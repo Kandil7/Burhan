@@ -1,0 +1,70 @@
+# Large datasets (not needed for Docker build)
+datasets/
+*.csv
+*.parquet
+*.jsonl
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+LICENSE
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files (use .env.example instead)
+.env
+.env.local
+.env.*.local
+
+# Test files
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data files (not needed for build)
+data/raw/
+data/processed/
+data/embeddings/
+
+# Docker
+docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Qdrant storage
+.qdrant/
+
+# MyPy
+.mypy_cache/
+*.mypy.ini
