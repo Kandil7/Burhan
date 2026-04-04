@@ -70,3 +70,8 @@ htmlcov/
 
 # Qdrant
 .qdrant/
+
+#datasets
+datasets/
+
+.opencode.json
