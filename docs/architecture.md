@@ -13,6 +13,7 @@ Detailed technical architecture of the Athar Islamic QA system.
 - [Data Flow](#data-flow)
 - [Database Schema](#database-schema)
 - [API Design](#api-design)
+- [RAG Pipeline](#rag-pipeline)
 - [Security Considerations](#security-considerations)
 - [Performance Considerations](#performance-considerations)
 - [Scalability](#scalability)
@@ -72,7 +73,7 @@ Every answer must be verifiable:
 
 ## 🏗️ Layer Architecture
 
-### Layer 1: API Layer (FastAPI)
+### Layer 1: API Layer (FastAPI + Next.js)
 
 **Responsibilities:**
 - Receive HTTP requests
@@ -80,15 +81,11 @@ Every answer must be verifiable:
 - Route to orchestrator
 - Return structured responses
 
-**Components:**
-- `FastAPI` application
-- Request/Response schemas
-- Error handling middleware
-- CORS configuration
-
 **Endpoints:**
 ```
 POST /api/v1/query       # Main query endpoint
+POST /api/v1/rag/fiqh    # Fiqh RAG endpoint
+POST /api/v1/rag/general # General Islamic knowledge
 GET  /health             # Health check
 GET  /ready              # Readiness probe
 GET  /docs               # Swagger UI
@@ -153,17 +150,17 @@ class CitationNormalizer:
 ### Layer 3: Agents & Tools Layer
 
 **Agents** (require reasoning/RAG):
-- FiqhAgent
-- QuranAgent
-- GeneralIslamicAgent
-- ChatbotAgent
+- FiqhAgent - Islamic jurisprudence with RAG
+- QuranAgent - Quran lookup, NL2SQL, tafsir
+- GeneralIslamicAgent - History, biography, theology
+- ChatbotAgent - Greetings, small talk
 
 **Tools** (deterministic):
-- ZakatCalculator
-- InheritanceCalculator
-- PrayerTimesTool
-- HijriCalendarTool
-- DuaRetrievalTool
+- ZakatCalculator - Wealth, livestock, crops
+- InheritanceCalculator - Fara'id rules
+- PrayerTimesTool - Astronomical calculations
+- HijriCalendarTool - Umm al-Qura calendar
+- DuaRetrievalTool - Verified adhkar database
 
 **Agent Interface:**
 ```python
@@ -189,7 +186,6 @@ class BaseTool(ABC):
 - Quran verses (6,236 ayahs)
 - Translations (multi-language)
 - Tafsir (commentaries)
-- Hadith collections
 - Query logs (analytics)
 
 **Qdrant (Vector DB):**
@@ -200,12 +196,12 @@ class BaseTool(ABC):
 
 **Redis 7:**
 - Response caching
+- Embedding cache
 - Session management
-- Rate limiting
 
 **LLM Provider:**
 - OpenAI (GPT-4o-mini)
-- Phase 2+: Multiple providers
+- Used for: Intent classification, RAG generation
 
 ---
 
@@ -354,18 +350,80 @@ POST /api/v1/query
 
 ---
 
+## 🧠 RAG Pipeline
+
+### Retrieval-Augmented Generation Flow
+
+```
+User Question
+    │
+    ▼
+┌──────────────────┐
+│ Encode Query     │  Qwen3-Embedding
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Vector Search    │  Qdrant (cosine similarity)
+└────────┬─────────┘
+         │
+         │ Top-15 passages
+         ▼
+┌──────────────────┐
+│ Hybrid Search    │  Semantic + BM25 keyword
+└────────┬─────────┘
+         │
+         │ Top-5 re-ranked
+         ▼
+┌──────────────────┐
+│ LLM Generation   │  Grounded answer (temp 0.1)
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Citations        │  Normalize to [C1], [C2]
+└────────┬─────────┘
+         │
+         ▼
+    Final Answer
+```
+
+### Fiqh Agent Configuration
+
+```python
+class FiqhAgent(BaseAgent):
+    TOP_K_RETRIEVAL = 15
+    TOP_K_RERANK = 5
+    TEMPERATURE = 0.1  # Very low for fiqh
+    
+    FIQH_GENERATION_PROMPT = """
+أجب بناءً ONLY على النصوص المسترجاعة.
+
+السؤال: {query}
+النصوص: {passages}
+
+التعليمات:
+1. أجب بناءً على النصوص فقط
+2. اذكر الافتراضات
+3. استخدم المراجع [C1], [C2]
+4. لا تخترع مصادر خارجية
+"""
+```
+
+---
+
 ## 🔒 Security Considerations
 
-### Phase 1
+### Phase 1-5 (Current)
 - No authentication (development only)
 - CORS configured for localhost
 - Input validation (Pydantic)
+- SQL injection prevention (parameterized queries)
 
-### Phase 2+
+### Phase 6+ (Planned)
 - API key authentication
 - Rate limiting (Redis)
 - Request sanitization
-- SQL injection prevention (parameterized queries)
 - XSS prevention (output encoding)
 
 ---
@@ -374,7 +432,7 @@ POST /api/v1/query
 
 ### Caching Strategy
 - **Response Cache**: Cache identical queries (1 hour TTL)
-- **Embedding Cache**: Cache query embeddings
+- **Embedding Cache**: Cache query embeddings (7 days)
 - **Intent Cache**: Cache frequent query intents
 
 ### Database Optimization
@@ -421,7 +479,7 @@ POST /api/v1/query
 
 ## 📊 Monitoring & Observability
 
-### Metrics (Phase 2+)
+### Metrics (Phase 6+)
 - Query volume (queries/minute)
 - Intent distribution (% by intent type)
 - Response latency (p50, p95, p99)
@@ -432,11 +490,6 @@ POST /api/v1/query
 - Structured JSON logs
 - Request ID tracking
 - Error tracing
-
-### Alerts (Phase 2+)
-- High error rate (>5%)
-- Slow responses (p95 > 2s)
-- Database connection pool exhaustion
 
 ---
 
@@ -467,8 +520,8 @@ POST /api/v1/query
 
 <div align="center">
 
-**Phase 1 Architecture Complete** ✅
-
-Next: Phase 2 - Tools Implementation
+**Architecture Version:** 1.0  
+**Last Updated:** Phase 5 Complete  
+**Status:** Production-Ready
 
 </div>
