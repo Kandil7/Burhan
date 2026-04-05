@@ -36,6 +36,13 @@ class ResponseOrchestrator:
     4. Assembles final response with citations and metadata
     
     Phase 1: Basic routing (agents/tools not yet implemented)
+    Phase 2+: Full agent execution with RAG, calculators, etc.
+    
+    Usage:
+        orchestrator = ResponseOrchestrator()
+        orchestrator.register_agent("fiqh_agent", FiqhAgent())
+        orchestrator.register_tool("zakat_tool", ZakatCalculator())
+        
     Phase 2: Full agent execution with calculators and tools
     
     Usage:

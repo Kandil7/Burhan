@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
     
     Runs on startup and shutdown.
+    Phase 1: Basic logging setup
     Phase 2: All tools initialized and ready.
     """
     # Startup
@@ -61,6 +62,22 @@ def create_app() -> FastAPI:
 
 Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
 
+## Features
+- **Intent Classification**: Automatically detects query type (fiqh, quran, zakat, etc.)
+- **Grounded Answers**: All answers backed by verified sources with citations
+- **Deterministic Calculators**: Zakat and inheritance calculations
+- **Multi-language**: Arabic and English support
+- **Madhhab-aware**: Handles differences between Islamic schools
+
+## Authentication
+Phase 1: No authentication required
+Phase 2: API key authentication for rate limiting
+
+## Rate Limiting
+Phase 1: No rate limiting
+Phase 2: 100 requests/minute for free tier
+        """,
+        version="0.1.0",
 ## Phase 2 Features
 - **Deterministic Calculators**: Zakat and Inheritance
 - **Service Tools**: Prayer Times, Hijri Calendar, Dua Retrieval
@@ -94,6 +111,7 @@ Phase 1-2: No rate limiting
         allow_headers=["*"],
     )
     
+    # Error handling (custom middleware)
     # Error handling
     app.middleware("http")(error_handler_middleware)
     
