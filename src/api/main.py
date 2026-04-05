@@ -20,6 +20,7 @@ from src.api.middleware.error_handler import error_handler_middleware
 from src.api.routes.health import router as health_router
 from src.api.routes.query import router as query_router
 from src.api.routes.tools import router as tools_router
+from src.api.routes.rag import router as rag_router
 from src.api.routes.quran import router as quran_router
 
 logger = get_logger()
@@ -121,6 +122,8 @@ Phase 1-2: No rate limiting
     # ==========================================
     app.include_router(health_router)
     app.include_router(query_router, prefix=settings.api_v1_prefix)
+    app.include_router(tools_router, prefix=settings.api_v1_prefix)
+    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")  # Phase 2
     app.include_router(tools_router, prefix=settings.api_v1_prefix)  # Phase 2
     app.include_router(quran_router, prefix=f"{settings.api_v1_prefix}")  # Phase 3
     
