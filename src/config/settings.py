@@ -62,10 +62,13 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.1
     llm_max_tokens: int = 2048
     
+    # HuggingFace
+    hf_token: Optional[str] = None
+
     # ==========================================
     # Embeddings
     # ==========================================
-    embedding_model: str = "qwen3-embedding-0.5b"
+    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
     embedding_dimension: int = 1024
     
     # ==========================================

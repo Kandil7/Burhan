@@ -77,3 +77,4 @@ datasets/
 .opencode.json
 "models/"  
 "api_output.log"  
+-e "\n# ML Models\nmodels/\ncache/\nnul"  

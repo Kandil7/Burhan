@@ -194,13 +194,13 @@ class VectorStore:
                 ]
                 qdrant_filter = Filter(must=conditions)
             
-            # Search
-            results = self.client.search(
+            # Search using query_points (new Qdrant API)
+            results = self.client.query_points(
                 collection_name=collection,
-                query_vector=query_embedding.tolist(),
+                query=query_embedding.tolist(),
                 query_filter=qdrant_filter,
                 limit=top_k,
-            )
+            ).points
             
             # Format results
             formatted_results = []
