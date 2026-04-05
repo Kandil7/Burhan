@@ -77,19 +77,51 @@ class ResponseOrchestrator:
         self.register_tool("hijri_tool", HijriCalendarTool())
         self.register_tool("dua_tool", DuaRetrievalTool())
 
-        # Register agents (Phase 2-4)
+        # Register chatbot agent (Phase 2)
         self.register_agent("chatbot_agent", ChatbotAgent())
 
-        # Phase 3: Register Quran agent (requires DB session - will be initialized lazily)
-        # Note: Quran agent requires database session, so we register a placeholder
-        # that will be initialized when the route is called
+        # Phase 3-4: Register RAG agents if dependencies available
+        self._register_rag_agents()
+
         logger.info(
             "orchestrator.agents_registered",
             tools=["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"],
-            agents=["chatbot_agent"],
+            agents=list(self.agents.keys()),
         )
 
-        logger.info("orchestrator.phase2_tools_registered")
+    def _register_rag_agents(self):
+        """Conditionally register RAG agents if dependencies available."""
+        try:
+            # Check if torch is available
+            import torch
+
+            from src.agents.fiqh_agent import FiqhAgent
+            from src.agents.general_islamic_agent import GeneralIslamicAgent
+
+            # Initialize embedding model and vector store (lazy)
+            from src.knowledge.embedding_model import EmbeddingModel
+            from src.knowledge.vector_store import VectorStore
+
+            embedding_model = EmbeddingModel()
+            vector_store = VectorStore()
+
+            # Register Fiqh agent
+            self.register_agent("fiqh_agent", FiqhAgent(embedding_model=embedding_model, vector_store=vector_store))
+
+            # Register General Islamic agent
+            self.register_agent(
+                "general_islamic_agent", GeneralIslamicAgent(embedding_model=embedding_model, vector_store=vector_store)
+            )
+
+            logger.info("orchestrator.rag_agents_registered", agents=["fiqh_agent", "general_islamic_agent"])
+
+        except ImportError:
+            logger.warning(
+                "orchestrator.rag_agents_unavailable",
+                reason="torch/transformers not installed. Install with: poetry install --with rag",
+            )
+
+        # Note: quran_agent requires DB session - registered in routes, not orchestrator
 
     def register_agent(self, name: str, agent: BaseAgent):
         """
