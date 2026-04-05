@@ -21,7 +21,8 @@ from src.quran.verse_retrieval import VerseRetrievalEngine, VerseNotFoundError
 from src.quran.nl2sql import NL2SQLEngine, NL2SQLQueryError
 from src.quran.quotation_validator import QuotationValidator
 from src.quran.tafsir_retrieval import TafsirRetrievalEngine, TafsirNotFoundError
-from src.infrastructure.db import get_db_session
+from src.infrastructure.db_sync import get_sync_session
+from src.data.models.quran import Surah, Ayah, Translation, Tafsir
 from src.config.logging_config import get_logger
 
 logger = get_logger()
@@ -133,7 +134,7 @@ def get_tafsir_engine(db_session):
 
 
 @router.get("/surahs", response_model=list[SurahResponse])
-async def list_surahs(db_session=Depends(get_db_session)):
+async def list_surahs(db_session=Depends(get_sync_session)):
     """
     List all 114 surahs.
 
@@ -156,7 +157,7 @@ async def list_surahs(db_session=Depends(get_db_session)):
 
 
 @router.get("/surahs/{surah_number}", response_model=dict)
-async def get_surah_details(surah_number: int, db_session=Depends(get_db_session)):
+async def get_surah_details(surah_number: int, db_session=Depends(get_sync_session)):
     """
     Get details for a specific surah.
 
@@ -188,7 +189,7 @@ async def get_surah_details(surah_number: int, db_session=Depends(get_db_session
 
 
 @router.get("/ayah/{surah}:{ayah}", response_model=AyahResponse)
-async def get_ayah(surah: int, ayah: int, db_session=Depends(get_db_session)):
+async def get_ayah(surah: int, ayah: int, db_session=Depends(get_sync_session)):
     """
     Get a specific ayah by surah:ayah reference.
 
@@ -208,19 +209,21 @@ async def get_ayah(surah: int, ayah: int, db_session=Depends(get_db_session)):
 # ==========================================
 
 
+class SearchRequest(BaseModel):
+    """Search request."""
+    query: str = Field(..., description="Search query")
+    limit: int = Field(5, ge=1, le=20)
+
+
 @router.post("/search", response_model=VerseSearchResponse)
-async def search_verses(
-    query: str = Query(..., description="Search query"),
-    limit: int = Query(5, ge=1, le=20),
-    db_session=Depends(get_db_session),
-):
+async def search_verses(request: SearchRequest, db_session=Depends(get_sync_session)):
     """
     Search Quran verses by text.
 
     Performs fuzzy search on Uthmani text.
     """
     engine = get_verse_engine(db_session)
-    results = await engine.search_verses(query, limit=limit)
+    results = await engine.search_verses(request.query, limit=request.limit)
 
     return VerseSearchResponse(verses=[AyahResponse(**r) for r in results], count=len(results))
 
@@ -231,7 +234,7 @@ async def search_verses(
 
 
 @router.post("/validate", response_model=QuotationValidationResponse)
-async def validate_quotation(request: QuotationValidationRequest, db_session=Depends(get_db_session)):
+async def validate_quotation(request: QuotationValidationRequest, db_session=Depends(get_sync_session)):
     """
     Validate if text is from the Quran.
 
@@ -249,7 +252,7 @@ async def validate_quotation(request: QuotationValidationRequest, db_session=Dep
 
 
 @router.post("/analytics", response_model=NL2SQLResponse)
-async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_db_session)):
+async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_session)):
     """
     Execute analytics queries on Quran data.
 
@@ -274,7 +277,7 @@ async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_db_sess
 
 
 @router.get("/tafsir/{surah}:{ayah}", response_model=TafsirResponse)
-async def get_tafsir(surah: int, ayah: int, source: Optional[str] = None, db_session=Depends(get_db_session)):
+async def get_tafsir(surah: int, ayah: int, source: Optional[str] = None, db_session=Depends(get_sync_session)):
     """
     Get tafsir (commentary) for a specific ayah.
 
@@ -290,7 +293,7 @@ async def get_tafsir(surah: int, ayah: int, source: Optional[str] = None, db_ses
 
 
 @router.get("/tafsir-sources", response_model=list[dict])
-async def list_tafsir_sources(db_session=Depends(get_db_session)):
+async def list_tafsir_sources(db_session=Depends(get_sync_session)):
     """
     List all available tafsir sources.
 

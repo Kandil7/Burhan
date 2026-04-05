@@ -267,19 +267,28 @@ class QuranLoader:
                 stats["surahs"] += 1
             
             self.session.commit()
+
+            # Load ayahs (supports both nested and flat formats)
+            ayahs_list = data.get("ayahs", [])
             
-            # Load ayahs
-            for ayah_data in data.get("ayahs", []):
+            # If no root-level ayahs, extract from nested surahs
+            if not ayahs_list:
+                for surah_data in data.get("surahs", []):
+                    for ayah in surah_data.get("ayahs", []):
+                        ayah["surah_number"] = surah_data["number"]
+                        ayahs_list.append(ayah)
+
+            for ayah_data in ayahs_list:
                 surah = self.session.query(Surah).filter_by(
                     number=ayah_data["surah_number"]
                 ).first()
-                
+
                 if not surah:
                     continue
-                
+
                 ayah = Ayah(
                     surah_id=surah.id,
-                    number=ayah_data.get("number"),
+                    number=ayah_data.get("number", ayah_data.get("number_in_surah")),
                     number_in_surah=ayah_data.get("number_in_surah"),
                     text_uthmani=ayah_data.get("text_uthmani", ""),
                     text_simple=ayah_data.get("text_simple"),
@@ -291,21 +300,23 @@ class QuranLoader:
                     surah_name=surah.name_en,
                     surah_name_ar=surah.name_ar
                 )
-                
+
                 self.session.add(ayah)
+                self.session.flush()  # Flush to get ayah.id
                 stats["ayahs"] += 1
-                
+
                 # Add translations
                 for trans_data in ayah_data.get("translations", []):
+                    translator_name = trans_data.get("translator", trans_data.get("resource_name", "Unknown"))
                     trans = Translation(
-                        ayah_id=ayah.id,
+                        ayah_id=ayah.id,  # Now has ID
                         language=trans_data.get("language", "en"),
-                        translator=trans_data.get("translator"),
+                        translator=translator_name,
                         text=trans_data.get("text", "")
                     )
                     self.session.add(trans)
                     stats["translations"] += 1
-            
+
             self.session.commit()
             logger.info(
                 "quran.loader.json_loaded",

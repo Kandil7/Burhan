@@ -87,16 +87,28 @@ class FiqhAgent(BaseAgent):
 
     async def _initialize(self):
         """Lazy initialization of dependencies."""
-        if self.embedding_model is None:
-            self.embedding_model = EmbeddingModel()
-            await self.embedding_model.load_model()
-
-        if self.vector_store is None:
-            self.vector_store = VectorStore()
-            await self.vector_store.initialize()
-
-        if self.hybrid_searcher is None:
-            self.hybrid_searcher = HybridSearcher(self.vector_store)
+        try:
+            if self.embedding_model is None:
+                from src.knowledge.embedding_model import EmbeddingModel
+                self.embedding_model = EmbeddingModel()
+                await self.embedding_model.load_model()
+        except Exception as e:
+            logger.warning("fiqh_agent.embedding_unavailable", error=str(e))
+            self.embedding_model = None
+        
+        try:
+            if self.vector_store is None:
+                from src.knowledge.vector_store import VectorStore
+                self.vector_store = VectorStore()
+                await self.vector_store.initialize()
+            
+            if self.hybrid_searcher is None and self.vector_store:
+                from src.knowledge.hybrid_search import HybridSearcher
+                self.hybrid_searcher = HybridSearcher(self.vector_store)
+        except Exception as e:
+            logger.warning("fiqh_agent.vector_store_unavailable", error=str(e))
+            self.vector_store = None
+            self.hybrid_searcher = None
 
         # Initialize LLM client if not provided
         if self.llm_client is None:
@@ -127,6 +139,15 @@ class FiqhAgent(BaseAgent):
         await self._initialize()
 
         try:
+            # If no embedding model, return fallback response
+            if not self.embedding_model:
+                return AgentOutput(
+                    answer="الرجاء تثبيت نموذج التضمين للبحث في النصوص. التثبيت: pip install torch transformers",
+                    metadata={"error": "Embedding model not available", "fix": "pip install torch transformers"},
+                    confidence=0.0,
+                    requires_human_review=True
+                )
+            
             # Step 1: Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 

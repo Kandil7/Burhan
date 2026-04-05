@@ -1,27 +1,56 @@
 """
 LLM client abstraction for Athar Islamic QA system.
 
-Provides unified interface for multiple LLM providers (OpenAI, Azure, local).
+Provides unified interface for multiple LLM providers:
+- OpenAI (GPT-4o-mini, GPT-4)
+- Groq (Qwen3-32B, Llama 3.3 70B, Mixtral 8x7B)
+- Local models (future)
+
+Phase 4: Added Groq support for faster, cheaper inference.
 """
 from typing import Optional
 from openai import AsyncOpenAI
+
+try:
+    from groq import AsyncGroq
+    GROQ_AVAILABLE = True
+except ImportError:
+    AsyncGroq = None
+    GROQ_AVAILABLE = False
 
 from src.config.settings import settings
 from src.config.logging_config import get_logger
 
 logger = get_logger()
 
-# Global LLM client
+# Global LLM clients
 llm_client: Optional[AsyncOpenAI] = None
+groq_client: Optional[AsyncGroq] = None
+
+
+# Available models per provider
+MODELS = {
+    "openai": {
+        "default": "gpt-4o-mini",
+        "fast": "gpt-4o-mini",
+        "smart": "gpt-4o",
+    },
+    "groq": {
+        "default": "qwen/qwen3-32b",
+        "fast": "meta-llama/llama-3.3-70b-versatile",
+        "smart": "qwen/qwen3-32b",
+    }
+}
 
 
 async def get_llm_client() -> AsyncOpenAI:
     """
     Get or create LLM client instance.
-    
-    Phase 1: OpenAI client
-    Phase 2+: Support multiple providers (Azure, local models, etc.)
-    
+
+    Supports multiple providers:
+    - openai: OpenAI API (GPT-4o-mini, GPT-4)
+    - groq: Groq API (Qwen3-32B, Llama 3.3 70B)
+
     Usage:
         client = await get_llm_client()
         response = await client.chat.completions.create(
@@ -29,25 +58,49 @@ async def get_llm_client() -> AsyncOpenAI:
             messages=[{"role": "user", "content": "Hello"}]
         )
     """
+    global llm_client, groq_client
+
+    provider = settings.llm_provider.lower()
+
+    if provider == "groq":
+        if not GROQ_AVAILABLE:
+            logger.warning("llm.groq_not_installed", fallback_to="openai")
+            return await get_openai_client()
+        
+        if groq_client is None:
+            if not settings.groq_api_key:
+                logger.warning("llm.no_groq_key", fallback_to="openai")
+                return await get_openai_client()
+
+            groq_client = AsyncGroq(api_key=settings.groq_api_key)
+            logger.info(
+                "llm.groq_initialized",
+                model=MODELS["groq"]["default"]
+            )
+        return groq_client
+    else:
+        return await get_openai_client()
+
+
+async def get_openai_client() -> AsyncOpenAI:
+    """Get OpenAI client."""
     global llm_client
-    
+
     if llm_client is None:
         if not settings.openai_api_key:
-            logger.warning("llm.no_api_key", provider=settings.llm_provider)
-            # Phase 1: Allow running without LLM (for testing)
-            # Phase 2: Raise error in production
-        
-        llm_client = AsyncOpenAI(
-            api_key=settings.openai_api_key or "sk-dummy-key-for-testing",
-            base_url=None,  # Use OpenAI default
-        )
-        
+            logger.warning("llm.no_api_key", provider="openai")
+            llm_client = AsyncOpenAI(
+                api_key="sk-dummy-key-for-testing",
+                base_url=None,
+            )
+        else:
+            llm_client = AsyncOpenAI(api_key=settings.openai_api_key)
+
         logger.info(
-            "llm.client_initialized",
-            provider=settings.llm_provider,
+            "llm.openai_initialized",
             model=settings.openai_model
         )
-    
+
     return llm_client
 
 

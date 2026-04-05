@@ -1,3 +1,0 @@
-@echo off
-REM Athar - Start Application
-call build.bat start

@@ -80,16 +80,28 @@ class GeneralIslamicAgent(BaseAgent):
 
     async def _initialize(self):
         """Lazy initialization."""
-        if self.embedding_model is None:
-            self.embedding_model = EmbeddingModel()
-            await self.embedding_model.load_model()
-
-        if self.vector_store is None:
-            self.vector_store = VectorStore()
-            await self.vector_store.initialize()
-
-        if self.hybrid_searcher is None:
-            self.hybrid_searcher = HybridSearcher(self.vector_store)
+        try:
+            if self.embedding_model is None:
+                from src.knowledge.embedding_model import EmbeddingModel
+                self.embedding_model = EmbeddingModel()
+                await self.embedding_model.load_model()
+        except Exception as e:
+            logger.warning("general_agent.embedding_unavailable", error=str(e))
+            self.embedding_model = None
+        
+        try:
+            if self.vector_store is None:
+                from src.knowledge.vector_store import VectorStore
+                self.vector_store = VectorStore()
+                await self.vector_store.initialize()
+            
+            if self.hybrid_searcher is None and self.vector_store:
+                from src.knowledge.hybrid_search import HybridSearcher
+                self.hybrid_searcher = HybridSearcher(self.vector_store)
+        except Exception as e:
+            logger.warning("general_agent.vector_store_unavailable", error=str(e))
+            self.vector_store = None
+            self.hybrid_searcher = None
 
         # Initialize LLM client if not provided
         if self.llm_client is None:
@@ -105,6 +117,14 @@ class GeneralIslamicAgent(BaseAgent):
         await self._initialize()
 
         try:
+            # If no embedding model, return fallback
+            if not self.embedding_model:
+                return AgentOutput(
+                    answer="نموذج التضمين غير متاح. التثبيت: pip install torch transformers",
+                    metadata={"error": "Embedding model not available"},
+                    confidence=0.0
+                )
+            
             # Step 1: Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 
