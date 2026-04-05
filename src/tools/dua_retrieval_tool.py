@@ -17,6 +17,7 @@ logger = get_logger()
 
 # Path to duas database
 DUAS_DB_PATH = Path(__file__).parent.parent.parent / "data" / "seed" / "duas.json"
+AZKAR_DB_PATH = Path(__file__).parent.parent.parent / "data" / "seed" / "azkar_imported.json"
 
 
 class DuaRetrievalTool(BaseTool):
@@ -25,6 +26,7 @@ class DuaRetrievalTool(BaseTool):
     
     Retrieves from authenticated database only - no LLM generation.
     Supports search by occasion, category, or semantic query.
+    Integrates both Hisn al-Muslim and azkar-db datasets.
     
     Usage:
         tool = DuaRetrievalTool()
@@ -33,20 +35,38 @@ class DuaRetrievalTool(BaseTool):
     
     name = "dua_retrieval_tool"
     
-    def __init__(self, duas_path: Optional[Path] = None):
-        """Initialize with duas database."""
+    def __init__(self, duas_path: Optional[Path] = None, azkar_path: Optional[Path] = None):
+        """Initialize with duas databases."""
         self.duas_path = duas_path or DUAS_DB_PATH
+        self.azkar_path = azkar_path or AZKAR_DB_PATH
         self.duas = self._load_duas()
-        logger.info("dua.tool_initialized", duas_count=len(self.duas))
+        self.azkar = self._load_azkar()
+        logger.info(
+            "dua.tool_initialized",
+            duas_count=len(self.duas),
+            azkar_count=len(self.azkar),
+            total=len(self.duas) + len(self.azkar)
+        )
     
     def _load_duas(self) -> list[dict]:
-        """Load duas from JSON database."""
+        """Load duas from JSON database (Hisn al-Muslim)."""
         try:
-            with open(self.duas_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            if self.duas_path.exists():
+                with open(self.duas_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
         except Exception as e:
             logger.error("dua.load_error", error=str(e))
-            return []
+        return []
+    
+    def _load_azkar(self) -> list[dict]:
+        """Load azkar from imported database."""
+        try:
+            if self.azkar_path.exists():
+                with open(self.azkar_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.error("azkar.load_error", error=str(e))
+        return []
     
     async def execute(
         self,
@@ -59,6 +79,8 @@ class DuaRetrievalTool(BaseTool):
         """
         Retrieve duas based on occasion, category, or query.
         
+        Searches both Hisn al-Muslim and azkar-db datasets.
+        
         Args:
             query: User query for semantic search
             occasion: Specific occasion (morning, evening, travel, etc.)
@@ -69,37 +91,46 @@ class DuaRetrievalTool(BaseTool):
             ToolOutput with list of verified duas
         """
         try:
-            duas = self.duas[:]  # Copy
+            # Combine both datasets
+            all_duas = self.duas + self.azkar
             
             # Filter by category
             if category:
-                duas = [d for d in duas if d.get("category") == category]
+                all_duas = [d for d in all_duas if d.get("category") == category]
             
             # Filter by occasion
             if occasion:
-                duas = [d for d in duas if d.get("occasion") == occasion]
+                all_duas = [
+                    d for d in all_duas
+                    if occasion.lower() in d.get("occasion", "").lower()
+                    or occasion.lower() in d.get("category", "").lower()
+                ]
             
             # Semantic search by query (simple keyword matching for Phase 2)
             if query and not occasion and not category:
-                duas = self._search_duas(query, duas)
+                all_duas = self._search_duas(query, all_duas)
             
             # Limit results
-            duas = duas[:limit]
+            all_duas = all_duas[:limit]
             
             # Format response
             result = {
-                "duas": duas,
-                "count": len(duas),
+                "duas": all_duas,
+                "count": len(all_duas),
                 "filters": {
                     "occasion": occasion,
                     "category": category,
                     "query": query if query else None
+                },
+                "sources": {
+                    "hisn_al_muslim": len(self.duas),
+                    "azkar_db": len(self.azkar)
                 }
             }
             
             logger.info(
                 "dua.retrieved",
-                count=len(duas),
+                count=len(all_duas),
                 occasion=occasion,
                 category=category
             )
@@ -108,7 +139,7 @@ class DuaRetrievalTool(BaseTool):
                 result=result,
                 success=True,
                 metadata={
-                    "source": "Hisn al-Muslim and authenticated collections",
+                    "source": "Hisn al-Muslim + Azkar Database (https://github.com/osamayy/azkar-db)",
                     "note": "All duas are from verified sources with proper references"
                 }
             )
@@ -170,15 +201,17 @@ class DuaRetrievalTool(BaseTool):
     def get_occasions(self) -> list[str]:
         """Get list of all available occasions."""
         occasions = set()
-        for dua in self.duas:
+        for dua in self.duas + self.azkar:
             if dua.get("occasion"):
                 occasions.add(dua["occasion"])
+            if dua.get("category"):
+                occasions.add(dua["category"])
         return sorted(list(occasions))
     
     def get_categories(self) -> list[str]:
         """Get list of all available categories."""
         categories = set()
-        for dua in self.duas:
+        for dua in self.duas + self.azkar:
             if dua.get("category"):
                 categories.add(dua["category"])
         return sorted(list(categories))
