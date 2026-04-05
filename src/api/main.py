@@ -10,6 +10,7 @@ Creates and configures the FastAPI application with:
 
 Phase 2: Includes tool endpoints for direct access.
 """
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +31,7 @@ logger = get_logger()
 async def lifespan(app: FastAPI):
     """
     Application lifespan handler.
-    
+
     Runs on startup and shutdown.
     Phase 1: Basic logging setup
     Phase 2: All tools initialized and ready.
@@ -41,11 +42,11 @@ async def lifespan(app: FastAPI):
         "app.startup",
         app_name=settings.app_name,
         version="0.3.0",  # Phase 3 version
-        environment=settings.app_env
+        environment=settings.app_env,
     )
-    
+
     yield
-    
+
     # Shutdown
     logger.info("app.shutdown")
 
@@ -53,7 +54,7 @@ async def lifespan(app: FastAPI):
 def create_app() -> FastAPI:
     """
     Create and configure FastAPI application.
-    
+
     Returns:
         Configured FastAPI application instance
     """
@@ -79,31 +80,18 @@ Phase 2: API key authentication for rate limiting
 Phase 1: No rate limiting
 Phase 2: 100 requests/minute for free tier
         """,
-        version="0.1.0",
-## Phase 2 Features
-- **Deterministic Calculators**: Zakat and Inheritance
-- **Service Tools**: Prayer Times, Hijri Calendar, Dua Retrieval
-- **Intent Classification**: 9 intents with routing
-- **Direct Tool Access**: Tool endpoints bypass router
-
-## Authentication
-Phase 1-2: No authentication required
-
-## Rate Limiting
-Phase 1-2: No rate limiting
-        """,
-        version="0.2.0",
+        version="0.3.0",
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
         lifespan=lifespan,
-        debug=settings.debug
+        debug=settings.debug,
     )
-    
+
     # ==========================================
     # Middleware
     # ==========================================
-    
+
     # CORS
     app.add_middleware(
         CORSMiddleware,
@@ -112,21 +100,20 @@ Phase 1-2: No rate limiting
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Error handling (custom middleware)
     # Error handling
     app.middleware("http")(error_handler_middleware)
-    
+
     # ==========================================
     # Routes
     # ==========================================
     app.include_router(health_router)
     app.include_router(query_router, prefix=settings.api_v1_prefix)
     app.include_router(tools_router, prefix=settings.api_v1_prefix)
-    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")  # Phase 2
-    app.include_router(tools_router, prefix=settings.api_v1_prefix)  # Phase 2
+    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")  # Phase 4
     app.include_router(quran_router, prefix=f"{settings.api_v1_prefix}")  # Phase 3
-    
+
     # ==========================================
     # Root endpoint
     # ==========================================
@@ -154,9 +141,9 @@ Phase 1-2: No rate limiting
                 "prayer_times": f"{settings.api_v1_prefix}/tools/prayer-times",
                 "hijri": f"{settings.api_v1_prefix}/tools/hijri",
                 "duas": f"{settings.api_v1_prefix}/tools/duas",
-            }
+            },
         }
-    
+
     return app
 
 
