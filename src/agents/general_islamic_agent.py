@@ -77,33 +77,42 @@ class GeneralIslamicAgent(BaseAgent):
         self.hybrid_searcher = None
         self.citation_normalizer = CitationNormalizer()
         self._llm_available = True
+        self._embedding_loaded = False
 
     async def _initialize(self):
         """Lazy initialization."""
-        try:
-            if self.embedding_model is None:
+        # Initialize embedding model
+        if self.embedding_model is None:
+            try:
                 from src.knowledge.embedding_model import EmbeddingModel
+
                 self.embedding_model = EmbeddingModel()
                 await self.embedding_model.load_model()
-        except Exception as e:
-            logger.warning("general_agent.embedding_unavailable", error=str(e))
-            self.embedding_model = None
-        
-        try:
-            if self.vector_store is None:
+                self._embedding_loaded = True
+                logger.info("general_agent.embedding_loaded")
+            except Exception as e:
+                logger.warning("general_agent.embedding_unavailable", error=str(e))
+                self.embedding_model = None
+                self._embedding_loaded = False
+
+        # Initialize vector store
+        if self.vector_store is None:
+            try:
                 from src.knowledge.vector_store import VectorStore
+
                 self.vector_store = VectorStore()
                 await self.vector_store.initialize()
-            
-            if self.hybrid_searcher is None and self.vector_store:
-                from src.knowledge.hybrid_search import HybridSearcher
-                self.hybrid_searcher = HybridSearcher(self.vector_store)
-        except Exception as e:
-            logger.warning("general_agent.vector_store_unavailable", error=str(e))
-            self.vector_store = None
-            self.hybrid_searcher = None
 
-        # Initialize LLM client if not provided
+                if self.hybrid_searcher is None and self.vector_store:
+                    from src.knowledge.hybrid_search import HybridSearcher
+
+                    self.hybrid_searcher = HybridSearcher(self.vector_store)
+            except Exception as e:
+                logger.warning("general_agent.vector_store_unavailable", error=str(e))
+                self.vector_store = None
+                self.hybrid_searcher = None
+
+        # Initialize LLM client
         if self.llm_client is None:
             try:
                 self.llm_client = await get_llm_client()
@@ -116,19 +125,19 @@ class GeneralIslamicAgent(BaseAgent):
         """Execute general knowledge RAG pipeline."""
         await self._initialize()
 
+        # If embedding model failed to load, return fallback
+        if not self._embedding_loaded or not self.embedding_model:
+            logger.warning("general_agent.embedding_model_not_loaded", query=input.query[:50])
+            return await self._fallback_response(input.query, input.language)
+
         try:
-            # If no embedding model, return fallback
-            if not self.embedding_model:
-                return AgentOutput(
-                    answer="نموذج التضمين غير متاح. التثبيت: pip install torch transformers",
-                    metadata={"error": "Embedding model not available"},
-                    confidence=0.0
-                )
-            
             # Step 1: Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 
             # Step 2: Retrieve passages
+            if not self.hybrid_searcher:
+                return await self._fallback_response(input.query, input.language)
+
             passages = await self.hybrid_searcher.search(
                 query=input.query,
                 query_embedding=query_embedding,
@@ -242,3 +251,37 @@ class GeneralIslamicAgent(BaseAgent):
 
         scores = [p.get("score", 0) for p in passages[:5]]
         return min(1.0, sum(scores) / len(scores))
+
+    async def _fallback_response(self, query: str, language: str = "ar") -> AgentOutput:
+        """Generate fallback response when RAG is not available."""
+        query_lower = query.lower()
+
+        # Try to detect intent and provide targeted responses
+        if any(k in query_lower for k in ["صلاة", " prayer", "صيام", "fast"]):
+            return AgentOutput(
+                answer="أعتذر، النظام حالياً في وضع الصيانة. للمعلومات الأساسية:\n\n• الصلاة: ركن من أركان الإسلام، يجب أداء الصلوات الخمس يومياً في أوقاتها\n• الصيام: wajib في شهر رمضان\n\nللحصول على معلومات دقيقة، يرجى مراجعة دار الإضافة المحلية.",
+                citations=[],
+                metadata={"fallback": "general_knowledge", "topic": "worship"},
+                confidence=0.3,
+            )
+        elif any(k in query_lower for k in ["زكاة", "zakat", "صدقة"]):
+            return AgentOutput(
+                answer="أعتذر، النظام حالياً في وضع الصيانة. للمعلومات الأساسية:\n\n• الزكاة: wajib على المال عند بلوغ النصاب (ما يعادل 85g ذهب)\n• نسبة الزكاة: 2.5%\n\nللحصول على معلومات دقيقة، يرجى مراجعة دار الإضافة المحلية.",
+                citations=[],
+                metadata={"fallback": "general_knowledge", "topic": "zakat"},
+                confidence=0.3,
+            )
+        elif any(k in query_lower for k in ["حج", " pilgrimage", "عمرة"]):
+            return AgentOutput(
+                answer="أعتذر، النظام حالياً في وضع الصيانة. للمعلومات الأساسية:\n\n• الحج: wajib مرة واحدة في العمر للمقتدر\n• العمرة: مسنونة غير wajib\n\nللحصول على معلومات دقيقة، يرجى مراجعة دار الإضافة المحلية.",
+                citations=[],
+                metadata={"fallback": "general_knowledge", "topic": "hajj"},
+                confidence=0.3,
+            )
+        else:
+            return AgentOutput(
+                answer="أعتذر، النظام حالياً في وضع الصيانة. يمكنني مساعدتك في:\n\n• الأسئلة العامة عن الإسلام\n• أحكام العبادات والمعاملات\n• الآيات القرآنية والتفسير\n• الأذكار والأدعية\n\nللحصول على معلومات دقيقة، يرجى مراجعة أهل العلم.",
+                citations=[],
+                metadata={"fallback": "general_knowledge"},
+                confidence=0.3,
+            )

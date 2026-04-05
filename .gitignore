@@ -75,3 +75,5 @@ htmlcov/
 datasets/
 
 .opencode.json
+"models/"  
+"api_output.log"  
