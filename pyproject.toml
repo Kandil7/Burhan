@@ -1,38 +1,42 @@
-[project]
+[tool.poetry]
 name = "athar"
 version = "0.1.0"
 description = "Islamic QA System - Multi-Agent Architecture based on Fanar-Sadiq"
+authors = ["Athar Team <team@athar.islamic>"]
 readme = "README.md"
-requires-python = ">=3.12"
-license = {text = "MIT"}
-authors = [
-    {name = "Athar Team"}
-]
-dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.32.0",
-    "pydantic>=2.9.0",
-    "pydantic-settings>=2.6.0",
-    "sqlalchemy[asyncio]>=2.0.36",
-    "asyncpg>=0.30.0",
-    "alembic>=1.14.0",
-    "redis[hiredis]>=5.2.0",
-    "qdrant-client>=1.12.0",
-    "openai>=1.54.0",
-    "httpx>=0.27.0",
-    "python-dotenv>=1.0.0",
-    "structlog>=24.4.0",
-    "pyyaml>=6.0.2",
-]
+packages = [{include = "src", from = "."}]
+include = ["tests/"]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.3.0",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=6.0.0",
-    "ruff>=0.7.0",
-    "mypy>=1.13.0",
-]
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+pydantic = "^2.9.0"
+pydantic-settings = "^2.6.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+asyncpg = "^0.30.0"
+alembic = "^1.14.0"
+redis = {extras = ["hiredis"], version = "^5.2.0"}
+qdrant-client = "^1.12.0"
+openai = "^1.54.0"
+httpx = "^0.27.0"
+python-dotenv = "^1.0.0"
+structlog = "^24.4.0"
+pyyaml = "^6.0.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^6.0.0"
+ruff = "^0.7.0"
+mypy = "^1.13.0"
+
+[tool.poetry.scripts]
+athar = "src.api.main:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py312"
