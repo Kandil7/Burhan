@@ -1,0 +1,31 @@
+{
+  "Index": {
+    "title": "أثر",
+    "subtitle": "مساعد إسلامي ذكي مع مصادر موثقة",
+    "placeholder": "اكتب سؤالك هنا...",
+    "footer": "أثر مبني على معمارية Fanar-Sadiq • جميع الإجابات مع مصادر موثقة"
+  },
+  "Common": {
+    "sources": "المصادر / Sources",
+    "viewSource": "عرض المصدر ←",
+    "confidence": "% ثقة",
+    "error": "خطأ"
+  },
+  "Intents": {
+    "fiqh": "فقه",
+    "quran": "قرآن",
+    "islamic_knowledge": "معرفة إسلامية",
+    "greeting": "تحية",
+    "zakat": "زكاة",
+    "inheritance": "ميراث",
+    "dua": "دعاء",
+    "hijri_calendar": "تقويم هجري",
+    "prayer_times": "مواقيت صلاة"
+  },
+  "Suggestions": {
+    "zakat": "ما حكم زكاة الأسهم؟",
+    "quran": "كم عدد آيات سورة البقرة؟",
+    "fiqh": "ما حكم صلاة الجمعة؟",
+    "dua": "أعطني دعاء السفر"
+  }
+}
