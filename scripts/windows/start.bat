@@ -1,3 +1,4 @@
 @echo off
-REM Athar - Start Application
+REM Athar - Quick Start
+cd ..
 call build.bat start
