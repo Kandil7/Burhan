@@ -8,6 +8,7 @@ Main orchestrator that:
 4. Handles fallback and error cases
 
 This is the central coordination point for the multi-agent system.
+Phase 2: All tools registered and functional.
 """
 from typing import Optional
 
@@ -42,6 +43,10 @@ class ResponseOrchestrator:
         orchestrator.register_agent("fiqh_agent", FiqhAgent())
         orchestrator.register_tool("zakat_tool", ZakatCalculator())
         
+    Phase 2: Full agent execution with calculators and tools
+    
+    Usage:
+        orchestrator = ResponseOrchestrator()
         result = await orchestrator.route_query(
             query="ما حكم الصلاة؟",
             intent=Intent.FIQH,
@@ -55,10 +60,26 @@ class ResponseOrchestrator:
         self._register_default_fallbacks()
     
     def _register_default_fallbacks(self):
-        """Register default fallback agent."""
-        # Phase 1: No agents registered yet
-        # Phase 2+: Will register all agents and tools
-        pass
+        """Register default fallback agents and all Phase 2 tools."""
+        # Phase 2: Register all tools
+        from src.tools.zakat_calculator import ZakatCalculator
+        from src.tools.inheritance_calculator import InheritanceCalculator
+        from src.tools.prayer_times_tool import PrayerTimesTool
+        from src.tools.hijri_calendar_tool import HijriCalendarTool
+        from src.tools.dua_retrieval_tool import DuaRetrievalTool
+        from src.agents.chatbot_agent import ChatbotAgent
+        
+        # Register tools (Phase 2)
+        self.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
+        self.register_tool("inheritance_tool", InheritanceCalculator())
+        self.register_tool("prayer_tool", PrayerTimesTool())
+        self.register_tool("hijri_tool", HijriCalendarTool())
+        self.register_tool("dua_tool", DuaRetrievalTool())
+        
+        # Register agents (Phase 2)
+        self.register_agent("chatbot_agent", ChatbotAgent())
+        
+        logger.info("orchestrator.phase2_tools_registered")
     
     def register_agent(self, name: str, agent: BaseAgent):
         """
@@ -170,8 +191,10 @@ class ResponseOrchestrator:
                 )
                 
                 if result.success:
+                    # Format tool result as AgentOutput
+                    answer = self._format_tool_result(result.result)
                     return AgentOutput(
-                        answer=str(result.result),
+                        answer=answer,
                         metadata={
                             "tool": target,
                             **result.metadata,
@@ -208,6 +231,14 @@ class ResponseOrchestrator:
                 query,
                 f"Feature not yet implemented: {target}"
             )
+    
+    def _format_tool_result(self, result: dict) -> str:
+        """Format tool result dictionary into readable text."""
+        import json
+        
+        # For Phase 2, return JSON-formatted string
+        # Phase 4: Will use LLM to format naturally
+        return json.dumps(result, indent=2, ensure_ascii=False)
     
     async def _fallback_response(self, query: str, reason: str) -> AgentOutput:
         """
