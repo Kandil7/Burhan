@@ -31,6 +31,13 @@ pytest-cov = "^6.0.0"
 ruff = "^0.7.0"
 mypy = "^1.13.0"
 
+[tool.poetry.group.rag]
+optional = true
+
+[tool.poetry.group.rag.dependencies]
+torch = ">=2.2.0"
+transformers = ">=4.40.0"
+
 [tool.poetry.scripts]
 athar = "src.api.main:app"
 

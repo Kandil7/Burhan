@@ -10,6 +10,7 @@ Main orchestrator that:
 This is the central coordination point for the multi-agent system.
 Phase 2: All tools registered and functional.
 """
+
 from typing import Optional
 
 from src.config.intents import Intent, INTENT_ROUTING
@@ -28,23 +29,23 @@ logger = get_logger()
 class ResponseOrchestrator:
     """
     Main orchestrator that routes queries to appropriate agents/tools.
-    
+
     The orchestrator:
     1. Receives query with classified intent
     2. Looks up target agent/tool from routing map
     3. Executes agent/tool with appropriate parameters
     4. Assembles final response with citations and metadata
-    
+
     Phase 1: Basic routing (agents/tools not yet implemented)
     Phase 2+: Full agent execution with RAG, calculators, etc.
-    
+
     Usage:
         orchestrator = ResponseOrchestrator()
         orchestrator.register_agent("fiqh_agent", FiqhAgent())
         orchestrator.register_tool("zakat_tool", ZakatCalculator())
-        
+
     Phase 2: Full agent execution with calculators and tools
-    
+
     Usage:
         orchestrator = ResponseOrchestrator()
         result = await orchestrator.route_query(
@@ -53,14 +54,14 @@ class ResponseOrchestrator:
             language="ar"
         )
     """
-    
+
     def __init__(self):
         self.agents: dict[str, BaseAgent] = {}
         self.tools: dict[str, BaseTool] = {}
         self._register_default_fallbacks()
-    
+
     def _register_default_fallbacks(self):
-        """Register default fallback agents and all Phase 2 tools."""
+        """Register default fallback agents and all Phase 2-4 tools."""
         # Phase 2: Register all tools
         from src.tools.zakat_calculator import ZakatCalculator
         from src.tools.inheritance_calculator import InheritanceCalculator
@@ -68,41 +69,50 @@ class ResponseOrchestrator:
         from src.tools.hijri_calendar_tool import HijriCalendarTool
         from src.tools.dua_retrieval_tool import DuaRetrievalTool
         from src.agents.chatbot_agent import ChatbotAgent
-        
+
         # Register tools (Phase 2)
         self.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
         self.register_tool("inheritance_tool", InheritanceCalculator())
         self.register_tool("prayer_tool", PrayerTimesTool())
         self.register_tool("hijri_tool", HijriCalendarTool())
         self.register_tool("dua_tool", DuaRetrievalTool())
-        
-        # Register agents (Phase 2)
+
+        # Register agents (Phase 2-4)
         self.register_agent("chatbot_agent", ChatbotAgent())
-        
+
+        # Phase 3: Register Quran agent (requires DB session - will be initialized lazily)
+        # Note: Quran agent requires database session, so we register a placeholder
+        # that will be initialized when the route is called
+        logger.info(
+            "orchestrator.agents_registered",
+            tools=["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"],
+            agents=["chatbot_agent"],
+        )
+
         logger.info("orchestrator.phase2_tools_registered")
-    
+
     def register_agent(self, name: str, agent: BaseAgent):
         """
         Register an agent with the orchestrator.
-        
+
         Args:
             name: Agent name (e.g., "fiqh_agent")
             agent: Agent instance
         """
         self.agents[name] = agent
         logger.info("orchestrator.agent_registered", name=name)
-    
+
     def register_tool(self, name: str, tool: BaseTool):
         """
         Register a tool with the orchestrator.
-        
+
         Args:
             name: Tool name (e.g., "zakat_tool")
             tool: Tool instance
         """
         self.tools[name] = tool
         logger.info("orchestrator.tool_registered", name=name)
-    
+
     async def route_query(
         self,
         query: str,
@@ -114,7 +124,7 @@ class ResponseOrchestrator:
     ) -> AgentOutput:
         """
         Route query to appropriate agent/tool based on intent.
-        
+
         Args:
             query: User's question
             intent: Classified intent
@@ -122,60 +132,45 @@ class ResponseOrchestrator:
             location: Location data (for prayer times, qibla)
             madhhab: Islamic school of jurisprudence
             session_id: Session ID for conversation context
-            
+
         Returns:
             AgentOutput with answer, citations, and metadata
         """
         target = INTENT_ROUTING.get(intent)
-        
+
         if not target:
-            logger.warning(
-                "orchestrator.unknown_intent",
-                intent=intent.value,
-                query=query[:100]
-            )
+            logger.warning("orchestrator.unknown_intent", intent=intent.value, query=query[:100])
             return await self._fallback_response(query, "Unknown intent")
-        
-        logger.info(
-            "orchestrator.routing",
-            intent=intent.value,
-            target=target,
-            language=language
-        )
-        
+
+        logger.info("orchestrator.routing", intent=intent.value, target=target, language=language)
+
         # ==========================================
         # Route to agent
         # ==========================================
         if target in self.agents:
             agent = self.agents[target]
             try:
-                result = await agent.execute(AgentInput(
-                    query=query,
-                    language=language,
-                    metadata={
-                        "location": location,
-                        "madhhab": madhhab,
-                        "session_id": session_id,
-                    }
-                ))
-                
+                result = await agent.execute(
+                    AgentInput(
+                        query=query,
+                        language=language,
+                        metadata={
+                            "location": location,
+                            "madhhab": madhhab,
+                            "session_id": session_id,
+                        },
+                    )
+                )
+
                 # Add agent name to metadata
                 result.metadata["agent"] = target
-                
+
                 return result
-                
+
             except Exception as e:
-                logger.error(
-                    "orchestrator.agent_error",
-                    agent=target,
-                    error=str(e),
-                    exc_info=True
-                )
-                return await self._fallback_response(
-                    query,
-                    f"Agent error: {str(e)}"
-                )
-        
+                logger.error("orchestrator.agent_error", agent=target, error=str(e), exc_info=True)
+                return await self._fallback_response(query, f"Agent error: {str(e)}")
+
         # ==========================================
         # Route to tool
         # ==========================================
@@ -183,13 +178,9 @@ class ResponseOrchestrator:
             tool = self.tools[target]
             try:
                 result = await tool.execute(
-                    query=query,
-                    language=language,
-                    location=location,
-                    madhhab=madhhab,
-                    session_id=session_id
+                    query=query, language=language, location=location, madhhab=madhhab, session_id=session_id
                 )
-                
+
                 if result.success:
                     # Format tool result as AgentOutput
                     answer = self._format_tool_result(result.result)
@@ -198,56 +189,38 @@ class ResponseOrchestrator:
                         metadata={
                             "tool": target,
                             **result.metadata,
-                        }
+                        },
                     )
                 else:
-                    return await self._fallback_response(
-                        query,
-                        f"Tool error: {result.error}"
-                    )
-                
+                    return await self._fallback_response(query, f"Tool error: {result.error}")
+
             except Exception as e:
-                logger.error(
-                    "orchestrator.tool_error",
-                    tool=target,
-                    error=str(e),
-                    exc_info=True
-                )
-                return await self._fallback_response(
-                    query,
-                    f"Tool error: {str(e)}"
-                )
-        
+                logger.error("orchestrator.tool_error", tool=target, error=str(e), exc_info=True)
+                return await self._fallback_response(query, f"Tool error: {str(e)}")
+
         # ==========================================
         # Fallback: Agent/tool not implemented
         # ==========================================
         else:
-            logger.warning(
-                "orchestrator.not_implemented",
-                target=target,
-                intent=intent.value
-            )
-            return await self._fallback_response(
-                query,
-                f"Feature not yet implemented: {target}"
-            )
-    
+            logger.warning("orchestrator.not_implemented", target=target, intent=intent.value)
+            return await self._fallback_response(query, f"Feature not yet implemented: {target}")
+
     def _format_tool_result(self, result: dict) -> str:
         """Format tool result dictionary into readable text."""
         import json
-        
+
         # For Phase 2, return JSON-formatted string
         # Phase 4: Will use LLM to format naturally
         return json.dumps(result, indent=2, ensure_ascii=False)
-    
+
     async def _fallback_response(self, query: str, reason: str) -> AgentOutput:
         """
         Generate fallback response when routing fails.
-        
+
         Args:
             query: Original user query
             reason: Reason for fallback
-            
+
         Returns:
             AgentOutput with apologetic message
         """
@@ -271,5 +244,5 @@ class ResponseOrchestrator:
                 "requires_implementation": True,
             },
             confidence=0.0,
-            requires_human_review=True
+            requires_human_review=True,
         )
