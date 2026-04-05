@@ -4,6 +4,7 @@ Query route for Athar Islamic QA system.
 Main endpoint that receives user queries, classifies intent,
 routes to appropriate agent/tool, and returns structured response.
 """
+
 import uuid
 import time
 from fastapi import APIRouter, HTTPException, Depends
@@ -11,22 +12,27 @@ from src.api.schemas.request import QueryRequest
 from src.api.schemas.response import QueryResponse, CitationResponse
 from src.core.orchestrator import ResponseOrchestrator
 from src.core.router import HybridQueryClassifier
+from src.infrastructure.llm_client import get_llm_client
 from src.config.logging_config import get_logger
 
 logger = get_logger()
 router = APIRouter(prefix="/query", tags=["Query"])
 
 
+# Singleton orchestrator instance
+_orchestrator_instance: ResponseOrchestrator | None = None
+
+
 def get_orchestrator() -> ResponseOrchestrator:
     """
-    Dependency to get orchestrator instance.
-    
-    Phase 1: Creates new instance per request
-    Phase 2+: Will use singleton from app state
+    Get singleton orchestrator instance.
+
+    Reuses existing instance to avoid recreating agents/tools on each request.
     """
-    # TODO: Move to app state singleton in Phase 2
-    orchestrator = ResponseOrchestrator()
-    return orchestrator
+    global _orchestrator_instance
+    if _orchestrator_instance is None:
+        _orchestrator_instance = ResponseOrchestrator()
+    return _orchestrator_instance
 
 
 @router.post(
@@ -56,54 +62,53 @@ with citations.
         400: {"description": "Invalid request (empty query, bad parameters)"},
         422: {"description": "Validation error"},
         500: {"description": "Internal server error"},
-    }
+    },
 )
-async def handle_query(
-    request: QueryRequest,
-    orchestrator: ResponseOrchestrator = Depends(get_orchestrator)
-):
+async def handle_query(request: QueryRequest, orchestrator: ResponseOrchestrator = Depends(get_orchestrator)):
     """
     Handle user query and return structured response.
-    
+
     Flow:
     1. Classify intent using HybridQueryClassifier
     2. Route to appropriate agent/tool
     3. Assemble response with citations
     4. Return structured JSON response
-    
+
     Args:
         request: QueryRequest with query text and optional parameters
         orchestrator: ResponseOrchestrator instance
-        
+
     Returns:
         QueryResponse with answer, citations, and metadata
     """
     start_time = time.time()
     query_id = str(uuid.uuid4())
-    
+
     try:
         logger.info(
             "query.received",
             query_id=query_id,
             query=request.query[:50],  # Log first 50 chars
             language=request.language,
-            madhhab=request.madhhab
+            madhhab=request.madhhab,
         )
-        
+
         # ==========================================
         # Step 1: Classify intent
         # ==========================================
-        classifier = HybridQueryClassifier()
+        # Get LLM client for classification
+        llm_client = await get_llm_client()
+        classifier = HybridQueryClassifier(llm_client=llm_client)
         router_result = await classifier.classify(request.query)
-        
+
         logger.info(
             "query.classified",
             query_id=query_id,
             intent=router_result.intent.value,
             confidence=router_result.confidence,
-            method=router_result.method
+            method=router_result.method,
         )
-        
+
         # ==========================================
         # Step 2: Route to appropriate agent/tool
         # ==========================================
@@ -115,20 +120,20 @@ async def handle_query(
             madhhab=request.madhhab,
             session_id=request.session_id,
         )
-        
+
         # ==========================================
         # Step 3: Calculate processing time
         # ==========================================
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         logger.info(
             "query.completed",
             query_id=query_id,
             intent=router_result.intent.value,
             processing_time_ms=processing_time,
-            citations_count=len(result.citations)
+            citations_count=len(result.citations),
         )
-        
+
         # ==========================================
         # Step 4: Build response
         # ==========================================
@@ -139,12 +144,7 @@ async def handle_query(
             answer=result.answer,
             citations=[
                 CitationResponse(
-                    id=c.id,
-                    type=c.type,
-                    source=c.source,
-                    reference=c.reference,
-                    url=c.url,
-                    text_excerpt=c.text_excerpt
+                    id=c.id, type=c.type, source=c.source, reference=c.reference, url=c.url, text_excerpt=c.text_excerpt
                 )
                 for c in result.citations
             ],
@@ -156,23 +156,11 @@ async def handle_query(
             },
             follow_up_suggestions=result.metadata.get("follow_up_suggestions", []),
         )
-        
+
     except ValueError as e:
-        logger.warning(
-            "query.validation_error",
-            query_id=query_id,
-            error=str(e)
-        )
+        logger.warning("query.validation_error", query_id=query_id, error=str(e))
         raise HTTPException(status_code=400, detail=str(e))
-        
+
     except Exception as e:
-        logger.error(
-            "query.error",
-            query_id=query_id,
-            error=str(e),
-            exc_info=True
-        )
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal error processing query: {str(e)}"
-        )
+        logger.error("query.error", query_id=query_id, error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal error processing query: {str(e)}")

@@ -195,12 +195,20 @@ class VectorStore:
                 qdrant_filter = Filter(must=conditions)
             
             # Search using query_points (new Qdrant API)
-            results = self.client.query_points(
+            response = self.client.query_points(
                 collection_name=collection,
                 query=query_embedding.tolist(),
                 query_filter=qdrant_filter,
                 limit=top_k,
-            ).points
+            )
+            
+            # Extract points from response (handle different response formats)
+            if hasattr(response, 'points'):
+                results = response.points
+            elif isinstance(response, list):
+                results = response
+            else:
+                results = []
             
             # Format results
             formatted_results = []
@@ -267,17 +275,28 @@ class VectorStore:
         try:
             info = self.client.get_collection(collection)
             
+            # Handle different Qdrant client versions
+            vectors_count = getattr(info, 'vectors_count', None)
+            if vectors_count is None:
+                # Try alternative attribute names
+                vectors_count = getattr(info, 'points_count', 0)
+                if vectors_count == 0:
+                    # Try to get from status
+                    vectors_count = getattr(info, 'status', 'unknown')
+            
             return {
                 "collection": collection,
-                "vectors_count": info.vectors_count,
-                "indexed_vectors_count": info.indexed_vectors_count,
-                "points_count": info.points_count,
-                "segments_count": info.segments_count,
+                "vectors_count": vectors_count,
+                "status": str(getattr(info, 'status', 'unknown')),
             }
             
         except Exception as e:
-            logger.error("vectorstore.stats_error", error=str(e))
-            raise VectorStoreError(f"Failed to get stats: {str(e)}")
+            logger.warning("vectorstore.stats_error", error=str(e))
+            return {
+                "collection": collection,
+                "vectors_count": "unknown",
+                "status": "error",
+            }
     
     def list_collections(self) -> list[str]:
         """List all collection names."""

@@ -4,6 +4,7 @@ Intent definitions and routing configuration for Athar Islamic QA system.
 Defines the 9 primary intents based on Fanar-Sadiq architecture,
 along with Quran sub-intents and keyword patterns for fast-path classification.
 """
+
 from enum import Enum
 from typing import Optional
 
@@ -11,9 +12,10 @@ from typing import Optional
 class Intent(str, Enum):
     """
     Supported query intents for Athar Islamic QA system.
-    
+
     Based on Fanar-Sadiq hybrid query classifier with 9 primary intents.
     """
+
     FIQH = "fiqh"
     QURAN = "quran"
     ISLAMIC_KNOWLEDGE = "islamic_knowledge"
@@ -28,13 +30,14 @@ class Intent(str, Enum):
 class QuranSubIntent(str, Enum):
     """
     Sub-intents for Quran queries.
-    
+
     Used by Quran router to direct to appropriate pipeline:
     - verse_lookup: Exact verse retrieval (2:255, Ayat al-Kursi, etc.)
     - interpretation: Tafsir and meaning
     - analytics: NL2SQL for statistics (count, length, etc.)
     - quotation_validation: Verify if text is actually a Quran verse
     """
+
     VERSE_LOOKUP = "verse_lookup"
     INTERPRETATION = "interpretation"
     ANALYTICS = "analytics"
@@ -79,6 +82,27 @@ INTENT_ROUTING = {
 # These patterns are checked first before LLM classification.
 # If a pattern matches with high confidence (>=0.90), we skip LLM call.
 KEYWORD_PATTERNS = {
+    Intent.FIQH: [
+        "حكم",
+        "fiqh",
+        "halal",
+        "haram",
+        "Islamic law",
+        "ما حكم",
+        "هل يجوز",
+        "هل هو حلال",
+        "هل هو حرام",
+    ],
+    Intent.ISLAMIC_KNOWLEDGE: [
+        "من هو",
+        "ما هو",
+        "ما هي",
+        "who is",
+        "what is",
+        "explain",
+        "شرح",
+        "معلومات عن",
+    ],
     Intent.ZAKAT: [
         "زكاة",
         "zakat",
@@ -108,13 +132,11 @@ KEYWORD_PATTERNS = {
         "أطول سورة",
     ],
     Intent.PRAYER_TIMES: [
-        "صلاة",
-        "prayer",
-        "مواقيت",
-        "قبلة",
-        "qibla",
         "prayer times",
+        "مواقيت الصلاة",
         "وقت الصلاة",
+        "qibla direction",
+        "قبلة",
     ],
     Intent.HIJRI_CALENDAR: [
         "هجري",

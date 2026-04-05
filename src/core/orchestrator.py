@@ -81,47 +81,105 @@ class ResponseOrchestrator:
         self.register_agent("chatbot_agent", ChatbotAgent())
 
         # Phase 3-4: Register RAG agents if dependencies available
-        self._register_rag_agents()
+        # Track whether RAG actually initialized successfully
+        self._rag_initialized = self._register_rag_agents()
+
+        # If RAG agents failed to initialize, use chatbot as fallback
+        # for general knowledge queries instead of failing completely
+        if not self._rag_initialized:
+            logger.warning("orchestrator.rag_agents_unavailable", using_fallback="chatbot_agent")
+            self._rag_fallback_to_chatbot = True
+        else:
+            self._rag_fallback_to_chatbot = False
 
         logger.info(
             "orchestrator.agents_registered",
             tools=["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"],
             agents=list(self.agents.keys()),
+            rag_available=self._rag_initialized,
+            rag_fallback=self._rag_fallback_to_chatbot,
         )
 
-    def _register_rag_agents(self):
-        """Conditionally register RAG agents if dependencies available."""
+    def _register_rag_agents(self) -> bool:
+        """Conditionally register RAG agents if dependencies available.
+
+        Returns True if RAG agents initialized successfully, False otherwise.
+        """
+        # First check if transformers can actually load the model
         try:
-            # Check if torch is available
+            from transformers import AutoModel, AutoTokenizer
+
+            # Quick test - just check if we can import without errors
+            logger.info("orchestrator.transformers_available")
+        except ImportError:
+            logger.warning(
+                "orchestrator.transformers_unavailable",
+                reason="transformers not installed. Install with: pip install transformers",
+            )
+            return False
+
+        # Also check torch
+        try:
             import torch
 
+            logger.info("orchestrator.torch_available", version=torch.__version__)
+        except ImportError:
+            logger.warning("orchestrator.torch_unavailable")
+            return False
+
+        try:
             from src.agents.fiqh_agent import FiqhAgent
             from src.agents.general_islamic_agent import GeneralIslamicAgent
 
-            # Initialize embedding model and vector store (lazy)
-            from src.knowledge.embedding_model import EmbeddingModel
-            from src.knowledge.vector_store import VectorStore
+            # Try to initialize embedding model and test it
+            try:
+                from src.knowledge.embedding_model import EmbeddingModel
 
-            embedding_model = EmbeddingModel()
-            vector_store = VectorStore()
+                embedding_model = EmbeddingModel()
+                # Try to actually load the model to verify it works
+                import asyncio
 
-            # Register Fiqh agent
-            self.register_agent("fiqh_agent", FiqhAgent(embedding_model=embedding_model, vector_store=vector_store))
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # If loop is running, create a task
+                        import concurrent.futures
 
-            # Register General Islamic agent
-            self.register_agent(
-                "general_islamic_agent", GeneralIslamicAgent(embedding_model=embedding_model, vector_store=vector_store)
-            )
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(asyncio.run, embedding_model.load_model())
+                            future.result()
+                    else:
+                        asyncio.run(embedding_model.load_model())
+                except Exception as model_load_error:
+                    logger.warning("orchestrator.embedding_model_load_failed", error=str(model_load_error))
+                    return False
 
-            logger.info("orchestrator.rag_agents_registered", agents=["fiqh_agent", "general_islamic_agent"])
+                from src.knowledge.vector_store import VectorStore
 
-        except ImportError:
+                vector_store = VectorStore()
+
+                # Register Fiqh agent
+                self.register_agent("fiqh_agent", FiqhAgent(embedding_model=embedding_model, vector_store=vector_store))
+
+                # Register General Islamic agent
+                self.register_agent(
+                    "general_islamic_agent",
+                    GeneralIslamicAgent(embedding_model=embedding_model, vector_store=vector_store),
+                )
+
+                logger.info("orchestrator.rag_agents_registered", agents=["fiqh_agent", "general_islamic_agent"])
+                return True  # RAG initialized successfully
+            except Exception as e:
+                # RAG components exist but failed to initialize
+                logger.warning("orchestrator.rag_components_init_error", error=str(e), fallback_to_chatbot=True)
+                return False  # RAG failed to initialize
+
+        except ImportError as e:
             logger.warning(
                 "orchestrator.rag_agents_unavailable",
-                reason="torch/transformers not installed. Install with: poetry install --with rag",
+                reason=f"Import error: {str(e)}",
             )
-
-        # Note: quran_agent requires DB session - registered in routes, not orchestrator
+            return False  # RAG not available
 
     def register_agent(self, name: str, agent: BaseAgent):
         """
@@ -170,16 +228,37 @@ class ResponseOrchestrator:
         """
         target = INTENT_ROUTING.get(intent)
 
+        # If RAG agents are not available, fallback to chatbot_agent for general intents
         if not target:
             logger.warning("orchestrator.unknown_intent", intent=intent.value, query=query[:100])
             return await self._fallback_response(query, "Unknown intent")
 
-        logger.info("orchestrator.routing", intent=intent.value, target=target, language=language)
+        # For FIQH and ISLAMIC_KNOWLEDGE intents, route to RAG agents if available
+        requires_rag = intent in [Intent.FIQH, Intent.ISLAMIC_KNOWLEDGE]
+
+        if requires_rag and self._rag_initialized:
+            # RAG is available, keep original target (fiqh_agent or general_islamic_agent)
+            logger.info("orchestrator.using_rag", intent=intent.value, target=target)
+        else:
+            # RAG not available, fallback to chatbot
+            target = "chatbot_agent"
+            logger.info(
+                "orchestrator.using_chatbot_fallback", intent=intent.value, reason=f"rag_init={self._rag_initialized}"
+            )
+
+        logger.info(
+            "orchestrator.routing",
+            intent=intent.value,
+            target=target,
+            language=language,
+            rag_initialized=self._rag_initialized,
+        )
 
         # ==========================================
         # Route to agent
         # ==========================================
         if target in self.agents:
+            logger.warning(f"EXECUTING AGENT: {target} (rag_init={self._rag_initialized})")
             agent = self.agents[target]
             try:
                 result = await agent.execute(
@@ -193,6 +272,29 @@ class ResponseOrchestrator:
                         },
                     )
                 )
+
+                # Check if result indicates RAG failure and fallback is needed
+                # Fallback if: RAG agent was used AND there was an error AND RAG fallback is enabled
+                is_rag_agent = target in ["fiqh_agent", "general_islamic_agent"]
+                has_error = result.metadata.get("error") or "embedding" in result.answer.lower()
+
+                if is_rag_agent and has_error and self._rag_fallback_to_chatbot:
+                    logger.info("orchestrator.rag_runtime_fallback", original_agent=target)
+                    # Fallback to chatbot
+                    fallback_agent = self.agents.get("chatbot_agent")
+                    if fallback_agent:
+                        return await fallback_agent.execute(
+                            AgentInput(
+                                query=query,
+                                language=language,
+                                metadata={
+                                    "fallback": "rag_failed",
+                                    "location": location,
+                                    "madhhab": madhhab,
+                                    "session_id": session_id,
+                                },
+                            )
+                        )
 
                 # Add agent name to metadata
                 result.metadata["agent"] = target
