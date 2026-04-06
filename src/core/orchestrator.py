@@ -8,7 +8,7 @@ Main orchestrator that:
 4. Handles fallback and error cases
 
 This is the central coordination point for the multi-agent system.
-Phase 2: All tools registered and functional.
+Phase 5: Uses AgentRegistry for cleaner separation of concerns.
 """
 
 from typing import Optional
@@ -22,6 +22,7 @@ from src.agents.base import (
     Citation,
 )
 from src.tools.base import BaseTool, ToolOutput
+from src.core.registry import AgentRegistry, get_registry, initialize_registry
 
 logger = get_logger()
 
@@ -32,19 +33,11 @@ class ResponseOrchestrator:
 
     The orchestrator:
     1. Receives query with classified intent
-    2. Looks up target agent/tool from routing map
+    2. Looks up target agent/tool from registry
     3. Executes agent/tool with appropriate parameters
     4. Assembles final response with citations and metadata
 
-    Phase 1: Basic routing (agents/tools not yet implemented)
-    Phase 2+: Full agent execution with RAG, calculators, etc.
-
-    Usage:
-        orchestrator = ResponseOrchestrator()
-        orchestrator.register_agent("fiqh_agent", FiqhAgent())
-        orchestrator.register_tool("zakat_tool", ZakatCalculator())
-
-    Phase 2: Full agent execution with calculators and tools
+    Phase 5: Uses AgentRegistry for better separation of concerns.
 
     Usage:
         orchestrator = ResponseOrchestrator()
@@ -55,153 +48,122 @@ class ResponseOrchestrator:
         )
     """
 
-    def __init__(self):
-        self.agents: dict[str, BaseAgent] = {}
-        self.tools: dict[str, BaseTool] = {}
-        self._register_default_fallbacks()
-
-    def _register_default_fallbacks(self):
-        """Register default fallback agents and all Phase 2-4 tools."""
-        # Phase 2: Register all tools
-        from src.tools.zakat_calculator import ZakatCalculator
-        from src.tools.inheritance_calculator import InheritanceCalculator
-        from src.tools.prayer_times_tool import PrayerTimesTool
-        from src.tools.hijri_calendar_tool import HijriCalendarTool
-        from src.tools.dua_retrieval_tool import DuaRetrievalTool
-        from src.agents.chatbot_agent import ChatbotAgent
-
-        # Register tools (Phase 2)
-        self.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
-        self.register_tool("inheritance_tool", InheritanceCalculator())
-        self.register_tool("prayer_tool", PrayerTimesTool())
-        self.register_tool("hijri_tool", HijriCalendarTool())
-        self.register_tool("dua_tool", DuaRetrievalTool())
-
-        # Register chatbot agent (Phase 2)
-        self.register_agent("chatbot_agent", ChatbotAgent())
-
-        # Phase 3-4: Register RAG agents if dependencies available
-        # Track whether RAG actually initialized successfully
-        self._rag_initialized = self._register_rag_agents()
-
-        # If RAG agents failed to initialize, use chatbot as fallback
-        # for general knowledge queries instead of failing completely
-        if not self._rag_initialized:
-            logger.warning("orchestrator.rag_agents_unavailable", using_fallback="chatbot_agent")
-            self._rag_fallback_to_chatbot = True
-        else:
-            self._rag_fallback_to_chatbot = False
-
-        logger.info(
-            "orchestrator.agents_registered",
-            tools=["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"],
-            agents=list(self.agents.keys()),
-            rag_available=self._rag_initialized,
-            rag_fallback=self._rag_fallback_to_chatbot,
-        )
-
-    def _register_rag_agents(self) -> bool:
-        """Conditionally register RAG agents if dependencies available.
-
-        Returns True if RAG agents initialized successfully, False otherwise.
+    def __init__(self, use_registry: bool = True):
         """
-        # First check if transformers can actually load the model
+        Initialize orchestrator.
+
+        Args:
+            use_registry: Whether to use the global registry (recommended)
+        """
+        if use_registry:
+            # Use global registry
+            self.registry = get_registry()
+            self._ensure_initialized()
+        else:
+            # Create local registry for this instance
+            self.registry = AgentRegistry()
+            self._register_default_fallbacks()
+
+        # RAG availability tracking
+        self._rag_initialized = False
+        self._rag_fallback_to_chatbot = False
+
+        # Check RAG availability
+        self._check_rag_availability()
+
+    def _ensure_initialized(self):
+        """Ensure registry is initialized."""
+        if not self.registry._initialized:
+            initialize_registry()
+
+    def _check_rag_availability(self):
+        """Check if RAG agents are available."""
+        # Check if transformers can actually load the model
         try:
             from transformers import AutoModel, AutoTokenizer
 
-            # Quick test - just check if we can import without errors
             logger.info("orchestrator.transformers_available")
         except ImportError:
             logger.warning(
                 "orchestrator.transformers_unavailable",
                 reason="transformers not installed. Install with: pip install transformers",
             )
-            return False
+            self._rag_initialized = False
+            return
 
-        # Also check torch
+        # Check torch
         try:
             import torch
 
             logger.info("orchestrator.torch_available", version=torch.__version__)
         except ImportError:
             logger.warning("orchestrator.torch_unavailable")
-            return False
+            self._rag_initialized = False
+            return
 
+        # Try to initialize RAG agents
+        self._rag_initialized = self._register_rag_agents()
+
+        if not self._rag_initialized:
+            logger.warning("orchestrator.rag_agents_unavailable", using_fallback="chatbot_agent")
+            self._rag_fallback_to_chatbot = True
+
+    def _register_default_fallbacks(self):
+        """Register default fallback agents and all Phase 2-4 tools."""
+        if self.registry._initialized:
+            return
+
+        initialize_registry()
+
+    def _register_rag_agents(self) -> bool:
+        """Conditionally register RAG agents if dependencies available."""
         try:
             from src.agents.fiqh_agent import FiqhAgent
             from src.agents.general_islamic_agent import GeneralIslamicAgent
+            from src.agents.hadith_agent import HadithAgent
+            from src.agents.tafsir_agent import TafsirAgent
+            from src.agents.aqeedah_agent import AqeedahAgent
+            from src.agents.seerah_agent import SeerahAgent
+            from src.agents.islamic_history_agent import IslamicHistoryAgent
+            from src.agents.fiqh_usul_agent import FiqhUsulAgent
+            from src.knowledge.embedding_model import EmbeddingModel
+            from src.knowledge.vector_store import VectorStore
 
-            # Try to initialize embedding model and test it
-            try:
-                from src.knowledge.embedding_model import EmbeddingModel
+            # Try to initialize embedding model
+            embedding_model = EmbeddingModel()
+            import asyncio
 
-                embedding_model = EmbeddingModel()
-                # Try to actually load the model to verify it works
-                import asyncio
+            asyncio.run(embedding_model.load_model())
 
+            # Initialize vector store
+            vector_store = VectorStore()
+            asyncio.run(vector_store.initialize())
+
+            # Register all RAG agents
+            agents_to_register = [
+                ("fiqh_agent", FiqhAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.FIQH]),
+                ("general_islamic_agent", GeneralIslamicAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.ISLAMIC_KNOWLEDGE]),
+                ("hadith_agent", HadithAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.HADITH]),
+                ("tafsir_agent", TafsirAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.TAFSIR]),
+                ("aqeedah_agent", AqeedahAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.AQEEDAH]),
+                ("seerah_agent", SeerahAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.SEERAH]),
+                ("islamic_history_agent", IslamicHistoryAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.ISLAMIC_HISTORY]),
+                ("usul_fiqh_agent", FiqhUsulAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.USUL_FIQH]),
+            ]
+
+            for name, agent, intents in agents_to_register:
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        # If loop is running, create a task
-                        import concurrent.futures
+                    self.registry.register_agent(name, agent, intents=intents)
+                    logger.info("orchestrator.agent_registered", agent=name, intents=[i.value for i in intents])
+                except Exception as e:
+                    logger.warning("orchestrator.agent_registration_failed", agent=name, error=str(e))
 
-                        with concurrent.futures.ThreadPoolExecutor() as executor:
-                            future = executor.submit(asyncio.run, embedding_model.load_model())
-                            future.result()
-                    else:
-                        asyncio.run(embedding_model.load_model())
-                except Exception as model_load_error:
-                    logger.warning("orchestrator.embedding_model_load_failed", error=str(model_load_error))
-                    return False
+            logger.info("orchestrator.rag_agents_registered", agents=[a[0] for a in agents_to_register])
+            return True
 
-                from src.knowledge.vector_store import VectorStore
-
-                vector_store = VectorStore()
-
-                # Register Fiqh agent
-                self.register_agent("fiqh_agent", FiqhAgent(embedding_model=embedding_model, vector_store=vector_store))
-
-                # Register General Islamic agent
-                self.register_agent(
-                    "general_islamic_agent",
-                    GeneralIslamicAgent(embedding_model=embedding_model, vector_store=vector_store),
-                )
-
-                logger.info("orchestrator.rag_agents_registered", agents=["fiqh_agent", "general_islamic_agent"])
-                return True  # RAG initialized successfully
-            except Exception as e:
-                # RAG components exist but failed to initialize
-                logger.warning("orchestrator.rag_components_init_error", error=str(e), fallback_to_chatbot=True)
-                return False  # RAG failed to initialize
-
-        except ImportError as e:
-            logger.warning(
-                "orchestrator.rag_agents_unavailable",
-                reason=f"Import error: {str(e)}",
-            )
-            return False  # RAG not available
-
-    def register_agent(self, name: str, agent: BaseAgent):
-        """
-        Register an agent with the orchestrator.
-
-        Args:
-            name: Agent name (e.g., "fiqh_agent")
-            agent: Agent instance
-        """
-        self.agents[name] = agent
-        logger.info("orchestrator.agent_registered", name=name)
-
-    def register_tool(self, name: str, tool: BaseTool):
-        """
-        Register a tool with the orchestrator.
-
-        Args:
-            name: Tool name (e.g., "zakat_tool")
-            tool: Tool instance
-        """
-        self.tools[name] = tool
-        logger.info("orchestrator.tool_registered", name=name)
+        except Exception as e:
+            logger.warning("orchestrator.rag_agents_init_error", error=str(e), fallback_to_chatbot=True)
+            return False
 
     async def route_query(
         self,
@@ -228,18 +190,18 @@ class ResponseOrchestrator:
         """
         target = INTENT_ROUTING.get(intent)
 
-        # If RAG agents are not available, fallback to chatbot_agent for general intents
         if not target:
             logger.warning("orchestrator.unknown_intent", intent=intent.value, query=query[:100])
             return await self._fallback_response(query, "Unknown intent")
 
-        # For FIQH and ISLAMIC_KNOWLEDGE intents, route to RAG agents if available
-        requires_rag = intent in [Intent.FIQH, Intent.ISLAMIC_KNOWLEDGE]
+        # For FIQH, ISLAMIC_KNOWLEDGE, and new specialized intents, route to RAG agents if available
+        requires_rag = intent in [
+            Intent.FIQH, Intent.ISLAMIC_KNOWLEDGE,
+            Intent.HADITH, Intent.TAFSIR, Intent.AQEEDAH,
+            Intent.SEERAH, Intent.ISLAMIC_HISTORY, Intent.USUL_FIQH
+        ]
 
-        if requires_rag and self._rag_initialized:
-            # RAG is available, keep original target (fiqh_agent or general_islamic_agent)
-            logger.info("orchestrator.using_rag", intent=intent.value, target=target)
-        else:
+        if requires_rag and not self._rag_initialized:
             # RAG not available, fallback to chatbot
             target = "chatbot_agent"
             logger.info(
@@ -254,110 +216,106 @@ class ResponseOrchestrator:
             rag_initialized=self._rag_initialized,
         )
 
-        # ==========================================
-        # Route to agent
-        # ==========================================
-        if target in self.agents:
-            logger.warning(f"EXECUTING AGENT: {target} (rag_init={self._rag_initialized})")
-            agent = self.agents[target]
-            try:
-                result = await agent.execute(
-                    AgentInput(
-                        query=query,
-                        language=language,
-                        metadata={
-                            "location": location,
-                            "madhhab": madhhab,
-                            "session_id": session_id,
-                        },
-                    )
-                )
+        # Get from registry
+        instance, is_agent = self.registry.get_for_intent(intent)
 
-                # Check if result indicates RAG failure and fallback is needed
-                # Fallback if: RAG agent was used AND there was an error AND RAG fallback is enabled
-                is_rag_agent = target in ["fiqh_agent", "general_islamic_agent"]
-                has_error = result.metadata.get("error") or "embedding" in result.answer.lower()
+        # Fallback if needed
+        if not instance and target == "chatbot_agent":
+            instance, is_agent = self.registry.get_for_intent(Intent.GREETING)
 
-                if is_rag_agent and has_error and self._rag_fallback_to_chatbot:
-                    logger.info("orchestrator.rag_runtime_fallback", original_agent=target)
-                    # Fallback to chatbot
-                    fallback_agent = self.agents.get("chatbot_agent")
-                    if fallback_agent:
-                        return await fallback_agent.execute(
-                            AgentInput(
-                                query=query,
-                                language=language,
-                                metadata={
-                                    "fallback": "rag_failed",
-                                    "location": location,
-                                    "madhhab": madhhab,
-                                    "session_id": session_id,
-                                },
-                            )
-                        )
-
-                # Add agent name to metadata
-                result.metadata["agent"] = target
-
-                return result
-
-            except Exception as e:
-                logger.error("orchestrator.agent_error", agent=target, error=str(e), exc_info=True)
-                return await self._fallback_response(query, f"Agent error: {str(e)}")
-
-        # ==========================================
-        # Route to tool
-        # ==========================================
-        elif target in self.tools:
-            tool = self.tools[target]
-            try:
-                result = await tool.execute(
-                    query=query, language=language, location=location, madhhab=madhhab, session_id=session_id
-                )
-
-                if result.success:
-                    # Format tool result as AgentOutput
-                    answer = self._format_tool_result(result.result)
-                    return AgentOutput(
-                        answer=answer,
-                        metadata={
-                            "tool": target,
-                            **result.metadata,
-                        },
-                    )
-                else:
-                    return await self._fallback_response(query, f"Tool error: {result.error}")
-
-            except Exception as e:
-                logger.error("orchestrator.tool_error", tool=target, error=str(e), exc_info=True)
-                return await self._fallback_response(query, f"Tool error: {str(e)}")
-
-        # ==========================================
-        # Fallback: Agent/tool not implemented
-        # ==========================================
-        else:
-            logger.warning("orchestrator.not_implemented", target=target, intent=intent.value)
+        if not instance:
             return await self._fallback_response(query, f"Feature not yet implemented: {target}")
+
+        # Route to agent
+        if is_agent:
+            return await self._route_to_agent(instance, query, language, location, madhhab, session_id, target)
+        else:
+            return await self._route_to_tool(instance, query, language, location, madhhab, session_id, target)
+
+    async def _route_to_agent(
+        self,
+        agent: BaseAgent,
+        query: str,
+        language: str,
+        location: Optional[dict],
+        madhhab: Optional[str],
+        session_id: Optional[str],
+        agent_name: str,
+    ) -> AgentOutput:
+        """Route to an agent."""
+        try:
+            result = await agent.execute(
+                AgentInput(
+                    query=query,
+                    language=language,
+                    metadata={
+                        "location": location,
+                        "madhhab": madhhab,
+                        "session_id": session_id,
+                    },
+                )
+            )
+
+            # Check if result indicates RAG failure and fallback is needed
+            has_error = result.metadata.get("error") or "embedding" in result.answer.lower()
+
+            if agent_name in ["fiqh_agent", "general_islamic_agent"] and has_error and self._rag_fallback_to_chatbot:
+                logger.info("orchestrator.rag_runtime_fallback", original_agent=agent_name)
+                # Fallback to chatbot
+                chatbot, _ = self.registry.get_for_intent(Intent.GREETING)
+                if chatbot:
+                    return await chatbot.execute(
+                        AgentInput(
+                            query=query,
+                            language=language,
+                            metadata={"fallback": "rag_failed"},
+                        )
+                    )
+
+            result.metadata["agent"] = agent_name
+            return result
+
+        except Exception as e:
+            logger.error("orchestrator.agent_error", agent=agent_name, error=str(e), exc_info=True)
+            return await self._fallback_response(query, f"Agent error: {str(e)}")
+
+    async def _route_to_tool(
+        self,
+        tool: BaseTool,
+        query: str,
+        language: str,
+        location: Optional[dict],
+        madhhab: Optional[str],
+        session_id: Optional[str],
+        tool_name: str,
+    ) -> AgentOutput:
+        """Route to a tool."""
+        try:
+            result = await tool.execute(
+                query=query, language=language, location=location, madhhab=madhhab, session_id=session_id
+            )
+
+            if result.success:
+                answer = self._format_tool_result(result.result)
+                return AgentOutput(
+                    answer=answer,
+                    metadata={"tool": tool_name, **result.metadata},
+                )
+            else:
+                return await self._fallback_response(query, f"Tool error: {result.error}")
+
+        except Exception as e:
+            logger.error("orchestrator.tool_error", tool=tool_name, error=str(e), exc_info=True)
+            return await self._fallback_response(query, f"Tool error: {str(e)}")
 
     def _format_tool_result(self, result: dict) -> str:
         """Format tool result dictionary into readable text."""
         import json
 
-        # For Phase 2, return JSON-formatted string
-        # Phase 4: Will use LLM to format naturally
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     async def _fallback_response(self, query: str, reason: str) -> AgentOutput:
-        """
-        Generate fallback response when routing fails.
-
-        Args:
-            query: Original user query
-            reason: Reason for fallback
-
-        Returns:
-            AgentOutput with apologetic message
-        """
+        """Generate fallback response when routing fails."""
         return AgentOutput(
             answer=(
                 "أعتذر، لم أتمكن من معالجة سؤالك بشكل كامل في الوقت الحالي. "

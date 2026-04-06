@@ -13,7 +13,7 @@ class Intent(str, Enum):
     """
     Supported query intents for Athar Islamic QA system.
 
-    Based on Fanar-Sadiq hybrid query classifier with 9 primary intents.
+    Based on Fanar-Sadiq hybrid query classifier with 15 primary intents.
     """
 
     FIQH = "fiqh"
@@ -25,6 +25,14 @@ class Intent(str, Enum):
     DUA = "dua"
     HIJRI_CALENDAR = "hijri_calendar"
     PRAYER_TIMES = "prayer_times"
+    
+    # NEW: Specialized agents
+    HADITH = "hadith"
+    TAFSIR = "tafsir"
+    AQEEDAH = "aqeedah"
+    SEERAH = "seerah"
+    USUL_FIQH = "usul_fiqh"
+    ISLAMIC_HISTORY = "islamic_history"
 
 
 class QuranSubIntent(str, Enum):
@@ -57,6 +65,13 @@ INTENT_DESCRIPTIONS = {
     Intent.DUA: "Request specific duas or adhkar (supplications, remembrance, Hisn al-Muslim)",
     Intent.HIJRI_CALENDAR: "Hijri dates, Ramadan dates, Eid dates, Islamic calendar conversion",
     Intent.PRAYER_TIMES: "Prayer times or qibla direction for a location",
+    # NEW intents
+    Intent.HADITH: "Hadith retrieval, authentication, sanad, and matn (Prophetic traditions)",
+    Intent.TAFSIR: "Quran interpretation and exegesis (Ibn Kathir, Al-Jalalayn, Al-Qurtubi)",
+    Intent.AQEEDAH: "Islamic creed and theology (Tawhid, faith, beliefs, theological questions)",
+    Intent.SEERAH: "Prophet Muhammad's biography and life events (Seerah, prophetic history)",
+    Intent.USUL_FIQH: "Principles of Islamic jurisprudence (methodology, sources of Islamic law)",
+    Intent.ISLAMIC_HISTORY: "Islamic history and civilization (historical events, figures, culture)",
 }
 
 
@@ -73,6 +88,13 @@ INTENT_ROUTING = {
     Intent.DUA: "dua_tool",
     Intent.HIJRI_CALENDAR: "hijri_tool",
     Intent.PRAYER_TIMES: "prayer_tool",
+    # NEW: Specialized agents
+    Intent.HADITH: "hadith_agent",
+    Intent.TAFSIR: "tafsir_agent",
+    Intent.AQEEDAH: "aqeedah_agent",
+    Intent.SEERAH: "seerah_agent",
+    Intent.USUL_FIQH: "usul_fiqh_agent",
+    Intent.ISLAMIC_HISTORY: "islamic_history_agent",
 }
 
 
@@ -167,6 +189,57 @@ KEYWORD_PATTERNS = {
         "assalamu alaikum",
         "ramadan kareem",
         "عيد مبارك",
+    ],
+    # NEW: Specialized agent patterns
+    Intent.HADITH: [
+        "حديث",
+        "hadith",
+        "سند",
+        "متن",
+        "رواه",
+        "صحيح",
+        "ضعيف",
+        "الإسناد",
+        "المحدث",
+    ],
+    Intent.TAFSIR: [
+        "تفسير",
+        "tafsir",
+        "معنى الآية",
+        "شرح الآية",
+        "تفسير ابن كثير",
+        "تفسير الجلالين",
+    ],
+    Intent.AQEEDAH: [
+        "عقيدة",
+        "توحيد",
+        "إيمان",
+        "aqeedah",
+        "tawhid",
+        "أركان الإيمان",
+    ],
+    Intent.SEERAH: [
+        "سيرة",
+        "النبي",
+        "seerah",
+        "prophet biography",
+        "حياة النبي",
+        "السيرة النبوية",
+    ],
+    Intent.USUL_FIQH: [
+        "أصول الفقه",
+        "usul al-fiqh",
+        "الاجتهاد",
+        "القياس",
+        "الإجماع",
+        "مصادر التشريع",
+    ],
+    Intent.ISLAMIC_HISTORY: [
+        "تاريخ إسلامي",
+        "islamic history",
+        "الدولة الأموية",
+        "الدولة العباسية",
+        "الخلفاء",
     ],
 }
 

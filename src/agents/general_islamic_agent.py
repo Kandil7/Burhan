@@ -8,8 +8,7 @@ Answers general Islamic questions using retrieval-augmented generation:
 - Concepts and definitions
 
 Higher temperature (0.3) for educational tone.
-Phase 4: Core RAG pipeline for general Islamic knowledge.
-Phase 5: LLM integration for answer generation.
+Phase 5: Uses settings and constants for configuration.
 """
 
 from typing import Optional
@@ -22,6 +21,8 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
+from src.config.settings import settings
+from src.config.constants import RetrievalConfig, LLMConfig
 from src.infrastructure.llm_client import get_llm_client
 
 logger = get_logger()
@@ -156,7 +157,8 @@ class GeneralIslamicAgent(BaseAgent):
             )
 
             # Step 5: Normalize citations
-            normalized_text, citations = self.citation_normalizer.normalize(answer)
+            normalized_text = self.citation_normalizer.normalize(answer)
+            citations = self.citation_normalizer.get_citations()
 
             return AgentOutput(
                 answer=normalized_text,

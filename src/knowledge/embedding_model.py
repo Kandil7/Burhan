@@ -158,8 +158,11 @@ class EmbeddingModel:
                 embeddings_from_cache = []
 
                 if cached:
-                    cached_embeddings = [self.cache.get(self._get_hash(t)) for t, _ in cached]
-                    embeddings_from_cache = [e for e in cached_embeddings if e is not None]
+                    # Get cached embeddings directly using stored hash
+                    cached_embeddings = [self.cache.get(text_hash) for _, text_hash in cached]
+                    # Filter out any None values (failed cache lookups)
+                    cached_embeddings = [e for e in cached_embeddings if e is not None]
+                    embeddings_from_cache.extend(cached_embeddings)
 
                 if uncached:
                     # Encode uncached texts

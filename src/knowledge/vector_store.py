@@ -262,39 +262,63 @@ class VectorStore:
     def get_collection_stats(self, collection: str) -> dict:
         """
         Get collection statistics.
-        
+
         Args:
             collection: Collection name
-            
+
         Returns:
             Stats dict
         """
         if not self._initialized:
             raise VectorStoreError("Vector store not initialized")
-        
+
         try:
+            # Check if collection exists first
+            exists = self.client.collection_exists(collection)
+            if not exists:
+                return {
+                    "collection": collection,
+                    "vectors_count": 0,
+                    "status": "not_found",
+                }
+
+            # Get collection info
             info = self.client.get_collection(collection)
             
-            # Handle different Qdrant client versions
-            vectors_count = getattr(info, 'vectors_count', None)
-            if vectors_count is None:
-                # Try alternative attribute names
-                vectors_count = getattr(info, 'points_count', 0)
-                if vectors_count == 0:
-                    # Try to get from status
-                    vectors_count = getattr(info, 'status', 'unknown')
-            
+            # Extract vectors count - handle different Qdrant client versions
+            # Qdrant client returns dict-like objects
+            if hasattr(info, 'vectors_count'):
+                vectors_count = info.vectors_count
+            elif hasattr(info, 'points_count'):
+                vectors_count = info.points_count
+            elif isinstance(info, dict):
+                vectors_count = info.get('vectors_count', info.get('points_count', 0))
+            else:
+                # Try to count points
+                try:
+                    points = self.client.query_points(collection, limit=1)
+                    vectors_count = getattr(points, 'total', 0) if hasattr(points, 'total') else 0
+                except:
+                    vectors_count = 0
+
+            # Get status
+            status = 'unknown'
+            if hasattr(info, 'status'):
+                status = str(info.status)
+            elif isinstance(info, dict):
+                status = info.get('status', 'unknown')
+
             return {
                 "collection": collection,
                 "vectors_count": vectors_count,
-                "status": str(getattr(info, 'status', 'unknown')),
+                "status": status,
             }
-            
+
         except Exception as e:
             logger.warning("vectorstore.stats_error", error=str(e))
             return {
                 "collection": collection,
-                "vectors_count": "unknown",
+                "vectors_count": 0,
                 "status": "error",
             }
     

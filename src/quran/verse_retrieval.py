@@ -270,15 +270,17 @@ class VerseRetrievalEngine:
     ) -> list[dict]:
         """
         Search verses by text (fuzzy matching).
-        
+
         Args:
             query: Search text (Arabic or English)
             limit: Maximum results
-            
+
         Returns:
             List of matching verse dicts
         """
-        # Full-text search on Uthmani text
+        from sqlalchemy import func
+        
+        # Try exact match first (for performance)
         ayahs = (
             self.session.query(Ayah)
             .filter(Ayah.text_uthmani.like(f"%{query}%"))
@@ -286,7 +288,61 @@ class VerseRetrievalEngine:
             .all()
         )
         
+        # If no results, try normalized matching (limited for performance)
+        if not ayahs:
+            # Get ayahs in batches and filter with normalization
+            normalized_query = self._normalize_arabic_text(query)
+            
+            matching_ayahs = []
+            batch_size = 1000
+            offset = 0
+            
+            # Only search first 3000 ayahs for performance
+            while len(matching_ayahs) < limit and offset < 3000:
+                batch = (
+                    self.session.query(Ayah)
+                    .order_by(Ayah.number)
+                    .limit(batch_size)
+                    .offset(offset)
+                    .all()
+                )
+                
+                if not batch:
+                    break
+                
+                for ayah in batch:
+                    normalized_text = self._normalize_arabic_text(ayah.text_uthmani or "")
+                    if normalized_query in normalized_text:
+                        matching_ayahs.append(ayah)
+                        if len(matching_ayahs) >= limit:
+                            break
+                
+                offset += batch_size
+            
+            ayahs = matching_ayahs
+
         return [self._format_ayah(ayah, include_translation=False) for ayah in ayahs]
+    
+    def _normalize_arabic_text(self, text: str) -> str:
+        """
+        Normalize Arabic text by removing diacritical marks.
+        
+        Args:
+            text: Arabic text with diacritics
+        
+        Returns:
+            Normalized text without diacritics
+        """
+        import re
+        # Remove Arabic diacritical marks (Unicode range 064B-065F)
+        normalized = re.sub(r'[\u064B-\u065F\u0670]', '', text)
+        # Normalize alef variations
+        normalized = normalized.replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا')
+        # Normalize ha variations  
+        normalized = normalized.replace('ة', 'ه')
+        # Normalize ya variations
+        normalized = normalized.replace('ى', 'ي')
+        return normalized
     
     def _find_surah_by_name(self, name: str) -> Optional[Surah]:
         """

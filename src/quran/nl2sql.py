@@ -144,9 +144,9 @@ class NL2SQLEngine:
             SQL query string
         """
         query_lower = query.lower()
-        
-        # Template 1: "كم عدد آيات سورة..." or "how many verses in surah..."
-        if any(kw in query_lower for kw in ["عدد آيات", "verses in", "ayahs in"]):
+
+        # Template 1: "كم عدد آيات سورة..." or "how many verses in surah..." or "how many verses are in..."
+        if any(kw in query_lower for kw in ["عدد آيات", "verses in", "ayahs in", "verses are in"]):
             surah = self._extract_surah_number(query)
             if surah:
                 return f"SELECT verse_count FROM surahs WHERE number = {surah}"
@@ -254,27 +254,42 @@ class NL2SQLEngine:
     def _extract_surah_number(self, query: str) -> Optional[int]:
         """Extract surah number from query."""
         import re
-        
-        # Look for number in query
+
+        # Look for number in query (e.g., "surah 2" or "surah number 2")
         match = re.search(r'(\d+)', query)
         if match:
             return int(match.group(1))
-        
-        # Map Arabic surah names to numbers
+
+        # Map Arabic and English surah names to numbers
         surah_names = {
             "الفاتحة": 1, "البقرة": 2, "آل عمران": 3, "النساء": 4,
             "المائدة": 5, "الأنعام": 6, "الأعراف": 7, "الأنفال": 8,
             "التوبة": 9, "يونس": 10, "هود": 11, "يوسف": 12,
             "الإخلاص": 112, "الفلق": 113, "الناس": 114,
-            "al-fatihah": 1, "al-baqarah": 2, "al-ikhlas": 112,
-            "al-falaq": 113, "an-nas": 114,
+            # English names with variations
+            "al-fatihah": 1, "alfatihah": 1, "al fatihah": 1, "fatihah": 1,
+            "al-baqarah": 2, "albaqarah": 2, "al baqarah": 2, "baqarah": 2,
+            "al-baqara": 2, "albaqara": 2, "al baqara": 2, "baqara": 2,
+            "al-ikhlas": 112, "alikhlas": 112, "al ikhlas": 112, "ikhlas": 112,
+            "al-falaq": 113, "alfalaq": 113, "al falaq": 113, "falaq": 113,
+            "an-nas": 114, "annas": 114, "an nas": 114, "nas": 114,
+            # Handle "the" prefix
+            "the-fatihah": 1, "the-baqarah": 2, "the-ikhlas": 112,
         }
+
+        query_lower = query.lower().replace("surah", "").replace("sura", "").strip()
         
-        query_lower = query.lower()
+        # Try exact match first
         for name, number in surah_names.items():
             if name in query_lower:
                 return number
         
+        # Try removing article prefixes (Al-, The-, etc.)
+        query_clean = re.sub(r'^(al[-\s]?|the[-\s]?|a[-\s]?)', '', query_lower).strip()
+        for name, number in surah_names.items():
+            if name in query_clean:
+                return number
+
         return None
     
     def _validate_sql(self, sql: str):

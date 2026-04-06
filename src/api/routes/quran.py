@@ -10,9 +10,11 @@ Provides endpoints for:
 - NL2SQL analytics
 - Tafsir retrieval
 
-Phase 3: Complete Quran API surface.
+Phase 5: Improved with thread pool execution for sync DB operations.
 """
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -27,6 +29,9 @@ from src.config.logging_config import get_logger
 
 logger = get_logger()
 router = APIRouter(prefix="/quran", tags=["Quran"])
+
+# Thread pool for running sync DB operations
+_db_executor = ThreadPoolExecutor(max_workers=4)
 
 
 # ==========================================
@@ -134,15 +139,22 @@ def get_tafsir_engine(db_session):
 
 
 @router.get("/surahs", response_model=list[SurahResponse])
-async def list_surahs(db_session=Depends(get_sync_session)):
+async def list_surahs():
     """
     List all 114 surahs.
 
     Returns basic information about all surahs in the Quran.
-    """
-    from src.data.models.quran import Surah
 
-    surahs = db_session.query(Surah).order_by(Surah.number).all()
+    Note: Uses thread pool to avoid blocking event loop.
+    """
+
+    def _query_surahs():
+        with get_sync_session() as session:
+            return session.query(Surah).order_by(Surah.number).all()
+
+    # Run sync query in thread pool
+    loop = asyncio.get_event_loop()
+    surahs = await loop.run_in_executor(_db_executor, _query_surahs)
 
     return [
         SurahResponse(
@@ -157,19 +169,31 @@ async def list_surahs(db_session=Depends(get_sync_session)):
 
 
 @router.get("/surahs/{surah_number}", response_model=dict)
-async def get_surah_details(surah_number: int, db_session=Depends(get_sync_session)):
+async def get_surah_details(surah_number: int):
     """
     Get details for a specific surah.
 
     Includes surah information and list of ayahs.
-    """
-    from src.data.models.quran import Surah, Ayah
 
-    surah = db_session.query(Surah).filter(Surah.number == surah_number).first()
-    if not surah:
+    Note: Uses thread pool to avoid blocking event loop.
+    """
+
+    def _query_surah():
+        with get_sync_session() as session:
+            surah = session.query(Surah).filter(Surah.number == surah_number).first()
+            if not surah:
+                return None
+            ayahs = session.query(Ayah).filter(Ayah.surah_id == surah.id).order_by(Ayah.number_in_surah).all()
+            return {"surah": surah, "ayahs": ayahs}
+
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(_db_executor, _query_surah)
+
+    if not result or result["surah"] is None:
         raise HTTPException(status_code=404, detail=f"Surah {surah_number} not found")
 
-    ayahs = db_session.query(Ayah).filter(Ayah.surah_id == surah.id).order_by(Ayah.number_in_surah).all()
+    surah = result["surah"]
+    ayahs = result["ayahs"]
 
     return {
         "number": surah.number,
@@ -211,6 +235,7 @@ async def get_ayah(surah: int, ayah: int, db_session=Depends(get_sync_session)):
 
 class SearchRequest(BaseModel):
     """Search request."""
+
     query: str = Field(..., description="Search query")
     limit: int = Field(5, ge=1, le=20)
 

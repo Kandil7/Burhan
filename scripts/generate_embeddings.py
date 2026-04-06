@@ -33,60 +33,176 @@ logger = get_logger()
 
 PROCESSED_DIR = Path(__file__).parent.parent / "data" / "processed"
 
+# ==========================================
+# Category to Collection Mapping
+# ==========================================
+CATEGORY_COLLECTION_MAP = {
+    # Fiqh-related
+    "الفقه العام": "fiqh_passages",
+    "أصول الفقه": "usul_fiqh_passages",
+    
+    # Quran/Tafsir-related
+    "التفسير": "quran_tafsir",
+    "علوم القرآن": "quran_tafsir",
+    
+    # Hadith-related
+    "علوم الحديث": "hadith_passages",
+    
+    # Aqeedah (Creed/Theology)
+    "العقيدة": "aqeedah_passages",
+    
+    # History & Biography
+    "التاريخ": "islamic_history_passages",
+    "السيرة النبوية": "seerah_passages",
+    "التراجم والطبقات": "islamic_history_passages",
+    
+    # General/Literature
+    "الأدب": "general_islamic",
+    "كتب عامة": "general_islamic",
+    "كتب اللغة": "general_islamic",
+    "الرقائق والآداب والأذكار": "general_islamic",
+    "مسائل فقهية": "fiqh_passages",
+}
+
+
+def route_chunk_to_collection(chunk: dict) -> str:
+    """
+    Route a chunk to the appropriate collection based on metadata.
+    
+    Args:
+        chunk: Document chunk with metadata
+        
+    Returns:
+        Collection name string
+    """
+    metadata = chunk.get('metadata', {})
+    chunk_type = metadata.get('type', '')
+    category = metadata.get('category', '')
+    
+    # Hadith chunks
+    if chunk_type == 'hadith':
+        return 'hadith_passages'
+    
+    # Dua chunks
+    if chunk_type == 'dua':
+        return 'duas_adhkar'
+    
+    # Islamic book chunks - route by category
+    if chunk_type == 'islamic_book':
+        return CATEGORY_COLLECTION_MAP.get(category, 'general_islamic')
+    
+    # Default to general
+    return 'general_islamic'
+
 
 def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
     """
     Load documents for a specific collection.
-    
+
     Args:
         collection: Collection name (fiqh_passages, hadith_passages, etc.)
         limit: Maximum number of documents
-        
+
     Returns:
         List of document dicts
     """
     documents = []
-    
+
     if collection == "fiqh_passages":
-        # Load from processed extracted books
-        chunk_files = list(PROCESSED_DIR.glob("*_chunks.json"))
-        
-        for chunk_file in chunk_files:
-            with open(chunk_file, 'r', encoding='utf-8') as f:
-                chunks = json.load(f)
-                documents.extend(chunks)
-                
-                if limit and len(documents) >= limit:
-                    documents = documents[:limit]
-                    break
-    
+        # Load from processed islamic books (filter by type)
+        all_chunks_file = PROCESSED_DIR / "all_chunks.json"
+        if all_chunks_file.exists():
+            logger.info("embeddings.loading_all_chunks", path=str(all_chunks_file))
+            with open(all_chunks_file, 'r', encoding='utf-8') as f:
+                all_chunks = json.load(f)
+                # Filter for islamic_book type chunks
+                documents = [c for c in all_chunks if c.get('metadata', {}).get('type') == 'islamic_book']
+                logger.info("embeddings.filtered_chunks", total=len(all_chunks), fiqh=len(documents))
+
+        # Also load hadith chunks if we don't have enough
+        if len(documents) < 1000:
+            hadith_file = PROCESSED_DIR / "hadith_chunks.json"
+            if hadith_file.exists():
+                with open(hadith_file, 'r', encoding='utf-8') as f:
+                    hadith_chunks = json.load(f)
+                    documents.extend(hadith_chunks)
+
+        if limit and len(documents) > limit:
+            documents = documents[:limit]
+
     elif collection == "hadith_passages":
-        # Load hadith data (would be processed separately)
-        hadith_file = PROCESSED_DIR / "hadith" / "hadith_chunks.json"
+        # FIXED: Correct path to hadith_chunks.json
+        hadith_file = PROCESSED_DIR / "hadith_chunks.json"
         if hadith_file.exists():
             with open(hadith_file, 'r', encoding='utf-8') as f:
                 documents = json.load(f)
-    
+                logger.info("embeddings.hadith_loaded", count=len(documents))
+        else:
+            logger.warning("embeddings.hadith_file_not_found", path=str(hadith_file))
+
+        if limit and len(documents) > limit:
+            documents = documents[:limit]
+
     elif collection == "general_islamic":
-        # Load general Islamic knowledge documents
-        general_files = list((PROCESSED_DIR / "general").glob("*.json"))
-        
-        for general_file in general_files:
-            with open(general_file, 'r', encoding='utf-8') as f:
-                docs = json.load(f)
-                documents.extend(docs)
-    
+        # FIXED: Filter from all_chunks.json by category
+        all_chunks_file = PROCESSED_DIR / "all_chunks.json"
+        if all_chunks_file.exists():
+            with open(all_chunks_file, 'r', encoding='utf-8') as f:
+                all_chunks = json.load(f)
+                # Filter for general Islamic categories (not fiqh-specific)
+                general_categories = [
+                    "العقيدة", "التاريخ", "السيرة", "الرقائق",
+                    "الأدب", "التراجم", "علوم القرآن", "التفسير",
+                    "اللغة", "النحو", "general"
+                ]
+                documents = [
+                    c for c in all_chunks
+                    if c.get('metadata', {}).get('type') == 'islamic_book'
+                    and c.get('metadata', {}).get('category') in general_categories
+                ]
+                logger.info("embeddings.general_loaded", total=len(all_chunks), general=len(documents))
+
+        if limit and len(documents) > limit:
+            documents = documents[:limit]
+
+    elif collection == "duas_adhkar":
+        # Load duas from seed data
+        duas_file = Path(__file__).parent.parent / "data" / "seed" / "duas.json"
+        if duas_file.exists():
+            with open(duas_file, 'r', encoding='utf-8') as f:
+                duas = json.load(f)
+                # Convert duas to chunk format
+                documents = [
+                    {
+                        "chunk_index": i,
+                        "content": f"الدعاء: {dua.get('arabic_text', '')}\n\nالترجمة: {dua.get('translation', '')}\n\nالمناسبة: {dua.get('occasion', '')}\n\nالمصدر: {dua.get('source', '')}",
+                        "metadata": {
+                            "type": "dua",
+                            "category": dua.get('category', 'general'),
+                            "occasion": dua.get('occasion', ''),
+                            "source": dua.get('source', ''),
+                            "id": dua.get('id', i)
+                        }
+                    }
+                    for i, dua in enumerate(duas)
+                ]
+                logger.info("embeddings.duas_loaded", count=len(documents))
+
     elif collection == "all":
-        # Load all collections
-        for coll in ["fiqh_passages", "hadith_passages", "general_islamic"]:
-            documents.extend(load_documents(coll, limit))
-    
+        # Load all collections sequentially
+        for coll in ["fiqh_passages", "hadith_passages", "general_islamic", "duas_adhkar"]:
+            coll_docs = load_documents(coll, limit)
+            documents.extend(coll_docs)
+            if limit and len(documents) >= limit:
+                documents = documents[:limit]
+                break
+
     logger.info(
         "embeddings.documents_loaded",
         collection=collection,
         count=len(documents)
     )
-    
+
     return documents
 
 

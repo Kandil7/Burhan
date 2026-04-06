@@ -2,13 +2,14 @@
 FastAPI application factory for Athar Islamic QA system.
 
 Creates and configures the FastAPI application with:
+- Security middleware (rate limiting, API key, security headers)
 - CORS middleware
 - Error handling
 - Request logging
 - Route registration
 - OpenAPI documentation
 
-Phase 2: Includes tool endpoints for direct access.
+Phase 5: Security improvements and performance optimizations.
 """
 
 from contextlib import asynccontextmanager
@@ -18,6 +19,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config.settings import settings
 from src.config.logging_config import setup_logging, get_logger
 from src.api.middleware.error_handler import error_handler_middleware
+from src.api.middleware.security import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from src.api.routes.health import router as health_router
 from src.api.routes.query import router as query_router
 from src.api.routes.tools import router as tools_router
@@ -33,15 +38,14 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
 
     Runs on startup and shutdown.
-    Phase 1: Basic logging setup
-    Phase 2: All tools initialized and ready.
+    Phase 5: Includes security and performance optimizations.
     """
     # Startup
     setup_logging()
     logger.info(
         "app.startup",
         app_name=settings.app_name,
-        version="0.3.0",  # Phase 3 version
+        version="0.5.0",
         environment=settings.app_env,
     )
 
@@ -71,16 +75,16 @@ Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
 - **Deterministic Calculators**: Zakat and inheritance calculations
 - **Multi-language**: Arabic and English support
 - **Madhhab-aware**: Handles differences between Islamic schools
+- **Rate Limiting**: Protected against abuse
+- **API Key Authentication**: Secure access
 
-## Authentication
-Phase 1: No authentication required
-Phase 2: API key authentication for rate limiting
+## Security
+- API Key required for query endpoints
+- Rate limiting: 60 requests/minute default
+- Security headers on all responses
 
-## Rate Limiting
-Phase 1: No rate limiting
-Phase 2: 100 requests/minute for free tier
         """,
-        version="0.3.0",
+        version="0.5.0",
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -89,8 +93,15 @@ Phase 2: 100 requests/minute for free tier
     )
 
     # ==========================================
-    # Middleware
+    # Middleware (order matters - last added runs first)
     # ==========================================
+
+    # Security headers (outermost - runs last)
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # Rate limiting
+    if settings.app_env == "production":
+        app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
 
     # CORS
     app.add_middleware(
@@ -101,7 +112,6 @@ Phase 2: 100 requests/minute for free tier
         allow_headers=["*"],
     )
 
-    # Error handling (custom middleware)
     # Error handling
     app.middleware("http")(error_handler_middleware)
 
@@ -111,8 +121,8 @@ Phase 2: 100 requests/minute for free tier
     app.include_router(health_router)
     app.include_router(query_router, prefix=settings.api_v1_prefix)
     app.include_router(tools_router, prefix=settings.api_v1_prefix)
-    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")  # Phase 4
-    app.include_router(quran_router, prefix=f"{settings.api_v1_prefix}")  # Phase 3
+    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")
+    app.include_router(quran_router, prefix=f"{settings.api_v1_prefix}")
 
     # ==========================================
     # Root endpoint
@@ -122,10 +132,11 @@ Phase 2: 100 requests/minute for free tier
         """Root endpoint with API information."""
         return {
             "name": settings.app_name,
-            "version": "0.3.0",
-            "phase": "3 - Quranic Pipeline",
+            "version": "0.5.0",
+            "phase": "5 - Security & Performance",
             "docs": "/docs",
             "health": "/health",
+            "authentication": "API Key required (X-API-Key header)",
             "query_endpoint": f"{settings.api_v1_prefix}/query",
             "quran_endpoints": {
                 "surahs": f"{settings.api_v1_prefix}/quran/surahs",

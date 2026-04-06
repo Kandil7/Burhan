@@ -8,7 +8,7 @@ Answers fiqh questions using retrieval-augmented generation:
 4. Normalize citations to [C1], [C2] format
 
 Phase 4: Core RAG pipeline for fiqh questions.
-Phase 5: LLM integration for answer generation.
+Phase 5: Uses settings for LLM model configuration.
 """
 
 from typing import Optional
@@ -21,6 +21,8 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
+from src.config.settings import settings
+from src.config.constants import RetrievalConfig, LLMConfig
 from src.infrastructure.llm_client import get_llm_client
 
 logger = get_logger()
@@ -40,11 +42,12 @@ class FiqhAgent(BaseAgent):
 
     name = "fiqh_agent"
 
-    TOP_K_RETRIEVAL = 15
+    # Use centralized constants
+    TOP_K_RETRIEVAL = RetrievalConfig.TOP_K_FIQH
     TOP_K_RERANK = 5
-    SCORE_THRESHOLD = 0.7
-    TEMPERATURE = 0.1
-    MAX_TOKENS = 2048
+    SCORE_THRESHOLD = RetrievalConfig.SEMANTIC_SCORE_THRESHOLD
+    TEMPERATURE = LLMConfig.FIQH_TEMPERATURE
+    MAX_TOKENS = LLMConfig.DEFAULT_MAX_TOKENS
 
     FIQH_SYSTEM_PROMPT = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.
 
@@ -90,20 +93,23 @@ class FiqhAgent(BaseAgent):
         try:
             if self.embedding_model is None:
                 from src.knowledge.embedding_model import EmbeddingModel
+
                 self.embedding_model = EmbeddingModel()
                 await self.embedding_model.load_model()
         except Exception as e:
             logger.warning("fiqh_agent.embedding_unavailable", error=str(e))
             self.embedding_model = None
-        
+
         try:
             if self.vector_store is None:
                 from src.knowledge.vector_store import VectorStore
+
                 self.vector_store = VectorStore()
                 await self.vector_store.initialize()
-            
+
             if self.hybrid_searcher is None and self.vector_store:
                 from src.knowledge.hybrid_search import HybridSearcher
+
                 self.hybrid_searcher = HybridSearcher(self.vector_store)
         except Exception as e:
             logger.warning("fiqh_agent.vector_store_unavailable", error=str(e))
@@ -145,9 +151,9 @@ class FiqhAgent(BaseAgent):
                     answer="الرجاء تثبيت نموذج التضمين للبحث في النصوص. التثبيت: pip install torch transformers",
                     metadata={"error": "Embedding model not available", "fix": "pip install torch transformers"},
                     confidence=0.0,
-                    requires_human_review=True
+                    requires_human_review=True,
                 )
-            
+
             # Step 1: Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 
@@ -173,7 +179,8 @@ class FiqhAgent(BaseAgent):
             )
 
             # Step 6: Normalize citations
-            normalized_text, citations = self.citation_normalizer.normalize(answer)
+            normalized_text = self.citation_normalizer.normalize(answer)
+            citations = self.citation_normalizer.get_citations()
 
             # Step 7: Add disclaimer
             final_answer = self._add_disclaimer(normalized_text)
@@ -194,11 +201,14 @@ class FiqhAgent(BaseAgent):
             )
 
         except Exception as e:
-            logger.error("fiqh_agent.error", error=str(e), exc_info=True)
+            import traceback
+
+            error_traceback = traceback.format_exc()
+            logger.error("fiqh_agent.error", error=str(e), traceback=error_traceback, exc_info=True)
             return AgentOutput(
                 answer=f"Error processing fiqh query: {str(e)}\n\nPlease consult a qualified scholar.",
                 confidence=0.0,
-                metadata={"error": str(e)},
+                metadata={"error": str(e), "traceback": error_traceback.split("\n")[-5:]},
                 requires_human_review=True,
             )
 
@@ -247,9 +257,9 @@ class FiqhAgent(BaseAgent):
                 query=query, language="العربية" if language == "ar" else "الإنجليزية", passages=passages
             )
 
-            # Call LLM
+            # Call LLM - use settings for model
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[
                     {"role": "system", "content": self.FIQH_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
