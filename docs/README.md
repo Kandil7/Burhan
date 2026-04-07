@@ -1,4 +1,4 @@
-# 📚 Athar Islamic QA System - Documentation Index
+# Athar Islamic QA System - Documentation Index
 
 Welcome to the comprehensive documentation for the **Athar Islamic QA System**.
 
@@ -8,12 +8,15 @@ Welcome to the comprehensive documentation for the **Athar Islamic QA System**.
 
 ```
 docs/
-├── getting-started/          # Quick start guides
-├── architecture/             # System architecture
-├── technical/                # Technical documentation
-├── reports/                  # Project reports
-├── reference/                # Reference materials
-├── guides/                   # How-to guides
+├── getting-started/          # Entry point & overview
+├── architecture/             # System architecture & design
+├── guides/                   # How-to guides (setup, running, windows)
+├── development/             # Developer guides (dev, frontend, embeddings)
+├── api/                      # API documentation
+├── core-features/            # RAG, Quran modules
+├── deployment/               # Production deployment
+├── improvements/             # Phase improvements & changelogs
+├── reports/                  # Project reports & status
 └── Fanar-Sadiq Paper.pdf     # Research paper
 ```
 
@@ -21,19 +24,19 @@ docs/
 
 ## 🚀 Quick Start
 
-### Getting Started Guides
+### Getting Started
 | File | Description |
 |------|-------------|
-| [getting-started/00_README.md](getting-started/00_README.md) | Project introduction and quick start |
-| [getting-started/01_ARCHITECTURE_OVERVIEW.md](getting-started/01_ARCHITECTURE_OVERVIEW.md) | System architecture diagram |
-| [getting-started/02_QUICK_REFERENCE.md](getting-started/02_QUICK_REFERENCE.md) | Quick reference guide |
+| [getting-started/index.md](getting-started/index.md) | Project introduction |
+| [architecture/01_ARCHITECTURE_OVERVIEW.md](architecture/01_ARCHITECTURE_OVERVIEW.md) | System architecture diagram |
+| [guides/running.md](guides/running.md) | Quick start guide |
 
-### How-to Guides
+### User Guides
 | File | Description |
 |------|-------------|
-| [guides/01_RUN.md](guides/01_RUN.md) | How to run the application |
-| [guides/02_SETUP_COMPLETE.md](guides/02_SETUP_COMPLETE.md) | Complete setup guide |
-| [guides/03_WINDOWS_GUIDE.md](guides/03_WINDOWS_GUIDE.md) | Windows setup guide |
+| [guides/running.md](guides/running.md) | How to run the application |
+| [guides/setup.md](guides/setup.md) | Complete setup guide |
+| [guides/windows.md](guides/windows.md) | Windows setup guide |
 
 ---
 
@@ -41,34 +44,46 @@ docs/
 
 | File | Description |
 |------|-------------|
-| [architecture/03_architecture.md](architecture/03_architecture.md) | Detailed architecture |
-| [architecture/04_BRANCH_STRATEGY.md](architecture/04_BRANCH_STRATEGY.md) | Git branching strategy |
-| [architecture/05_IMPROVEMENTS_SUMMARY.md](architecture/05_IMPROVEMENTS_SUMMARY.md) | Phase 5 improvements |
+| [architecture/01_ARCHITECTURE_OVERVIEW.md](architecture/01_ARCHITECTURE_OVERVIEW.md) | High-level system overview |
+| [architecture/technical-architecture.md](architecture/technical-architecture.md) | Detailed technical architecture |
+| [architecture/branch-strategy.md](architecture/branch-strategy.md) | Git branching strategy |
 
 ---
 
-## 📖 Technical Documentation
+## 🔧 Development
 
-### Development & Setup
 | File | Description |
 |------|-------------|
-| [technical/10_DEVELOPMENT.md](technical/10_DEVELOPMENT.md) | Development setup |
-| [technical/11_FRONTEND.md](technical/11_FRONTEND.md) | Frontend documentation |
-| [technical/12_EMBEDDING_SETUP.md](technical/12_EMBEDDING_SETUP.md) | Embedding model setup |
+| [development/index.md](development/index.md) | Development setup |
+| [development/frontend.md](development/frontend.md) | Frontend documentation |
+| [development/embeddings.md](development/embeddings.md) | Embedding model setup |
 
-### API & Integration
+---
+
+## 📖 API Documentation
+
 | File | Description |
 |------|-------------|
-| [technical/20_API.md](technical/20_API.md) | API documentation |
-| [technical/25_FULL_DOCUMENTATION.md](technical/25_FULL_DOCUMENTATION.md) | Complete technical docs |
-| [technical/26_API_REFERENCE.md](technical/26_API_REFERENCE.md) | Complete API reference |
+| [api/reference.md](api/reference.md) | API documentation |
+| [api/endpoints.md](api/endpoints.md) | Complete API endpoints reference |
+| [api/complete.md](api/complete.md) | Full technical documentation |
 
-### Core Features
+---
+
+## ⚡ Core Features
+
 | File | Description |
 |------|-------------|
-| [technical/21_RAG_GUIDE.md](technical/21_RAG_GUIDE.md) | RAG pipeline guide |
-| [technical/22_QURAN_GUIDE.md](technical/22_QURAN_GUIDE.md) | Quran module guide |
-| [technical/23_DEPLOYMENT.md](technical/23_DEPLOYMENT.md) | Deployment guide |
+| [core-features/rag.md](core-features/rag.md) | RAG pipeline guide |
+| [core-features/quran.md](core-features/quran.md) | Quran module guide |
+
+---
+
+## 🚢 Deployment
+
+| File | Description |
+|------|-------------|
+| [deployment/index.md](deployment/index.md) | Production deployment guide |
 
 ---
 
@@ -81,17 +96,15 @@ docs/
 | [reports/32_TEST_RESULTS.md](reports/32_TEST_RESULTS.md) | Test results |
 | [reports/33_COMPREHENSIVE_TEST_RESULTS.md](reports/33_COMPREHENSIVE_TEST_RESULTS.md) | Comprehensive tests |
 | [reports/34_100_PERCENT_COMPLETE.md](reports/34_100_PERCENT_COMPLETE.md) | 100% completion report |
-| [reports/35_CODE_REVIEW_FULL.md](reports/35_CODE_REVIEW_FULL.md) | Full code review |
-| [reports/36_PHASE_5_IMPROVEMENTS.md](reports/36_PHASE_5_IMPROVEMENTS.md) | Phase 5 improvements |
 
 ---
 
-## 📚 Reference Materials
+## 📚 Reference
 
 | File | Description |
 |------|-------------|
 | [reference/40_project_plan.md](reference/40_project_plan.md) | Original project plan |
-| [reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md](reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md) | Full project explanation |
+| [reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md](reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md) | Complete project explanation |
 | [reference/42_DOCUMENTATION_REVIEW.md](reference/42_DOCUMENTATION_REVIEW.md) | Documentation review |
 
 ---
