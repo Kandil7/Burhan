@@ -11,12 +11,17 @@ docs/
 ├── getting-started/          # Entry point & overview
 ├── architecture/             # System architecture & design
 ├── guides/                   # How-to guides (setup, running, windows)
-├── development/             # Developer guides (dev, frontend, embeddings)
+├── development/               # Developer guides (dev, frontend, embeddings)
 ├── api/                      # API documentation
 ├── core-features/            # RAG, Quran modules
 ├── deployment/               # Production deployment
-├── improvements/             # Phase improvements & changelogs
+├── improvements/              # Phase improvements & changelogs
 ├── reports/                  # Project reports & status
+├── planning/                 # Planning documents & strategies
+├── status/                   # Working status & checkpoints
+├── data/                     # Data status & datasets
+├── analysis/                 # Data analysis & strategy
+├── reference/                # Reference materials
 └── Fanar-Sadiq Paper.pdf     # Research paper
 ```
 
@@ -27,9 +32,11 @@ docs/
 ### Getting Started
 | File | Description |
 |------|-------------|
+| [getting-started/START_HERE.md](getting-started/START_HERE.md) | Entry point & quick start |
 | [getting-started/index.md](getting-started/index.md) | Project introduction |
-| [architecture/01_ARCHITECTURE_OVERVIEW.md](architecture/01_ARCHITECTURE_OVERVIEW.md) | System architecture diagram |
-| [guides/running.md](guides/running.md) | Quick start guide |
+| [getting-started/STRUCTURE.md](getting-started/STRUCTURE.md) | Project structure overview |
+| [getting-started/QUICK_START.md](getting-started/QUICK_START.md) | Quick start guide |
+| [guides/running.md](guides/running.md) | How to run the application |
 
 ### User Guides
 | File | Description |
@@ -96,6 +103,54 @@ docs/
 | [reports/32_TEST_RESULTS.md](reports/32_TEST_RESULTS.md) | Test results |
 | [reports/33_COMPREHENSIVE_TEST_RESULTS.md](reports/33_COMPREHENSIVE_TEST_RESULTS.md) | Comprehensive tests |
 | [reports/34_100_PERCENT_COMPLETE.md](reports/34_100_PERCENT_COMPLETE.md) | 100% completion report |
+| [reports/FINAL_STATUS_REPORT.md](reports/FINAL_STATUS_REPORT.md) | Final status report |
+| [reports/FINAL_VALIDATION_REPORT.md](reports/FINAL_VALIDATION_REPORT.md) | Validation report |
+| [reports/FINAL_COMPLETE_REPORT.md](reports/FINAL_COMPLETE_REPORT.md) | Completion report |
+| [reports/TESTING_REPORT.md](reports/TESTING_REPORT.md) | Testing report |
+| [reports/PROJECT_COMPLETE.md](reports/PROJECT_COMPLETE.md) | Project complete |
+| [reports/PROJECT_COMPLETE_FINAL.md](reports/PROJECT_COMPLETE_FINAL.md) | Final project complete |
+| [reports/MULTI_AGENT_COMPLETE.md](reports/MULTI_AGENT_COMPLETE.md) | Multi-agent status |
+| [reports/MULTI_AGENT_FINAL_REPORT.md](reports/MULTI_AGENT_FINAL_REPORT.md) | Multi-agent report |
+| [reports/ENDPOINT_VALIDATION_COMPLETE.md](reports/ENDPOINT_VALIDATION_COMPLETE.md) | Endpoint validation |
+
+---
+
+## 📋 Planning
+
+| File | Description |
+|------|-------------|
+| [planning/DATA_DRIVEN_AGENT_STRATEGY.md](planning/DATA_DRIVEN_AGENT_STRATEGY.md) | Agent strategy |
+| [planning/COMPLETE_DATA_DRIVEN_PLAN.md](planning/COMPLETE_DATA_DRIVEN_PLAN.md) | Data-driven plan |
+| [planning/RTL_ENHANCEMENTS.md](planning/RTL_ENHANCEMENTS.md) | RTL enhancements |
+| [planning/SANADSET_HADITH_AGENT.md](planning/SANADSET_HADITH_AGENT.md) | Hadith agent |
+
+---
+
+## 📈 Status
+
+| File | Description |
+|------|-------------|
+| [status/WORKING_NOW.md](status/WORKING_NOW.md) | Current working status |
+| [status/WORKING_STATUS.md](status/WORKING_STATUS.md) | Working status |
+| [status/CHECKPOINT_STATUS.md](status/CHECKPOINT_STATUS.md) | Checkpoint status |
+| [status/EMBEDDING_CHECKPOINT_STATUS.md](status/EMBEDDING_CHECKPOINT_STATUS.md) | Embedding checkpoint |
+| [status/RAG_PROJECT_STATUS.md](status/RAG_PROJECT_STATUS.md) | RAG project status |
+
+---
+
+## 💾 Data
+
+| File | Description |
+|------|-------------|
+| [data/MINI_DATASET_COMPLETE.md](data/MINI_DATASET_COMPLETE.md) | Mini dataset status |
+
+---
+
+## 🔬 Analysis
+
+| File | Description |
+|------|-------------|
+| [analysis/DATA_INVENTORY_AND_STRATEGY.md](analysis/DATA_INVENTORY_AND_STRATEGY.md) | Data inventory & strategy |
 
 ---
 

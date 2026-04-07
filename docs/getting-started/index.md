@@ -10,9 +10,10 @@ Complete documentation for the Athar Islamic QA System.
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
+| **[START_HERE.md](START_HERE.md)** | Entry point & quick start | **First!** |
 | **[index.md](index.md)** | This file - documentation index | Always |
-| **[../architecture/01_ARCHITECTURE_OVERVIEW.md](../architecture/01_ARCHITECTURE_OVERVIEW.md)** | System architecture overview | **First** |
-| **[../guides/running.md](../guides/running.md)** | Quick start guide | First time |
+| **[STRUCTURE.md](STRUCTURE.md)** | Project structure overview | First time |
+| **[QUICK_START.md](QUICK_START.md)** | Quick start commands | Quick reference |
 
 ---
 
@@ -69,7 +70,27 @@ Complete documentation for the Athar Islamic QA System.
 
 ---
 
-### 📋 Reference & Research
+### 📋 Planning & Status
+
+| Document | Purpose |
+|----------|---------|
+| **[../planning/DATA_DRIVEN_AGENT_STRATEGY.md](../planning/DATA_DRIVEN_AGENT_STRATEGY.md)** | Agent strategy |
+| **[../planning/COMPLETE_DATA_DRIVEN_PLAN.md](../planning/COMPLETE_DATA_DRIVEN_PLAN.md)** | Data-driven plan |
+| **[../status/WORKING_NOW.md](../status/WORKING_NOW.md)** | Current working status |
+| **[../status/RAG_PROJECT_STATUS.md](../status/RAG_PROJECT_STATUS.md)** | RAG project status |
+
+---
+
+### 📈 Data & Analysis
+
+| Document | Purpose |
+|----------|---------|
+| **[../data/MINI_DATASET_COMPLETE.md](../data/MINI_DATASET_COMPLETE.md)** | Mini dataset status |
+| **[../analysis/DATA_INVENTORY_AND_STRATEGY.md](../analysis/DATA_INVENTORY_AND_STRATEGY.md)** | Data inventory & strategy |
+
+---
+
+### 📚 Reference & Research
 
 | Document | Purpose |
 |----------|---------|
@@ -85,7 +106,7 @@ Complete documentation for the Athar Islamic QA System.
 
 | Goal | Read This | Priority |
 |------|-----------|----------|
-| **Start using Athar** | [../guides/running.md](../guides/running.md) | ⭐ First |
+| **Start using Athar** | [START_HERE.md](START_HERE.md) | ⭐ First |
 | **Understand the system** | [../architecture/01_ARCHITECTURE_OVERVIEW.md](../architecture/01_ARCHITECTURE_OVERVIEW.md) | ⭐ First |
 | **Use the API** | [../api/reference.md](../api/reference.md) | Important |
 | **Deploy to production** | [../deployment/index.md](../deployment/index.md) | Important |
@@ -100,7 +121,7 @@ Complete documentation for the Athar Islamic QA System.
 
 ### Path A: For Users (Quick Start)
 ```
-getting-started/index → guides/running → architecture/01_ARCHITECTURE_OVERVIEW
+START_HERE.md → guides/running → getting-started/index
 ```
 
 ### Path B: For Developers (Understand & Build)
@@ -129,17 +150,21 @@ architecture/01_ARCHITECTURE_OVERVIEW → core-features/rag → development/embe
 
 | Category | Count |
 |----------|-------|
-| **Getting Started** | 1 |
+| **Getting Started** | 4 |
 | **Architecture** | 3 |
 | **User Guides** | 3 |
 | **Development** | 3 |
 | **API** | 3 |
 | **Core Features** | 2 |
 | **Deployment** | 1 |
-| **Reports** | 5 |
+| **Reports** | 14 |
+| **Planning** | 4 |
+| **Status** | 5 |
+| **Data** | 1 |
+| **Analysis** | 1 |
 | **Reference** | 2 |
 | **Research** | 1 |
-| **TOTAL** | **24** |
+| **TOTAL** | **47** |
 
 ---
 
@@ -158,7 +183,7 @@ python -m uvicorn src.api.main:app --reload
 
 ---
 
-**Need help?** Run `build.bat help` or check the main [README.md](../README.md)
+**Need help?** Run `build.bat help` or check the main [../README.md](../README.md)
 
 ---
 
