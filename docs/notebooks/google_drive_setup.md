@@ -1,0 +1,383 @@
+# 📂 Google Drive Setup Guide for Athar
+
+Complete guide for setting up Google Drive with Google Colab for the Athar Islamic QA System.
+
+---
+
+## 🎯 Purpose
+
+Google Drive serves as the storage layer for Colab notebooks, enabling:
+- ✅ Persistent dataset storage
+- ✅ Output file saving
+- ✅ Collaboration between team members
+- ✅ Automatic backup
+
+---
+
+## 📁 Folder Structure
+
+### Create This Structure
+
+```
+Google Drive/
+└── MyDrive/
+    └── Athar/
+        ├── datasets/                    # Input data (upload once)
+        │   ├── extracted_books/         # 8,425 Shamela books (17.16 GB)
+        │   ├── Sanadset*/               # 650K hadith (1.43 GB)
+        │   └── metadata/                # Small files (<1 MB)
+        │       ├── books.db
+        │       ├── categories.json
+        │       └── authors.json
+        │
+        ├── output/                      # Generated files (auto-created)
+        │   ├── embeddings/              # Vector embeddings
+        │   │   ├── fiqh_passages_embeddings.npy
+        │   │   ├── hadith_passages_embeddings.npy
+        │   │   └── ... (10 collections)
+        │   │
+        │   └── chunked_data/            # Processed chunks
+        │       ├── all_chunks.json
+        │       └── chunks_by_collection/
+        │
+        └── notebooks/                   # Colab notebooks
+            ├── setup_colab_env.ipynb
+            ├── 01_embed_all_collections.ipynb
+            ├── 02_process_sanadset_hadith.ipynb
+            └── 03_analyze_and_chunk_books.ipynb
+```
+
+---
+
+## 📤 Upload Methods
+
+### Method 1: Google Drive Desktop (Recommended)
+
+**Best for:** Large datasets (17+ GB)
+
+**Steps:**
+
+1. **Install Google Drive for Desktop**
+   - Download from: https://www.google.com/drive/download/
+   - Install and sign in
+   - Select "Stream files" (saves disk space)
+
+2. **Create Athar Folder**
+   - Open Google Drive (G: drive on Windows)
+   - Create folder: `MyDrive/Athar/`
+   - Create subfolders: `datasets/`, `output/`, `notebooks/`
+
+3. **Copy Datasets**
+   - Copy `datasets/data/extracted_books/` → `G:/MyDrive/Athar/datasets/extracted_books/`
+   - Copy `datasets/Sanadset*/` → `G:/MyDrive/Athar/datasets/Sanadset*/`
+   - Copy `datasets/data/metadata/` → `G:/MyDrive/Athar/datasets/metadata/`
+
+4. **Wait for Sync**
+   - Check sync status in system tray
+   - Large files may take several hours
+   - You can use Colab while syncing
+
+**Pros:**
+- ✅ Fastest method
+- ✅ Resume interrupted uploads
+- ✅ Background sync
+
+**Cons:**
+- Requires installing desktop app
+
+---
+
+### Method 2: Web Upload
+
+**Best for:** Small files (<1 GB)
+
+**Steps:**
+
+1. Go to https://drive.google.com
+2. Navigate to `MyDrive/Athar/datasets/`
+3. Click **New → Folder Upload**
+4. Select folder to upload
+5. Wait for upload to complete
+
+**For Large Files:**
+
+1. Go to https://drive.google.com
+2. Navigate to target folder
+3. Click **New → File Upload**
+4. Select individual files
+
+**Pros:**
+- ✅ No installation required
+- ✅ Works on any device
+
+**Cons:**
+- ❌ Slow for large files
+- ❌ No resume for interrupted uploads
+- ❌ Max 5 TB per file
+
+---
+
+### Method 3: Colab Upload
+
+**Best for:** Quick uploads from notebook
+
+**Steps:**
+
+1. Open any Colab notebook
+2. In left sidebar, click **Files** icon
+3. Click **Upload** button
+4. Select files from your computer
+5. Files upload to `/content/` (temporary)
+6. Move to Google Drive:
+   ```python
+   from google.colab import drive
+   drive.mount('/content/drive')
+   !cp /content/file.txt /content/drive/MyDrive/Athar/
+   ```
+
+**Pros:**
+- ✅ Quick for small files
+- ✅ Integrated with Colab
+
+**Cons:**
+- ❌ Uploads to temp storage first
+- ❌ Lost when session ends
+- ❌ Not suitable for large datasets
+
+---
+
+## 🔗 Connect Colab to Drive
+
+### Step 1: Mount Drive in Notebook
+
+```python
+from google.colab import drive
+drive.mount('/content/drive', force_remount=True)
+```
+
+### Step 2: Verify Access
+
+```python
+import os
+
+ATHAR_DIR = "/content/drive/MyDrive/Athar"
+print(f"Athar directory exists: {os.path.exists(ATHAR_DIR)}")
+print(f"Contents: {os.listdir(ATHAR_DIR)}")
+```
+
+### Step 3: Set Paths
+
+```python
+from pathlib import Path
+
+# Input paths
+DATASETS_DIR = Path("/content/drive/MyDrive/Athar/datasets")
+BOOKS_DIR = DATASETS_DIR / "extracted_books"
+METADATA_DIR = DATASETS_DIR / "metadata"
+
+# Output paths
+OUTPUT_DIR = Path("/content/drive/MyDrive/Athar/output")
+EMBEDDINGS_DIR = OUTPUT_DIR / "embeddings"
+CHUNKED_DIR = OUTPUT_DIR / "chunked_data"
+
+# Create output directories
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+EMBEDDINGS_DIR.mkdir(parents=True, exist_ok=True)
+CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
+```
+
+---
+
+## 📊 Dataset Sizes
+
+### What to Upload
+
+| Folder | Size | Upload Priority |
+|--------|------|-----------------|
+| `extracted_books/` | 17.16 GB | 🔴 High |
+| `Sanadset*/` | 1.43 GB | 🔴 High |
+| `metadata/` | <1 MB | 🟡 Medium |
+| **Total** | **~19 GB** | |
+
+### What NOT to Upload
+
+| Folder | Reason |
+|--------|--------|
+| `system_book_datasets/` | Too large (500+ MB), not needed |
+| `output/` | Auto-generated by notebooks |
+| `notebooks/` | Already in GitHub repo |
+
+---
+
+## 🔄 Sync Strategy
+
+### Initial Setup (One-time)
+
+1. Upload all datasets to Google Drive
+2. Run setup notebook
+3. Test with mini-dataset first
+
+### Daily Workflow
+
+1. Open Colab notebook
+2. Mount Google Drive
+3. Run embedding/processing
+4. Outputs auto-save to Drive
+5. Download results when done
+
+### Team Collaboration
+
+1. **Shared Drive** (Google Workspace)
+   - Create shared "Athar" drive
+   - Grant access to team members
+   - Everyone sees same files
+
+2. **Individual Drives**
+   - Each person has their own copy
+   - Sync results via GitHub
+   - Good for independent work
+
+---
+
+## 💾 Storage Management
+
+### Google Drive Free Tier
+
+- **Storage:** 15 GB (shared across Google services)
+- **Athar Needs:** ~19 GB (datasets) + outputs
+- **Solution:** Upgrade or use selective upload
+
+### Upgrade Options
+
+| Plan | Storage | Cost |
+|------|---------|------|
+| Free | 15 GB | $0 |
+| 100 GB | 100 GB | $2/month |
+| 200 GB | 200 GB | $3/month |
+| 2 TB | 2 TB | $10/month |
+
+**Recommendation:** 100 GB plan ($2/month) for Athar
+
+### Reduce Storage Usage
+
+1. **Compress Before Upload**
+   ```bash
+   tar -czf extracted_books.tar.gz extracted_books/
+   ```
+
+2. **Upload Only Needed Books**
+   - Select top 500 books instead of all 8,425
+   - Reduces size from 17 GB to ~1 GB
+
+3. **Clean Old Outputs**
+   ```python
+   # Delete old embeddings
+   import shutil
+   shutil.rmtree("/content/drive/MyDrive/Athar/output/embeddings")
+   ```
+
+---
+
+## 📥 Download Results
+
+### From Colab
+
+1. In left sidebar, click **Files**
+2. Navigate to `/content/drive/MyDrive/Athar/output/`
+3. Right-click file → **Download**
+
+### From Google Drive
+
+1. Go to https://drive.google.com
+2. Navigate to `MyDrive/Athar/output/`
+3. Select files/folders
+4. Click **Download** (zip for folders)
+
+### Using rclone (Advanced)
+
+```bash
+# Install rclone
+# https://rclone.org/
+
+# Configure Google Drive
+rclone config
+
+# Download embeddings
+rclone copy gdrive:"MyDrive/Athar/output/embeddings" ./embeddings/
+```
+
+---
+
+## 🔐 Security & Privacy
+
+### Best Practices
+
+1. **Don't Share Publicly**
+   - Datasets contain Islamic scholarly texts
+   - Keep access restricted to team
+
+2. **Use Service Account** (for automation)
+   - Create Google Cloud service account
+   - Grant access to specific folder
+   - Use in automated pipelines
+
+3. **Backup Regularly**
+   - Download important outputs weekly
+   - Store in multiple locations
+
+### Sharing with Team
+
+1. Right-click `Athar/` folder
+2. Click **Share**
+3. Add team member emails
+4. Set permission: **Editor**
+5. Uncheck "Notify people"
+
+---
+
+## 🚀 Quick Start Checklist
+
+- [ ] Create Google Drive account (or use existing)
+- [ ] Create `MyDrive/Athar/` folder
+- [ ] Create subfolders: `datasets/`, `output/`, `notebooks/`
+- [ ] Upload `extracted_books/` (~17 GB)
+- [ ] Upload `Sanadset*/` (~1.4 GB)
+- [ ] Upload `metadata/` (<1 MB)
+- [ ] Verify all files uploaded
+- [ ] Open `setup_colab_env.ipynb` in Colab
+- [ ] Run all cells in setup notebook
+- [ ] Test with mini-dataset
+
+---
+
+## 💡 Tips & Tricks
+
+### 1. Check Upload Progress
+
+- Right-click uploading file → **Manage versions**
+- Shows upload speed and ETA
+
+### 2. Avoid Duplicate Uploads
+
+- Google Drive keeps both versions
+- Delete old files before uploading new ones
+
+### 3. Use Shortcuts
+
+- Create shortcuts to frequently used folders
+- Right-click → **Organize → Add shortcut**
+
+### 4. Search Efficiently
+
+- Use search bar: `type:folder owner:me`
+- Filter by file type: `type:json`
+
+### 5. Offline Access
+
+- Right-click folder → **Available offline**
+- Downloads to local device
+- Good for working without internet
+
+---
+
+*Last updated: April 7, 2026*

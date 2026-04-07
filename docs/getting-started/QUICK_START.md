@@ -1,117 +1,338 @@
-# Athar Islamic QA System - Quick Reference
+# Athar - Quick Start Guide
 
-## ✅ System Status: **FULLY OPERATIONAL**
-
-All endpoints tested and working. Critical bugs fixed.
+**For:** New developers, contributors, and users  
+**Time:** 30 minutes to get running
 
 ---
 
-## 🚀 Quick Start
+## 🎯 What You'll Get
+
+After completing this guide, you'll have:
+- ✅ Backend API running on localhost:8000
+- ✅ API documentation at localhost:8000/docs
+- ✅ Test queries working
+- ✅ Understanding of the system
+
+---
+
+## Prerequisites (5 minutes)
+
+### Required Software
+
+1. **Python 3.12+**
+   ```bash
+   python --version
+   ```
+
+2. **Poetry** (dependency manager)
+   ```bash
+   pip install poetry
+   ```
+
+3. **Docker** (for databases)
+   ```bash
+   docker --version
+   ```
+
+### Clone Repository
 
 ```bash
-# Start infrastructure
-docker compose -f docker/docker-compose.dev.yml up -d postgres redis qdrant
-
-# Start API (in a new terminal)
-python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Access API docs
-# http://localhost:8000/docs
+git clone https://github.com/Kandil7/Athar.git
+cd Athar
 ```
 
 ---
 
-## 📊 API Endpoints (All Tested ✅)
+## Step 1: Install Dependencies (5 minutes)
 
-### Health & Info
-- `GET /health` - Health check
-- `GET /ready` - Readiness probe  
-- `GET /` - API info
+```bash
+# Install Python dependencies
+poetry install --with dev
 
-### Main Query
-- `POST /api/v1/query` - Intelligent query routing (handles all Islamic questions)
-
-### Tools
-- `POST /api/v1/tools/zakat` - Calculate zakat
-- `POST /api/v1/tools/inheritance` - Distribution calculator ✅ **FIXED**
-- `POST /api/v1/tools/prayer-times` - Prayer times + Qibla
-- `POST /api/v1/tools/hijri` - Date conversion
-- `POST /api/v1/tools/duas` - Retrieve duas
-
-### Quran
-- `GET /api/v1/quran/surahs` - List surahs (4 seeded)
-- `GET /api/v1/quran/surahs/{n}` - Surah details
-- `GET /api/v1/quran/ayah/{s}:{a}` - Specific ayah
-- `POST /api/v1/quran/search` - Search Quran
-- `POST /api/v1/quran/validate` - Validate text
-- `POST /api/v1/quran/analytics` - NL2SQL queries
-- `GET /api/v1/quran/tafsir/{s}:{a}` - Tafsir
-
-### RAG
-- `POST /api/v1/rag/fiqh` - Fiqh questions
-- `POST /api/v1/rag/general` - General knowledge
-- `GET /api/v1/rag/stats` - RAG statistics
+# Verify installation
+poetry run python -c "import fastapi; print('✓ FastAPI installed')"
+```
 
 ---
 
-## 🔧 Fixes Applied
+## Step 2: Configure Environment (5 minutes)
 
-### 1. CORS Origins (.env file)
-**Before:** `CORS_ORIGINS=http://localhost:3000,http://localhost:8000`  
-**After:** `CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000"]`
+```bash
+# Copy environment template
+cp .env.example .env
 
-### 2. Inheritance Calculator (src/tools/inheritance_calculator.py)
-- Fixed amounts showing 0
-- Added proper calculation for all shares
-- Implemented sons/daughters 2:1 ratio
-- All percentages now calculated correctly
+# Edit .env with your values
+# Required:
+# - GROQ_API_KEY or OPENAI_API_KEY
+# - HF_TOKEN (for embedding model)
+```
 
-**Example Output:**
+**Minimal .env:**
+```bash
+APP_ENV=development
+DEBUG=true
+SECRET_KEY=change-this-to-random-string
+GROQ_API_KEY=your-groq-key-here
+HF_TOKEN=your-huggingface-token
+```
+
+---
+
+## Step 3: Start Databases (3 minutes)
+
+```bash
+# Start PostgreSQL, Redis, Qdrant
+docker compose -f docker/docker-compose.dev.yml up -d
+
+# Verify services running
+docker compose -f docker/docker-compose.dev.yml ps
+```
+
+**Expected output:**
+```
+athar-postgres   Up (healthy)
+athar-redis      Up (healthy)
+athar-qdrant     Up (healthy)
+```
+
+---
+
+## Step 4: Start API Server (2 minutes)
+
+```bash
+# Start development server
+make dev
+
+# Or manually:
+poetry run uvicorn src.api.main:app --reload --port 8000
+```
+
+**Expected output:**
+```
+INFO: Uvicorn running on http://0.0.0.0:8000
+INFO: Application startup complete.
+```
+
+---
+
+## Step 5: Verify Installation (5 minutes)
+
+### 1. Check Health
+
+```bash
+curl http://localhost:8000/health
+```
+
+**Expected:**
 ```json
 {
-  "estate_value": 100000,
-  "distribution": [
-    {"heir": "Husband", "fraction": "1/4", "amount": 25000.0, "percentage": 25.0},
-    {"heir": "Father", "fraction": "1/6", "amount": 16666.67, "percentage": 16.67},
-    {"heir": "Mother", "fraction": "1/3", "amount": 33333.33, "percentage": 33.33},
-    {"heir": "Son", "fraction": "1/6", "amount": 16666.67, "percentage": 16.67},
-    {"heir": "Daughter", "fraction": "1/12", "amount": 8333.33, "percentage": 8.33}
-  ],
-  "total_distributed": 100000.0
+  "status": "healthy",
+  "version": "0.1.0"
+}
+```
+
+### 2. Open API Docs
+
+Visit: **http://localhost:8000/docs**
+
+You should see Swagger UI with all endpoints.
+
+### 3. Test Query
+
+```bash
+curl -X POST http://localhost:8000/api/v1/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "السلام عليكم", "language": "ar"}'
+```
+
+**Expected:**
+```json
+{
+  "intent": "greeting",
+  "intent_confidence": 0.95,
+  "answer": "وعليكم السلام ورحمة الله وبركاته"
 }
 ```
 
 ---
 
-## 📈 Test Results
+## 🚀 Next Steps
 
-- **Total:** 141 tests
-- **Passed:** 122 (86.5%) ✅
-- **Failed:** 19 (13.5%) ⚠️ (Non-critical, mostly test assertion updates needed)
+### Option 1: Test Tools (No Data Required)
+
+These tools work immediately:
+
+```bash
+# Zakat calculator
+curl -X POST http://localhost:8000/api/v1/tools/zakat \
+  -H "Content-Type: application/json" \
+  -d '{"wealth": 10000}'
+
+# Prayer times
+curl -X POST http://localhost:8000/api/v1/tools/prayer-times \
+  -H "Content-Type: application/json" \
+  -d '{"latitude": 21.4225, "longitude": 39.8262}'
+
+# Hijri calendar
+curl -X POST http://localhost:8000/api/v1/tools/hijri \
+  -H "Content-Type: application/json" \
+  -d '{"date": "2026-04-07"}'
+```
+
+### Option 2: Seed Data for RAG (1 hour)
+
+```bash
+# Seed mini-dataset (1.7 MB, 1,623 docs)
+python scripts/seed_mvp_data.py
+
+# Or seed full data (requires Lucene extraction)
+python scripts/extract_master_catalog.py
+python scripts/extract_all_lucene_pipeline.py
+```
+
+### Option 3: Start Frontend (10 minutes)
+
+```bash
+cd frontend
+npm install
+npm run dev
+
+# Open http://localhost:3000
+```
 
 ---
 
-## 📦 Data Status
+## 📊 What Works Now?
 
-### Available
-- ✅ 4 Quran surahs (1, 112, 113, 114) with translations
-- ✅ 10 duas from Hisn al-Muslim
-- ✅ 10 vector embeddings in Qdrant
+### ✅ Working Immediately
 
-### Not Yet Ingested
-- ⚠️ Full Quran (110 surahs missing)
-- ⚠️ Hadith collections
-- ⚠️ 8,424 Islamic books (16.4 GB in datasets/)
+| Feature | Status | Test |
+|---------|--------|------|
+| Health check | ✅ | `GET /health` |
+| Greeting agent | ✅ | Query: "السلام عليكم" |
+| Zakat calculator | ✅ | Tool endpoint |
+| Prayer times | ✅ | Tool endpoint |
+| Hijri calendar | ✅ | Tool endpoint |
+| API documentation | ✅ | `/docs` |
+
+### ⏳ Requires Data Seeding
+
+| Feature | Data Needed | Time |
+|---------|-------------|------|
+| Fiqh RAG | Fiqh passages | 30 min |
+| Hadith RAG | Hadith passages | 30 min |
+| Quran lookup | Quran tables | 10 min |
+| Tafsir lookup | Tafsir passages | 30 min |
+| Aqeedah RAG | Aqeedah passages | 30 min |
 
 ---
 
-## 🎯 Next Steps
+## 🐛 Troubleshooting
 
-1. **Ingest more data:** `build.bat data:ingest`
-2. **Generate embeddings:** `build.bat data:embed`  
-3. **Install RAG deps:** `pip install torch transformers`
-4. **Run full tests:** `build.bat test`
+### "Port 8000 already in use"
+
+```bash
+# Kill port 8000
+./kill_port_8000.ps1
+
+# Or use different port
+make dev -- --port 8002
+```
+
+### "Database connection failed"
+
+```bash
+# Check Docker
+docker compose -f docker/docker-compose.dev.yml ps
+
+# Restart services
+docker compose -f docker/docker-compose.dev.yml restart
+```
+
+### "Module not found"
+
+```bash
+# Reinstall dependencies
+poetry install --with dev
+```
+
+### "LLM API key missing"
+
+```bash
+# Check .env file
+cat .env | grep GROQ_API_KEY
+
+# Get free key from: https://console.groq.com
+```
 
 ---
 
-**For detailed information, see:** `TESTING_REPORT.md`
+## 📚 Learn More
+
+### Read These Docs
+
+1. `README.md` - Project overview
+2. `docs/COMPLETE_DOCUMENTATION.md` - Full docs
+3. `docs/FILE_REFERENCE.md` - File tree
+
+### Run Tests
+
+```bash
+# Quick test
+python scripts/quick_test.py
+
+# Full test suite
+make test
+
+# Specific test
+poetry run pytest tests/test_router.py -v
+```
+
+---
+
+## 🎓 Understanding the System
+
+### Architecture in 30 Seconds
+
+```
+User Query
+    ↓
+Intent Classifier (detects question type)
+    ↓
+Route to Agent (fiqh, hadith, quran, etc.)
+    ↓
+Agent Retrieves Documents (from vector DB)
+    ↓
+LLM Generates Answer (with citations)
+    ↓
+Response with [C1], [C2] citations
+```
+
+### Key Components
+
+1. **Router** - Detects intent (fiqh, greeting, zakat, etc.)
+2. **Orchestrator** - Routes query to right agent
+3. **Agents** - Specialized handlers per intent
+4. **Vector DB** - Stores document embeddings
+5. **LLM** - Generates answers from context
+
+---
+
+## ✅ Success Checklist
+
+- [ ] Python 3.12+ installed
+- [ ] Poetry installed
+- [ ] Repository cloned
+- [ ] Dependencies installed (`poetry install`)
+- [ ] .env configured
+- [ ] Docker services running
+- [ ] API server started
+- [ ] Health check passing (`/health`)
+- [ ] API docs accessible (`/docs`)
+- [ ] Test query working
+
+**If all checked: You're ready! 🎉**
+
+---
+
+*Next: Read COMPLETE_DOCUMENTATION.md for advanced features*
