@@ -1,0 +1,211 @@
+{
+  "fiqh_passages": [
+    {
+      "book_pattern": "بداية المجتهد",
+      "chunks": 80,
+      "category": "الفقه العام"
+    },
+    {
+      "book_pattern": "المغني",
+      "chunks": 60,
+      "category": "الفقه الحنبلي"
+    },
+    {
+      "book_pattern": "الأم للشافعي",
+      "chunks": 60,
+      "category": "الفقه الشافعي"
+    },
+    {
+      "book_pattern": "المدونة",
+      "chunks": 60,
+      "category": "الفقه المالكي"
+    },
+    {
+      "book_pattern": "الهداية",
+      "chunks": 60,
+      "category": "الفقه الحنفي"
+    },
+    {
+      "book_pattern": "فتاوى",
+      "chunks": 50,
+      "category": "الفتاوى"
+    },
+    {
+      "book_pattern": "المحلى",
+      "chunks": 40,
+      "category": "مسائل فقهية"
+    },
+    {
+      "book_pattern": "أصول",
+      "chunks": 40,
+      "category": "أصول الفقه"
+    }
+  ],
+  "aqeedah_passages": [
+    {
+      "book_pattern": "العقيدة الطحاوية",
+      "chunks": 60,
+      "category": "العقيدة"
+    },
+    {
+      "book_pattern": "كتاب التوحيد",
+      "chunks": 50,
+      "category": "العقيدة"
+    },
+    {
+      "book_pattern": "لمعة الاعتقاد",
+      "chunks": 40,
+      "category": "العقيدة"
+    },
+    {
+      "book_pattern": "العقيدة الواسطية",
+      "chunks": 30,
+      "category": "العقيدة"
+    },
+    {
+      "book_pattern": "شرح أصول",
+      "chunks": 20,
+      "category": "العقيدة"
+    }
+  ],
+  "seerah_passages": [
+    {
+      "book_pattern": "زاد المعاد",
+      "chunks": 60,
+      "category": "السيرة النبوية"
+    },
+    {
+      "book_pattern": "السيرة النبوية",
+      "chunks": 50,
+      "category": "السيرة النبوية"
+    },
+    {
+      "book_pattern": "الرحيق المختوم",
+      "chunks": 50,
+      "category": "السيرة النبوية"
+    },
+    {
+      "book_pattern": "فقه السيرة",
+      "chunks": 40,
+      "category": "السيرة النبوية"
+    }
+  ],
+  "islamic_history_passages": [
+    {
+      "book_pattern": "تاريخ الطبري",
+      "chunks": 80,
+      "category": "التاريخ"
+    },
+    {
+      "book_pattern": "البداية والنهاية",
+      "chunks": 60,
+      "category": "التاريخ"
+    },
+    {
+      "book_pattern": "وفيات الأعيان",
+      "chunks": 60,
+      "category": "التراجم"
+    },
+    {
+      "book_pattern": "طبقات",
+      "chunks": 50,
+      "category": "التراجم"
+    },
+    {
+      "book_pattern": "معجم البلدان",
+      "chunks": 30,
+      "category": "البلدان"
+    },
+    {
+      "book_pattern": "رحلة",
+      "chunks": 20,
+      "category": "الرحلات"
+    }
+  ],
+  "arabic_language_passages": [
+    {
+      "book_pattern": "ألفية ابن مالك",
+      "chunks": 80,
+      "category": "النحو"
+    },
+    {
+      "book_pattern": "لسان العرب",
+      "chunks": 60,
+      "category": "المعاجم"
+    },
+    {
+      "book_pattern": "النحو الوافي",
+      "chunks": 50,
+      "category": "النحو"
+    },
+    {
+      "book_pattern": "البلاغة",
+      "chunks": 40,
+      "category": "البلاغة"
+    },
+    {
+      "book_pattern": "ديوان",
+      "chunks": 40,
+      "category": "الشعر"
+    },
+    {
+      "book_pattern": "الصرف",
+      "chunks": 30,
+      "category": "الصرف"
+    }
+  ],
+  "spirituality_passages": [
+    {
+      "book_pattern": "إحياء علوم الدين",
+      "chunks": 60,
+      "category": "الرقائق"
+    },
+    {
+      "book_pattern": "رياض الصالحين",
+      "chunks": 50,
+      "category": "الرقائق"
+    },
+    {
+      "book_pattern": "الآداب الشرعية",
+      "chunks": 40,
+      "category": "الرقائق"
+    },
+    {
+      "book_pattern": "مدارج السالكين",
+      "chunks": 30,
+      "category": "الرقائق"
+    },
+    {
+      "book_pattern": "التذكرة",
+      "chunks": 20,
+      "category": "الرقائق"
+    }
+  ],
+  "general_islamic": [
+    {
+      "book_pattern": "المنطق",
+      "chunks": 50,
+      "category": "المنطق"
+    },
+    {
+      "book_pattern": "الجوامع",
+      "chunks": 60,
+      "category": "الجوامع"
+    },
+    {
+      "book_pattern": "الطب",
+      "chunks": 40,
+      "category": "الطب"
+    },
+    {
+      "book_pattern": "فهارس",
+      "chunks": 50,
+      "category": "الفهارس"
+    },
+    {
+      "book_pattern": "عامة",
+      "chunks": 100,
+      "category": "كتب عامة"
+    }
+  ]
+}

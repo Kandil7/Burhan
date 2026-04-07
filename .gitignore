@@ -58,6 +58,16 @@ docker/qdrant_storage/
 data/raw/*.json
 data/processed/*.json
 data/embeddings/
+data/seed/
+
+# Full datasets (exclude - too large for GitHub)
+datasets/data/extracted_books/
+datasets/data/metadata/*.db
+datasets/Sanadset*/
+datasets/system_book_datasets/
+
+# BUT include mini-dataset for MVP
+!data/mini_dataset/
 
 # Testing
 .coverage

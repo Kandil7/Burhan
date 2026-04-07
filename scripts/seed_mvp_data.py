@@ -147,8 +147,13 @@ async def seed_collection(
     except:
         pass  # Collection may already exist
     
-    # Embed in batches
+    # Disable Redis cache for this seed run (use local cache only)
+    embedding_model.cache_enabled = False
+    
+    # Embed in batches with progress bar
     total_upserted = 0
+    pbar = tqdm(total=len(documents), desc=f"Embedding {collection_name}", unit="docs")
+    
     for i in range(0, len(documents), batch_size):
         batch = documents[i:i+batch_size]
         texts = [d["content"] for d in batch]
@@ -159,7 +164,9 @@ async def seed_collection(
         # Upsert
         count = await vector_store.upsert(collection_name, batch, embeddings)
         total_upserted += count
+        pbar.update(len(batch))
     
+    pbar.close()
     logger.info("seed.complete", collection=collection_name, upserted=total_upserted)
     return total_upserted
 

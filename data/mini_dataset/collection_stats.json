@@ -1,0 +1,34 @@
+{
+  "fiqh_passages": {
+    "documents": 347,
+    "size_mb": 6.2459999999999996
+  },
+  "hadith_passages": {
+    "documents": 126,
+    "size_mb": 2.52
+  },
+  "aqeedah_passages": {
+    "documents": 90,
+    "size_mb": 1.3499999999999999
+  },
+  "seerah_passages": {
+    "documents": 100,
+    "size_mb": 1.5
+  },
+  "islamic_history_passages": {
+    "documents": 270,
+    "size_mb": 4.590000000000001
+  },
+  "arabic_language_passages": {
+    "documents": 240,
+    "size_mb": 4.08
+  },
+  "spirituality_passages": {
+    "documents": 150,
+    "size_mb": 2.25
+  },
+  "general_islamic": {
+    "documents": 300,
+    "size_mb": 5.1000000000000005
+  }
+}
