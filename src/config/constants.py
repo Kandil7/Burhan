@@ -26,7 +26,7 @@ class RetrievalConfig:
     TOP_K_MULTIPLIER: Final[int] = 2
 
     # Score thresholds
-    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.7
+    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.4
     HYBRID_SCORE_THRESHOLD: Final[float] = 0.65
 
     # Reciprocal rank fusion parameter

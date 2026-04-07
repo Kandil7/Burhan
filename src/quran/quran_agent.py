@@ -8,7 +8,6 @@ Integrates all Quran components:
 - Tafsir Retrieval
 
 Routes queries via QuranSubRouter and assembles responses.
-Phase 3: Complete Quran pipeline agent.
 """
 
 from typing import Optional

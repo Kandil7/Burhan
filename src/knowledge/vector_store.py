@@ -59,12 +59,34 @@ class VectorStore:
         "quran_tafsir": {"dimension": 1024, "description": "Tafsir passages"},
         "general_islamic": {"dimension": 1024, "description": "General Islamic knowledge"},
         "duas_adhkar": {"dimension": 1024, "description": "Duas and adhkar"},
+        "aqeedah_passages": {"dimension": 1024, "description": "Aqeedah and creed"},
+        "seerah_passages": {"dimension": 1024, "description": "Prophet biography"},
+        "islamic_history_passages": {"dimension": 1024, "description": "Islamic history"},
+        "arabic_language_passages": {"dimension": 1024, "description": "Arabic language"},
+        "spirituality_passages": {"dimension": 1024, "description": "Spirituality and ethics"},
     }
     
     def __init__(self):
         """Initialize vector store."""
         self.client = None
         self._initialized = False
+
+    async def ensure_collection(self, name: str, dimension: int = 1024):
+        """Ensure a collection exists, create if not."""
+        if not self._initialized:
+            await self.initialize()
+        
+        if not self.client.collection_exists(name):
+            self.client.create_collection(
+                collection_name=name,
+                vectors_config=VectorParams(
+                    size=dimension,
+                    distance=Distance.COSINE,
+                ),
+            )
+            logger.info("vectorstore.collection_created", collection=name, dimension=dimension)
+            # Also add to COLLECTIONS dict
+            self.COLLECTIONS[name] = {"dimension": dimension, "description": ""}
     
     async def initialize(self) -> None:
         """
@@ -127,11 +149,13 @@ class VectorStore:
             raise VectorStoreError(f"Collection '{collection}' does not exist")
         
         try:
-            # Build points
+            import uuid
+
+            # Build points with UUID IDs for guaranteed uniqueness
             points = []
             for i, (doc, embedding) in enumerate(zip(documents, embeddings)):
                 point = PointStruct(
-                    id=i,  # Simple numeric ID
+                    id=str(uuid.uuid4()),  # UUID for guaranteed uniqueness
                     vector=embedding.tolist(),
                     payload={
                         **doc.get("metadata", {}),

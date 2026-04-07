@@ -34,34 +34,67 @@ logger = get_logger()
 PROCESSED_DIR = Path(__file__).parent.parent / "data" / "processed"
 
 # ==========================================
-# Category to Collection Mapping
+# Category to Collection Mapping (All 40 Shamela categories)
 # ==========================================
 CATEGORY_COLLECTION_MAP = {
-    # Fiqh-related
-    "الفقه العام": "fiqh_passages",
-    "أصول الفقه": "usul_fiqh_passages",
-    
-    # Quran/Tafsir-related
-    "التفسير": "quran_tafsir",
-    "علوم القرآن": "quran_tafsir",
-    
-    # Hadith-related
+    # Hadith-related (5 categories → hadith_passages)
+    "كتب السنة": "hadith_passages",
+    "شروح الحديث": "hadith_passages",
     "علوم الحديث": "hadith_passages",
+    "التخريج والأطراف": "hadith_passages",
+    "العلل والسؤالات الحديثية": "hadith_passages",
     
-    # Aqeedah (Creed/Theology)
-    "العقيدة": "aqeedah_passages",
+    # Quran/Tafsir-related (3 categories → quran_tafsir)
+    "التفسير": "quran_tafsir",
+    "علوم القرآن وأصول التفسير": "quran_tafsir",
+    "التجويد والقراءات": "quran_tafsir",
     
-    # History & Biography
-    "التاريخ": "islamic_history_passages",
-    "السيرة النبوية": "seerah_passages",
-    "التراجم والطبقات": "islamic_history_passages",
-    
-    # General/Literature
-    "الأدب": "general_islamic",
-    "كتب عامة": "general_islamic",
-    "كتب اللغة": "general_islamic",
-    "الرقائق والآداب والأذكار": "general_islamic",
+    # Fiqh-related (8 categories → fiqh_passages)
+    "الفقه العام": "fiqh_passages",
     "مسائل فقهية": "fiqh_passages",
+    "الفقه الحنفي": "fiqh_passages",
+    "الفقه المالكي": "fiqh_passages",
+    "الفقه الشافعي": "fiqh_passages",
+    "الفقه الحنبلي": "fiqh_passages",
+    "السياسة الشرعية والقضاء": "fiqh_passages",
+    "الفرائض والوصايا": "fiqh_passages",
+    "الفتاوى": "fiqh_passages",
+    
+    # Usul al-Fiqh (2 categories → usul_fiqh_passages)
+    "أصول الفقه": "usul_fiqh_passages",
+    "علوم الفقه والقواعد الفقهية": "usul_fiqh_passages",
+    
+    # Aqeedah (2 categories → aqeedah_passages)
+    "العقيدة": "aqeedah_passages",
+    "الفرق والردود": "aqeedah_passages",
+    
+    # Seerah/Biography (3 categories → seerah_passages)
+    "السيرة النبوية": "seerah_passages",
+    "التراجم والطبقات": "seerah_passages",
+    "الأنساب": "seerah_passages",
+    
+    # History (2 categories → islamic_history_passages)
+    "التاريخ": "islamic_history_passages",
+    "البلدان والرحلات": "islamic_history_passages",
+    
+    # Arabic Language (6 categories → arabic_language_passages)
+    "كتب اللغة": "arabic_language_passages",
+    "النحو والصرف": "arabic_language_passages",
+    "الغريب والمعاجم": "arabic_language_passages",
+    "البلاغة": "arabic_language_passages",
+    "الأدب": "arabic_language_passages",
+    "الدواوين الشعرية": "arabic_language_passages",
+    "العروض والقوافي": "arabic_language_passages",
+    
+    # General Islamic (8 categories → general_islamic_passages)
+    "كتب عامة": "general_islamic_passages",
+    "الرقائق والآداب والأذكار": "general_islamic_passages",
+    "الجوامع": "general_islamic_passages",
+    "فهارس الكتب والأدلة": "general_islamic_passages",
+    "المنطق": "general_islamic_passages",
+    "الطب": "general_islamic_passages",
+    "علوم أخرى": "general_islamic_passages",
+    "#": "general_islamic_passages",
 }
 
 
@@ -89,10 +122,10 @@ def route_chunk_to_collection(chunk: dict) -> str:
     
     # Islamic book chunks - route by category
     if chunk_type == 'islamic_book':
-        return CATEGORY_COLLECTION_MAP.get(category, 'general_islamic')
+        return CATEGORY_COLLECTION_MAP.get(category, 'general_islamic_passages')
     
     # Default to general
-    return 'general_islamic'
+    return 'general_islamic_passages'
 
 
 def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
@@ -143,7 +176,7 @@ def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
         if limit and len(documents) > limit:
             documents = documents[:limit]
 
-    elif collection == "general_islamic":
+    elif collection in ("general_islamic", "general_islamic_passages"):
         # FIXED: Filter from all_chunks.json by category
         all_chunks_file = PROCESSED_DIR / "all_chunks.json"
         if all_chunks_file.exists():
@@ -151,9 +184,8 @@ def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
                 all_chunks = json.load(f)
                 # Filter for general Islamic categories (not fiqh-specific)
                 general_categories = [
-                    "العقيدة", "التاريخ", "السيرة", "الرقائق",
-                    "الأدب", "التراجم", "علوم القرآن", "التفسير",
-                    "اللغة", "النحو", "general"
+                    "كتب عامة", "الرقائق والآداب والأذكار", "الجوامع",
+                    "فهارس الكتب والأدلة", "المنطق", "الطب", "علوم أخرى", "#"
                 ]
                 documents = [
                     c for c in all_chunks
@@ -190,7 +222,7 @@ def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
 
     elif collection == "all":
         # Load all collections sequentially
-        for coll in ["fiqh_passages", "hadith_passages", "general_islamic", "duas_adhkar"]:
+        for coll in ["fiqh_passages", "hadith_passages", "general_islamic_passages", "duas_adhkar", "arabic_language_passages"]:
             coll_docs = load_documents(coll, limit)
             documents.extend(coll_docs)
             if limit and len(documents) >= limit:
@@ -288,7 +320,12 @@ def main():
     parser = argparse.ArgumentParser(description="Generate Embeddings")
     parser.add_argument(
         "--collection",
-        choices=["fiqh_passages", "hadith_passages", "general_islamic", "all"],
+        choices=[
+            "fiqh_passages", "hadith_passages", "quran_tafsir",
+            "aqeedah_passages", "seerah_passages", "islamic_history_passages",
+            "usul_fiqh_passages", "arabic_language_passages",
+            "general_islamic_passages", "duas_adhkar", "all"
+        ],
         default="all",
         help="Collection to embed"
     )

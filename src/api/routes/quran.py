@@ -10,7 +10,6 @@ Provides endpoints for:
 - NL2SQL analytics
 - Tafsir retrieval
 
-Phase 5: Improved with thread pool execution for sync DB operations.
 """
 
 import asyncio

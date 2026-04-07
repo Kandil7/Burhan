@@ -55,6 +55,9 @@ class ResponseOrchestrator:
         Args:
             use_registry: Whether to use the global registry (recommended)
         """
+        # ALWAYS initialize registry first, before anything else
+        initialize_registry()
+        
         if use_registry:
             # Use global registry
             self.registry = get_registry()
@@ -72,9 +75,12 @@ class ResponseOrchestrator:
         self._check_rag_availability()
 
     def _ensure_initialized(self):
-        """Ensure registry is initialized."""
+        """Ensure registry is initialized with base agents and tools."""
         if not self.registry._initialized:
+            # Reinitialize the global registry with all base agents and tools
             initialize_registry()
+            # Update our reference to use the newly initialized registry
+            self.registry = get_registry()
 
     def _check_rag_availability(self):
         """Check if RAG agents are available."""
@@ -126,6 +132,8 @@ class ResponseOrchestrator:
             from src.agents.seerah_agent import SeerahAgent
             from src.agents.islamic_history_agent import IslamicHistoryAgent
             from src.agents.fiqh_usul_agent import FiqhUsulAgent
+            from src.agents.arabic_language_agent import ArabicLanguageAgent
+            from src.agents.sanadset_hadith_agent import SanadsetHadithAgent
             from src.knowledge.embedding_model import EmbeddingModel
             from src.knowledge.vector_store import VectorStore
 
@@ -149,6 +157,8 @@ class ResponseOrchestrator:
                 ("seerah_agent", SeerahAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.SEERAH]),
                 ("islamic_history_agent", IslamicHistoryAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.ISLAMIC_HISTORY]),
                 ("usul_fiqh_agent", FiqhUsulAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.USUL_FIQH]),
+                ("arabic_language_agent", ArabicLanguageAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.ARABIC_LANGUAGE]),
+                ("sanadset_hadith_agent", SanadsetHadithAgent(embedding_model=embedding_model, vector_store=vector_store), [Intent.HADITH]),
             ]
 
             for name, agent, intents in agents_to_register:
@@ -198,7 +208,8 @@ class ResponseOrchestrator:
         requires_rag = intent in [
             Intent.FIQH, Intent.ISLAMIC_KNOWLEDGE,
             Intent.HADITH, Intent.TAFSIR, Intent.AQEEDAH,
-            Intent.SEERAH, Intent.ISLAMIC_HISTORY, Intent.USUL_FIQH
+            Intent.SEERAH, Intent.ISLAMIC_HISTORY, Intent.USUL_FIQH,
+            Intent.ARABIC_LANGUAGE
         ]
 
         if requires_rag and not self._rag_initialized:
@@ -208,20 +219,33 @@ class ResponseOrchestrator:
                 "orchestrator.using_chatbot_fallback", intent=intent.value, reason=f"rag_init={self._rag_initialized}"
             )
 
-        logger.info(
-            "orchestrator.routing",
-            intent=intent.value,
-            target=target,
-            language=language,
-            rag_initialized=self._rag_initialized,
-        )
-
-        # Get from registry
-        instance, is_agent = self.registry.get_for_intent(intent)
-
-        # Fallback if needed
-        if not instance and target == "chatbot_agent":
-            instance, is_agent = self.registry.get_for_intent(Intent.GREETING)
+        # DIRECT FIX: For greeting intent, always create ChatbotAgent directly
+        if intent == Intent.GREETING:
+            try:
+                from src.agents.chatbot_agent import ChatbotAgent
+                instance = ChatbotAgent()
+                is_agent = True
+                logger.info("orchestrator.chatbot_created_directly")
+            except Exception as e:
+                logger.error("orchestrator.chatbot_direct_creation_failed", error=str(e))
+                return await self._fallback_response(query, f"Failed to create chatbot: {str(e)}")
+        else:
+            # Get from registry for other intents
+            instance, is_agent = self.registry.get_for_intent(intent)
+            
+            # Fallback if needed
+            if not instance and target == "chatbot_agent":
+                instance, is_agent = self.registry.get_for_intent(Intent.GREETING)
+            
+            # Create on fly if needed
+            if not instance and target == "chatbot_agent":
+                try:
+                    from src.agents.chatbot_agent import ChatbotAgent
+                    instance = ChatbotAgent()
+                    is_agent = True
+                    self.registry.register_agent("chatbot_agent", instance, intents=[Intent.GREETING])
+                except Exception as e:
+                    logger.error("orchestrator.chatbot_creation_failed", error=str(e))
 
         if not instance:
             return await self._fallback_response(query, f"Feature not yet implemented: {target}")

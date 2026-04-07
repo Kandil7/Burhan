@@ -33,6 +33,7 @@ class Intent(str, Enum):
     SEERAH = "seerah"
     USUL_FIQH = "usul_fiqh"
     ISLAMIC_HISTORY = "islamic_history"
+    ARABIC_LANGUAGE = "arabic_language"
 
 
 class QuranSubIntent(str, Enum):
@@ -72,6 +73,7 @@ INTENT_DESCRIPTIONS = {
     Intent.SEERAH: "Prophet Muhammad's biography and life events (Seerah, prophetic history)",
     Intent.USUL_FIQH: "Principles of Islamic jurisprudence (methodology, sources of Islamic law)",
     Intent.ISLAMIC_HISTORY: "Islamic history and civilization (historical events, figures, culture)",
+    Intent.ARABIC_LANGUAGE: "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), literature, poetry, dictionaries",
 }
 
 
@@ -95,6 +97,7 @@ INTENT_ROUTING = {
     Intent.SEERAH: "seerah_agent",
     Intent.USUL_FIQH: "usul_fiqh_agent",
     Intent.ISLAMIC_HISTORY: "islamic_history_agent",
+    Intent.ARABIC_LANGUAGE: "arabic_language_agent",
 }
 
 
@@ -240,6 +243,20 @@ KEYWORD_PATTERNS = {
         "الدولة الأموية",
         "الدولة العباسية",
         "الخلفاء",
+    ],
+    Intent.ARABIC_LANGUAGE: [
+        "نحو",
+        "صرف",
+        "بلاغة",
+        "معجم",
+        "قاموس",
+        "شعر",
+        "أدب",
+        "grammar",
+        "rhetoric",
+        "poetry",
+        "arabic language",
+        "اللغة العربية",
     ],
 }
 

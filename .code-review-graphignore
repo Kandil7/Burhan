@@ -1,0 +1,51 @@
+# Code Review Graph - Ignore Patterns
+# These files will be skipped during graph building
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Build artifacts
+dist/
+build/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (we parse code, not docs)
+*.md
+*.pdf
+
+# Data and logs
+*.json
+*.log
+.env.local
+
+# Test files (we mainly care about production code)
+test_*
+*_test.py
+tests/
+migrations/
+
+# Frontend (we're a Python backend project)
+frontend/
+*.js
+*.vue
+*.css
+
+# Generated
+generated/
+scripts/output/
+data/raw/
