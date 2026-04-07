@@ -59,6 +59,7 @@ data/raw/*.json
 data/processed/*.json
 data/embeddings/
 data/seed/
+data/
 
 # Full datasets (exclude - too large for GitHub)
 datasets/data/extracted_books/
