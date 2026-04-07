@@ -2,6 +2,13 @@
 """
 Athar CLI - Command-line interface for managing the application.
 
+Provides convenient commands for:
+- Setup and installation
+- Starting/stopping services
+- Data ingestion and embedding
+- Testing and status checks
+- Database management
+
 Usage:
     python scripts/cli.py setup
     python scripts/cli.py start
@@ -11,63 +18,106 @@ Usage:
     python scripts/cli.py ingest --books 100 --hadith 1000
     python scripts/cli.py embed --limit 1000
     python scripts/cli.py db migrate
-    python scripts/cli.py db shell
+    python scripts/cli.py help
+
+Author: Athar Engineering Team
 """
-import sys
-import subprocess
-import time
+
 import json
+import subprocess
+import sys
+import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
-PROJECT_ROOT = Path(__file__).parent.parent
+from scripts.utils import (
+    get_project_root,
+    get_data_dir,
+    setup_script_logger,
+    format_size,
+)
+
+logger = setup_script_logger("cli")
+
+PROJECT_ROOT = get_project_root()
 
 
-def run_command(cmd: str, capture: bool = False) -> tuple[bool, str]:
-    """Run shell command and return success + output."""
+# ── Terminal Helpers ─────────────────────────────────────────────────────
+
+
+def print_header(text: str) -> None:
+    """Print a formatted section header."""
+    print(f"\n{'=' * 60}")
+    print(f"  {text}")
+    print(f"{'=' * 60}\n")
+
+
+def print_step(text: str) -> None:
+    """Print a step indicator."""
+    print(f"  ▸ {text}")
+
+
+def print_success(text: str) -> None:
+    """Print a success message."""
+    print(f"  ✓ {text}")
+
+
+def print_error(text: str) -> None:
+    """Print an error message."""
+    print(f"  ✗ {text}")
+
+
+def print_warning(text: str) -> None:
+    """Print a warning message."""
+    print(f"  ⚠ {text}")
+
+
+# ── Command Runner ───────────────────────────────────────────────────────
+
+
+def run_command(cmd: str, capture: bool = False, cwd: Optional[Path] = None) -> Tuple[bool, str]:
+    """
+    Run shell command and return success status and output.
+
+    Args:
+        cmd: Shell command to run.
+        capture: Whether to capture stdout.
+        cwd: Working directory.
+
+    Returns:
+        Tuple of (success, output).
+    """
     try:
         result = subprocess.run(
             cmd,
             shell=True,
             capture_output=capture,
             text=True,
-            timeout=120
+            timeout=120,
+            cwd=cwd or PROJECT_ROOT,
         )
         return result.returncode == 0, result.stdout if capture else ""
+    except subprocess.TimeoutExpired:
+        return False, "Command timed out after 120s"
     except Exception as e:
         return False, str(e)
 
 
-def print_header(text: str):
-    print(f"\n{'='*60}")
-    print(f"  {text}")
-    print(f"{'='*60}\n")
+# ── Commands ─────────────────────────────────────────────────────────────
 
 
-def print_step(text: str):
-    print(f"  ▸ {text}")
-
-
-def print_success(text: str):
-    print(f"  ✓ {text}")
-
-
-def print_error(text: str):
-    print(f"  ✗ {text}")
-
-
-def cmd_setup():
+def cmd_setup() -> bool:
     """Full initial setup."""
     print_header("🚀 Athar - Complete Setup")
-    
+
     # Check Python
     print_step("Checking Python...")
-    success, _ = run_command("python --version")
+    success, output = run_command("python --version", capture=True)
     if not success:
-        print_error("Python 3.12+ not found!")
+        print_error("Python not found!")
         return False
-    print_success("Python found")
-    
+    print_success(f"Python found: {output.strip()}")
+
     # Install dependencies
     print_step("Installing dependencies...")
     success, _ = run_command("pip install -e . --quiet")
@@ -75,166 +125,194 @@ def cmd_setup():
         print_error("Installation failed!")
         return False
     print_success("Dependencies installed")
-    
+
     # Start Docker
     print_step("Starting Docker services...")
     run_command("docker compose -f docker/docker-compose.dev.yml up -d postgres redis qdrant")
     time.sleep(10)
     print_success("Services started")
-    
+
     # Run migrations
     print_step("Running migrations...")
-    run_command("docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql")
+    run_command(
+        "docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql"
+    )
     print_success("Migrations complete")
-    
-    # Ingest sample data
-    print_step("Processing sample data...")
-    run_command("python scripts/complete_ingestion.py --books 50 --hadith 500")
-    
-    print_header("✓ Setup Complete! Next: build.bat start")
+
+    print_header("✓ Setup Complete! Next: python scripts/cli.py start")
     return True
 
 
-def cmd_start(api_only: bool = False):
+def cmd_start(api_only: bool = False) -> None:
     """Start application."""
     print_header("🚀 Starting Athar")
-    
+
     # Check Docker
     print_step("Checking Docker services...")
-    success, _ = run_command("docker compose -f docker/docker-compose.dev.yml ps | findstr healthy")
+    success, _ = run_command("docker compose -f docker/docker-compose.dev.yml ps", capture=True)
     if not success:
         print_step("Starting services...")
         run_command("docker compose -f docker/docker-compose.dev.yml up -d postgres redis qdrant")
         time.sleep(10)
     print_success("Services running")
-    
+
     # Start API
     print_step("Starting Backend API...")
-    run_command('start "Athar API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"')
+    print_warning("API will start in a new window")
+    run_command(
+        'start "Athar API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"'
+    )
     time.sleep(3)
     print_success("API starting on port 8000")
-    
+
     if not api_only:
         print_step("Starting Frontend...")
         run_command('cd frontend && start "Athar Frontend" cmd /k "npm run dev" && cd ..')
         time.sleep(3)
         print_success("Frontend starting on port 3000")
-    
-    print_header("✓ Application Starting!\nAPI: http://localhost:8000\nDocs: http://localhost:8000/docs")
-    
+
+    print_header(
+        "✓ Application Starting!\n"
+        "  API: http://localhost:8000\n"
+        "  Docs: http://localhost:8000/docs"
+    )
+
     # Open browser
     time.sleep(3)
     run_command("start http://localhost:8000/docs")
 
 
-def cmd_stop():
+def cmd_stop() -> None:
     """Stop all services."""
     print_header("🛑 Stopping Services")
     run_command("docker compose -f docker/docker-compose.dev.yml down")
     print_success("Services stopped")
 
 
-def cmd_test():
+def cmd_test() -> None:
     """Run tests."""
     print_header("🧪 Running Tests")
-    
+
     print_step("Testing API...")
-    run_command("python scripts/test_api.py")
-    
+    run_command("python scripts/tests/test_api.py")
+
     print_step("Running unit tests...")
     run_command("pytest tests/ -v --tb=short")
-    
+
     print_header("✓ Tests Complete")
 
 
-def cmd_status():
+def cmd_status() -> None:
     """Check service status."""
     print_header("📊 Athar Status")
-    
+
     print("Docker Services:")
-    success, output = run_command("docker compose -f docker/docker-compose.dev.yml ps", capture=True)
-    print(output)
-    
+    success, output = run_command(
+        "docker compose -f docker/docker-compose.dev.yml ps", capture=True
+    )
+    if output:
+        print(output)
+    else:
+        print_warning("Could not get Docker status")
+
     print("\nData Files:")
-    processed_dir = PROJECT_ROOT / "data" / "processed"
+    processed_dir = get_data_dir("processed")
     if processed_dir.exists():
         for f in processed_dir.glob("*.json"):
-            size_mb = f.stat().st_size / 1024 / 1024
-            print(f"  • {f.name}: {size_mb:.2f} MB")
-    
+            size = format_size(f.stat().st_size)
+            print(f"  • {f.name}: {size}")
+    else:
+        print_warning("No processed data found")
+
     print()
 
 
-def cmd_ingest(books: int = 100, hadith: int = 1000):
+def cmd_ingest(books: int = 100, hadith: int = 1000) -> None:
     """Ingest data."""
     print_header(f"📥 Data Ingestion ({books} books, {hadith} hadith)")
-    
-    run_command(f"python scripts/complete_ingestion.py --books {books} --hadith {hadith}")
+    run_command(
+        f"python scripts/ingestion/complete_ingestion.py --books {books} --hadith {hadith}"
+    )
 
 
-def cmd_embed(limit: int = 1000):
+def cmd_embed(limit: int = 1000) -> None:
     """Generate embeddings."""
     print_header(f"🔢 Generating Embeddings (limit: {limit})")
-    
-    run_command(f"python scripts/generate_embeddings.py --collection fiqh_passages --limit {limit}")
+    run_command(
+        f"python scripts/data/generate_embeddings.py --collection fiqh_passages --limit {limit}"
+    )
 
 
-def cmd_db_migrate():
+def cmd_db_migrate() -> None:
     """Run database migrations."""
     print_header("🗄️  Database Migrations")
-    
+
     migrations = [
         "migrations/001_initial_schema.sql",
-        "migrations/versions/002_quran_translations_tafsir.sql"
     ]
-    
+
     for migration in migrations:
         migration_path = PROJECT_ROOT / migration
         if migration_path.exists():
             print_step(f"Running {migration_path.name}...")
-            run_command(f"docker exec -i athar-postgres psql -U athar -d athar_db < {migration}")
+            run_command(
+                f"docker exec -i athar-postgres psql -U athar -d athar_db < {migration_path}"
+            )
             print_success(f"{migration_path.name} complete")
+        else:
+            print_warning(f"Migration not found: {migration}")
 
 
-def cmd_db_shell():
+def cmd_db_shell() -> None:
     """Open database shell."""
     print_header("🗄️  PostgreSQL Shell")
     run_command("docker exec -it athar-postgres psql -U athar -d athar_db")
 
 
-def cmd_data_status():
+def cmd_data_status() -> None:
     """Show data statistics."""
     print_header("📊 Data Statistics")
-    
-    processed_dir = PROJECT_ROOT / "data" / "processed"
-    
+
+    processed_dir = get_data_dir("processed")
+
     if not processed_dir.exists():
         print_error("No processed data found")
         return
-    
+
     total_chunks = 0
     total_size = 0
-    
+
     for f in processed_dir.glob("*.json"):
         size = f.stat().st_size
         total_size += size
-        
-        # Count chunks
+
         try:
-            with open(f, 'r', encoding='utf-8') as file:
+            with open(f, "r", encoding="utf-8") as file:
                 data = json.load(file)
                 if isinstance(data, list):
                     total_chunks += len(data)
-        except:
+        except Exception:
             pass
-    
+
     print(f"  Total chunks: {total_chunks:,}")
-    print(f"  Total size: {total_size / 1024 / 1024:.2f} MB")
-    print(f"  Files: {len(list(processed_dir.glob('*.json')))}")
+    print(f"  Total size:   {format_size(total_size)}")
+    print(f"  Files:        {len(list(processed_dir.glob('*.json')))}")
     print()
 
 
-def print_help():
+def cmd_check_datasets() -> None:
+    """Run dataset integrity check."""
+    print_header("🔍 Dataset Integrity Check")
+    run_command("python scripts/check_datasets.py")
+
+
+def cmd_quick_test() -> None:
+    """Run quick smoke test."""
+    print_header("🧪 Quick Smoke Test")
+    run_command("python scripts/quick_test.py")
+
+
+def print_help() -> None:
     """Print help message."""
     print("""
 Athar CLI - Command-line interface
@@ -252,6 +330,8 @@ Commands:
     ingest                  Process books and hadith
     embed                   Generate embeddings
     data                    Show data statistics
+    check                   Check dataset integrity
+    quick-test              Run quick smoke test
     db migrate              Run database migrations
     db shell                Open PostgreSQL shell
     help                    Show this help
@@ -262,16 +342,21 @@ Examples:
     python scripts/cli.py ingest --books 100 --hadith 1000
     python scripts/cli.py embed --limit 5000
     python scripts/cli.py db migrate
+    python scripts/cli.py check
     """)
 
 
+# ── Main ─────────────────────────────────────────────────────────────────
+
+
 def main():
+    """CLI entry point."""
     if len(sys.argv) < 2:
         print_help()
         return
-    
+
     command = sys.argv[1]
-    
+
     if command == "setup":
         cmd_setup()
     elif command == "start":
@@ -302,6 +387,10 @@ def main():
         cmd_embed(limit)
     elif command == "data":
         cmd_data_status()
+    elif command == "check":
+        cmd_check_datasets()
+    elif command == "quick-test":
+        cmd_quick_test()
     elif command == "db":
         if len(sys.argv) > 2:
             subcmd = sys.argv[2]
