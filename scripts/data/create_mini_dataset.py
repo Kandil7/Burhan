@@ -2,59 +2,81 @@
 """
 Create Mini-Dataset for Athar Islamic QA System MVP.
 
-Extracts representative samples from full datasets to create a 
+Extracts representative samples from full datasets to create a
 GitHub-friendly mini-dataset (<50 MB) that demonstrates all features.
 
+The mini-dataset includes:
+- Fiqh passages from Shamela books
+- Hadith from Sanadset 368K dataset
+- Aqeedah, Seerah, History, Arabic Language, Spirituality passages
+- General Islamic knowledge passages
+
 Usage:
-    python scripts/create_mini_dataset.py
+    python scripts/data/create_mini_dataset.py
+    python scripts/data/create_mini_dataset.py --output data/my_mini_dataset
 
 Output:
     data/mini_dataset/
-    ├── fiqh_passages.jsonl                 (450 docs, ~8 MB)
-    ├── hadith_passages.jsonl               (300 docs, ~6 MB)
-    ├── quran_tafsir.jsonl                  (300 docs, ~5 MB)
-    ├── general_islamic.jsonl               (300 docs, ~5 MB)
-    ├── aqeedah_passages.jsonl              (200 docs, ~3 MB)
-    ├── seerah_passages.jsonl               (200 docs, ~3 MB)
-    ├── islamic_history_passages.jsonl      (300 docs, ~5 MB)
-    ├── arabic_language_passages.jsonl      (300 docs, ~5 MB)
-    ├── spirituality_passages.jsonl         (200 docs, ~3 MB)
-    ├── duas_adhkar.jsonl                   (50 docs, ~0.5 MB)
+    ├── fiqh_passages.jsonl                 (sampled fiqh docs)
+    ├── hadith_passages.jsonl               (sampled hadith docs)
+    ├── aqeedah_passages.jsonl              (sampled aqeedah docs)
+    ├── seerah_passages.jsonl               (sampled seerah docs)
+    ├── islamic_history_passages.jsonl      (sampled history docs)
+    ├── arabic_language_passages.jsonl      (sampled language docs)
+    ├── spirituality_passages.jsonl         (sampled spirituality docs)
+    ├── general_islamic.jsonl               (sampled general docs)
+    ├── collection_stats.json               (statistics)
     ├── book_selections.json                (metadata)
-    ├── collection_stats.json               (stats)
     └── README.md                           (documentation)
 
-Total: ~2,600 documents, ~44 MB
+Author: Athar Engineering Team
 """
+
+import csv
 import json
-import os
 import random
 import re
-import sqlite3
-import csv
+import sys
 from pathlib import Path
 from typing import Optional
 
-# Increase CSV field size limit for large hadith
-csv.field_size_limit(10000000)
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-random.seed(42)  # Reproducible sampling
+from scripts.utils import (
+    get_project_root,
+    get_data_dir,
+    get_datasets_dir,
+    setup_script_logger,
+    ProgressBar,
+    format_size,
+    ensure_dir,
+)
+
+# ── Configuration ────────────────────────────────────────────────────────
+
+# Reproducible sampling
+random.seed(42)
 
 # Paths
-BASE_DIR = Path(__file__).parent.parent
-DATA_DIR = BASE_DIR / "datasets" / "data"
+PROJECT_ROOT = get_project_root()
+DATA_DIR = get_datasets_dir("data")
 BOOKS_DIR = DATA_DIR / "extracted_books"
 METADATA_DIR = DATA_DIR / "metadata"
-SANADSET_CSV = BASE_DIR / "datasets" / "Sanadset 368K Data on Hadith Narrators" / "Sanadset 368K Data on Hadith Narrators" / "sanadset.csv"
-OUTPUT_DIR = BASE_DIR / "data" / "mini_dataset"
+SANADSET_CSV = (
+    get_datasets_dir()
+    / "Sanadset 368K Data on Hadith Narrators"
+    / "Sanadset 368K Data on Hadith Narrators"
+    / "sanadset.csv"
+)
+OUTPUT_DIR = get_data_dir("mini_dataset")
 
 # Chunking parameters
 MIN_CHUNK_SIZE = 250
 MAX_CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
 
 # Book selections by collection
-BOOK_SELECTIONS = {
+BOOK_SELECTIONS: dict[str, list[dict]] = {
     "fiqh_passages": [
         {"book_pattern": "بداية المجتهد", "chunks": 80, "category": "الفقه العام"},
         {"book_pattern": "المغني", "chunks": 60, "category": "الفقه الحنبلي"},
@@ -110,21 +132,39 @@ BOOK_SELECTIONS = {
     ],
 }
 
+logger = setup_script_logger("create-mini-dataset")
+
+
+# ── Book Matching ────────────────────────────────────────────────────────
+
 
 def find_book_files(pattern: str, limit: int = 5) -> list[Path]:
-    """Find book files matching pattern with flexible matching."""
+    """
+    Find book files matching a pattern with flexible matching.
+
+    Tries exact match first, then falls back to partial matching
+    using the first 5 characters of the pattern.
+
+    Args:
+        pattern: Arabic book name pattern to match.
+        limit: Maximum number of matches to return.
+
+    Returns:
+        List of matching book file paths.
+    """
     if not BOOKS_DIR.exists():
+        logger.warning("books_dir_not_found", path=str(BOOKS_DIR))
         return []
-    
-    matches = []
-    
+
+    matches: list[Path] = []
+
     # Try exact pattern first
     for f in BOOKS_DIR.glob("*.txt"):
         if pattern in f.name:
             matches.append(f)
             if len(matches) >= limit:
                 return matches
-    
+
     # If no matches, try partial matching (first 5 chars of pattern)
     if len(pattern) > 5 and not matches:
         short_pattern = pattern[:5]
@@ -133,41 +173,59 @@ def find_book_files(pattern: str, limit: int = 5) -> list[Path]:
                 matches.append(f)
                 if len(matches) >= limit:
                     break
-    
+
     return matches
 
 
+# ── Chunk Extraction ─────────────────────────────────────────────────────
+
+
 def extract_chunks_from_book(book_file: Path, num_chunks: int) -> list[str]:
-    """Extract random chunks from a book file."""
+    """
+    Extract random chunks from a book file.
+
+    Chunks are extracted respecting paragraph boundaries and
+    constrained to MIN_CHUNK_SIZE - MAX_CHUNK_SIZE characters.
+
+    Args:
+        book_file: Path to the book text file.
+        num_chunks: Number of chunks to extract.
+
+    Returns:
+        List of chunk strings.
+    """
     if not book_file.exists():
         return []
-    
+
     try:
-        with open(book_file, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(book_file, "r", encoding="utf-8", errors="ignore") as f:
             content = f.read()
-        
+
         # Clean content
-        content = re.sub(r'\[Page \d+\]', '', content)
-        content = re.sub(r'\n{3,}', '\n\n', content)  # Normalize newlines
-        
+        content = re.sub(r"\[Page \d+\]", "", content)
+        content = re.sub(r"\n{3,}", "\n\n", content)  # Normalize newlines
+
         # Split into paragraphs
-        paragraphs = [p.strip() for p in content.split('\n\n') 
-                     if len(p.strip()) > MIN_CHUNK_SIZE]
-        
+        paragraphs = [p.strip() for p in content.split("\n\n") if len(p.strip()) > MIN_CHUNK_SIZE]
+
         if not paragraphs:
             # Try splitting by single newlines
-            paragraphs = [l.strip() for l in content.split('\n') 
-                         if len(l.strip()) > MIN_CHUNK_SIZE]
-        
+            paragraphs = [l.strip() for l in content.split("\n") if len(l.strip()) > MIN_CHUNK_SIZE]
+
+        if not paragraphs:
+            return []
+
         # Sample paragraphs
         selected = random.sample(paragraphs, min(num_chunks * 2, len(paragraphs)))
-        
-        chunks = []
+
+        chunks: list[str] = []
         for para in selected:
+            if len(chunks) >= num_chunks:
+                break
+
             # If paragraph is too long, split it
             if len(para) > MAX_CHUNK_SIZE:
-                # Split into sentences
-                sentences = re.split(r'[.!?؟]\s+', para)
+                sentences = re.split(r"[.!?؟]\s+", para)
                 current_chunk = ""
                 for sentence in sentences:
                     if len(current_chunk) + len(sentence) <= MAX_CHUNK_SIZE:
@@ -180,37 +238,54 @@ def extract_chunks_from_book(book_file: Path, num_chunks: int) -> list[str]:
                     chunks.append(current_chunk.strip())
             else:
                 chunks.append(para[:MAX_CHUNK_SIZE])
-            
-            if len(chunks) >= num_chunks:
-                break
-        
+
         return chunks[:num_chunks]
+
     except Exception as e:
-        print(f"  ⚠️ Error extracting {book_file.name}: {e}")
+        logger.warning("extract_error", book=book_file.name, error=str(e))
         return []
+
+
+# ── Hadith Sampling ──────────────────────────────────────────────────────
 
 
 def sample_sanadset_hadith(num_samples: int = 300) -> list[dict]:
-    """Sample hadith from Sanadset CSV."""
+    """
+    Sample hadith from Sanadset CSV with balanced collection representation.
+
+    Samples evenly from major hadith collections (Sahih Bukhari, Muslim, etc.)
+    to ensure diverse coverage.
+
+    Args:
+        num_samples: Total number of hadith to sample.
+
+    Returns:
+        List of hadith document dicts ready for JSONL output.
+    """
     if not SANADSET_CSV.exists():
-        print(f"  ⚠️ Sanadset CSV not found at {SANADSET_CSV}")
+        logger.warning("sanadset_not_found", path=str(SANADSET_CSV))
         return []
-    
-    print(f"  📖 Sampling {num_samples} hadith from Sanadset...")
-    
-    hadith_by_book = {}
-    
+
+    logger.info("sampling_hadith", target=num_samples)
+
+    # Increase CSV field size limit for large hadith
+    try:
+        csv.field_size_limit(sys.maxsize)
+    except OverflowError:
+        csv.field_size_limit(2**31 - 1)
+
+    hadith_by_book: dict[str, list[dict]] = {}
+
     # First pass: group hadith by book
-    with open(SANADSET_CSV, 'r', encoding='utf-8') as f:
+    with open(SANADSET_CSV, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            book = row.get('Book', '').strip()
-            if book not in hadith_by_book:
-                hadith_by_book[book] = []
-            hadith_by_book[book].append(row)
-    
+            book = row.get("Book", "").strip()
+            if book:
+                hadith_by_book.setdefault(book, []).append(row)
+
     # Select major hadith collections
-    major_collections_names = [
+    major_collections = [
         "صحيح البخاري",
         "صحيح مسلم",
         "سنن أبي داود",
@@ -219,189 +294,165 @@ def sample_sanadset_hadith(num_samples: int = 300) -> list[dict]:
         "سنن ابن ماجه",
         "مسند أحمد",
     ]
-    
-    sampled = []
-    samples_per_book = num_samples // len(major_collections_names)
-    
-    for collection_name in major_collections_names:
-        # Find matching books
-        matching_books = [b for b in hadith_by_book.keys() if collection_name in b]
-        
-        for book in matching_books[:2]:  # Take max 2 books per collection
-            available = hadith_by_book[book]
-            num_to_sample = min(samples_per_book // 2, len(available))
-            
-            if num_to_sample > 0:
+
+    sampled: list[dict] = []
+    samples_per_book = num_samples // len(major_collections)
+
+    with ProgressBar(total=num_samples, desc="Sampling Hadith", unit="hadith") as bar:
+        for collection_name in major_collections:
+            matching_books = [b for b in hadith_by_book.keys() if collection_name in b]
+
+            for book in matching_books[:2]:  # Max 2 books per collection
+                available = hadith_by_book[book]
+                num_to_sample = min(samples_per_book // 2, len(available))
+
+                if num_to_sample <= 0:
+                    continue
+
                 sample = random.sample(available, num_to_sample)
-                
+
                 for row in sample:
-                    # Clean sanad
-                    sanad_raw = row.get('Sanad', '')
-                    sanad_clean = re.sub(r'<[^>]+>', '', sanad_raw).strip()
-                    matn = row.get('Matn', '').strip()
-                    
+                    sanad_raw = row.get("Sanad", "")
+                    sanad_clean = re.sub(r"<[^>]+>", "", sanad_raw).strip()
+                    matn = row.get("Matn", "").strip()
+                    book_name = row.get("Book", "").strip()
+
                     # Build content
                     content_parts = []
                     if matn:
                         content_parts.append(matn)
                     if sanad_clean and sanad_clean != "No SANAD":
                         content_parts.append(sanad_clean)
-                    if book:
-                        content_parts.append(book)
-                    
+                    if book_name:
+                        content_parts.append(book_name)
+
                     content = " | ".join(content_parts)[:3000]
-                    
+
                     sampled.append({
+                        "chunk_index": len(sampled),
                         "content": content,
                         "metadata": {
                             "type": "hadith",
-                            "book": book,
-                            "num_hadith": row.get('Num_hadith', ''),
+                            "book": book_name,
+                            "num_hadith": row.get("Num_hadith", ""),
                             "matn": matn[:2000],
                             "sanad": sanad_clean[:1000],
-                            "sanad_length": row.get('Sanad_Length', ''),
+                            "sanad_length": row.get("Sanad_Length", ""),
                             "dataset": "sanadset_mini",
                             "language": "ar",
-                        }
+                        },
                     })
-    
-    print(f"  ✅ Sampled {len(sampled)} hadith")
+
+                    bar.update(1)
+
+                    if len(sampled) >= num_samples:
+                        break
+
+            if len(sampled) >= num_samples:
+                break
+
+    logger.info("hadith_sampled", count=len(sampled))
     return sampled
 
 
-def extract_books_for_collection(collection_name: str, selections: list[dict]) -> list[dict]:
-    """Extract chunks from selected books for a collection."""
-    print(f"\n📚 Extracting {collection_name}...")
-    
-    all_chunks = []
-    
-    for selection in selections:
-        pattern = selection["book_pattern"]
-        num_chunks = selection["chunks"]
-        category = selection["category"]
-        
-        # Find matching books
-        book_files = find_book_files(pattern, limit=3)
-        
-        if not book_files:
-            print(f"  ⚠️ No books found for pattern: {pattern}")
-            continue
-        
-        # Take first matching book
-        book_file = book_files[0]
-        print(f"  📖 Extracting from {book_file.name} ({num_chunks} chunks)")
-        
-        chunks = extract_chunks_from_book(book_file, num_chunks)
-        
-        for i, chunk in enumerate(chunks):
-            all_chunks.append({
-                "chunk_index": len(all_chunks),
-                "content": chunk[:MAX_CHUNK_SIZE],
-                "metadata": {
-                    "type": collection_name.split("_")[0],
-                    "book": book_file.name,
-                    "category": category,
-                    "language": "ar",
-                    "collection": collection_name,
-                }
-            })
-        
-        print(f"    ✅ Extracted {len(chunks)} chunks")
-    
-    print(f"  ✅ Total: {len(all_chunks)} chunks for {collection_name}")
+# ── Collection Extraction ────────────────────────────────────────────────
+
+
+def extract_books_for_collection(
+    collection_name: str,
+    selections: list[dict],
+) -> list[dict]:
+    """
+    Extract chunks from selected books for a collection.
+
+    Args:
+        collection_name: Name of the collection (e.g., 'fiqh_passages').
+        selections: List of book selection configs.
+
+    Returns:
+        List of document dicts.
+    """
+    logger.info("extracting_collection", collection=collection_name)
+
+    all_chunks: list[dict] = []
+
+    # Count total target chunks for progress bar
+    total_target = sum(s["chunks"] for s in selections)
+
+    with ProgressBar(total=total_target, desc=f"Extracting {collection_name}", unit="chunks") as bar:
+        for selection in selections:
+            pattern = selection["book_pattern"]
+            num_chunks = selection["chunks"]
+            category = selection["category"]
+
+            book_files = find_book_files(pattern, limit=3)
+
+            if not book_files:
+                logger.warning("no_books_found", pattern=pattern)
+                bar.update(num_chunks)  # Skip progress
+                continue
+
+            book_file = book_files[0]
+            chunks = extract_chunks_from_book(book_file, num_chunks)
+
+            for chunk in chunks:
+                all_chunks.append({
+                    "chunk_index": len(all_chunks),
+                    "content": chunk[:MAX_CHUNK_SIZE],
+                    "metadata": {
+                        "type": collection_name.split("_")[0],
+                        "book": book_file.name,
+                        "category": category,
+                        "language": "ar",
+                        "collection": collection_name,
+                    },
+                })
+                bar.update(1)
+
+    logger.info("collection_extracted", collection=collection_name, chunks=len(all_chunks))
     return all_chunks
 
 
-def save_jsonl(documents: list[dict], filepath: Path):
-    """Save documents as JSONL."""
-    filepath.parent.mkdir(parents=True, exist_ok=True)
-    
-    with open(filepath, 'w', encoding='utf-8') as f:
+# ── Output Helpers ───────────────────────────────────────────────────────
+
+
+def save_jsonl(documents: list[dict], filepath: Path) -> None:
+    """
+    Save documents as JSONL file.
+
+    Args:
+        documents: List of document dicts.
+        filepath: Output file path.
+    """
+    ensure_dir(filepath.parent)
+
+    with open(filepath, "w", encoding="utf-8") as f:
         for doc in documents:
-            f.write(json.dumps(doc, ensure_ascii=False) + '\n')
-    
+            f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+
     size_mb = filepath.stat().st_size / 1e6
-    print(f"  💾 Saved {len(documents)} docs to {filepath.name} ({size_mb:.1f} MB)")
+    logger.info("saved_jsonl", file=filepath.name, docs=len(documents), size_mb=f"{size_mb:.1f}")
 
 
-def main():
-    """Create complete mini-dataset."""
-    print("="*70)
-    print("🕌 ATHAR MINI-DATASET CREATOR")
-    print("="*70)
-    print(f"\n📁 Output directory: {OUTPUT_DIR}")
-    print(f"📚 Books directory: {BOOKS_DIR}")
-    print(f"📊 Sanadset CSV: {SANADSET_CSV}")
-    
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    
-    collection_stats = {}
-    total_docs = 0
-    total_size = 0
-    
-    # 1. Fiqh passages
-    fiqh_docs = extract_books_for_collection("fiqh_passages", BOOK_SELECTIONS["fiqh_passages"])
-    save_jsonl(fiqh_docs, OUTPUT_DIR / "fiqh_passages.jsonl")
-    collection_stats["fiqh_passages"] = {"documents": len(fiqh_docs), "size_mb": len(fiqh_docs) * 0.018}
-    total_docs += len(fiqh_docs)
-    
-    # 2. Hadith passages (from Sanadset)
-    hadith_docs = sample_sanadset_hadith(300)
-    save_jsonl(hadith_docs, OUTPUT_DIR / "hadith_passages.jsonl")
-    collection_stats["hadith_passages"] = {"documents": len(hadith_docs), "size_mb": len(hadith_docs) * 0.02}
-    total_docs += len(hadith_docs)
-    
-    # 3. Aqeedah passages
-    aqeedah_docs = extract_books_for_collection("aqeedah_passages", BOOK_SELECTIONS["aqeedah_passages"])
-    save_jsonl(aqeedah_docs, OUTPUT_DIR / "aqeedah_passages.jsonl")
-    collection_stats["aqeedah_passages"] = {"documents": len(aqeedah_docs), "size_mb": len(aqeedah_docs) * 0.015}
-    total_docs += len(aqeedah_docs)
-    
-    # 4. Seerah passages
-    seerah_docs = extract_books_for_collection("seerah_passages", BOOK_SELECTIONS["seerah_passages"])
-    save_jsonl(seerah_docs, OUTPUT_DIR / "seerah_passages.jsonl")
-    collection_stats["seerah_passages"] = {"documents": len(seerah_docs), "size_mb": len(seerah_docs) * 0.015}
-    total_docs += len(seerah_docs)
-    
-    # 5. Islamic history
-    history_docs = extract_books_for_collection("islamic_history_passages", BOOK_SELECTIONS["islamic_history_passages"])
-    save_jsonl(history_docs, OUTPUT_DIR / "islamic_history_passages.jsonl")
-    collection_stats["islamic_history_passages"] = {"documents": len(history_docs), "size_mb": len(history_docs) * 0.017}
-    total_docs += len(history_docs)
-    
-    # 6. Arabic language
-    arabic_docs = extract_books_for_collection("arabic_language_passages", BOOK_SELECTIONS["arabic_language_passages"])
-    save_jsonl(arabic_docs, OUTPUT_DIR / "arabic_language_passages.jsonl")
-    collection_stats["arabic_language_passages"] = {"documents": len(arabic_docs), "size_mb": len(arabic_docs) * 0.017}
-    total_docs += len(arabic_docs)
-    
-    # 7. Spirituality
-    spirituality_docs = extract_books_for_collection("spirituality_passages", BOOK_SELECTIONS["spirituality_passages"])
-    save_jsonl(spirituality_docs, OUTPUT_DIR / "spirituality_passages.jsonl")
-    collection_stats["spirituality_passages"] = {"documents": len(spirituality_docs), "size_mb": len(spirituality_docs) * 0.015}
-    total_docs += len(spirituality_docs)
-    
-    # 8. General Islamic
-    general_docs = extract_books_for_collection("general_islamic", BOOK_SELECTIONS["general_islamic"])
-    save_jsonl(general_docs, OUTPUT_DIR / "general_islamic.jsonl")
-    collection_stats["general_islamic"] = {"documents": len(general_docs), "size_mb": len(general_docs) * 0.017}
-    total_docs += len(general_docs)
-    
-    # Calculate total size
-    total_size = sum(s["size_mb"] for s in collection_stats.values())
-    
-    # Save collection stats
-    stats_file = OUTPUT_DIR / "collection_stats.json"
-    with open(stats_file, 'w', encoding='utf-8') as f:
-        json.dump(collection_stats, f, indent=2, ensure_ascii=False)
-    
-    # Save book selections
-    selections_file = OUTPUT_DIR / "book_selections.json"
-    with open(selections_file, 'w', encoding='utf-8') as f:
-        json.dump(BOOK_SELECTIONS, f, indent=2, ensure_ascii=False)
-    
-    # Create README
-    readme = f"""# 🕌 Athar Mini-Dataset for MVP
+def create_readme(stats: dict[str, dict], total_docs: int, total_size_mb: float) -> str:
+    """
+    Generate README.md for the mini-dataset.
+
+    Args:
+        stats: Collection statistics dict.
+        total_docs: Total document count.
+        total_size_mb: Total estimated size in MB.
+
+    Returns:
+        README markdown content.
+    """
+    rows = []
+    for coll_name, coll_stats in stats.items():
+        docs = coll_stats.get("documents", 0)
+        size = coll_stats.get("size_mb", 0)
+        rows.append(f"| {coll_name} | {docs} | {size:.1f} MB |")
+
+    return f"""# Athar Mini-Dataset for MVP
 
 This mini-dataset contains representative samples from the full Athar datasets,
 optimized for GitHub (<50 MB) while demonstrating all system features.
@@ -409,23 +460,15 @@ optimized for GitHub (<50 MB) while demonstrating all system features.
 ## Dataset Overview
 
 - **Total Documents:** {total_docs:,}
-- **Estimated Size:** {total_size:.1f} MB
-- **Collections:** 10
-- **Source Books:** ~50 books from 41 categories
-- **Hadith:** 300 from Sanadset (6 major collections)
+- **Estimated Size:** {total_size_mb:.1f} MB
+- **Collections:** {len(stats)}
+- **Language:** Arabic
 
 ## Collections
 
-| Collection | Documents | Size (est.) | Source |
-|------------|-----------|-------------|--------|
-| fiqh_passages | {len(fiqh_docs)} | {len(fiqh_docs)*0.018:.1f} MB | 8 fiqh books |
-| hadith_passages | {len(hadith_docs)} | {len(hadith_docs)*0.02:.1f} MB | Sanadset 368K |
-| aqeedah_passages | {len(aqeedah_docs)} | {len(aqeedah_docs)*0.015:.1f} MB | 5 aqeedah books |
-| seerah_passages | {len(seerah_docs)} | {len(seerah_docs)*0.015:.1f} MB | 4 seerah books |
-| islamic_history | {len(history_docs)} | {len(history_docs)*0.017:.1f} MB | 6 history books |
-| arabic_language | {len(arabic_docs)} | {len(arabic_docs)*0.017:.1f} MB | 8 language books |
-| spirituality | {len(spirituality_docs)} | {len(spirituality_docs)*0.015:.1f} MB | 5 spirituality books |
-| general_islamic | {len(general_docs)} | {len(general_docs)*0.017:.1f} MB | 10 general books |
+| Collection | Documents | Size (est.) |
+|------------|-----------|-------------|
+{chr(10).join(rows)}
 
 ## File Format
 
@@ -451,7 +494,6 @@ Each `.jsonl` file contains one JSON object per line:
 ```python
 import json
 
-# Load a collection
 documents = []
 with open('data/mini_dataset/fiqh_passages.jsonl', 'r', encoding='utf-8') as f:
     for line in f:
@@ -459,19 +501,6 @@ with open('data/mini_dataset/fiqh_passages.jsonl', 'r', encoding='utf-8') as f:
 
 print(f"Loaded {{len(documents)}} documents")
 ```
-
-### Embed with Athar
-```bash
-# This mini-dataset can be embedded using the existing pipeline
-python scripts/embed_mini_dataset.py
-```
-
-## Sampling Methodology
-
-- **Books:** First 15-25 pages extracted from ~50 representative books
-- **Hadith:** 300 hadith sampled from 6 major collections (50 each)
-- **Chunks:** 250-500 characters with paragraph boundaries
-- **Categories:** All 41 categories represented across 9 super-categories
 
 ## Full Datasets
 
@@ -481,39 +510,113 @@ This is a **sample** for MVP/demo purposes. Full datasets are available separate
 
 Full datasets are excluded from Git per `.gitignore`.
 
-## License
-
-Data sourced from:
-- Shamela Library (public domain Islamic texts)
-- Sanadset Hadith Dataset (open-source hadith collection)
-
 ---
 
-**Created:** April 7, 2026  
-**Version:** 1.0  
+**Created:** Auto-generated
 **Purpose:** MVP demonstration and GitHub hosting
 """
-    
-    with open(OUTPUT_DIR / "README.md", 'w', encoding='utf-8') as f:
-        f.write(readme)
-    
+
+
+# ── Main Pipeline ────────────────────────────────────────────────────────
+
+
+def main(output_dir: Optional[str] = None) -> None:
+    """
+    Create complete mini-dataset.
+
+    Args:
+        output_dir: Custom output directory (default: data/mini_dataset).
+    """
+    target_dir = Path(output_dir) if output_dir else OUTPUT_DIR
+    ensure_dir(target_dir)
+
+    print(f"\n{'=' * 70}")
+    print("  ATHAR MINI-DATASET CREATOR")
+    print(f"{'=' * 70}")
+    print(f"  Output: {target_dir}")
+    print(f"  Books:  {BOOKS_DIR}")
+    print(f"  Hadith: {SANADSET_CSV}")
+    print(f"{'=' * 70}\n")
+
+    # Define collection extraction order
+    collections = [
+        ("fiqh_passages", BOOK_SELECTIONS["fiqh_passages"]),
+        ("aqeedah_passages", BOOK_SELECTIONS["aqeedah_passages"]),
+        ("seerah_passages", BOOK_SELECTIONS["seerah_passages"]),
+        ("islamic_history_passages", BOOK_SELECTIONS["islamic_history_passages"]),
+        ("arabic_language_passages", BOOK_SELECTIONS["arabic_language_passages"]),
+        ("spirituality_passages", BOOK_SELECTIONS["spirituality_passages"]),
+        ("general_islamic", BOOK_SELECTIONS["general_islamic"]),
+    ]
+
+    collection_stats: dict[str, dict] = {}
+    total_docs = 0
+
+    # Extract book-based collections
+    for coll_name, selections in collections:
+        docs = extract_books_for_collection(coll_name, selections)
+        save_jsonl(docs, target_dir / f"{coll_name}.jsonl")
+
+        size_mb = len(docs) * 0.017  # ~17KB per doc estimate
+        collection_stats[coll_name] = {"documents": len(docs), "size_mb": size_mb}
+        total_docs += len(docs)
+
+    # Sample hadith from Sanadset
+    hadith_docs = sample_sanadset_hadith(300)
+    save_jsonl(hadith_docs, target_dir / "hadith_passages.jsonl")
+    hadith_size = len(hadith_docs) * 0.02
+    collection_stats["hadith_passages"] = {"documents": len(hadith_docs), "size_mb": hadith_size}
+    total_docs += len(hadith_docs)
+
+    # Calculate total size
+    total_size_mb = sum(s["size_mb"] for s in collection_stats.values())
+
+    # Save metadata
+    save_jsonl([], target_dir / ".placeholder")  # Ensure directory is tracked
+
+    with open(target_dir / "collection_stats.json", "w", encoding="utf-8") as f:
+        json.dump(collection_stats, f, indent=2, ensure_ascii=False)
+
+    with open(target_dir / "book_selections.json", "w", encoding="utf-8") as f:
+        json.dump(BOOK_SELECTIONS, f, indent=2, ensure_ascii=False)
+
+    # Create README
+    with open(target_dir / "README.md", "w", encoding="utf-8") as f:
+        f.write(create_readme(collection_stats, total_docs, total_size_mb))
+
     # Print summary
-    print(f"\n{'='*70}")
-    print(f"✅ MINI-DATASET CREATION COMPLETE")
-    print(f"{'='*70}")
-    print(f"\n📊 SUMMARY:")
-    print(f"   Total documents: {total_docs:,}")
-    print(f"   Estimated size: {total_size:.1f} MB")
-    print(f"   Collections: 10")
-    print(f"\n📁 Files created:")
-    for f in sorted(OUTPUT_DIR.glob("*")):
-        size = f.stat().st_size / 1e6
-        print(f"   {f.name:40s} {size:6.1f} MB")
-    print(f"\n💡 Next step:")
-    print(f"   python scripts/embed_mini_dataset.py")
-    print(f"\n📝 Documentation:")
-    print(f"   See data/mini_dataset/README.md for usage instructions")
+    print(f"\n{'=' * 70}")
+    print("  MINI-DATASET CREATION COMPLETE")
+    print(f"{'=' * 70}")
+    print(f"  Total documents: {total_docs:,}")
+    print(f"  Estimated size:  {total_size_mb:.1f} MB")
+    print(f"  Collections:     {len(collection_stats)}")
+    print(f"\n  Files:")
+    for f in sorted(target_dir.glob("*")):
+        if f.name.startswith("."):
+            continue
+        size = format_size(f.stat().st_size)
+        print(f"    {f.name:<40s} {size:>10s}")
+    print(f"\n{'=' * 70}\n")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Create mini-dataset for Athar MVP",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Example: python scripts/data/create_mini_dataset.py --output data/my_mini",
+    )
+    parser.add_argument("--output", type=str, default=None, help="Custom output directory")
+    args = parser.parse_args()
+
+    try:
+        main(output_dir=args.output)
+    except KeyboardInterrupt:
+        print("\n\n  Interrupted by user.")
+        sys.exit(1)
+    except Exception as e:
+        logger.error("fatal_error", error=str(e), exc_info=True)
+        print(f"\nFatal error: {e}")
+        sys.exit(1)
