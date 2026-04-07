@@ -58,8 +58,9 @@ docker/qdrant_storage/
 data/raw/*.json
 data/processed/*.json
 data/embeddings/
-data/seed/
-data/
+data/athar-datasets/
+data/athar-datasets-v2/
+data/processed_v1/
 
 # Full datasets (exclude - too large for GitHub)
 datasets/data/extracted_books/
