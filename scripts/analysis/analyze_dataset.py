@@ -1,383 +1,360 @@
-#!/usr/bin/env python3
-"""
-Complete Dataset Analysis for Athar Islamic QA System.
-
-Analyzes the datasets/data directory structure:
-- Extracted books statistics (count, size, distribution)
-- Metadata analysis (categories, authors, books.db)
-- Category distribution with super-category grouping
-- Chunking strategy recommendations
-- Embedding priority ranking
-
-Usage:
-    python scripts/analysis/analyze_dataset.py
-    python scripts/analysis/analyze_dataset.py --report     # Detailed report
-    python scripts/analysis/analyze_dataset.py --json       # JSON output
-
-Author: Athar Engineering Team
-"""
-
-import argparse
-import glob
-import json
+#!/usr/bin/env python
+"""Comprehensive analysis of extracted_books dataset."""
 import os
-import sqlite3
-import sys
-from pathlib import Path
-from typing import Any
+import re
+import json
+import hashlib
+from collections import Counter, defaultdict
 
-from scripts.utils import (
-    get_project_root,
-    get_datasets_dir,
-    setup_script_logger,
-    format_size,
-)
+PATH = r'K:\business\projects_v2\Athar\datasets\data\extracted_books'
+METADATA_PATH = r'K:\business\projects_v2\Athar\datasets\data\metadata'
 
-logger = setup_script_logger("analyze-dataset")
+def get_all_files():
+    files = os.listdir(PATH)
+    # Exclude non-book files
+    book_files = [f for f in files if f not in ('extraction_state.json', 'file_list.txt')]
+    return sorted(book_files)
 
-# ── Configuration ────────────────────────────────────────────────────────
+def analyze_sizes(files):
+    sizes = []
+    for f in files:
+        fp = os.path.join(PATH, f)
+        sizes.append((f, os.path.getsize(fp)))
+    sizes.sort(key=lambda x: x[1])
+    
+    size_values = [s[1] for s in sizes]
+    print("=== FILE SIZE DISTRIBUTION ===")
+    print(f"Total files: {len(sizes)}")
+    print(f"Smallest: {sizes[0][0]} -> {sizes[0][1]:,} bytes")
+    print(f"Largest: {sizes[-1][0]} -> {sizes[-1][1]:,} bytes")
+    n = len(sizes)
+    print(f"Median: {sizes[n//2][1]:,} bytes")
+    print(f"Average: {sum(size_values)//n:,} bytes")
+    print(f"Q1: {sizes[n//4][1]:,} bytes")
+    print(f"Q3: {sizes[3*n//4][1]:,} bytes")
+    
+    print("\n=== SIZE BUCKETS ===")
+    buckets = {'<1KB':0, '1-10KB':0, '10-50KB':0, '50-100KB':0, '100-500KB':0, '500KB-1MB':0, '1MB+':0}
+    for s in size_values:
+        if s < 1024: buckets['<1KB'] += 1
+        elif s < 10240: buckets['1-10KB'] += 1
+        elif s < 51200: buckets['10-50KB'] += 1
+        elif s < 102400: buckets['50-100KB'] += 1
+        elif s < 512000: buckets['100-500KB'] += 1
+        elif s < 1048576: buckets['500KB-1MB'] += 1
+        else: buckets['1MB+'] += 1
+    for k, v in buckets.items():
+        print(f"  {k}: {v:,}")
+    
+    return sizes
 
-DATA_DIR = get_datasets_dir("data")
-BOOKS_DIR = DATA_DIR / "extracted_books"
-METADATA_DIR = DATA_DIR / "metadata"
+def analyze_naming(files):
+    print("\n=== NAMING PATTERNS ===")
+    numeric_prefix = sum(1 for f in files if re.match(r'^\d+_', f))
+    print(f"Files with numeric prefix: {numeric_prefix}/{len(files)}")
+    
+    # Extract numeric IDs
+    ids = []
+    for f in files:
+        m = re.match(r'^(\d+)_', f)
+        if m:
+            ids.append(int(m.group(1)))
+    
+    if ids:
+        print(f"ID range: {min(ids)} to {max(ids)}")
+        print(f"Unique IDs: {len(set(ids))}")
+        print(f"Missing IDs (gaps): {max(ids) - min(ids) + 1 - len(set(ids))}")
+    
+    # Analyze underscore patterns
+    underscore_counts = Counter(f.count('_') for f in files)
+    print("\nUnderscore count distribution:")
+    for k, v in sorted(underscore_counts.items()):
+        print(f"  {k} underscores: {v:,} files")
+    
+    return ids
 
-
-# ── Analysis Functions ───────────────────────────────────────────────────
-
-
-def analyze_extracted_books() -> dict[str, Any]:
-    """
-    Analyze extracted books directory.
-
-    Returns:
-        Dict with book statistics.
-    """
-    if not BOOKS_DIR.exists():
-        return {"error": f"Books directory not found: {BOOKS_DIR}"}
-
-    txt_files = glob.glob(os.path.join(BOOKS_DIR, "*.txt"))
-    sizes = [os.path.getsize(f) for f in txt_files]
-    total_size = sum(sizes)
-
-    # Size distribution
-    large = [s for s in sizes if s > 10e6]  # > 10MB
-    medium = [s for s in sizes if 1e6 < s <= 10e6]  # 1-10MB
-    small = [s for s in sizes if s <= 1e6]  # < 1MB
-
-    return {
-        "total_files": len(txt_files),
-        "total_size_bytes": total_size,
-        "total_size_human": format_size(total_size),
-        "avg_size_bytes": sum(sizes) / len(sizes) if sizes else 0,
-        "avg_size_human": format_size(int(sum(sizes) / len(sizes))) if sizes else "0 B",
-        "largest_bytes": max(sizes) if sizes else 0,
-        "largest_human": format_size(max(sizes)) if sizes else "0 B",
-        "smallest_bytes": min(sizes) if sizes else 0,
-        "smallest_human": format_size(min(sizes)) if sizes else "0 B",
-        "size_distribution": {
-            "> 10MB": len(large),
-            "1-10MB": len(medium),
-            "< 1MB": len(small),
-        },
-    }
-
-
-def analyze_metadata() -> dict[str, Any]:
-    """
-    Analyze metadata files.
-
-    Returns:
-        Dict with metadata statistics.
-    """
-    result: dict[str, Any] = {}
-
-    # Categories
-    categories_file = METADATA_DIR / "categories.json"
-    if categories_file.exists():
-        with open(categories_file, encoding="utf-8") as f:
-            cats_data = json.load(f)
-            result["categories_count"] = len(cats_data.get("categories", []))
-    else:
-        result["categories_count"] = 0
-        result["categories_error"] = "File not found"
-
-    # Authors
-    authors_file = METADATA_DIR / "authors.json"
-    if authors_file.exists():
-        with open(authors_file, encoding="utf-8") as f:
-            authors = json.load(f)
-            result["authors_count"] = len(authors)
-    else:
-        result["authors_count"] = 0
-        result["authors_error"] = "File not found"
-
-    # Books database
-    books_db = METADATA_DIR / "books.db"
-    if books_db.exists():
-        result["books_db"] = analyze_books_db(books_db)
-    else:
-        result["books_db"] = {"error": "File not found"}
-
-    return result
-
-
-def analyze_books_db(db_path: Path) -> dict[str, Any]:
-    """
-    Analyze books.db SQLite database.
-
-    Args:
-        db_path: Path to books.db.
-
-    Returns:
-        Dict with database statistics.
-    """
-    result: dict[str, Any] = {}
-
-    conn = sqlite3.connect(str(db_path))
-    cur = conn.cursor()
-
-    # Books per category
-    cur.execute(
-        """
-        SELECT cat_name, COUNT(*) as cnt, SUM(size_mb) as total_mb,
-               AVG(size_mb) as avg_mb, MIN(size_mb) as min_mb, MAX(size_mb) as max_mb
-        FROM books
-        GROUP BY cat_name
-        ORDER BY cnt DESC
-    """
-    )
-
-    categories = []
-    cat_groups: dict[str, dict[str, float]] = {}
-
-    for row in cur.fetchall():
-        cat_name, cnt, total_mb, avg_mb, min_mb, max_mb = row
-        total_gb = total_mb / 1024 if total_mb else 0
-
-        # Group into super-categories
-        group = categorize_super_category(cat_name)
-        cat_groups.setdefault(group, {"books": 0, "size_gb": 0})
-        cat_groups[group]["books"] += cnt
-        cat_groups[group]["size_gb"] += total_gb
-
-        categories.append({
-            "name": cat_name,
-            "count": cnt,
-            "total_gb": round(total_gb, 2),
-            "avg_mb": round(avg_mb, 0) if avg_mb else 0,
-            "min_mb": round(min_mb, 0) if min_mb else 0,
-            "max_mb": round(max_mb, 0) if max_mb else 0,
+def check_encoding_and_content(files, sizes, sample_count=50):
+    print("\n=== ENCODING & CONTENT ANALYSIS ===")
+    
+    # Sample files across size ranges
+    n = len(sizes)
+    sample_indices = set()
+    # Pick from different size buckets
+    for pct in [0, 5, 10, 25, 50, 75, 90, 95, 99]:
+        idx = n * pct // 100
+        for offset in range(-2, 3):
+            if 0 <= idx + offset < n:
+                sample_indices.add(idx + offset)
+    
+    # Also add some random samples
+    import random
+    random.seed(42)
+    for _ in range(20):
+        sample_indices.add(random.randint(0, n-1))
+    
+    sample_indices = sorted(sample_indices)[:sample_count]
+    samples = [sizes[i] for i in sample_indices]
+    
+    encoding_issues = []
+    content_stats = []
+    
+    for fname, fsize in samples:
+        fp = os.path.join(PATH, fname)
+        
+        # Try different encodings
+        content = None
+        encoding_used = None
+        for enc in ['utf-8', 'utf-8-sig', 'windows-1256', 'iso-8859-6']:
+            try:
+                with open(fp, 'r', encoding=enc) as f:
+                    content = f.read()
+                encoding_used = enc
+                break
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+        
+        if content is None:
+            encoding_issues.append(fname)
+            continue
+        
+        # Analyze content
+        lines = content.split('\n')
+        words = content.split()
+        
+        # Check for chapter/section markers
+        chapter_markers = []
+        for line in lines[:100]:  # Check first 100 lines
+            line_stripped = line.strip()
+            if any(marker in line_stripped for marker in ['فصل', 'باب', 'كتاب', 'جزء', 'مقدمة', 'خاتمة', 'الفصل', 'الباب']):
+                chapter_markers.append(line_stripped[:80])
+        
+        # Check for page separators
+        page_sep_chars = Counter(content)
+        has_page_breaks = '---' in content or '===' in content or '___' in content
+        
+        # Check for metadata
+        has_title = bool(re.search(r'العنوان|العنوان:|Title:', content[:500]))
+        has_author = bool(re.search(r'المؤلف|المؤلف:|Author:', content[:500]))
+        
+        # Arabic character ratio
+        arabic_chars = sum(1 for c in content if '\u0600' <= c <= '\u06FF')
+        arabic_ratio = arabic_chars / len(content) if content else 0
+        
+        content_stats.append({
+            'file': fname,
+            'size': fsize,
+            'encoding': encoding_used,
+            'lines': len(lines),
+            'words': len(words),
+            'chars': len(content),
+            'arabic_ratio': round(arabic_ratio, 3),
+            'has_chapter_markers': len(chapter_markers) > 0,
+            'chapter_markers': chapter_markers[:3],
+            'has_page_breaks': has_page_breaks,
+            'has_title_meta': has_title,
+            'has_author_meta': has_author,
         })
+    
+    print(f"\nEncoding issues: {len(encoding_issues)} files")
+    if encoding_issues:
+        print(f"  Files with encoding issues: {encoding_issues[:10]}")
+    
+    encodings = Counter(s['encoding'] for s in content_stats)
+    print(f"\nEncoding distribution (sample):")
+    for enc, cnt in encodings.most_common():
+        print(f"  {enc}: {cnt}")
+    
+    print(f"\nContent statistics (sample of {len(content_stats)} files):")
+    print(f"  Avg lines: {sum(s['lines'] for s in content_stats)//len(content_stats):,}")
+    print(f"  Avg words: {sum(s['words'] for s in content_stats)//len(content_stats):,}")
+    print(f"  Avg arabic ratio: {sum(s['arabic_ratio'] for s in content_stats)/len(content_stats):.3f}")
+    print(f"  Files with chapter markers: {sum(1 for s in content_stats if s['has_chapter_markers'])}")
+    print(f"  Files with page breaks: {sum(1 for s in content_stats if s['has_page_breaks'])}")
+    print(f"  Files with title metadata: {sum(1 for s in content_stats if s['has_title_meta'])}")
+    print(f"  Files with author metadata: {sum(1 for s in content_stats if s['has_author_meta'])}")
+    
+    return content_stats
 
-    result["categories"] = categories
-    result["super_categories"] = cat_groups
-    result["total_categories"] = len(categories)
+def check_quality_issues(files, sizes):
+    print("\n=== QUALITY ISSUES ===")
+    
+    # Very small files (< 100 bytes)
+    tiny_files = [(f, s) for f, s in sizes if s < 100]
+    print(f"\nVery small files (<100 bytes): {len(tiny_files)}")
+    for f, s in tiny_files[:10]:
+        fp = os.path.join(PATH, f)
+        with open(fp, 'r', encoding='utf-8', errors='ignore') as fh:
+            content = fh.read()
+        print(f"  {f} ({s} bytes): {repr(content[:100])}")
+    
+    # Check for duplicates via hash
+    print("\nChecking for duplicate files (by content hash)...")
+    hash_map = defaultdict(list)
+    sample_for_hash = sizes[:2000]  # Sample for speed
+    for fname, fsize in sample_for_hash:
+        fp = os.path.join(PATH, fname)
+        with open(fp, 'rb') as f:
+            h = hashlib.md5(f.read()).hexdigest()
+        hash_map[h].append(fname)
+    
+    duplicates = {h: flist for h, flist in hash_map.items() if len(flist) > 1}
+    print(f"Duplicate groups (in sample of {len(sample_for_hash)}): {len(duplicates)}")
+    for h, flist in list(duplicates.items())[:10]:
+        print(f"  Hash {h}: {flist[:5]}")
+    
+    # Near-duplicate detection (same ID, different name)
+    id_map = defaultdict(list)
+    for f, _ in sizes:
+        m = re.match(r'^(\d+)_', f)
+        if m:
+            id_map[m.group(1)].append(f)
+    
+    dup_ids = {k: v for k, v in id_map.items() if len(v) > 1}
+    print(f"\nFiles sharing same ID: {len(dup_ids)}")
+    for k, v in list(dup_ids.items())[:10]:
+        print(f"  ID {k}: {v}")
 
-    # Extraction status
-    cur.execute("SELECT extracted, COUNT(*) FROM books GROUP BY extracted")
-    extraction_status = {}
-    for row in cur.fetchall():
-        status = "Extracted" if row[0] == 1 else "Not Extracted"
-        extraction_status[status] = row[1]
-    result["extraction_status"] = extraction_status
-
-    # Size stats
-    cur.execute("SELECT MIN(size_mb), MAX(size_mb), AVG(size_mb), SUM(size_mb) FROM books")
-    row = cur.fetchone()
-    result["size_stats_mb"] = {
-        "min": round(row[0], 0) if row[0] else 0,
-        "max": round(row[1], 0) if row[1] else 0,
-        "avg": round(row[2], 0) if row[2] else 0,
-        "total": round(row[3], 0) if row[3] else 0,
+def categorize_files(files):
+    print("\n=== CATEGORIZATION ANALYSIS ===")
+    
+    # Category keywords in Arabic
+    category_keywords = {
+        'fiqh': ['فقه', 'فروع', 'أحكام', 'حلال', 'حرام', 'صلاة', 'زكاة', 'صيام', 'حج'],
+        'hadith': ['حديث', 'أحاديث', 'سنن', 'صحيح', 'مسند', 'رواية', 'مسن'],
+        'aqeedah': ['عقيدة', 'توحيد', 'إيمان', 'أصول الدين', 'إثبات', 'صفات الله'],
+        'tafsir': ['تفسير', 'علوم القرآن', 'القراءات', 'المصحف'],
+        'seerah': ['سيرة', 'نبوية', 'غزوات', 'صحاب', 'رسول'],
+        'arabic_language': ['نحو', 'صرف', 'لغة', 'بلاغة', 'معجم', 'قاموس'],
+        'history': ['تاريخ', 'حرب', 'دولة', 'خلافة', 'حضارة'],
+        'islamic_culture': ['ثقافة', 'أخلاق', 'آداب', 'تربية', 'دعوة'],
+        'comparative_religion': ['مقارنة', 'أديان', 'مسيحية', 'يهودية', 'استشراق'],
+        'general': ['عام', 'متنوع'],
     }
+    
+    # Score each file against categories
+    file_categories = {}
+    for fname in files[:2000]:  # Sample for speed
+        scores = {}
+        title_part = fname.split('_', 1)[-1].replace('_', ' ').replace('.txt', '')
+        
+        for cat, keywords in category_keywords.items():
+            score = sum(1 for kw in keywords if kw in title_part)
+            if score > 0:
+                scores[cat] = score
+        
+        if scores:
+            best_cat = max(scores, key=scores.get)
+            file_categories[fname] = (best_cat, scores[best_cat])
+    
+    cat_counts = Counter(c[0] for c in file_categories.values())
+    print("\nCategory distribution (from filename analysis, sample of 2000):")
+    for cat, cnt in cat_counts.most_common():
+        print(f"  {cat}: {cnt}")
+    
+    uncat = sum(1 for f in files[:2000] if f not in file_categories)
+    print(f"  Uncategorized: {uncat}")
+    
+    return file_categories
 
-    conn.close()
-    return result
+def sample_content_details(sizes, count=40):
+    print("\n=== DETAILED CONTENT SAMPLES ===")
+    
+    # Select diverse samples
+    n = len(sizes)
+    indices = set()
+    for i in range(count):
+        indices.add(n * i // count)
+    indices = sorted(indices)
+    
+    samples = [sizes[i] for i in indices]
+    
+    for fname, fsize in samples:
+        fp = os.path.join(PATH, fname)
+        try:
+            with open(fp, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+        except:
+            try:
+                with open(fp, 'r', encoding='windows-1256', errors='replace') as f:
+                    content = f.read()
+            except:
+                print(f"\n{'='*80}")
+                print(f"FILE: {fname} ({fsize:,} bytes) - COULD NOT READ")
+                continue
+        
+        lines = content.split('\n')
+        non_empty = [l for l in lines if l.strip()]
+        
+        print(f"\n{'='*80}")
+        print(f"FILE: {fname} ({fsize:,} bytes)")
+        print(f"Lines: {len(lines)}, Non-empty: {len(non_empty)}, Words: {len(content.split())}")
+        print(f"\n--- FIRST 15 LINES ---")
+        for line in lines[:15]:
+            print(f"  | {line[:120]}")
+        print(f"\n--- LINES 15-25 ---")
+        for line in lines[15:25]:
+            print(f"  | {line[:120]}")
+        print(f"\n--- LAST 10 LINES ---")
+        for line in lines[-10:]:
+            print(f"  | {line[:120]}")
+        
+        # Check for structural markers
+        markers_found = []
+        for i, line in enumerate(lines):
+            ls = line.strip()
+            if ls and (ls.startswith('===') or ls.startswith('---') or ls.startswith('___')):
+                markers_found.append(f"Line {i}: {ls[:50]}")
+        if markers_found:
+            print(f"\n--- STRUCTURAL MARKERS ---")
+            for m in markers_found[:5]:
+                print(f"  {m}")
 
-
-def categorize_super_category(cat_name: str) -> str:
-    """
-    Map a category name to a super-category.
-
-    Args:
-        cat_name: Original category name.
-
-    Returns:
-        Super-category name.
-    """
-    if any(k in cat_name for k in ["الفقه", "فقه", "فرائض", "فتاوى", "سياسة", "قضاء"]):
-        return "Fiqh (Jurisprudence)"
-    elif any(k in cat_name for k in ["حديث", "السنة", "شروح", "تخريج", "أطراف", "علل", "جوامع"]):
-        return "Hadith (Traditions)"
-    elif any(k in cat_name for k in ["عقيدة", "فرق", "ردود"]):
-        return "Aqeedah (Creed)"
-    elif any(k in cat_name for k in ["تفسير", "قرآن", "تجويد", "قراءات"]):
-        return "Quran & Tafsir"
-    elif any(k in cat_name for k in ["سيرة", "تاريخ", "تراجم", "طبقات", "أنساب", "بلدان", "رحلات"]):
-        return "History & Biography"
-    elif any(k in cat_name for k in ["لغة", "غريب", "معاجم", "نحو", "صرف", "أدب", "بلاغة", "عروض", "دواوين", "شعرية"]):
-        return "Arabic Language & Literature"
-    elif any(k in cat_name for k in ["رقائق", "آداب", "أذكار"]):
-        return "Spirituality & Ethics"
-    elif any(k in cat_name for k in ["عامة", "علوم أخرى", "منطق", "#", "فهارس"]):
-        return "General & Reference"
+def check_metadata_directory():
+    print("\n=== METADATA DIRECTORY ANALYSIS ===")
+    if os.path.exists(METADATA_PATH):
+        items = os.listdir(METADATA_PATH)
+        print(f"Items in metadata: {items}")
+        for item in items:
+            fp = os.path.join(METADATA_PATH, item)
+            if os.path.isfile(fp):
+                with open(fp, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                print(f"\n--- {item} (first 1000 chars) ---")
+                print(content[:1000])
     else:
-        return "Other"
-
-
-def print_report(books_stats: dict, metadata_stats: dict, detailed: bool = False) -> None:
-    """
-    Print formatted analysis report.
-
-    Args:
-        books_stats: Extracted books statistics.
-        metadata_stats: Metadata statistics.
-        detailed: Show detailed output.
-    """
-    print("=" * 70)
-    print("COMPLETE DATASET ANALYSIS - datasets/data")
-    print("=" * 70)
-
-    # 1. Extracted Books
-    print(f"\n{'📚' if not detailed else '1.'} EXTRACTED BOOKS")
-    print("-" * 70)
-    if "error" in books_stats:
-        print(f"  ✗ {books_stats['error']}")
-    else:
-        print(f"  Total files:  {books_stats['total_files']:,}")
-        print(f"  Total size:   {books_stats['total_size_human']}")
-        print(f"  Avg size:     {books_stats['avg_size_human']}")
-        print(f"  Largest:      {books_stats['largest_human']}")
-        print(f"  Smallest:     {books_stats['smallest_human']}")
-
-        dist = books_stats.get("size_distribution", {})
-        print(f"  > 10MB:       {dist.get('> 10MB', 0)} books")
-        print(f"  1-10MB:       {dist.get('1-10MB', 0)} books")
-        print(f"  < 1MB:        {dist.get('< 1MB', 0)} books")
-
-    # 2. Metadata
-    print(f"\n{'📋' if not detailed else '2.'} METADATA")
-    print("-" * 70)
-    print(f"  Categories: {metadata_stats.get('categories_count', 'N/A')}")
-    print(f"  Authors:    {metadata_stats.get('authors_count', 'N/A'):,}")
-
-    # 3. Category Distribution
-    books_db = metadata_stats.get("books_db", {})
-    if "error" not in books_db:
-        categories = books_db.get("categories", [])
-        if categories:
-            print(f"\n{'📊' if not detailed else '3.'} CATEGORY DISTRIBUTION ({books_db.get('total_categories', 0)} categories)")
-            print("-" * 70)
-            print(f"{'Category':<30} {'Books':>6} {'Total GB':>8} {'Avg MB':>7} {'Min MB':>7} {'Max MB':>7}")
-            print("-" * 70)
-
-            for cat in categories:
-                print(
-                    f"{cat['name']:<30} {cat['count']:>6,} {cat['total_gb']:>8.1f} "
-                    f"{cat['avg_mb']:>7.0f} {cat['min_mb']:>7.0f} {cat['max_mb']:>7.0f}"
-                )
-
-        # 4. Super-category summary
-        super_cats = books_db.get("super_categories", {})
-        if super_cats:
-            print(f"\n{'🎯' if not detailed else '4.'} SUPER-CATEGORY SUMMARY")
-            print("-" * 50)
-            print(f"{'Super-Category':<35} {'Books':>6} {'Size GB':>8}")
-            print("-" * 50)
-            for group, stats in sorted(super_cats.items(), key=lambda x: -x[1]["books"]):
-                print(f"{group:<35} {stats['books']:>6,} {stats['size_gb']:>8.1f}")
-
-        # Extraction status
-        extraction = books_db.get("extraction_status", {})
-        if extraction:
-            print(f"\n  Extraction Status:")
-            for status, count in extraction.items():
-                print(f"    {status}: {count:,}")
-
-    # 5. Chunking Strategy Recommendations
-    if detailed and super_cats:
-        print(f"\n{'📝' if not detailed else '5.'} RECOMMENDED CHUNKING STRATEGY")
-        print("-" * 60)
-        print(f"{'Super-Category':<35} {'Chunk Size':>12} {'Est. Chunks':>12}")
-        print("-" * 60)
-
-        chunk_estimates = {
-            "Hadith (Traditions)": ("1 hadith each", "~650K"),
-            "Fiqh (Jurisprudence)": ("300-500 chars", "~800K"),
-            "Quran & Tafsir": ("1 ayah + tafsir", "~50K"),
-            "Aqeedah (Creed)": ("300-500 chars", "~100K"),
-            "History & Biography": ("400-600 chars", "~500K"),
-            "Arabic Language & Literature": ("300-500 chars", "~300K"),
-            "Spirituality & Ethics": ("300-500 chars", "~200K"),
-            "General & Reference": ("300-500 chars", "~100K"),
-            "Other": ("300-500 chars", "~50K"),
-        }
-
-        for group in sorted(super_cats.keys()):
-            if group in chunk_estimates:
-                chunk_size, est = chunk_estimates[group]
-                print(f"{group:<35} {chunk_size:>12} {est:>12}")
-
-    # 6. Priority Ranking
-    if detailed:
-        print(f"\n{'🚀' if not detailed else '6.'} EMBEDDING PRIORITY (by ROI)")
-        print("-" * 70)
-        priorities = [
-            ("P0 - Critical", "Sanadset Hadith", "650K hadith", "Already chunked"),
-            ("P0 - Critical", "Quran Ayahs", "6,236 ayahs", "Check quran.db"),
-            ("P1 - High", "Hadith Books (كتب السنة)", "1,226 books, 1.7 GB", "Need re-chunking"),
-            ("P1 - High", "Tafsir Books", "270 books, 1.7 GB", "High-value content"),
-            ("P2 - Medium", "Fiqh Books (all madhhabs)", "1,000+ books, 2.5 GB", "Core Islamic law"),
-            ("P2 - Medium", "Aqeedah Books", "794 books, 0.6 GB", "Core theology"),
-            ("P3 - Low", "History & Biography", "1,000+ books, 2.4 GB", "Historical context"),
-            ("P3 - Low", "Arabic Language", "500+ books, 0.8 GB", "Grammar, lexicon"),
-        ]
-
-        for priority, name, volume, status in priorities:
-            print(f"  {priority}: {name}")
-            print(f"    Volume: {volume}")
-            print(f"    Status: {status}")
-            print()
-
-    print("=" * 70)
-
-
-# ── Main ─────────────────────────────────────────────────────────────────
-
+        print(f"Metadata directory not found: {METADATA_PATH}")
+    
+    # Also check for extraction_state.json
+    state_file = os.path.join(PATH, 'extraction_state.json')
+    if os.path.exists(state_file):
+        with open(state_file, 'r', encoding='utf-8') as f:
+            state = json.load(f)
+        print(f"\n--- extraction_state.json ---")
+        print(json.dumps(state, ensure_ascii=False, indent=2)[:2000])
+    
+    # Check file_list.txt
+    flist_file = os.path.join(PATH, 'file_list.txt')
+    if os.path.exists(flist_file):
+        with open(flist_file, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+        print(f"\n--- file_list.txt ({len(lines)} lines, first 30) ---")
+        for line in lines[:30]:
+            print(f"  {line.strip()}")
 
 def main():
-    """Run dataset analysis."""
-    parser = argparse.ArgumentParser(
-        description="Analyze Athar datasets",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python scripts/analysis/analyze_dataset.py
-  python scripts/analysis/analyze_dataset.py --report
-  python scripts/analysis/analyze_dataset.py --json
-        """,
-    )
-    parser.add_argument("--report", action="store_true", help="Show detailed report")
-    parser.add_argument("--json", action="store_true", help="Output as JSON")
-    args = parser.parse_args()
+    files = get_all_files()
+    print(f"Total book files: {len(files)}")
+    
+    sizes = analyze_sizes(files)
+    analyze_naming(files)
+    check_metadata_directory()
+    content_stats = check_encoding_and_content(files, sizes, sample_count=50)
+    check_quality_issues(files, sizes)
+    categorize_files(files)
+    sample_content_details(sizes, count=40)
+    
+    # Save detailed samples for further analysis
+    print("\n\n=== ANALYSIS COMPLETE ===")
 
-    print("\n🔍 Analyzing datasets...\n")
-
-    # Run analysis
-    books_stats = analyze_extracted_books()
-    metadata_stats = analyze_metadata()
-
-    if args.json:
-        # JSON output
-        output = {
-            "extracted_books": books_stats,
-            "metadata": metadata_stats,
-        }
-        print(json.dumps(output, indent=2, ensure_ascii=False, default=str))
-    else:
-        # Formatted report
-        print_report(books_stats, metadata_stats, detailed=args.report)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

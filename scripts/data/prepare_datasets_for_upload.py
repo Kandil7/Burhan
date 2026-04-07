@@ -169,12 +169,31 @@ def main():
     
     # Calculate source sizes
     books_dir = DATASETS_DIR / "data" / "extracted_books"
-    hadith_dir = DATASETS_DIR / "Sanadset 368K Data on Hadith Narrators" / "Sanadset 368K Data on Hadith Narrators"
-    metadata_dir = DATASETS_DIR / "data" / "metadata"
     
+    # Auto-detect Sanadset directory (handles various naming)
+    sanadset_base = DATASETS_DIR / "Sanadset 368K Data on Hadith Narrators"
+    hadith_dir = None
+    if sanadset_base.exists():
+        # Try nested directory
+        hadith_dir = sanadset_base / "Sanadset 368K Data on Hadith Narrators"
+        if not hadith_dir.exists():
+            # Try direct CSV
+            for csv_file in sanadset_base.rglob("sanadset.csv"):
+                hadith_dir = csv_file.parent
+                break
+    
+    metadata_dir = DATASETS_DIR / "data" / "metadata"
+
     print(f"\n📊 Source Data:")
     print(f"   Books: {format_size(get_directory_size(books_dir))} ({sum(1 for _ in books_dir.glob('*.txt')):,} files)")
-    print(f"   Hadith: {format_size(hadith_dir.stat().st_size) if hadith_dir.exists() else 'Not found'}")
+    
+    if hadith_dir and hadith_dir.exists():
+        hadith_size = get_directory_size(hadith_dir)
+        print(f"   Hadith: {format_size(hadith_size)} (in {hadith_dir.name})")
+    else:
+        print(f"   Hadith: Not found")
+        hadith_dir = None
+    
     print(f"   Metadata: {format_size(get_directory_size(metadata_dir))}")
     
     # Create directory structure
@@ -189,7 +208,13 @@ def main():
         print(f"\n⚠️  Books directory not found: {books_dir}")
     
     # 2. Copy hadith CSV (if <5 GB, no chunking needed)
-    sanadset_csv = hadith_dir / "sanadset.csv" if hadith_dir.exists() else None
+    sanadset_csv = None
+    if hadith_dir:
+        # Find sanadset.csv
+        for csv_file in hadith_dir.rglob("sanadset.csv"):
+            sanadset_csv = csv_file
+            break
+    
     if sanadset_csv and sanadset_csv.exists():
         csv_size = sanadset_csv.stat().st_size
         if csv_size < MAX_FILE_SIZE:
@@ -198,8 +223,10 @@ def main():
             print(f"   ✅ Copied successfully")
         else:
             print(f"\n⚠️  Hadith CSV too large ({format_size(csv_size)}), needs chunking")
+            # TODO: Implement CSV chunking if needed
     else:
         print(f"\n⚠️  Hadith CSV not found")
+        print(f"   Expected in: {hadith_dir if hadith_dir else 'Unknown'}")
     
     # 3. Prepare metadata
     metadata = prepare_metadata()
