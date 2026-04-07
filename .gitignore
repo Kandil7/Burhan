@@ -54,22 +54,34 @@ Thumbs.db
 # Docker
 docker/qdrant_storage/
 
-# Data
+# Data (exclude large processed/output files)
 data/raw/*.json
-data/processed/*.json
 data/embeddings/
+data/seed/
 data/athar-datasets/
-data/athar-datasets-v2/
 data/processed_v1/
+output/
+output_page_analysis.txt
+
+# Lucene extraction output (large files - keep metadata only)
+data/processed/lucene_*.json
+data/processed/lucene_pages/
+data/processed/*.jsonl
+
+# BUT include mini-dataset and key metadata
+!data/mini_dataset/
+!data/processed/master_catalog.json
+!data/processed/category_mapping.json
+!data/processed/author_catalog.json
+!data/processed/chunking_stats.json
+!data/processed/merge_report.json
 
 # Full datasets (exclude - too large for GitHub)
-datasets/data/extracted_books/
-datasets/data/metadata/*.db
-datasets/Sanadset*/
-datasets/system_book_datasets/
+datasets/
 
-# BUT include mini-dataset for MVP
-!data/mini_dataset/
+# Java compiled files (keep source, exclude .class)
+scripts/*.class
+scripts/lucene/*.class
 
 # Testing
 .coverage
@@ -83,11 +95,8 @@ htmlcov/
 # Qdrant
 .qdrant/
 
-#datasets
-datasets/
-
 .opencode.json
-"models/"  
-"api_output.log"  
--e "\n# ML Models\nmodels/\ncache/\nnul"  
+
+# ML Models
 models/
+cache/
