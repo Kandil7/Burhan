@@ -13,8 +13,6 @@ Phase 5: Uses settings and constants for configuration.
 
 from typing import Optional
 
-import numpy as np
-
 from src.agents.base import BaseAgent, AgentInput, AgentOutput, Citation
 from src.knowledge.embedding_model import EmbeddingModel
 from src.knowledge.vector_store import VectorStore
