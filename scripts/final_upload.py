@@ -115,6 +115,14 @@ def get_summary():
     print(f"📦 Compressed (estimated): {format_size(compressed_estimate)}")
     print(f"💡 Space savings: 65%")
 
+def get_target_collections(selected: str | None):
+    if selected is None:
+        return COLLECTIONS
+    if selected not in COLLECTIONS:
+        print(f"❌ Unknown collection: {selected}")
+        print("Available:", ", ".join(COLLECTIONS))
+        sys.exit(1)
+    return [selected]
 
 def compress_for_upload():
     """Compress collections for upload."""
@@ -185,6 +193,7 @@ def upload_to_huggingface(compress: bool = False):
     api = HfApi()
     login(token=token)
     
+    target_collections = get_target_collections(selected)
     # Compress if requested
     if compress:
         compress_for_upload()
@@ -198,7 +207,7 @@ def upload_to_huggingface(compress: bool = False):
     print("=" * 70)
     
     # Upload collections
-    for i, collection in enumerate(COLLECTIONS, 1):
+    for i, collection in enumerate(target_collections, 1):
         if compress:
             filepath = source_dir / f"{collection}.jsonl.gz"
         else:
@@ -277,6 +286,12 @@ def main():
     parser.add_argument("--verify", action="store_true", help="Verify upload")
     parser.add_argument("--summary", action="store_true", help="Show data summary")
     parser.add_argument("--repo", type=str, default=None, help="Repository ID")
+    parser.add_argument(
+    "--collection",
+    type=str,
+    default=None,
+    help="Only process a single collection by name",
+    )
     args = parser.parse_args()
     
     if args.repo:

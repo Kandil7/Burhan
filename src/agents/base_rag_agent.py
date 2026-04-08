@@ -23,6 +23,7 @@ from src.agents.base import BaseAgent, AgentInput, AgentOutput
 from src.knowledge.embedding_model import EmbeddingModel
 from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
+from src.knowledge.hierarchical_retriever import HierarchicalRetriever
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
 from src.config.settings import settings
@@ -75,6 +76,7 @@ class BaseRAGAgent(BaseAgent):
         self.llm_client = llm_client
         self.hybrid_searcher = None
         self.citation_normalizer = CitationNormalizer()
+        self.hierarchical_retriever = HierarchicalRetriever()
         self._llm_available = True
         self._initialized = False
 
@@ -118,25 +120,21 @@ class BaseRAGAgent(BaseAgent):
         self,
         input: AgentInput,
         filters: Optional[Dict[str, Any]] = None,
+        hierarchical: bool = False,
     ) -> AgentOutput:
         """
-        Execute RAG pipeline with optional facet filtering:
+        Execute RAG pipeline with optional facet filtering and hierarchical retrieval:
         1. Initialize dependencies
         2. Encode query
-        3. Retrieve passages (with optional filters)
+        3. Retrieve passages (with optional filters or hierarchical)
         4. Generate answer
         5. Normalize and enrich citations
         6. Return result with confidence
 
         Args:
             input: AgentInput with query and language
-            filters: Optional dict with:
-                - author: str or list[str]
-                - author_death_min: int
-                - author_death_max: int
-                - book_id: int or list[int]
-                - category: str or list[str]
-                - era: str or list[str]
+            filters: Optional dict with facet filters (author, era, book, etc.)
+            hierarchical: If True, use hierarchical retrieval for better context
         """
         await self._initialize()
 
@@ -153,8 +151,29 @@ class BaseRAGAgent(BaseAgent):
             # Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 
-            # Retrieve passages (with optional facet filtering)
-            if filters and self.hybrid_searcher:
+            # Retrieve passages (with optional facet filtering or hierarchical)
+            if hierarchical and self.hybrid_searcher:
+                # Get expanded results for hierarchical processing
+                expanded_passages = await self.hybrid_searcher.search_with_facets(
+                    query=input.query,
+                    query_embedding=query_embedding,
+                    collection=self.COLLECTION,
+                    top_k=self.TOP_K_RETRIEVAL * 3,
+                    filters=filters,
+                )
+
+                # Apply hierarchical retrieval
+                hierarchical_results = self.hierarchical_retriever.retrieve_hierarchical(
+                    passages=expanded_passages,
+                    top_k_books=3,
+                    top_k_pages_per_book=self.TOP_K_RERANK,
+                )
+
+                # Convert back to flat passages with hierarchy context
+                good_passages = self.hierarchical_retriever.get_flat_passages(
+                    hierarchical_results, max_passages=self.TOP_K_RERANK
+                )
+            elif filters and self.hybrid_searcher:
                 passages = await self.hybrid_searcher.search_with_facets(
                     query=input.query,
                     query_embedding=query_embedding,
@@ -162,6 +181,9 @@ class BaseRAGAgent(BaseAgent):
                     top_k=self.TOP_K_RETRIEVAL,
                     filters=filters,
                 )
+                good_passages = [
+                    p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
+                ][:self.TOP_K_RERANK]
             else:
                 passages = await self.hybrid_searcher.search(
                     query=input.query,
@@ -169,11 +191,9 @@ class BaseRAGAgent(BaseAgent):
                     collection=self.COLLECTION,
                     top_k=self.TOP_K_RETRIEVAL,
                 )
-
-            # Filter by score threshold
-            good_passages = [
-                p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
-            ]
+                good_passages = [
+                    p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
+                ][:self.TOP_K_RERANK]
 
             # Format passages for LLM
             formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
