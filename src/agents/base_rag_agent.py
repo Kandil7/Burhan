@@ -25,6 +25,7 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.knowledge.hierarchical_retriever import HierarchicalRetriever
 from src.knowledge.title_loader import TitleLoader
+from src.knowledge.hadith_grader import HadithAuthenticityGrader
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
 from src.config.settings import settings
@@ -79,6 +80,7 @@ class BaseRAGAgent(BaseAgent):
         self.citation_normalizer = CitationNormalizer()
         self.hierarchical_retriever = HierarchicalRetriever()
         self.title_loader = TitleLoader()
+        self.hadith_grader = HadithAuthenticityGrader()
         self._llm_available = True
         self._initialized = False
 
@@ -200,6 +202,8 @@ class BaseRAGAgent(BaseAgent):
             # Enrich passages with title/chapter context
             if good_passages:
                 good_passages = self.title_loader.enrich_passages(good_passages)
+                # Enrich hadith passages with authenticity grades
+                good_passages = self.hadith_grader.enrich_passages_with_authenticity(good_passages)
 
             # Format passages for LLM
             formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
