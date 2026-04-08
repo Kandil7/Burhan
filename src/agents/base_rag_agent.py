@@ -162,6 +162,10 @@ class BaseRAGAgent(BaseAgent):
             normalized_answer = self.citation_normalizer.normalize(answer)
             citations = self.citation_normalizer.get_citations()
 
+            # Enrich citations with passage metadata
+            if good_passages:
+                citations = self.citation_normalizer.enrich_citations(good_passages)
+
             # Calculate confidence
             confidence = self._calculate_confidence(good_passages)
 
