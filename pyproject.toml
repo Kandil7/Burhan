@@ -38,6 +38,12 @@ optional = true
 torch = ">=2.2.0"
 transformers = ">=4.40.0"
 
+[tool.poetry.group.data]
+optional = true
+
+[tool.poetry.group.data.dependencies]
+ijson = "^3.2.3"
+
 [tool.poetry.scripts]
 athar = "src.api.main:app"
 

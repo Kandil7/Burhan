@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 C. Merge Lucene-extracted content with master catalog.
 
@@ -37,6 +37,9 @@ Usage:
     python scripts/data/lucene/merge_lucene_with_master.py --chunk-size 2000
     python scripts/data/lucene/merge_lucene_with_master.py --dry-run
     python scripts/data/lucene/merge_lucene_with_master.py --skip-pages  # Skip 17GB page file
+    python scripts/data/lucene/merge_lucene_with_master.py --skip-large-files  # Auto-skip files > 5GB
+    python scripts/data/lucene/merge_lucene_with_master.py --stream-large-files  # Use ijson for streaming
+    python scripts/data/lucene/merge_lucene_with_master.py --process-all-pages   # Disk-based batch processing
 
 Output:
     data/processed/lucene_pages/collections/
@@ -57,6 +60,7 @@ Output:
 
 from __future__ import annotations
 
+import gc
 import json
 import sys
 import time
@@ -93,6 +97,9 @@ LUCENE_PAGES_DIR = PROCESSED_DIR / "lucene_pages"
 LUCENE_BOOKS_DIR = LUCENE_PAGES_DIR / "books"
 LUCENE_RAW_DIR = LUCENE_PAGES_DIR / "raw"
 
+# Disk-based processing temp directory
+TEMP_BOOK_PAGES_DIR = LUCENE_PAGES_DIR / "temp_book_pages"
+
 # Metadata
 MASTER_CATALOG = PROCESSED_DIR / "master_catalog.json"
 CATEGORY_MAPPING = PROCESSED_DIR / "category_mapping.json"
@@ -104,6 +111,10 @@ CHUNKS_DIR = LUCENE_PAGES_DIR / "chunks"
 # Default chunk size (characters)
 DEFAULT_CHUNK_SIZE = 2000
 DEFAULT_CHUNK_OVERLAP = 200
+
+# File size thresholds
+LARGE_FILE_THRESHOLD_BYTES = 1 * 1024 ** 3  # 1 GB
+SKIP_FILE_THRESHOLD_BYTES = 5 * 1024 ** 3  # 5 GB
 
 # Collection names (must match category_mapping.json collections)
 COLLECTION_NAMES = [
@@ -197,6 +208,10 @@ class MergeStats:
     collection_counts: Dict[str, int] = field(default_factory=dict)
     total_output_size_bytes: int = 0
     duration_seconds: float = 0.0
+    large_files_skipped: int = 0
+    large_files_streamed: int = 0
+    disk_batch_files_processed: int = 0
+    disk_batch_total_docs: int = 0
 
 
 # ── ID Parsing ────────────────────────────────────────────────────────────
@@ -362,6 +377,159 @@ def iter_jsonl_file(filepath: Path) -> Iterator[Dict[str, Any]]:
                     continue
 
 
+def iter_json_array_streaming(filepath: Path) -> Iterator[Dict[str, Any]]:
+    """
+    Incrementally iterate over objects in a large JSON array file.
+
+    Uses a memory-efficient streaming approach that:
+    1. Tries ijson library if available (best performance)
+    2. Falls back to manual line-by-line parsing for JSON arrays
+
+    This avoids loading the entire file into memory.
+
+    Args:
+        filepath: Path to JSON file containing an array of objects.
+
+    Yields:
+        Parsed JSON objects one at a time.
+    """
+    if not filepath.exists():
+        logger.warning(f"File not found: {filepath}")
+        return
+
+    file_size = filepath.stat().st_size
+    logger.info(f"Streaming {filepath.name} ({format_size(file_size)})")
+
+    # Try ijson first (most robust for large JSON arrays)
+    try:
+        import ijson
+        logger.info("  Using ijson for streaming parse")
+        yield from _iter_with_ijson(filepath)
+        return
+    except ImportError:
+        logger.info("  ijson not available, falling back to manual streaming parse")
+        logger.info("  Tip: pip install ijson for better large-file support")
+
+    # Fallback: manual streaming parse for JSON arrays
+    yield from _iter_json_array_manual(filepath, file_size)
+
+
+def _iter_with_ijson(filepath: Path) -> Iterator[Dict[str, Any]]:
+    """Stream parse JSON array using ijson library."""
+    import ijson
+
+    count = 0
+    log_interval = 100_000
+
+    with open(filepath, "rb") as f:
+        # ijson.items yields each element in the root array
+        for item in ijson.items(f, "item"):
+            if isinstance(item, dict):
+                yield item
+                count += 1
+                if count % log_interval == 0:
+                    logger.info(f"  Streamed {count:,} documents...")
+
+    logger.info(f"  Streamed {count:,} total documents from {filepath.name}")
+
+
+def _iter_json_array_manual(filepath: Path, file_size: int) -> Iterator[Dict[str, Any]]:
+    """
+    Manual streaming parse for JSON arrays.
+
+    Handles the format: [ {...}, {...}, {...} ]
+    by reading line-by-line and detecting JSON object boundaries.
+    """
+    count = 0
+    log_interval = 100_000
+    bytes_read = 0
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        # Skip opening bracket and whitespace
+        buffer = ""
+        started = False
+        brace_depth = 0
+        in_string = False
+        escape_next = False
+        current_object = ""
+
+        for line in f:
+            bytes_read += len(line.encode("utf-8"))
+            buffer += line
+
+            for char in buffer:
+                if escape_next:
+                    current_object += char
+                    escape_next = False
+                    continue
+
+                if char == "\\" and in_string:
+                    current_object += char
+                    escape_next = True
+                    continue
+
+                if char == '"' :
+                    in_string = not in_string
+                    current_object += char
+                    continue
+
+                if in_string:
+                    current_object += char
+                    continue
+
+                # Outside strings
+                if char == "[" and not started:
+                    # Skip opening bracket
+                    started = True
+                    continue
+
+                if char == "{" :
+                    brace_depth += 1
+                    current_object += char
+                    continue
+
+                if char == "}":
+                    current_object += char
+                    brace_depth -= 1
+
+                    if brace_depth == 0 and current_object.strip():
+                        # Complete object found
+                        try:
+                            obj = json.loads(current_object.strip())
+                            if isinstance(obj, dict):
+                                yield obj
+                                count += 1
+                                if count % log_interval == 0:
+                                    logger.info(f"  Streamed {count:,} documents...")
+                        except json.JSONDecodeError:
+                            pass
+                        current_object = ""
+                    continue
+
+                if char == ",":
+                    # Separator between objects, skip
+                    continue
+
+                if char == "]":
+                    # End of array
+                    started = False
+                    continue
+
+            buffer = ""
+
+        # Handle any remaining object
+        if current_object.strip():
+            try:
+                obj = json.loads(current_object.strip())
+                if isinstance(obj, dict):
+                    yield obj
+                    count += 1
+            except json.JSONDecodeError:
+                pass
+
+    logger.info(f"  Streamed {count:,} total documents from {filepath.name}")
+
+
 def load_per_book_jsonl(directory: Path) -> Dict[int, List[Dict[str, Any]]]:
     """
     Load all per-book JSONL files from a directory.
@@ -419,6 +587,192 @@ def group_by_book_id(
     return dict(grouped)
 
 
+def group_streaming_docs_by_book_id(
+    doc_iterator: Iterator[Dict[str, Any]],
+    pages_grouped: Dict[int, List[Dict[str, Any]]],
+    id_field: str = "id",
+    batch_size: int = 50_000,
+) -> int:
+    """
+    Group streaming documents by book_id without loading all into memory.
+
+    Processes documents in batches and merges into the existing grouped dict.
+
+    Args:
+        doc_iterator: Iterator yielding documents.
+        pages_grouped: Existing dict to merge into (modified in place).
+        id_field: Name of the ID field.
+        batch_size: Number of documents to process before logging progress.
+
+    Returns:
+        Total number of documents processed.
+    """
+    count = 0
+    log_interval = batch_size
+
+    for doc in doc_iterator:
+        doc_id = doc.get(id_field, "")
+        book_id = extract_book_id(doc_id)
+        if book_id is not None:
+            pages_grouped[book_id].append(doc)
+        count += 1
+
+        if count % log_interval == 0:
+            unique_books = len(pages_grouped)
+            logger.info(
+                f"  Processed {count:,} docs ({unique_books:,} unique books)..."
+            )
+
+    logger.info(f"  Total: {count:,} docs grouped into {len(pages_grouped):,} books")
+    return count
+
+
+# ── Disk-Based Batch Processing ──────────────────────────────────────────
+
+def process_pages_to_disk(
+    batch_files: List[Path],
+    temp_dir: Path,
+    log_interval: int = 100_000,
+) -> Dict[int, Path]:
+    """
+    Process page batch files and write grouped pages to disk per book.
+
+    Instead of keeping all documents in memory, this function:
+    1. Reads batch files one at a time
+    2. Groups docs by book_id in a small in-memory buffer
+    3. Flushes to per-book JSONL files when buffer gets large
+    4. Frees memory after each batch file
+
+    Args:
+        batch_files: List of page_batch_*.jsonl files to process.
+        temp_dir: Directory to write per-book JSONL files.
+        log_interval: Log progress every N documents.
+
+    Returns:
+        Dictionary mapping book_id to the per-book JSONL file path.
+    """
+    ensure_dir(temp_dir)
+
+    # Track which books have been written and their file paths
+    book_file_map: Dict[int, Path] = {}
+    total_docs = 0
+    total_skipped = 0
+
+    logger.info(f"Processing {len(batch_files)} batch files to disk...")
+    logger.info(f"  Temp directory: {temp_dir}")
+
+    for batch_idx, batch_file in enumerate(sorted(batch_files), 1):
+        if not batch_file.exists():
+            logger.warning(f"  Batch file not found: {batch_file}")
+            continue
+
+        file_size = batch_file.stat().st_size
+        logger.info(
+            f"  [{batch_idx}/{len(batch_files)}] Processing {batch_file.name} "
+            f"({format_size(file_size)})..."
+        )
+
+        # In-memory buffer for this batch only
+        # Maps book_id -> list of docs (flushed periodically)
+        batch_buffer: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+        batch_count = 0
+        batch_skipped = 0
+
+        # Read and group this batch file
+        for doc in iter_jsonl_file(batch_file):
+            doc_id = doc.get("id", "")
+            book_id = extract_book_id(doc_id)
+            if book_id is not None:
+                batch_buffer[book_id].append(doc)
+            else:
+                batch_skipped += 1
+
+            batch_count += 1
+            total_docs += 1
+
+            if batch_count % log_interval == 0:
+                logger.info(
+                    f"    Processed {batch_count:,} docs from {batch_file.name} "
+                    f"(total: {total_docs:,}, books in buffer: {len(batch_buffer):,})"
+                )
+
+        total_skipped += batch_skipped
+        logger.info(
+            f"    Batch complete: {batch_count:,} docs, {batch_skipped} skipped, "
+            f"{len(batch_buffer):,} unique books"
+        )
+
+        # Flush batch buffer to disk (append to existing per-book files)
+        flush_count = 0
+        for book_id, docs in batch_buffer.items():
+            book_file = temp_dir / f"{book_id}.jsonl"
+            book_file_map[book_id] = book_file
+
+            with open(book_file, "a", encoding="utf-8") as f:
+                for doc in docs:
+                    f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+                    flush_count += 1
+
+        logger.info(f"    Flushed {flush_count:,} docs to {len(batch_buffer):,} book files")
+
+        # Free memory: delete buffer and force GC
+        del batch_buffer
+        gc.collect()
+
+        logger.info(
+            f"  ✓ Completed {batch_file.name} "
+            f"(total so far: {total_docs:,} docs, {len(book_file_map):,} books)"
+        )
+
+    if total_skipped > 0:
+        logger.warning(f"  Total skipped docs (bad IDs): {total_skipped:,}")
+
+    logger.info(
+        f"Disk processing complete: {total_docs:,} docs across "
+        f"{len(book_file_map):,} books written to {temp_dir}"
+    )
+
+    return book_file_map
+
+
+def iter_book_pages_from_disk(book_file: Path) -> Iterator[Dict[str, Any]]:
+    """
+    Iterate over pages for a single book from its JSONL file on disk.
+
+    Args:
+        book_file: Path to the book's JSONL file.
+
+    Yields:
+        Page documents one at a time.
+    """
+    if not book_file.exists():
+        return
+
+    with open(book_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    yield json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+
+def load_book_pages_from_disk(book_file: Path) -> List[Dict[str, Any]]:
+    """
+    Load all pages for a single book from its JSONL file on disk.
+
+    Args:
+        book_file: Path to the book's JSONL file.
+
+    Returns:
+        List of page documents.
+    """
+    return list(iter_book_pages_from_disk(book_file))
+
+
+# ── Content Source Discovery ──────────────────────────────────────────────
+
 def find_lucene_content() -> Dict[str, Path]:
     """
     Find all available Lucene content files in their actual locations.
@@ -455,6 +809,43 @@ def find_lucene_content() -> Dict[str, Path]:
             sources[f"per_book_{subdir}"] = dirpath
 
     return sources
+
+
+def check_file_size_policy(
+    filepath: Path,
+    skip_large_files: bool = False,
+    stream_large_files: bool = False,
+) -> Tuple[str, bool]:
+    """
+    Check file size and determine handling strategy.
+
+    Args:
+        filepath: Path to the file.
+        skip_large_files: If True, skip files > SKIP_FILE_THRESHOLD_BYTES.
+        stream_large_files: If True, stream files > LARGE_FILE_THRESHOLD_BYTES.
+
+    Returns:
+        Tuple of (action, should_process).
+        action: "load", "stream", or "skip"
+        should_process: Whether to process this file.
+    """
+    file_size = filepath.stat().st_size
+
+    if skip_large_files and file_size > SKIP_FILE_THRESHOLD_BYTES:
+        logger.warning(
+            f"Skipping {filepath.name} ({format_size(file_size)}) - "
+            f"exceeds {format_size(SKIP_FILE_THRESHOLD_BYTES)} threshold (--skip-large-files)"
+        )
+        return ("skip", False)
+
+    if stream_large_files and file_size > LARGE_FILE_THRESHOLD_BYTES:
+        logger.info(
+            f"Streaming {filepath.name} ({format_size(file_size)}) - "
+            f"exceeds {format_size(LARGE_FILE_THRESHOLD_BYTES)} threshold"
+        )
+        return ("stream", True)
+
+    return ("load", True)
 
 
 # ── Chunking ──────────────────────────────────────────────────────────────
@@ -786,7 +1177,6 @@ def enrich_and_merge(
                 chunk_doc["category"] = book.category_name or ""
                 chunk_doc["author"] = book.author_name or ""
                 chunk_doc["author_death"] = book.author_death
-                chunk_doc["collection"] = book.collection
                 if not dry_run:
                     chunk_files[book.collection].write(
                         json.dumps(chunk_doc, ensure_ascii=False) + "\n"
@@ -808,6 +1198,194 @@ def enrich_and_merge(
                 stats.total_output_size_bytes += chunk_file.stat().st_size
 
     stats.duration_seconds = time.time() - start_time
+    logger.info(
+        f"Skipped {skipped_no_collection:,} books (collection not in target list)"
+    )
+    return stats
+
+
+def enrich_and_merge_disk_based(
+    books: Dict[int, BookMetadata],
+    book_file_map: Dict[int, Path],
+    titles_grouped: Dict[int, List[Dict[str, Any]]],
+    esnad_grouped: Dict[int, List[Dict[str, Any]]],
+    collections_dir: Path,
+    chunks_dir: Path,
+    target_collections: Optional[List[str]] = None,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    dry_run: bool = False,
+) -> MergeStats:
+    """
+    Disk-based merge operation: enrich documents by loading pages on-demand from disk.
+
+    This version processes books one at a time, loading page data from disk
+    only when needed, keeping memory usage low.
+
+    Args:
+        books: Master catalog book metadata.
+        book_file_map: Mapping of book_id -> per-book JSONL file path on disk.
+        titles_grouped: Titles grouped by book_id (in memory, smaller dataset).
+        esnad_grouped: Esnad grouped by book_id (in memory, smaller dataset).
+        collections_dir: Output directory for collection JSONL files.
+        chunks_dir: Output directory for hierarchical chunks.
+        target_collections: If specified, only process these collections.
+        chunk_size: Target chunk size in characters.
+        dry_run: If True, only count without writing.
+
+    Returns:
+        MergeStats with operation results.
+    """
+    stats = MergeStats()
+    start_time = time.time()
+
+    if target_collections is None:
+        target_collections = COLLECTION_NAMES
+
+    ensure_dir(collections_dir)
+    ensure_dir(chunks_dir)
+
+    # Open collection file handles
+    collection_files: Dict[str, Any] = {}
+    chunk_files: Dict[str, Any] = {}
+    if not dry_run:
+        for collection in target_collections:
+            collection_files[collection] = open(
+                collections_dir / f"{collection}.jsonl",
+                "w",
+                encoding="utf-8",
+            )
+            chunk_files[collection] = open(
+                chunks_dir / f"{collection}_chunks.jsonl",
+                "w",
+                encoding="utf-8",
+            )
+
+    # Find all book IDs that have content
+    book_ids_with_pages = set(book_file_map.keys()) & set(books.keys())
+    book_ids_with_titles = set(titles_grouped.keys()) & set(books.keys())
+    book_ids_with_esnad = set(esnad_grouped.keys()) & set(books.keys())
+    book_ids_with_content = book_ids_with_pages | book_ids_with_titles | book_ids_with_esnad
+
+    stats.books_loaded = len(books)
+    stats.books_with_content = len(book_ids_with_content)
+
+    logger.info(
+        f"Disk-based merge: {stats.books_with_content:,} books with content "
+        f"({len(book_ids_with_pages):,} with pages on disk, "
+        f"{len(book_ids_with_titles):,} with titles, "
+        f"{len(book_ids_with_esnad):,} with esnad)"
+    )
+
+    # Process each book
+    processed = 0
+    skipped_no_collection = 0
+    books_without_disk_file = 0
+
+    for book_id in sorted(book_ids_with_content):
+        book = books[book_id]
+        if book.collection not in target_collections:
+            skipped_no_collection += 1
+            continue
+
+        processed += 1
+        if processed % 100 == 0:
+            elapsed = time.time() - start_time
+            rate = processed / elapsed if elapsed > 0 else 0
+            logger.info(
+                f"  Processed {processed:,}/{stats.books_with_content:,} books "
+                f"({rate:.0f} books/sec, {stats.total_documents:,} docs)"
+            )
+
+        # Load pages from disk on-demand
+        pages: List[Dict[str, Any]] = []
+        if book_id in book_file_map:
+            pages = load_book_pages_from_disk(book_file_map[book_id])
+        else:
+            books_without_disk_file += 1
+
+        # Load titles and esnad from memory
+        titles = titles_grouped.get(book_id, [])
+        esnad_docs = esnad_grouped.get(book_id, [])
+
+        # Enrich pages
+        title_map = build_title_index(titles)
+        for page_doc in pages:
+            enriched = _enrich_page(page_doc, book, title_map)
+            if not dry_run:
+                collection_files[book.collection].write(
+                    json.dumps(enriched.to_dict(), ensure_ascii=False) + "\n"
+                )
+            stats.pages_merged += 1
+            stats.total_documents += 1
+            stats.collection_counts[book.collection] = (
+                stats.collection_counts.get(book.collection, 0) + 1
+            )
+
+        # Enrich titles
+        for title_doc in titles:
+            enriched = _enrich_title(title_doc, book)
+            if not dry_run:
+                collection_files[book.collection].write(
+                    json.dumps(enriched.to_dict(), ensure_ascii=False) + "\n"
+                )
+            stats.titles_merged += 1
+            stats.total_documents += 1
+            stats.collection_counts[book.collection] = (
+                stats.collection_counts.get(book.collection, 0) + 1
+            )
+
+        # Enrich esnad
+        for esnad_doc in esnad_docs:
+            enriched = _enrich_esnad(esnad_doc, book)
+            if not dry_run:
+                collection_files[book.collection].write(
+                    json.dumps(enriched.to_dict(), ensure_ascii=False) + "\n"
+                )
+            stats.esnad_merged += 1
+            stats.total_documents += 1
+            stats.collection_counts[book.collection] = (
+                stats.collection_counts.get(book.collection, 0) + 1
+            )
+
+        # Create hierarchical chunks (for pages)
+        if pages:
+            chunks = create_hierarchical_chunks(pages, title_map, book.title)
+            for chunk_doc in chunks:
+                chunk_doc["book_id"] = book.book_id
+                chunk_doc["book_title"] = book.title
+                chunk_doc["category"] = book.category_name or ""
+                chunk_doc["author"] = book.author_name or ""
+                chunk_doc["author_death"] = book.author_death
+                if not dry_run:
+                    chunk_files[book.collection].write(
+                        json.dumps(chunk_doc, ensure_ascii=False) + "\n"
+                    )
+                stats.chunks_created += 1
+
+        # Free pages memory after processing this book
+        del pages
+        if processed % 500 == 0:
+            gc.collect()
+
+    # Close all file handles
+    for fh in list(collection_files.values()) + list(chunk_files.values()):
+        fh.close()
+
+    # Calculate output sizes
+    if not dry_run:
+        for collection in target_collections:
+            coll_file = collections_dir / f"{collection}.jsonl"
+            chunk_file = chunks_dir / f"{collection}_chunks.jsonl"
+            if coll_file.exists():
+                stats.total_output_size_bytes += coll_file.stat().st_size
+            if chunk_file.exists():
+                stats.total_output_size_bytes += chunk_file.stat().st_size
+
+    stats.duration_seconds = time.time() - start_time
+
+    if books_without_disk_file > 0:
+        logger.warning(f"  {books_without_disk_file:,} books had no disk page file")
+
     logger.info(
         f"Skipped {skipped_no_collection:,} books (collection not in target list)"
     )
@@ -922,6 +1500,10 @@ def write_merge_report(stats: MergeStats) -> Path:
         "total_output_size": format_size(stats.total_output_size_bytes),
         "duration_seconds": stats.duration_seconds,
         "duration": format_duration(stats.duration_seconds),
+        "large_files_skipped": stats.large_files_skipped,
+        "large_files_streamed": stats.large_files_streamed,
+        "disk_batch_files_processed": stats.disk_batch_files_processed,
+        "disk_batch_total_docs": stats.disk_batch_total_docs,
     }
 
     report_path = LUCENE_PAGES_DIR / "merge_report.json"
@@ -946,6 +1528,14 @@ def print_merge_summary(stats: MergeStats) -> None:
     print(f"  Chunks created:      {stats.chunks_created:,}")
     print(f"  Output size:         {format_size(stats.total_output_size_bytes)}")
     print(f"  Duration:            {format_duration(stats.duration_seconds)}")
+
+    if stats.large_files_skipped > 0:
+        print(f"  Large files skipped: {stats.large_files_skipped}")
+    if stats.large_files_streamed > 0:
+        print(f"  Large files streamed: {stats.large_files_streamed}")
+    if stats.disk_batch_files_processed > 0:
+        print(f"  Disk batch files:    {stats.disk_batch_files_processed}")
+        print(f"  Disk batch docs:     {stats.disk_batch_total_docs:,}")
 
     print(f"\n  Collection distribution:")
     for collection in sorted(stats.collection_counts.keys()):
@@ -991,6 +1581,21 @@ def main():
         help="Skip the large lucene_page.json file (17.4 GB)",
     )
     parser.add_argument(
+        "--skip-large-files",
+        action="store_true",
+        help="Automatically skip files larger than 5 GB to prevent MemoryError",
+    )
+    parser.add_argument(
+        "--stream-large-files",
+        action="store_true",
+        help="Use streaming (ijson) for files larger than 1 GB instead of loading into memory",
+    )
+    parser.add_argument(
+        "--process-all-pages",
+        action="store_true",
+        help="Use disk-based batch processing for all page_batch_*.jsonl files (low memory)",
+    )
+    parser.add_argument(
         "--max-books",
         type=int,
         default=None,
@@ -1001,12 +1606,15 @@ def main():
     print(f"{'=' * 70}")
     print("ATHAR - MERGE LUCENE CONTENT WITH MASTER CATALOG")
     print(f"{'=' * 70}")
-    print(f"  Collections:   {', '.join(args.collections)}")
-    print(f"  Chunk size:    {args.chunk_size}")
-    print(f"  Dry run:       {args.dry_run}")
-    print(f"  Skip pages:    {args.skip_pages}")
-    print(f"  Max books:     {args.max_books or 'all'}")
-    print(f"  Output dir:    {COLLECTIONS_DIR}")
+    print(f"  Collections:       {', '.join(args.collections)}")
+    print(f"  Chunk size:        {args.chunk_size}")
+    print(f"  Dry run:           {args.dry_run}")
+    print(f"  Skip pages:        {args.skip_pages}")
+    print(f"  Skip large files:  {args.skip_large_files}")
+    print(f"  Stream large files:{args.stream_large_files}")
+    print(f"  Process all pages: {args.process_all_pages}")
+    print(f"  Max books:         {args.max_books or 'all'}")
+    print(f"  Output dir:        {COLLECTIONS_DIR}")
     print(f"{'=' * 70}")
 
     # Check prerequisites
@@ -1052,37 +1660,137 @@ def main():
 
     # ── Load and group content ────────────────────────────────────────
 
-    pages_grouped: Dict[int, List[Dict[str, Any]]] = {}
-    titles_grouped: Dict[int, List[Dict[str, Any]]] = {}
-    esnad_grouped: Dict[int, List[Dict[str, Any]]] = {}
+    pages_grouped: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    titles_grouped: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    esnad_grouped: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+
+    stats = MergeStats()
 
     # 1. Load flat JSON arrays (esnad, title)
     if "flat_esnad" in sources:
-        logger.info("Loading esnad from flat JSON array...")
-        esnad_docs = load_flat_json_array(sources["flat_esnad"])
-        if esnad_docs:
-            grouped = group_by_book_id(esnad_docs)
-            esnad_grouped.update(grouped)
-            logger.info(f"  Grouped into {len(grouped):,} books")
+        esnad_path = sources["flat_esnad"]
+        action, should_process = check_file_size_policy(
+            esnad_path, args.skip_large_files, args.stream_large_files
+        )
+
+        if not should_process:
+            stats.large_files_skipped += 1
+            logger.warning(f"Skipping esnad file (--skip-large-files)")
+        elif action == "stream":
+            logger.info("Streaming esnad from flat JSON array...")
+            stats.large_files_streamed += 1
+            doc_iter = iter_json_array_streaming(esnad_path)
+            count = group_streaming_docs_by_book_id(
+                doc_iter, esnad_grouped
+            )
+            logger.info(f"  Grouped {count:,} esnad documents into {len(esnad_grouped):,} books")
+        else:
+            logger.info("Loading esnad from flat JSON array...")
+            esnad_docs = load_flat_json_array(esnad_path)
+            if esnad_docs:
+                grouped = group_by_book_id(esnad_docs)
+                esnad_grouped.update(grouped)
+                logger.info(f"  Grouped into {len(grouped):,} books")
 
     if "flat_title" in sources:
-        logger.info("Loading titles from flat JSON array...")
-        title_docs = load_flat_json_array(sources["flat_title"])
-        if title_docs:
-            grouped = group_by_book_id(title_docs)
-            titles_grouped.update(grouped)
-            logger.info(f"  Grouped into {len(grouped):,} books")
+        title_path = sources["flat_title"]
+        action, should_process = check_file_size_policy(
+            title_path, args.skip_large_files, args.stream_large_files
+        )
 
-    # 2. Load flat page JSON array (17.4 GB - optionally skip)
-    if args.skip_pages:
+        if not should_process:
+            stats.large_files_skipped += 1
+            logger.warning(f"Skipping title file (--skip-large-files)")
+        elif action == "stream":
+            logger.info("Streaming titles from flat JSON array...")
+            stats.large_files_streamed += 1
+            doc_iter = iter_json_array_streaming(title_path)
+            count = group_streaming_docs_by_book_id(
+                doc_iter, titles_grouped
+            )
+            logger.info(f"  Grouped {count:,} title documents into {len(titles_grouped):,} books")
+        else:
+            logger.info("Loading titles from flat JSON array...")
+            title_docs = load_flat_json_array(title_path)
+            if title_docs:
+                grouped = group_by_book_id(title_docs)
+                titles_grouped.update(grouped)
+                logger.info(f"  Grouped into {len(grouped):,} books")
+
+    # 2. Page processing: either disk-based batch or in-memory
+    book_file_map: Dict[int, Path] = {}
+
+    if args.process_all_pages:
+        # ── DISK-BASED BATCH PROCESSING ────────────────────────────
+        logger.info("=" * 60)
+        logger.info("DISK-BASED BATCH PROCESSING (--process-all-pages)")
+        logger.info("=" * 60)
+
+        # Find all page batch files
+        batch_files = sorted(LUCENE_RAW_DIR.glob("page_batch_*.jsonl"))
+        if not batch_files:
+            logger.error(f"No page_batch_*.jsonl files found in {LUCENE_RAW_DIR}")
+            sys.exit(1)
+
+        total_batch_size = sum(f.stat().st_size for f in batch_files)
+        logger.info(
+            f"Found {len(batch_files)} batch files totaling {format_size(total_batch_size)}"
+        )
+
+        # Process all batches to disk
+        batch_start = time.time()
+        book_file_map = process_pages_to_disk(
+            batch_files=batch_files,
+            temp_dir=TEMP_BOOK_PAGES_DIR,
+            log_interval=100_000,
+        )
+        batch_duration = time.time() - batch_start
+
+        stats.disk_batch_files_processed = len(batch_files)
+        stats.disk_batch_total_docs = sum(
+            1 for f in TEMP_BOOK_PAGES_DIR.glob("*.jsonl")
+            for _ in open(f, "r", encoding="utf-8")
+        )
+
+        logger.info(
+            f"Disk batch processing complete in {format_duration(batch_duration)}: "
+            f"{len(book_file_map):,} books, {stats.disk_batch_total_docs:,} total docs"
+        )
+
+        # Skip the flat page file since we processed batches
+        logger.info("Using disk-based page data, skipping lucene_page.json")
+
+    elif args.skip_pages:
         logger.info("Skipping lucene_page.json (--skip-pages flag set)")
     elif "flat_page" in sources:
-        logger.info("Loading pages from flat JSON array (this may take a while)...")
-        page_docs = load_flat_json_array(sources["flat_page"])
-        if page_docs:
-            grouped = group_by_book_id(page_docs)
-            pages_grouped.update(grouped)
-            logger.info(f"  Grouped into {len(grouped):,} books")
+        page_path = sources["flat_page"]
+        action, should_process = check_file_size_policy(
+            page_path, args.skip_large_files, args.stream_large_files
+        )
+
+        if not should_process:
+            stats.large_files_skipped += 1
+            logger.warning(
+                f"Skipping lucene_page.json ({format_size(page_path.stat().st_size)}) "
+                f"-- exceeds skip threshold (--skip-large-files)"
+            )
+        elif action == "stream":
+            logger.info(
+                f"Streaming pages from flat JSON array ({format_size(page_path.stat().st_size)})..."
+            )
+            stats.large_files_streamed += 1
+            doc_iter = iter_json_array_streaming(page_path)
+            count = group_streaming_docs_by_book_id(
+                doc_iter, pages_grouped
+            )
+            logger.info(f"  Grouped {count:,} page documents into {len(pages_grouped):,} books")
+        else:
+            logger.info("Loading pages from flat JSON array (this may take a while)...")
+            page_docs = load_flat_json_array(page_path)
+            if page_docs:
+                grouped = group_by_book_id(page_docs)
+                pages_grouped.update(grouped)
+                logger.info(f"  Grouped into {len(grouped):,} books")
 
     # 3. Load per-book JSONL files (books directory)
     if "per_book_books" in sources:
@@ -1091,27 +1799,40 @@ def main():
         # These are book metadata entries, not pages - skip for page content
         logger.info(f"  Found {len(books_data)} book metadata files")
 
-    # 4. Load raw batch JSONL files (page content)
-    for key, path in sources.items():
-        if key.startswith("raw_") and path.suffix == ".jsonl":
-            logger.info(f"Loading raw batch: {path.name}...")
-            batch_docs: List[Dict[str, Any]] = []
-            count = 0
-            for doc in iter_jsonl_file(path):
-                batch_docs.append(doc)
-                count += 1
-                if count % 100000 == 0:
-                    logger.info(f"  Read {count:,} documents...")
+    # 4. Load raw batch JSONL files (page content) - only if NOT using disk-based processing
+    if not args.process_all_pages:
+        for key, path in sources.items():
+            if key.startswith("raw_") and path.suffix == ".jsonl":
+                file_size = path.stat().st_size
+                action, should_process = check_file_size_policy(
+                    path, args.skip_large_files, args.stream_large_files
+                )
 
-            if batch_docs:
-                grouped = group_by_book_id(batch_docs)
-                # Merge with existing pages_grouped
-                for book_id, docs in grouped.items():
-                    if book_id in pages_grouped:
-                        pages_grouped[book_id].extend(docs)
-                    else:
-                        pages_grouped[book_id] = docs
-                logger.info(f"  Grouped into {len(grouped):,} books")
+                if not should_process:
+                    stats.large_files_skipped += 1
+                    logger.warning(
+                        f"Skipping {path.name} ({format_size(file_size)}) --skip-large-files"
+                    )
+                    continue
+
+                logger.info(f"Loading raw batch: {path.name}...")
+                batch_docs: List[Dict[str, Any]] = []
+                count = 0
+                for doc in iter_jsonl_file(path):
+                    batch_docs.append(doc)
+                    count += 1
+                    if count % 100000 == 0:
+                        logger.info(f"  Read {count:,} documents...")
+
+                if batch_docs:
+                    grouped = group_by_book_id(batch_docs)
+                    # Merge with existing pages_grouped
+                    for book_id, docs in grouped.items():
+                        if book_id in pages_grouped:
+                            pages_grouped[book_id].extend(docs)
+                        else:
+                            pages_grouped[book_id] = docs
+                    logger.info(f"  Grouped into {len(grouped):,} books")
 
     # 5. Load per-book pages/titles/esnad directories (original structure)
     for content_type, group_dict in [
@@ -1121,6 +1842,15 @@ def main():
     ]:
         key = f"per_book_{content_type}"
         if key in sources:
+            # Check if we already have substantial flat data for this content type
+            existing_count = len(group_dict)
+            if existing_count >= 8000:
+                logger.info(
+                    f"Skipping per-book {content_type} "
+                    f"(already have flat data: {existing_count:,} books)"
+                )
+                continue
+
             logger.info(f"Loading per-book {content_type} from directory...")
             for filepath in sorted(sources[key].glob("*.jsonl")):
                 try:
@@ -1136,17 +1866,28 @@ def main():
 
     # ── Summary of loaded content ─────────────────────────────────────
 
-    total_pages = sum(len(v) for v in pages_grouped.values())
-    total_titles = sum(len(v) for v in titles_grouped.values())
-    total_esnad = sum(len(v) for v in esnad_grouped.values())
+    if args.process_all_pages:
+        # Disk-based: pages are on disk, count from book_file_map
+        total_pages = stats.disk_batch_total_docs
+        total_titles = sum(len(v) for v in titles_grouped.values())
+        total_esnad = sum(len(v) for v in esnad_grouped.values())
 
-    logger.info(f"\nContent summary:")
-    logger.info(f"  Pages:  {total_pages:>10,} documents across {len(pages_grouped):,} books")
-    logger.info(f"  Titles: {total_titles:>10,} documents across {len(titles_grouped):,} books")
-    logger.info(f"  Esnad:  {total_esnad:>10,} documents across {len(esnad_grouped):,} books")
+        logger.info(f"\nContent summary:")
+        logger.info(f"  Pages:  {total_pages:>10,} documents across {len(book_file_map):,} books (on disk)")
+        logger.info(f"  Titles: {total_titles:>10,} documents across {len(titles_grouped):,} books (in memory)")
+        logger.info(f"  Esnad:  {total_esnad:>10,} documents across {len(esnad_grouped):,} books (in memory)")
+    else:
+        total_pages = sum(len(v) for v in pages_grouped.values())
+        total_titles = sum(len(v) for v in titles_grouped.values())
+        total_esnad = sum(len(v) for v in esnad_grouped.values())
+
+        logger.info(f"\nContent summary:")
+        logger.info(f"  Pages:  {total_pages:>10,} documents across {len(pages_grouped):,} books")
+        logger.info(f"  Titles: {total_titles:>10,} documents across {len(titles_grouped):,} books")
+        logger.info(f"  Esnad:  {total_esnad:>10,} documents across {len(esnad_grouped):,} books")
 
     if total_pages == 0 and total_titles == 0 and total_esnad == 0:
-        logger.error("No Lucene content found after loading. Check file paths and formats.")
+        logger.error("No Lucene content found. Cannot proceed with merge.")
         sys.exit(1)
 
     # ── Limit books for testing ───────────────────────────────────────
@@ -1155,33 +1896,60 @@ def main():
         all_book_ids = set()
         for d in [pages_grouped, titles_grouped, esnad_grouped]:
             all_book_ids.update(d.keys())
+        all_book_ids.update(book_file_map.keys())
         all_book_ids = sorted(all_book_ids & set(books.keys()))
         limited_ids = set(all_book_ids[:args.max_books])
 
         pages_grouped = {k: v for k, v in pages_grouped.items() if k in limited_ids}
         titles_grouped = {k: v for k, v in titles_grouped.items() if k in limited_ids}
         esnad_grouped = {k: v for k, v in esnad_grouped.items() if k in limited_ids}
+        book_file_map = {k: v for k, v in book_file_map.items() if k in limited_ids}
 
         logger.info(f"Limited to {args.max_books} books for testing")
 
     # ── Perform merge ─────────────────────────────────────────────────
 
-    stats = enrich_and_merge(
-        books=books,
-        pages_grouped=pages_grouped,
-        titles_grouped=titles_grouped,
-        esnad_grouped=esnad_grouped,
-        collections_dir=COLLECTIONS_DIR,
-        chunks_dir=CHUNKS_DIR,
-        target_collections=args.collections,
-        chunk_size=args.chunk_size,
-        dry_run=args.dry_run,
-    )
+    if args.process_all_pages:
+        # Disk-based merge
+        logger.info("=" * 60)
+        logger.info("STARTING DISK-BASED MERGE")
+        logger.info("=" * 60)
+
+        merge_stats = enrich_and_merge_disk_based(
+            books=books,
+            book_file_map=book_file_map,
+            titles_grouped=titles_grouped,
+            esnad_grouped=esnad_grouped,
+            collections_dir=COLLECTIONS_DIR,
+            chunks_dir=CHUNKS_DIR,
+            target_collections=args.collections,
+            chunk_size=args.chunk_size,
+            dry_run=args.dry_run,
+        )
+    else:
+        # In-memory merge (original)
+        merge_stats = enrich_and_merge(
+            books=books,
+            pages_grouped=pages_grouped,
+            titles_grouped=titles_grouped,
+            esnad_grouped=esnad_grouped,
+            collections_dir=COLLECTIONS_DIR,
+            chunks_dir=CHUNKS_DIR,
+            target_collections=args.collections,
+            chunk_size=args.chunk_size,
+            dry_run=args.dry_run,
+        )
+
+    # Merge file handling stats
+    merge_stats.large_files_skipped = stats.large_files_skipped
+    merge_stats.large_files_streamed = stats.large_files_streamed
+    merge_stats.disk_batch_files_processed = stats.disk_batch_files_processed
+    merge_stats.disk_batch_total_docs = stats.disk_batch_total_docs
 
     # Write report and print summary
     if not args.dry_run:
-        write_merge_report(stats)
-    print_merge_summary(stats)
+        write_merge_report(merge_stats)
+    print_merge_summary(merge_stats)
 
 
 if __name__ == "__main__":
