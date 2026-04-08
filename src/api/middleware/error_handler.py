@@ -32,7 +32,8 @@ def _safe_error_str(e: Exception) -> str:
         if tb:
             # Return just the exception line, limited to 500 chars
             return tb[-1].strip()[:500]
-    except:
+    except Exception as e:
+        logger.warning("error_handler.safe_str_failed", error=str(e))
         pass
     
     # Fallback to type name only

@@ -93,7 +93,8 @@ class TafsirAgent(BaseAgent):
         if not self.llm_client:
             try:
                 self.llm_client = await get_llm_client()
-            except:
+            except Exception as e:
+                logger.warning("tafsir_agent.llm_failed", error=str(e))
                 self._llm_available = False
 
     async def execute(self, input: AgentInput) -> AgentOutput:
@@ -165,5 +166,6 @@ class TafsirAgent(BaseAgent):
                 max_tokens=self.MAX_TOKENS,
             )
             return resp.choices[0].message.content
-        except:
+        except Exception as e:
+            logger.warning("tafsir_agent.generation_failed", error=str(e))
             return passages[:300]
