@@ -24,6 +24,7 @@ from src.knowledge.embedding_model import EmbeddingModel
 from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.knowledge.hierarchical_retriever import HierarchicalRetriever
+from src.knowledge.title_loader import TitleLoader
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
 from src.config.settings import settings
@@ -77,6 +78,7 @@ class BaseRAGAgent(BaseAgent):
         self.hybrid_searcher = None
         self.citation_normalizer = CitationNormalizer()
         self.hierarchical_retriever = HierarchicalRetriever()
+        self.title_loader = TitleLoader()
         self._llm_available = True
         self._initialized = False
 
@@ -194,6 +196,10 @@ class BaseRAGAgent(BaseAgent):
                 good_passages = [
                     p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
                 ][:self.TOP_K_RERANK]
+
+            # Enrich passages with title/chapter context
+            if good_passages:
+                good_passages = self.title_loader.enrich_passages(good_passages)
 
             # Format passages for LLM
             formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
