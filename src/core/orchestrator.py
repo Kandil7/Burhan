@@ -71,8 +71,15 @@ class ResponseOrchestrator:
         self._rag_initialized = False
         self._rag_fallback_to_chatbot = False
 
-        # Check RAG availability
-        self._check_rag_availability()
+        # Check RAG availability (runs async when event loop starts)
+        import asyncio
+        try:
+            asyncio.get_running_loop()
+            # We're in an async context, schedule the check
+            asyncio.create_task(self._check_rag_availability())
+        except RuntimeError:
+            # No running loop yet, will be checked on first request
+            logger.info("orchestrator.rag_check_deferred")
 
     def _ensure_initialized(self):
         """Ensure registry is initialized with base agents and tools."""
@@ -82,7 +89,7 @@ class ResponseOrchestrator:
             # Update our reference to use the newly initialized registry
             self.registry = get_registry()
 
-    def _check_rag_availability(self):
+    async def _check_rag_availability(self):
         """Check if RAG agents are available."""
         # Check if transformers can actually load the model
         try:
@@ -108,7 +115,7 @@ class ResponseOrchestrator:
             return
 
         # Try to initialize RAG agents
-        self._rag_initialized = self._register_rag_agents()
+        self._rag_initialized = await self._register_rag_agents()
 
         if not self._rag_initialized:
             logger.warning("orchestrator.rag_agents_unavailable", using_fallback="chatbot_agent")
@@ -121,7 +128,7 @@ class ResponseOrchestrator:
 
         initialize_registry()
 
-    def _register_rag_agents(self) -> bool:
+    async def _register_rag_agents(self) -> bool:
         """Conditionally register RAG agents if dependencies available."""
         try:
             from src.agents.fiqh_agent import FiqhAgent
@@ -137,15 +144,24 @@ class ResponseOrchestrator:
             from src.knowledge.embedding_model import EmbeddingModel
             from src.knowledge.vector_store import VectorStore
 
-            # Try to initialize embedding model
-            embedding_model = EmbeddingModel()
-            import asyncio
-
-            asyncio.run(embedding_model.load_model())
+            # Initialize embedding model and vector store
+            # Using await instead of asyncio.run() to prevent event loop conflicts
+            try:
+                embedding_model = EmbeddingModel()
+                await embedding_model.load_model()
+                logger.info("orchestrator.embedding_model_loaded")
+            except Exception as e:
+                logger.warning("orchestrator.embedding_failed", error=str(e))
+                embedding_model = None
 
             # Initialize vector store
-            vector_store = VectorStore()
-            asyncio.run(vector_store.initialize())
+            try:
+                vector_store = VectorStore()
+                await vector_store.initialize()
+                logger.info("orchestrator.vector_store_initialized")
+            except Exception as e:
+                logger.warning("orchestrator.vector_store_failed", error=str(e))
+                vector_store = None
 
             # Register all RAG agents
             agents_to_register = [
