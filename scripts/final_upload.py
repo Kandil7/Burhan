@@ -26,6 +26,10 @@ import sys
 import time
 from pathlib import Path
 
+# Load .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 try:
     from huggingface_hub import HfApi, login
     HAS_HF = True
@@ -77,7 +81,6 @@ def get_summary():
     
     # Collections
     total_collection_size = 0
-    total_docs = 0
     
     print("\n📁 Collections (UPLOAD THESE):")
     for collection in COLLECTIONS:
@@ -85,15 +88,9 @@ def get_summary():
         if filepath.exists():
             size = filepath.stat().st_size
             total_collection_size += size
-            
-            # Count lines
-            with open(filepath, 'r', encoding='utf-8') as f:
-                line_count = sum(1 for _ in f)
-            total_docs += line_count
-            
-            print(f"  ✓ {collection}.jsonl: {format_size(size)} ({line_count:,} docs)")
+            print(f"  ✓ {collection}.jsonl: {format_size(size)}")
     
-    print(f"\n  Total: {format_size(total_collection_size)} ({total_docs:,} documents)")
+    print(f"\n  Total: {format_size(total_collection_size)}")
     
     # Metadata
     total_metadata_size = 0
