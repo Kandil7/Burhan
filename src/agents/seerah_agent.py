@@ -36,12 +36,14 @@ class SeerahAgent(BaseAgent):
         self._llm_available = True
 
     async def _initialize(self):
+        """Initialize embedding model, vector store, and LLM client."""
         try:
             if not self.embedding_model:
                 from src.knowledge.embedding_model import EmbeddingModel
                 self.embedding_model = EmbeddingModel()
                 await self.embedding_model.load_model()
-        except:
+        except Exception as e:
+            logger.warning("seerah_agent.embedding_failed", error=str(e))
             self.embedding_model = None
         try:
             if not self.vector_store:
@@ -51,12 +53,16 @@ class SeerahAgent(BaseAgent):
             if not self.hybrid_searcher and self.vector_store:
                 from src.knowledge.hybrid_search import HybridSearcher
                 self.hybrid_searcher = HybridSearcher(self.vector_store)
-        except:
+        except Exception as e:
+            logger.warning("seerah_agent.vector_store_failed", error=str(e))
             self.vector_store = None
             self.hybrid_searcher = None
         if not self.llm_client:
-            try: self.llm_client = await get_llm_client()
-            except: self._llm_available = False
+            try:
+                self.llm_client = await get_llm_client()
+            except Exception as e:
+                logger.warning("seerah_agent.llm_failed", error=str(e))
+                self._llm_available = False
 
     async def execute(self, input: AgentInput) -> AgentOutput:
         await self._initialize()

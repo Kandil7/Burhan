@@ -53,12 +53,14 @@ class AqeedahAgent(BaseAgent):
         self._llm_available = True
 
     async def _initialize(self):
+        """Initialize embedding model, vector store, and LLM client."""
         try:
             if not self.embedding_model:
                 from src.knowledge.embedding_model import EmbeddingModel
                 self.embedding_model = EmbeddingModel()
                 await self.embedding_model.load_model()
-        except:
+        except Exception as e:
+            logger.warning("aqeedah_agent.embedding_failed", error=str(e))
             self.embedding_model = None
         try:
             if not self.vector_store:
@@ -68,13 +70,15 @@ class AqeedahAgent(BaseAgent):
             if not self.hybrid_searcher and self.vector_store:
                 from src.knowledge.hybrid_search import HybridSearcher
                 self.hybrid_searcher = HybridSearcher(self.vector_store)
-        except:
+        except Exception as e:
+            logger.warning("aqeedah_agent.vector_store_failed", error=str(e))
             self.vector_store = None
             self.hybrid_searcher = None
         if not self.llm_client:
             try:
                 self.llm_client = await get_llm_client()
-            except:
+            except Exception as e:
+                logger.warning("aqeedah_agent.llm_failed", error=str(e))
                 self._llm_available = False
 
     async def execute(self, input: AgentInput) -> AgentOutput:
@@ -98,12 +102,22 @@ class AqeedahAgent(BaseAgent):
         return "\n\n".join([f"[C{i}] {p.get('content','')[:500]}" for i, p in enumerate(passages, 1)])
 
     async def _generate(self, query, passages, language):
+        """Generate answer using LLM or fallback to passages."""
         if not passages:
             return "لا توجد نصوص كافية."
         if not self._llm_available or not self.llm_client:
             return passages[:300]
         try:
-            resp = await self.llm_client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":self.SYSTEM_PROMPT},{"role":"user","content":self.USER_PROMPT.format(query=query,language=language,passages=passages)}], temperature=self.TEMPERATURE, max_tokens=self.MAX_TOKENS)
+            resp = await self.llm_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": self.SYSTEM_PROMPT},
+                    {"role": "user", "content": self.USER_PROMPT.format(query=query, language=language, passages=passages)}
+                ],
+                temperature=self.TEMPERATURE,
+                max_tokens=self.MAX_TOKENS
+            )
             return resp.choices[0].message.content
-        except:
+        except Exception as e:
+            logger.warning("aqeedah_agent.generation_failed", error=str(e))
             return passages[:300]
