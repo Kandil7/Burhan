@@ -86,4 +86,6 @@ class SeerahAgent(BaseAgent):
         try:
             r = await self.llm_client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":self.SYSTEM},{"role":"user","content":self.USER.format(query=q,language=lang,passages=p)}], temperature=self.TEMPERATURE, max_tokens=self.MAX_TOKENS)
             return r.choices[0].message.content
-        except: return p[:300]
+        except Exception as e:
+            logger.warning("seerah_agent.generation_failed", error=str(e))
+            return p[:300]
