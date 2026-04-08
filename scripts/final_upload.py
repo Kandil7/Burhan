@@ -202,7 +202,7 @@ def upload_to_huggingface(compress: bool = False):
         if compress:
             filepath = source_dir / f"{collection}.jsonl.gz"
         else:
-            filepath = source_dir / f"{collection}.jsonl"
+            filepath = source_dir / f"{collection}.jsonl.gz"
         
         if not filepath.exists():
             print(f"\n  ⚠️ {filepath.name} not found")

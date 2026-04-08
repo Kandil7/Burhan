@@ -114,15 +114,29 @@ class BaseRAGAgent(BaseAgent):
 
         self._initialized = True
 
-    async def execute(self, input: AgentInput) -> AgentOutput:
+    async def execute(
+        self,
+        input: AgentInput,
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> AgentOutput:
         """
-        Execute RAG pipeline:
+        Execute RAG pipeline with optional facet filtering:
         1. Initialize dependencies
         2. Encode query
-        3. Retrieve passages
+        3. Retrieve passages (with optional filters)
         4. Generate answer
-        5. Normalize citations
+        5. Normalize and enrich citations
         6. Return result with confidence
+
+        Args:
+            input: AgentInput with query and language
+            filters: Optional dict with:
+                - author: str or list[str]
+                - author_death_min: int
+                - author_death_max: int
+                - book_id: int or list[int]
+                - category: str or list[str]
+                - era: str or list[str]
         """
         await self._initialize()
 
@@ -139,13 +153,22 @@ class BaseRAGAgent(BaseAgent):
             # Encode query
             query_embedding = await self.embedding_model.encode_query(input.query)
 
-            # Retrieve passages
-            passages = await self.hybrid_searcher.search(
-                query=input.query,
-                query_embedding=query_embedding,
-                collection=self.COLLECTION,
-                top_k=self.TOP_K_RETRIEVAL,
-            )
+            # Retrieve passages (with optional facet filtering)
+            if filters and self.hybrid_searcher:
+                passages = await self.hybrid_searcher.search_with_facets(
+                    query=input.query,
+                    query_embedding=query_embedding,
+                    collection=self.COLLECTION,
+                    top_k=self.TOP_K_RETRIEVAL,
+                    filters=filters,
+                )
+            else:
+                passages = await self.hybrid_searcher.search(
+                    query=input.query,
+                    query_embedding=query_embedding,
+                    collection=self.COLLECTION,
+                    top_k=self.TOP_K_RETRIEVAL,
+                )
 
             # Filter by score threshold
             good_passages = [
