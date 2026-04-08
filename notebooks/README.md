@@ -1,249 +1,280 @@
-# 🕌 Athar - Google Colab Notebooks
+# 🕌 Athar - Complete Notebooks Guide
 
-GPU-accelerated notebooks for embedding, data processing, and analysis.
-
----
-
-## 📋 Overview
-
-These notebooks enable running computationally intensive tasks on Google Colab's free GPU tier, providing **13-150x speedup** compared to CPU processing.
-
-### Available Notebooks
-
-| Notebook | Purpose | GPU Time | CPU Time | Savings |
-|----------|---------|----------|----------|---------|
-| `setup_colab_env.ipynb` | Environment setup | 5 min | 5 min | N/A |
-| `01_embed_all_collections.ipynb` | Embed all 10 collections | ~3 hours | ~40 hours | **13x** |
-| `02_process_sanadset_hadith.ipynb` | Process 650K hadith | ~6 hours | ~900 hours | **150x** |
-| `03_analyze_and_chunk_books.ipynb` | Analyze & chunk books | ~2 hours | ~20 hours | **10x** |
+**Last Updated:** April 8, 2026  
+**Status:** Production-Ready  
+**Phase:** 7 Complete (Lucene Merge), Phase 8 (Upload & Embedding)
 
 ---
 
-## 🚀 Quick Start
+## Overview
 
-### Step 1: Open in Colab
+Production-ready Google Colab notebooks for:
+1. **Uploading** 5.7M Islamic documents to Hugging Face
+2. **Embedding** all collections with BGE-M3 on GPU
+3. **Importing** to Qdrant vector database
+4. **Verifying** everything works
 
-Click one of the links below or upload the notebook:
+---
 
-1. **Start Here:** [setup_colab_env.ipynb](setup_colab_env.ipynb)
-   - Opens in Colab
-   - Installs dependencies
-   - Mounts Google Drive
-   - Tests GPU
+## Available Notebooks
 
-2. **Embed Collections:** [01_embed_all_collections.ipynb](01_embed_all_collections.ipynb)
-   - Embeds all 10 collections
-   - Outputs: `.npy` embedding files
+| Notebook | Purpose | GPU Time | Status |
+|----------|---------|----------|--------|
+| **02_upload_and_embed.ipynb** | Upload + Embed + Import | ~2 hours | ✅ Complete |
+| **verify_upload.ipynb** | Verify uploads work | 10 min | ✅ Complete |
+| setup_colab_env.ipynb | Environment setup | 5 min | ⏳ Outdated |
+| 01_embed_all_collections.ipynb | Old embedding script | ~3 hours | ⏳ Outdated |
+| 04_upload_to_huggingface.ipynb | Old upload script | ~2 hours | ⏳ Outdated |
+| 05_upload_to_kaggle.ipynb | Kaggle upload | ~3 hours | ⏳ Outdated |
+| google_drive_setup.md | Drive setup guide | - | ✅ Reference |
+| README.md | This guide | - | ✅ Current |
 
-3. **Process Hadith:** [02_process_sanadset_hadith.ipynb](02_process_sanadset_hadith.ipynb)
-   - Processes 650K Sanadset hadith
-   - Outputs: Chunked JSONL files
+---
 
-4. **Analyze Books:** [03_analyze_and_chunk_books.ipynb](03_analyze_and_chunk_books.ipynb)
-   - Analyzes 8,425 books
-   - Outputs: Chunked data ready for embedding
+## Quick Start (Recommended Flow)
 
-### Step 2: Select GPU
+### Step 1: Upload Data to Hugging Face (Local Machine)
 
-1. Go to **Runtime → Change runtime type**
-2. Select **T4 GPU** (free tier)
-3. Click **Save**
+**Time:** ~1.5 hours  
+**Cost:** FREE
 
-### Step 3: Run All Cells
+```bash
+# Already running on your machine!
+# PID: 18364
 
-1. Open `setup_colab_env.ipynb` first
-2. Click **Runtime → Run all**
-3. Wait for setup to complete (~5 minutes)
-4. Open the notebook you need
+# Check progress
+dir data\processed\lucene_pages\upload_ready\*.gz
+
+# Verify when done
+poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
+```
+
+### Step 2: Embed on Colab GPU
+
+**Time:** ~1 hour  
+**Cost:** FREE (T4 GPU)
+
+1. Open Google Colab: https://colab.research.google.com
+2. Upload: `notebooks/02_upload_and_embed.ipynb`
+3. Set your `HF_TOKEN` in the notebook
+4. Select T4 GPU: Runtime → Change runtime type → GPU
 5. Run all cells
 
+### Step 3: Verify Everything Works
+
+**Time:** 10 minutes
+
+1. Upload: `notebooks/verify_upload.ipynb`
+2. Run all cells
+3. Check all collections load correctly
+
 ---
 
-## 📂 Google Drive Setup
+## Notebook Details
 
-### Folder Structure
+### 02_upload_and_embed.ipynb (MAIN NOTEBOOK)
 
-Create this structure in your Google Drive:
+**Purpose:** Complete pipeline from upload to embedding to Qdrant import
+
+**Steps:**
+1. Setup environment (install packages)
+2. Login to Hugging Face
+3. Compress collections (optional)
+4. Upload to Hugging Face
+5. Verify upload
+6. Embed all collections with BGE-M3
+7. Import to Qdrant
+8. Test retrieval
+
+**Requirements:**
+- Google Colab with T4 GPU (free)
+- Hugging Face token
+- ~2 hours runtime
+
+**Outputs:**
+- Collections on Hugging Face
+- Embeddings (.npy files)
+- Qdrant collections populated
+- Working RAG retrieval
+
+---
+
+### verify_upload.ipynb
+
+**Purpose:** Verify uploaded datasets work correctly
+
+**Steps:**
+1. Load each collection from Hugging Face
+2. Check document counts
+3. Verify data quality
+4. Show sample documents
+
+**Requirements:**
+- Google Colab (CPU is fine)
+- 10 minutes runtime
+
+**Outputs:**
+- Verification report
+- Collection statistics
+- Sample documents
+
+---
+
+## Google Drive Setup
+
+### For Local Data Upload (RECOMMENDED)
+
+Keep data on your local machine, upload via scripts:
+
+```bash
+# Upload to Hugging Face
+poetry run python scripts/final_upload.py --upload --compress
+
+# Verify
+poetry run python scripts/final_upload.py --verify
+```
+
+**Pros:**
+- No need to upload to Google Drive first
+- Direct upload to Hugging Face
+- Faster (no double upload)
+
+### For Google Drive Storage (OPTIONAL)
+
+If you want to store data on Google Drive:
 
 ```
 Google Drive/
 └── MyDrive/
     └── Athar/
-        ├── datasets/
-        │   ├── extracted_books/     # 8,425 books (17.16 GB)
-        │   ├── sanadset.csv         # 650K hadith (1.43 GB)
-        │   └── metadata/            # Small JSON/DB files
+        ├── collections/
+        │   ├── fiqh_passages.jsonl
+        │   ├── hadith_passages.jsonl
+        │   └── ... (10 files)
+        ├── metadata/
+        │   ├── master_catalog.json
+        │   ├── category_mapping.json
+        │   └── author_catalog.json
         └── output/
-            ├── embeddings/          # Generated embeddings
-            └── chunked_data/        # Processed chunks
+            ├── embeddings/
+            └── qdrant/
 ```
 
-### Upload Datasets
-
-**Option 1: Google Drive Desktop App** (Recommended)
-1. Install Google Drive for Desktop
-2. Copy datasets to `Google Drive/MyDrive/Athar/datasets/`
-3. Wait for sync to complete
-
-**Option 2: Web Upload**
-1. Go to https://drive.google.com
-2. Navigate to `MyDrive/Athar/datasets/`
-3. Upload files/folders
-4. Wait for upload to complete
+**Upload to Drive:**
+```bash
+# Install Google Drive CLI
+# Or use Google Drive Desktop app
+# Copy data/processed/lucene_pages/collections/ to Drive
+```
 
 ---
 
-## 💰 Cost Estimates
+## Cost Analysis
 
 ### Free Tier (T4 GPU)
 
 | Task | Time | Cost |
 |------|------|------|
 | Setup | 5 min | Free |
-| Embed 10 collections | ~3 hours | Free |
-| Process 650K hadith | ~6 hours | Free |
-| Analyze & chunk books | ~2 hours | Free |
-| **Total per session** | **~11 hours** | **Free** |
-
-**Limitations:**
-- 12-hour session timeout
-- May disconnect if idle
-- T4 GPU (16 GB VRAM)
+| Verify upload | 10 min | Free |
+| Embed 10 collections | ~1 hour | Free |
+| Import to Qdrant | 30 min | Free |
+| **Total** | **~2 hours** | **FREE** |
 
 ### Colab Pro ($10/month)
 
 | Task | Time | Cost |
 |------|------|------|
-| Embed 10 collections | ~1 hour | $0.17 |
-| Process 650K hadith | ~2 hours | $0.33 |
-| Analyze & chunk books | ~45 min | $0.13 |
-| **Total** | **~4 hours** | **$0.63** |
+| Embed 10 collections | ~20 min | $0.06 |
+| Import to Qdrant | 10 min | $0.03 |
+| **Total** | **~30 min** | **$0.09** |
 
-**Benefits:**
-- A100 GPU (40 GB VRAM)
-- 24-hour sessions
-- Priority access
-- More memory
+**Recommendation:** Free tier is sufficient for this workload
 
 ---
 
-## 📊 Expected Outputs
+## Current Status
 
-### After Embedding
-
-```
-output/embeddings/
-├── fiqh_passages_embeddings.npy       # 10,132 × 1024 matrix
-├── fiqh_passages_meta.json            # Metadata
-├── hadith_passages_embeddings.npy     # 650,986 × 1024 matrix
-├── hadith_passages_meta.json
-├── ... (10 collections total)
-└── embeddings.zip                     # All files
-```
-
-### After Processing Hadith
+### Upload Progress
 
 ```
-output/chunked_data/
-├── sanadset_chunked.jsonl             # 650K hadith
-└── sanadset_stats.json                # Statistics
+Repository: Kandil7/Athar-Datasets
+Status: Created ✅
+Upload: Running (PID: 18364)
+
+Collections to upload:
+  ✓ hadith_passages.jsonl (11.0 GB)
+  ✓ fiqh_passages.jsonl (7.0 GB)
+  ✓ general_islamic.jsonl (6.5 GB)
+  ✓ islamic_history_passages.jsonl (6.0 GB)
+  ✓ quran_tafsir.jsonl (5.2 GB)
+  ✓ arabic_language_passages.jsonl (2.3 GB)
+  ✓ aqeedah_passages.jsonl (1.8 GB)
+  ✓ usul_fiqh.jsonl (0.9 GB)
+  ✓ spirituality_passages.jsonl (1.1 GB)
+  ✓ seerah_passages.jsonl (0.8 GB)
+  
+Total: 42.6 GB → ~15 GB compressed
 ```
 
-### After Analyzing Books
+### Next Steps
 
-```
-output/chunked_data/
-├── all_chunks.json                    # All chunked books
-├── chunks_by_collection/
-│   ├── fiqh_passages.jsonl
-│   ├── aqeedah_passages.jsonl
-│   └── ... (10 collections)
-└── analysis_report.json               # Statistics
-```
+1. ⏳ **Wait for upload to complete** (~1 hour)
+2. ⏳ **Verify upload** (`scripts/final_upload.py --verify`)
+3. ⏳ **Open Colab** (notebooks/02_upload_and_embed.ipynb)
+4. ⏳ **Embed collections** (~1 hour on T4)
+5. ⏳ **Import to Qdrant** (30 min)
+6. ⏳ **Test retrieval** (10 min)
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### GPU Not Available
+### Upload Stuck
 
-**Problem:** Notebook shows "No GPU detected"
+```powershell
+# Check if running
+tasklist | findstr python
+
+# If stuck, restart
+poetry run python scripts/final_upload.py --upload --compress
+```
+
+### Colab GPU Not Available
 
 **Solution:**
-1. Go to **Runtime → Change runtime type**
-2. Select **T4 GPU**
-3. Re-run the setup cell
+1. Try again later (free GPUs get busy)
+2. Use CPU (slower but works): Change `device='cuda'` to `device='cpu'`
+3. Upgrade to Colab Pro ($10/month)
 
-### Session Timeout
-
-**Problem:** Colab disconnects after 12 hours
+### Out of Memory on Colab
 
 **Solution:**
-1. Save your progress frequently
-2. Outputs are saved to Google Drive automatically
-3. Re-run the notebook when you reconnect
-4. It will resume from where it left off
+```python
+# Reduce batch size
+BATCH_SIZE = 8  # Change from 32 to 8
+```
 
-### Out of Memory
-
-**Problem:** "CUDA out of memory" error
+### Hugging Face Authentication
 
 **Solution:**
-1. Reduce batch size in the notebook:
-   ```python
-   BATCH_SIZE = 64  # Change from 128 to 64
-   ```
-2. Or upgrade to Colab Pro for A100 GPU
-
-### HuggingFace Authentication
-
-**Problem:** Can't download embedding model
-
-**Solution:**
-1. Get token from https://huggingface.co/settings/tokens
-2. In Colab: **Secrets** → Add `HF_TOKEN`
-3. Enable "Notebook access"
+```python
+# Get token from https://huggingface.co/settings/tokens
+# In Colab, use:
+from huggingface_hub import login
+login(token="hf_YOUR_TOKEN_HERE")
+```
 
 ---
 
-## 📈 Performance Comparison
+## Resources
 
-| Task | Local CPU | Colab T4 | Colab A100 |
-|------|-----------|----------|------------|
-| Embed 650K hadith | 900 hours | 6 hours | 2 hours |
-| Embed 10 collections | 40 hours | 3 hours | 1 hour |
-| Process 8,425 books | 20 hours | 2 hours | 45 min |
-| **Total** | **960 hours** | **11 hours** | **4 hours** |
-
----
-
-## 🔗 Resources
-
-- **Colab Homepage:** https://colab.research.google.com
-- **Colab Pro:** https://colab.research.google.com/signup
-- **Athar Repository:** https://github.com/Kandil7/Athar
-- **HuggingFace:** https://huggingface.co/Qwen/Qwen3-Embedding-0.6B
+- **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **Colab:** https://colab.research.google.com
+- **BGE-M3 Model:** https://huggingface.co/BAAI/bge-m3
+- **Athar GitHub:** https://github.com/Kandil7/Athar
+- **Qdrant Docs:** https://qdrant.tech/documentation
 
 ---
 
-## 💡 Tips
-
-1. **Save Progress Frequently**
-   - Colab can disconnect unexpectedly
-   - All outputs are saved to Google Drive
-
-2. **Use Free Tier First**
-   - Test with mini-dataset (1,623 docs)
-   - Upgrade to Pro only if needed
-
-3. **Schedule Long Tasks**
-   - Start embedding before sleeping
-   - Check progress in the morning
-
-4. **Download Results**
-   - Zip files are in Google Drive
-   - Download to local machine for Qdrant import
-
----
-
-*Last updated: April 7, 2026*
+*Last updated: April 8, 2026*
