@@ -26,6 +26,7 @@ from src.knowledge.hybrid_search import HybridSearcher
 from src.knowledge.hierarchical_retriever import HierarchicalRetriever
 from src.knowledge.title_loader import TitleLoader
 from src.knowledge.hadith_grader import HadithAuthenticityGrader
+from src.knowledge.book_weighter import BookImportanceWeighter
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
 from src.config.settings import settings
@@ -81,6 +82,7 @@ class BaseRAGAgent(BaseAgent):
         self.hierarchical_retriever = HierarchicalRetriever()
         self.title_loader = TitleLoader()
         self.hadith_grader = HadithAuthenticityGrader()
+        self.book_weighter = BookImportanceWeighter()
         self._llm_available = True
         self._initialized = False
 
@@ -204,6 +206,8 @@ class BaseRAGAgent(BaseAgent):
                 good_passages = self.title_loader.enrich_passages(good_passages)
                 # Enrich hadith passages with authenticity grades
                 good_passages = self.hadith_grader.enrich_passages_with_authenticity(good_passages)
+                # Weight passages by book importance
+                good_passages = self.book_weighter.weight_passages_by_importance(good_passages)
 
             # Format passages for LLM
             formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
