@@ -190,7 +190,7 @@ def upload_to_huggingface(compress: bool = False):
         compress_for_upload()
         source_dir = UPLOAD_DIR
     else:
-        source_dir = COLLECTIONS_DIR
+        source_dir = UPLOAD_DIR
     
     print(f"\n📤 UPLOADING TO HUGGING FACE")
     print(f"  Repository: {REPO_ID}")
