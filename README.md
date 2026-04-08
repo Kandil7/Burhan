@@ -20,7 +20,7 @@
 - ✅ **10 hierarchical chunk files** created
 - ✅ Disk-based memory-efficient processing (<2 GB RAM)
 
-📖 **Full details:** [docs/LUCENE_MERGE_COMPLETE.md](docs/LUCENE_MERGE_COMPLETE.md)
+📖 **Full details:** [Dataset](https://claude.ai/public/artifacts/cf8f3309-058f-4d99-b06d-be3f013cb6cf)
 
 ---
 
