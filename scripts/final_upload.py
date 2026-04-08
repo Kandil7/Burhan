@@ -176,7 +176,7 @@ def compress_for_upload():
     print(f"  Output:     {UPLOAD_DIR}")
 
 
-def upload_to_huggingface(compress: bool = False):
+def upload_to_huggingface(compress: bool = False, selected: str | None = None):
     """Upload to Hugging Face."""
     if not HAS_HF:
         print("❌ huggingface_hub not installed. Run: pip install huggingface_hub")
