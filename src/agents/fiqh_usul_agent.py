@@ -11,6 +11,7 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 from src.infrastructure.llm_client import get_llm_client
 
 logger = get_logger()
@@ -82,7 +83,7 @@ class FiqhUsulAgent(BaseAgent):
         if not p: return "لا توجد نصوص كافية."
         if not self._llm_available or not self.llm_client: return p[:300]
         try:
-            r = await self.llm_client.chat.completions.create(model="gpt-4o-mini", messages=[{"role":"system","content":self.SYSTEM},{"role":"user","content":self.USER.format(query=q,language=lang,passages=p)}], temperature=self.TEMPERATURE, max_tokens=self.MAX_TOKENS)
+            r = await self.llm_client.chat.completions.create(model=settings.openai_model, messages=[{"role":"system","content":self.SYSTEM},{"role":"user","content":self.USER.format(query=q,language=lang,passages=p)}], temperature=self.TEMPERATURE, max_tokens=self.MAX_TOKENS)
             return r.choices[0].message.content
         except Exception as e:
             logger.warning("fiqh_usul_agent.generation_failed", error=str(e))

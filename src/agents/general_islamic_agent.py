@@ -205,7 +205,7 @@ class GeneralIslamicAgent(BaseAgent):
             )
 
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[
                     {"role": "system", "content": self.GENERAL_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},
