@@ -6,8 +6,8 @@ license: mit
 task_categories:
 - question-answering
 - text-generation
-- retrieval-augmented-generation
-- semantic-similarity
+- text-retrieval
+- sentence-similarity
 - fill-mask
 pretty_name: Athar Islamic QA Datasets
 tags:
