@@ -7,7 +7,6 @@ task_categories:
 - question-answering
 - text-generation
 - text-retrieval
-- sentence-similarity
 - fill-mask
 pretty_name: Athar Islamic QA Datasets
 tags:
