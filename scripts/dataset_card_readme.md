@@ -363,16 +363,50 @@ print(result.citations[0].metadata['hadith_grade'])
 
 ---
 
-## 📖 Source
+## 📖 Source: ElShamela Library (المكتبة الشاملة)
 
-The dataset is derived from the **Shamela Library** — a comprehensive digital library of Islamic texts containing 8,425 books across 41 categories spanning 1,400 years of Islamic scholarship.
+This dataset is derived from **ElShamela Library** (المكتبة الشاملة) — the largest comprehensive digital library of Islamic texts, containing **8,425 books** across **41 categories** spanning **1,400 years of Islamic scholarship**.
 
-**Processing Pipeline:**
-1. Extracted 8,425 books from Shamela format
-2. Split into pages and passages
-3. Enriched with metadata (author, death year, chapter, section)
-4. Mapped to 10 scholarly collections
-5. Added hadith chain (esnad) data where available
+### About ElShamela Library
+
+**ElShamela** (المكتبة الشاملة) is a free, open-access digital library that has been digitizing and preserving classical Islamic texts for over two decades. It is widely considered the most comprehensive collection of Islamic heritage works, including:
+
+- **Quran and Tafsir** — Complete Quran text with major classical commentaries
+- **Hadith Collections** — Six canonical hadith books (Kutub al-Sittah) plus Musnad works
+- **Fiqh** — Jurisprudence from all four major Sunni schools (Hanafi, Maliki, Shafi'i, Hanbali)
+- **Aqeedah** — Islamic theology and creed from various schools
+- **Seerah** — Prophet Muhammad's ﷺ biography
+- **Arabic Language** — Grammar, linguistics, rhetoric, and lexicons
+- **Islamic History** — Historical accounts from the Prophetic era through the Ottoman period
+- **Spirituality** — Tasawwuf, ethics, and purification of the heart
+- **Usul Fiqh** — Principles of Islamic jurisprudence and legal theory
+
+**Website:** https://shamela.ws/
+
+### Processing Pipeline
+
+1. **Extracted** 8,425 books from ElShamela Library format
+2. **Converted** from proprietary Shamela format to plain text
+3. **Split** into pages and passages for granular retrieval
+4. **Enriched** with metadata:
+   - Author names and death years (Hijri calendar)
+   - Book titles and categories
+   - Chapter and section headings
+   - Page numbers
+5. **Organized** into 10 scholarly collections based on subject matter
+6. **Added** hadith chain (esnad) data where available
+7. **Compressed** with gzip for efficient storage and transfer
+
+### ElShamela Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Books | 8,425 |
+| Total Categories | 41 |
+| Total Authors | 3,146 |
+| Time Span | 0-1400+ AH (7th-21st century CE) |
+| Original Size | 17.16 GB (extracted text) |
+| Languages | Classical Arabic (primary) |
 
 ---
 
