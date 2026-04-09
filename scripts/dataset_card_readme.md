@@ -40,8 +40,6 @@ dataset_info:
     dtype: int64
   - name: section_title
     dtype: string
-  - name: hierarchy
-    dtype: list
   - name: title
     dtype: string
   - name: chapter
