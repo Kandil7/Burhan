@@ -11,7 +11,7 @@
 
 ## 🎉 Latest Achievement: Complete Lucene Merge ✅
 
-**April 8, 2026:** Successfully processed **11.3M+ documents** from Shamela's Lucene indexes:
+**April 8, 2026:** Successfully processed **11.3M+ documents** from [ElShamela Library](https://shamela.ws/) (المكتبة الشاملة):
 - ✅ 7,358,148 page documents (16.14 GB)
 - ✅ 3,914,618 title documents (341 MB)
 - ✅ 35,526 hadith chains (esnad)
@@ -20,7 +20,7 @@
 - ✅ **10 hierarchical chunk files** created
 - ✅ Disk-based memory-efficient processing (<2 GB RAM)
 
-📖 **Full details:** [Dataset](https://claude.ai/public/artifacts/cf8f3309-058f-4d99-b06d-be3f013cb6cf)
+📖 **Full details:** [Lucene Merge Complete](docs/LUCENE_MERGE_COMPLETE.md)
 
 ---
 
@@ -150,10 +150,19 @@ make dev
 
 ## 📊 Data Pipeline
 
+### Source: ElShamela Library (المكتبة الشاملة)
+
+All data is derived from **ElShamela Library** (المكتبة الشاملة) — the largest comprehensive digital library of Islamic texts, containing **8,425 books** across **41 categories** spanning **1,400 years** of Islamic scholarship.
+
+- **Website:** https://shamela.ws/
+- **Format:** Proprietary Shamela format → Extracted to plain text
+- **Books:** 8,425 texts from 3,146 scholars
+- **Time Span:** 0-1400+ AH (7th-21st century CE)
+
 ### Complete Flow (Phase 7 - COMPLETE ✅)
 
 ```
-Raw Shamela Data → Extraction → Merge & Enrichment → Collections → Chunks → (Next: Embedding)
+ElShamela Library → Extraction → Merge & Enrichment → Collections → Chunks → (Next: Embedding)
 ```
 
 ### Processing Statistics
@@ -313,6 +322,8 @@ MIT License - see LICENSE file for details.
 **Built with ❤️ for the Muslim community**
 
 [🕌](#) Athar Islamic QA System • Based on Fanar-Sadiq Architecture
+
+**Data Source:** [ElShamela Library](https://shamela.ws/) (المكتبة الشاملة) • 8,425 books • 3,146 scholars
 
 **11.3M+ documents processed • 10 collections built • Ready for production**
 

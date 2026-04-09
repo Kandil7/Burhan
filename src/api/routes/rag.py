@@ -267,7 +267,8 @@ async def get_rag_stats():
                 stats = vector_store.get_collection_stats(coll)
                 collections[coll] = stats
                 total_docs += stats.get("vectors_count", 0)
-            except:
+            except Exception as e:
+                logger.warning("rag.stats_collection_failed", collection=coll, error=str(e))
                 collections[coll] = {"vectors_count": 0}
 
         embedding_model = EmbeddingModel()

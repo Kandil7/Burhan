@@ -20,14 +20,19 @@ Production-ready Google Colab notebooks for:
 
 | Notebook | Purpose | GPU Time | Status |
 |----------|---------|----------|--------|
-| **02_upload_and_embed.ipynb** | Upload + Embed + Import | ~2 hours | ✅ Complete |
-| **verify_upload.ipynb** | Verify uploads work | 10 min | ✅ Complete |
-| setup_colab_env.ipynb | Environment setup | 5 min | ⏳ Outdated |
-| 01_embed_all_collections.ipynb | Old embedding script | ~3 hours | ⏳ Outdated |
-| 04_upload_to_huggingface.ipynb | Old upload script | ~2 hours | ⏳ Outdated |
-| 05_upload_to_kaggle.ipynb | Kaggle upload | ~3 hours | ⏳ Outdated |
-| google_drive_setup.md | Drive setup guide | - | ✅ Reference |
+| **02_upload_and_embed.ipynb** | Upload + Embed + Import | ~13 hours | ✅ **MAIN - USE THIS** |
+| **verify_upload.ipynb** | Verify uploads work | 10 min | ✅ Verification |
+| **COLAB_GPU_EMBEDDING_GUIDE.md** | Complete setup guide | - | ✅ Documentation |
 | README.md | This guide | - | ✅ Current |
+
+### Archived (Not Recommended)
+
+| Notebook | Why Archived | Location |
+|----------|--------------|----------|
+| 01_embed_all_collections.ipynb | Uses old model (Qwen3 instead of BGE-M3) | `archive/` |
+| 04_upload_to_huggingface.ipynb | Duplicates Python scripts | `archive/` |
+| 05_upload_to_kaggle.ipynb | Kaggle is backup option only | `archive/` |
+| setup_colab_env.ipynb | Superseded by main notebook | Deleted |
 
 ---
 
@@ -51,14 +56,15 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 
 ### Step 2: Embed on Colab GPU
 
-**Time:** ~1 hour  
-**Cost:** FREE (T4 GPU)
+**Time:** ~13 hours (free T4) or ~4 hours (paid A100)
+**Cost:** FREE (T4 GPU) or ~$10-15 (A100)
 
 1. Open Google Colab: https://colab.research.google.com
 2. Upload: `notebooks/02_upload_and_embed.ipynb`
 3. Set your `HF_TOKEN` in the notebook
 4. Select T4 GPU: Runtime → Change runtime type → GPU
-5. Run all cells
+5. Run all cells (takes ~13 hours)
+6. Embeddings auto-save to Google Drive every 30 min
 
 ### Step 3: Verify Everything Works
 
@@ -176,20 +182,21 @@ Google Drive/
 | Task | Time | Cost |
 |------|------|------|
 | Setup | 5 min | Free |
-| Verify upload | 10 min | Free |
-| Embed 10 collections | ~1 hour | Free |
-| Import to Qdrant | 30 min | Free |
-| **Total** | **~2 hours** | **FREE** |
+| Download from HF | 15-30 min | Free |
+| Embed 10 collections (5.7M docs) | ~13 hours | Free |
+| Upload to Qdrant | 1-2 hours | Free |
+| Verify | 10 min | Free |
+| **Total** | **~15-16 hours** | **FREE** |
 
-### Colab Pro ($10/month)
+### Colab Pro A100 ($10/month)
 
 | Task | Time | Cost |
 |------|------|------|
-| Embed 10 collections | ~20 min | $0.06 |
-| Import to Qdrant | 10 min | $0.03 |
-| **Total** | **~30 min** | **$0.09** |
+| Embed 10 collections | ~3-4 hours | ~$0.15 |
+| Upload to Qdrant | 30 min | ~$0.05 |
+| **Total** | **~4-5 hours** | **~$0.20** |
 
-**Recommendation:** Free tier is sufficient for this workload
+**Recommendation:** Free T4 works fine for overnight runs. A100 is 4x faster if you need results quickly.
 
 ---
 

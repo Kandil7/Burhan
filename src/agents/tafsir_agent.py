@@ -17,6 +17,7 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 from src.infrastructure.llm_client import get_llm_client
 
 logger = get_logger()
@@ -93,7 +94,8 @@ class TafsirAgent(BaseAgent):
         if not self.llm_client:
             try:
                 self.llm_client = await get_llm_client()
-            except:
+            except Exception as e:
+                logger.warning("tafsir_agent.llm_failed", error=str(e))
                 self._llm_available = False
 
     async def execute(self, input: AgentInput) -> AgentOutput:
@@ -156,7 +158,7 @@ class TafsirAgent(BaseAgent):
             return passages[:300]
         try:
             resp = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[
                     {"role": "system", "content": self.TAFSIR_SYSTEM_PROMPT},
                     {"role": "user", "content": self.TAFSIR_USER_PROMPT.format(query=query, language=language, passages=passages)},
@@ -165,5 +167,6 @@ class TafsirAgent(BaseAgent):
                 max_tokens=self.MAX_TOKENS,
             )
             return resp.choices[0].message.content
-        except:
+        except Exception as e:
+            logger.warning("tafsir_agent.generation_failed", error=str(e))
             return passages[:300]

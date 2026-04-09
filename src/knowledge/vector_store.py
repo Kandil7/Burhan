@@ -322,7 +322,8 @@ class VectorStore:
                 try:
                     points = self.client.query_points(collection, limit=1)
                     vectors_count = getattr(points, 'total', 0) if hasattr(points, 'total') else 0
-                except:
+                except Exception as e:
+                    logger.warning("vector_store.count_failed", collection=collection, error=str(e))
                     vectors_count = 0
 
             # Get status

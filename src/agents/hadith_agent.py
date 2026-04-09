@@ -18,6 +18,7 @@ from src.knowledge.vector_store import VectorStore
 from src.knowledge.hybrid_search import HybridSearcher
 from src.core.citation import CitationNormalizer
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 from src.infrastructure.llm_client import get_llm_client
 
 logger = get_logger()
@@ -204,7 +205,7 @@ class HadithAgent(BaseAgent):
             )
 
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[
                     {"role": "system", "content": self.HADITH_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},

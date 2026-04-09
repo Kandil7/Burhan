@@ -115,6 +115,14 @@ def get_summary():
     print(f"📦 Compressed (estimated): {format_size(compressed_estimate)}")
     print(f"💡 Space savings: 65%")
 
+def get_target_collections(selected: str | None):
+    if selected is None:
+        return COLLECTIONS
+    if selected not in COLLECTIONS:
+        print(f"❌ Unknown collection: {selected}")
+        print("Available:", ", ".join(COLLECTIONS))
+        sys.exit(1)
+    return [selected]
 
 def compress_for_upload():
     """Compress collections for upload."""
@@ -168,7 +176,7 @@ def compress_for_upload():
     print(f"  Output:     {UPLOAD_DIR}")
 
 
-def upload_to_huggingface(compress: bool = False):
+def upload_to_huggingface(compress: bool = False, selected: str | None = None):
     """Upload to Hugging Face."""
     if not HAS_HF:
         print("❌ huggingface_hub not installed. Run: pip install huggingface_hub")
@@ -185,12 +193,13 @@ def upload_to_huggingface(compress: bool = False):
     api = HfApi()
     login(token=token)
     
+    target_collections = get_target_collections(selected)
     # Compress if requested
     if compress:
         compress_for_upload()
         source_dir = UPLOAD_DIR
     else:
-        source_dir = COLLECTIONS_DIR
+        source_dir = UPLOAD_DIR
     
     print(f"\n📤 UPLOADING TO HUGGING FACE")
     print(f"  Repository: {REPO_ID}")
@@ -198,11 +207,11 @@ def upload_to_huggingface(compress: bool = False):
     print("=" * 70)
     
     # Upload collections
-    for i, collection in enumerate(COLLECTIONS, 1):
+    for i, collection in enumerate(target_collections, 1):
         if compress:
             filepath = source_dir / f"{collection}.jsonl.gz"
         else:
-            filepath = source_dir / f"{collection}.jsonl"
+            filepath = source_dir / f"{collection}.jsonl.gz"
         
         if not filepath.exists():
             print(f"\n  ⚠️ {filepath.name} not found")
@@ -277,6 +286,12 @@ def main():
     parser.add_argument("--verify", action="store_true", help="Verify upload")
     parser.add_argument("--summary", action="store_true", help="Show data summary")
     parser.add_argument("--repo", type=str, default=None, help="Repository ID")
+    parser.add_argument(
+    "--collection",
+    type=str,
+    default=None,
+    help="Only process a single collection by name",
+    )
     args = parser.parse_args()
     
     if args.repo:

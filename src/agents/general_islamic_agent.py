@@ -13,8 +13,6 @@ Phase 5: Uses settings and constants for configuration.
 
 from typing import Optional
 
-import numpy as np
-
 from src.agents.base import BaseAgent, AgentInput, AgentOutput, Citation
 from src.knowledge.embedding_model import EmbeddingModel
 from src.knowledge.vector_store import VectorStore
@@ -205,7 +203,7 @@ class GeneralIslamicAgent(BaseAgent):
             )
 
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[
                     {"role": "system", "content": self.GENERAL_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},

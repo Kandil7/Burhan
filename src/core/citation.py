@@ -4,16 +4,17 @@ Citation Normalization Engine for Athar Islamic QA system.
 Converts various citation formats to standardized [C1], [C2], [C3] format
 with structured metadata for display and verification.
 
-Handles:
-- Quran citations (Quran 2:255, البقرة 255, Ayat al-Kursi)
-- Hadith citations (Sahih Bukhari 1234, رواه البخاري)
-- Fiqh book citations (Kitab al-Fiqh, chapter X)
-- Fatwa citations (IslamWeb fatwa #12345)
+Enhanced with rich metadata from processed collections:
+- Book title, author name, death year
+- Page number, chapter/section
+- Collection category
+- Scholarly era (based on author death year)
+- Link to source text
 
 Based on Fanar-Sadiq citation normalization approach.
 """
 import re
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from src.agents.base import Citation
 from src.config.logging_config import get_logger
@@ -24,19 +25,25 @@ logger = get_logger()
 class CitationNormalizer:
     """
     Normalizes citations from various formats to standard [C1], [C2] format.
-    
+
+    Enhanced version with rich metadata support:
+    - Extracts book/author info from passage metadata
+    - Adds scholarly era classification
+    - Provides source URLs when available
+    - Supports faceted display (by author, era, collection)
+
     This engine:
     1. Detects citation patterns in text
     2. Extracts structured metadata
     3. Replaces with normalized [C1], [C2] tags
     4. Maintains mapping for later display
-    
+
     Usage:
         normalizer = CitationNormalizer()
         text = "As stated in Quran 2:255 and Sahih Bukhari 1234..."
         normalized = normalizer.normalize(text)
         # "As stated in [C1] and [C2]..."
-        
+
         citations = normalizer.get_citations()
         # [Citation(id="C1", type="quran", source="Quran 2:255", ...),
         #  Citation(id="C2", type="hadith", source="Sahih Bukhari", ...)]
@@ -272,3 +279,121 @@ class CitationNormalizer:
         """Reset the normalizer for new text."""
         self.citation_counter = 0
         self.citation_map = {}
+
+    def enrich_citations(self, passages: list[Dict[str, Any]]) -> list[Citation]:
+        """
+        Enhance citations with rich metadata from retrieved passages.
+
+        Adds:
+        - Book title and author name
+        - Author death year (Hijri)
+        - Page number and chapter/section
+        - Collection category
+        - Scholarly era classification
+        - Source text link
+
+        Usage:
+            citations = normalizer.get_citations()
+            enriched = normalizer.enrich_citations(passages)
+
+        Args:
+            passages: List of passage dicts from collection with metadata
+
+        Returns:
+            List of Citation objects with enriched metadata
+        """
+        citations = self.get_citations()
+        enriched = []
+
+        for i, citation in enumerate(citations):
+            # Get corresponding passage metadata
+            passage = passages[i] if i < len(passages) else {}
+
+            # Extract metadata from passage
+            book_id = passage.get("book_id")
+            book_title = passage.get("title", "")
+            author = passage.get("author", "")
+            author_death = passage.get("author_death")
+            page = passage.get("page")
+            chapter = passage.get("chapter", "")
+            section = passage.get("section", "")
+            collection = passage.get("collection", "")
+            doc_id = passage.get("doc_id", "")
+
+            # Build rich metadata
+            meta = citation.metadata.copy() if hasattr(citation, 'metadata') and citation.metadata else {}
+
+            if book_id:
+                meta["book_id"] = book_id
+            if book_title:
+                meta["book_title"] = book_title
+            if author:
+                meta["author"] = author
+            if author_death:
+                meta["author_death"] = author_death
+                meta["scholarly_era"] = self._classify_era(author_death)
+            if page:
+                meta["page"] = page
+            if chapter:
+                meta["chapter"] = chapter
+            if section:
+                meta["section"] = section
+            if collection:
+                meta["collection"] = collection
+            if doc_id:
+                meta["doc_id"] = doc_id
+
+            # Build enhanced display text
+            if author and book_title:
+                meta["display_source"] = f"{author} - {book_title}"
+                if page:
+                    meta["display_source"] += f", p. {page}"
+            elif book_title:
+                meta["display_source"] = book_title
+                if page:
+                    meta["display_source"] += f", p. {page}"
+
+            # Create enriched citation
+            enriched_citation = Citation(
+                id=citation.id,
+                type=citation.type,
+                source=meta.get("display_source", citation.source),
+                reference=citation.reference,
+                url=citation.url,
+                metadata=meta,
+            )
+            enriched.append(enriched_citation)
+
+        return enriched
+
+    @staticmethod
+    def _classify_era(death_year_hijri: int) -> str:
+        """
+        Classify scholar's era based on death year (Hijri).
+
+        Eras:
+        - Prophetic: 0-100 AH (Companions)
+        - Tabi'un: 100-200 AH (Successors)
+        - Classical: 200-500 AH (Golden age)
+        - Medieval: 500-900 AH (Post-classical)
+        - Ottoman: 900-1300 AH (Ottoman era)
+        - Modern: 1300+ AH (Modern era)
+
+        Args:
+            death_year_hijri: Death year in Hijri calendar
+
+        Returns:
+            Era classification string
+        """
+        if death_year_hijri <= 100:
+            return "prophetic"
+        elif death_year_hijri <= 200:
+            return "tabiun"
+        elif death_year_hijri <= 500:
+            return "classical"
+        elif death_year_hijri <= 900:
+            return "medieval"
+        elif death_year_hijri <= 1300:
+            return "ottoman"
+        else:
+            return "modern"

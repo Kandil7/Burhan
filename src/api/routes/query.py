@@ -3,15 +3,21 @@ Query route for Athar Islamic QA system.
 
 Routes queries to appropriate agents based on intent:
 - greeting/chatbot → ChatbotAgent
-- fiqh → FiqhAgent (RAG)
+- fiqh → FiqhAgent (RAG with faceted search)
 - quran → Quran endpoints
 - zakat/inheritance/dua/prayer/hijri → Tool endpoints
 - general knowledge → GeneralIslamicAgent
+
+Enhanced with:
+- Faceted search filters (author, era, book, category)
+- Hierarchical retrieval for coherent results
+- Rich citation metadata in response
 """
 
 import uuid
 import time
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Optional, List
+from fastapi import APIRouter, HTTPException, Depends, Query
 from src.api.schemas.request import QueryRequest
 from src.api.schemas.response import QueryResponse, CitationResponse
 from src.core.router import HybridQueryClassifier
@@ -63,19 +69,52 @@ async def get_fiqh_agent():
     return _fiqh_agent
 
 
+async def get_general_agent():
+    """Get or create GeneralIslamicAgent with lazy initialization."""
+    global _general_agent, _agents_loaded
+    if _general_agent is None and not _agents_loaded:
+        try:
+            _general_agent = GeneralIslamicAgent()
+            await _general_agent._initialize()
+            _agents_loaded = True
+            logger.info("query.general_agent_initialized")
+        except Exception as e:
+            logger.warning("query.general_agent_init_failed", error=str(e))
+            _agents_loaded = True
+    return _general_agent
+
+
 @router.post(
     "",
     response_model=QueryResponse,
     summary="Submit query to Athar Islamic QA system",
 )
-async def handle_query(request: QueryRequest):
+async def handle_query(
+    request: QueryRequest,
+    # Faceted search filters
+    author: Optional[str] = Query(None, description="Filter by author name"),
+    era: Optional[str] = Query(None, description="Filter by scholarly era (prophetic, tabiun, classical, medieval, ottoman, modern)"),
+    book_id: Optional[int] = Query(None, description="Filter by specific book ID"),
+    category: Optional[str] = Query(None, description="Filter by category/madhhab"),
+    death_year_min: Optional[int] = Query(None, description="Minimum author death year (Hijri)"),
+    death_year_max: Optional[int] = Query(None, description="Maximum author death year (Hijri)"),
+    # Retrieval options
+    hierarchical: bool = Query(False, description="Use hierarchical retrieval for coherent results"),
+):
     """
-    Handle user query with intent-based routing.
+    Handle user query with intent-based routing and optional faceted search.
 
     Flow:
     1. Classify intent
-    2. Route to appropriate agent based on intent
-    3. Return structured response with citations
+    2. Build filters from query parameters
+    3. Route to appropriate agent with filters
+    4. Return structured response with rich citations
+
+    Faceted Search Examples:
+    - /api/v1/query?query=ما+حكم+الصلاة&author=Imam+Bukhari
+    - /api/v1/query?query=التوحيد&era=classical
+    - /api/v1/query?query=المواريث&death_year_min=200&death_year_max=500
+    - /api/v1/query?query=الفقه&hierarchical=true
     """
     start_time = time.time()
     query_id = str(uuid.uuid4())
@@ -100,6 +139,29 @@ async def handle_query(request: QueryRequest):
         )
 
         # Route based on intent
+        # Build filters from query parameters
+        filters = None
+        if any([author, era, book_id, category, death_year_min, death_year_max]):
+            filters = {}
+            if author:
+                filters["author"] = author
+            if era:
+                filters["era"] = era
+            if book_id:
+                filters["book_id"] = book_id
+            if category:
+                filters["category"] = category
+            if death_year_min:
+                filters["author_death_min"] = death_year_min
+            if death_year_max:
+                filters["author_death_max"] = death_year_max
+            
+            logger.info(
+                "query.filters_applied",
+                query_id=query_id,
+                filters=list(filters.keys()),
+            )
+
         if intent == Intent.GREETING:
             # Greeting → ChatbotAgent
             agent_result = await chatbot.execute(AgentInput(
@@ -108,16 +170,20 @@ async def handle_query(request: QueryRequest):
                 metadata={"madhhab": request.madhhab}
             ))
             agent_name = "chatbot_agent"
-            
+
         elif intent == Intent.FIQH:
-            # Fiqh → FiqhAgent (RAG with vector store)
+            # Fiqh → FiqhAgent (RAG with vector store, faceted search)
             fiqh_agent = await get_fiqh_agent()
             if fiqh_agent and hasattr(fiqh_agent, 'embedding_model') and fiqh_agent.embedding_model:
-                agent_result = await fiqh_agent.execute(AgentInput(
-                    query=request.query,
-                    language=language,
-                    metadata={"madhhab": request.madhhab}
-                ))
+                agent_result = await fiqh_agent.execute(
+                    AgentInput(
+                        query=request.query,
+                        language=language,
+                        metadata={"madhhab": request.madhhab}
+                    ),
+                    filters=filters,
+                    hierarchical=hierarchical,
+                )
                 agent_name = "fiqh_agent"
             else:
                 # FiqhAgent not available, use chatbot with helpful message
@@ -127,16 +193,29 @@ async def handle_query(request: QueryRequest):
                     metadata={"madhhab": request.madhhab}
                 ))
                 agent_name = "chatbot_fallback"
-                
+
         elif intent == Intent.ISLAMIC_KNOWLEDGE:
-            # General Islamic → GeneralIslamicAgent or Chatbot
-            agent_result = await chatbot.execute(AgentInput(
-                query=request.query,
-                language=language,
-                metadata={"madhhab": request.madhhab}
-            ))
-            agent_name = "general_islamic_agent"
-            
+            # General Islamic → GeneralIslamicAgent with faceted search
+            general_agent = await get_general_agent()
+            if general_agent and hasattr(general_agent, 'embedding_model') and general_agent.embedding_model:
+                agent_result = await general_agent.execute(
+                    AgentInput(
+                        query=request.query,
+                        language=language,
+                        metadata={"madhhab": request.madhhab}
+                    ),
+                    filters=filters,
+                    hierarchical=hierarchical,
+                )
+                agent_name = "general_islamic_agent"
+            else:
+                agent_result = await chatbot.execute(AgentInput(
+                    query=request.query,
+                    language=language,
+                    metadata={"madhhab": request.madhhab}
+                ))
+                agent_name = "chatbot_fallback"
+
         else:
             # Default → ChatbotAgent
             agent_result = await chatbot.execute(AgentInput(

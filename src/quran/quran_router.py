@@ -9,20 +9,13 @@ Classifies Quran queries into 4 sub-intents:
 
 Phase 3: Routes Quran queries to specialized handlers.
 """
-from enum import Enum
 from typing import Optional
 
 from src.config.logging_config import get_logger
+from src.config.settings import settings
+from src.config.intents import QuranSubIntent
 
 logger = get_logger()
-
-
-class QuranSubIntent(str, Enum):
-    """Sub-intents for Quran queries."""
-    VERSE_LOOKUP = "verse_lookup"
-    INTERPRETATION = "interpretation"
-    ANALYTICS = "analytics"
-    QUOTATION_VALIDATION = "quotation_validation"
 
 
 # Keyword patterns for fast-path classification
@@ -150,7 +143,7 @@ Query: {query}"""
             prompt = self.LLM_CLASSIFIER_PROMPT.format(query=query)
             
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model=settings.openai_model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=50
