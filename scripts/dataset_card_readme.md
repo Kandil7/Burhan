@@ -22,24 +22,34 @@ dataset_info:
   features:
   - name: content
     dtype: string
+  - name: content_type
+    dtype: string
   - name: book_id
     dtype: int64
-  - name: title
+  - name: book_title
+    dtype: string
+  - name: category
     dtype: string
   - name: author
     dtype: string
   - name: author_death
     dtype: int64
-  - name: page
+  - name: collection
+    dtype: string
+  - name: page_number
     dtype: int64
+  - name: section_title
+    dtype: string
+  - name: hierarchy
+    dtype: list
+  - name: title
+    dtype: string
   - name: chapter
     dtype: string
   - name: section
     dtype: string
-  - name: category
-    dtype: string
-  - name: collection
-    dtype: string
+  - name: page
+    dtype: int64
   splits:
   - name: train
     num_bytes: 42600000000
