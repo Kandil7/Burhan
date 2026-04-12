@@ -24,6 +24,11 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime
 
+# Fix Windows console encoding for emojis
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 from dotenv import load_dotenv
 load_dotenv()
 

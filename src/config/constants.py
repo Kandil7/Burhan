@@ -93,7 +93,7 @@ class EmbeddingConfig:
     """Configuration for embedding models."""
 
     # Default model
-    DEFAULT_MODEL: Final[str] = "Qwen/Qwen3-Embedding-0.6B"
+    DEFAULT_MODEL: Final[str] = "BAAI/bge-m3"
     FALLBACK_MODEL: Final[str] = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Dimensions

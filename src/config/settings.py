@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     # ==========================================
     # Embeddings
     # ==========================================
-    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
+    embedding_model: str = "BAAI/bge-m3"
     embedding_dimension: int = 1024
 
     # ==========================================

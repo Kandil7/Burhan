@@ -1,12 +1,14 @@
 """
-Qwen3-Embedding Model Wrapper for Athar Islamic QA system.
+BAAI/bge-m3 Embedding Model Wrapper for Athar Islamic QA system.
 
 Provides embedding generation with:
-- Qwen3-Embedding-0.6B (1024 dimensions)
+- BAAI/bge-m3 (1024 dimensions, 8192 tokens)
 - GPU support with automatic device selection
 - Redis-based caching (7-day TTL)
 - Batch processing optimization
 - Half-precision inference for memory efficiency
+
+Optimized for Arabic/Islamic content with multi-language support.
 
 Phase 4: Foundation for all RAG retrieval pipelines.
 """
@@ -35,13 +37,14 @@ class EmbeddingModelError(Exception):
 
 class EmbeddingModel:
     """
-    Qwen3-Embedding wrapper for Islamic text embeddings.
+    BAAI/bge-m3 wrapper for Islamic text embeddings.
 
     Optimized for Arabic/Islamic content with:
     - 1024-dimensional vectors
-    - 512 token context window
-    - Batch processing (up to 32 texts)
+    - 8192 token context window (supports long passages)
+    - Batch processing (up to 64 texts)
     - SHA-256 caching for repeated texts
+    - Multi-language support (Arabic, English, Urdu, etc.)
 
     Usage:
         model = EmbeddingModel()
@@ -49,10 +52,10 @@ class EmbeddingModel:
         embeddings = await model.encode(["النص الأول", "النص الثاني"])
     """
 
-    MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
+    MODEL_NAME = "BAAI/bge-m3"
     DIMENSION = 1024
-    MAX_LENGTH = 512
-    BATCH_SIZE = 32
+    MAX_LENGTH = 8192  # BGE-M3 supports up to 8192 tokens
+    BATCH_SIZE = 64    # Optimized for GPU batch processing
 
     def __init__(self, cache_enabled: bool = True):
         """
@@ -137,7 +140,7 @@ class EmbeddingModel:
 
         Args:
             texts: List of texts to encode
-            batch_size: Batch size (default: 32)
+            batch_size: Batch size (default: 64)
 
         Returns:
             Numpy array of embeddings (len(texts) x 1024)

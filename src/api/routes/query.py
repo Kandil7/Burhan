@@ -175,15 +175,17 @@ async def handle_query(
             # Fiqh → FiqhAgent (RAG with vector store, faceted search)
             fiqh_agent = await get_fiqh_agent()
             if fiqh_agent and hasattr(fiqh_agent, 'embedding_model') and fiqh_agent.embedding_model:
-                agent_result = await fiqh_agent.execute(
-                    AgentInput(
-                        query=request.query,
-                        language=language,
-                        metadata={"madhhab": request.madhhab}
-                    ),
-                    filters=filters,
-                    hierarchical=hierarchical,
+                # Pass filters and hierarchical via metadata
+                agent_input = AgentInput(
+                    query=request.query,
+                    language=language,
+                    metadata={
+                        "madhhab": request.madhhab,
+                        "filters": filters,
+                        "hierarchical": hierarchical,
+                    }
                 )
+                agent_result = await fiqh_agent.execute(agent_input)
                 agent_name = "fiqh_agent"
             else:
                 # FiqhAgent not available, use chatbot with helpful message
@@ -198,15 +200,16 @@ async def handle_query(
             # General Islamic → GeneralIslamicAgent with faceted search
             general_agent = await get_general_agent()
             if general_agent and hasattr(general_agent, 'embedding_model') and general_agent.embedding_model:
-                agent_result = await general_agent.execute(
-                    AgentInput(
-                        query=request.query,
-                        language=language,
-                        metadata={"madhhab": request.madhhab}
-                    ),
-                    filters=filters,
-                    hierarchical=hierarchical,
+                agent_input = AgentInput(
+                    query=request.query,
+                    language=language,
+                    metadata={
+                        "madhhab": request.madhhab,
+                        "filters": filters,
+                        "hierarchical": hierarchical,
+                    }
                 )
+                agent_result = await general_agent.execute(agent_input)
                 agent_name = "general_islamic_agent"
             else:
                 agent_result = await chatbot.execute(AgentInput(
