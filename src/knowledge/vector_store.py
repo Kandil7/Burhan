@@ -64,6 +64,7 @@ class VectorStore:
         "islamic_history_passages": {"dimension": 1024, "description": "Islamic history"},
         "arabic_language_passages": {"dimension": 1024, "description": "Arabic language"},
         "spirituality_passages": {"dimension": 1024, "description": "Spirituality and ethics"},
+        "usul_fiqh": {"dimension": 1024, "description": "Principles of jurisprudence"},
     }
     
     def __init__(self):
@@ -310,13 +311,15 @@ class VectorStore:
             info = self.client.get_collection(collection)
             
             # Extract vectors count - handle different Qdrant client versions
-            # Qdrant client returns dict-like objects
-            if hasattr(info, 'vectors_count'):
-                vectors_count = info.vectors_count
-            elif hasattr(info, 'points_count'):
+            # Qdrant 1.17+ uses points_count, older versions use vectors_count
+            if hasattr(info, 'points_count'):
                 vectors_count = info.points_count
+            elif hasattr(info, 'vectors_count'):
+                vectors_count = info.vectors_count
+            elif hasattr(info, 'indexed_vectors_count'):
+                vectors_count = info.indexed_vectors_count
             elif isinstance(info, dict):
-                vectors_count = info.get('vectors_count', info.get('points_count', 0))
+                vectors_count = info.get('points_count', info.get('vectors_count', info.get('indexed_vectors_count', 0)))
             else:
                 # Try to count points
                 try:
