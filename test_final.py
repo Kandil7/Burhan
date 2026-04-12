@@ -120,6 +120,20 @@ def test_all():
         print(f"❌ FAIL 7: Surah list error: {e}")
         failed += 1
     
+    # Test 8: Dua Retrieval (FIXED)
+    try:
+        d = post_json(f"{BASE}/api/v1/tools/duas", {"category": "morning"})
+        duas = d.get("duas", [])
+        if len(duas) > 0:
+            print(f"✅ PASS 8: Dua retrieval - {len(duas)} morning duas found (FIXED!)")
+            passed += 1
+        else:
+            print(f"❌ FAIL 8: No morning duas returned")
+            failed += 1
+    except Exception as e:
+        print(f"❌ FAIL 8: Dua retrieval error: {e}")
+        failed += 1
+    
     print()
     print("="*70)
     print(f"RESULTS: {passed} passed, {failed} failed out of {passed+failed} tests")

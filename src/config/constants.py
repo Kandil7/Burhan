@@ -25,8 +25,8 @@ class RetrievalConfig:
     # Multiplier for initial retrieval (before reranking/fusion)
     TOP_K_MULTIPLIER: Final[int] = 2
 
-    # Score thresholds
-    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.4
+    # Score thresholds (adjusted for BGE-M3 compatibility)
+    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.35  # Lowered from 0.4 for better recall
     HYBRID_SCORE_THRESHOLD: Final[float] = 0.65
 
     # Reciprocal rank fusion parameter

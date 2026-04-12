@@ -93,17 +93,42 @@ class DuaRetrievalTool(BaseTool):
         try:
             # Combine both datasets
             all_duas = self.duas + self.azkar
-            
-            # Filter by category
+
+            # Category to occasion mapping for user-friendly queries
+            category_to_occasion = {
+                "morning": "morning",
+                "evening": "evening",
+                "morning_evening": "morning_evening",
+                "sleep": "before_sleep",
+                "wake": "upon_waking",
+                "food": "before_eating",
+                "eating": "before_eating",
+                "travel": "traveling",
+                "protection": "protection",
+                "prayer": "prayer",
+            }
+
+            # Filter by category (with occasion fallback)
             if category:
-                all_duas = [d for d in all_duas if d.get("category") == category]
-            
-            # Filter by occasion
+                category_lower = category.lower()
+                # Try exact category match first
+                filtered = [d for d in all_duas if d.get("category") == category_lower]
+                if not filtered:
+                    # Try occasion mapping
+                    mapped_occasion = category_to_occasion.get(category_lower, category_lower)
+                    filtered = [d for d in all_duas if mapped_occasion in d.get("occasion", "").lower()]
+                if not filtered:
+                    # Try partial match in occasion or category
+                    filtered = [d for d in all_duas if category_lower in d.get("occasion", "").lower() or category_lower in d.get("category", "").lower()]
+                all_duas = filtered
+
+            # Filter by occasion (with broader matching)
             if occasion:
+                occasion_lower = occasion.lower()
                 all_duas = [
                     d for d in all_duas
-                    if occasion.lower() in d.get("occasion", "").lower()
-                    or occasion.lower() in d.get("category", "").lower()
+                    if occasion_lower in d.get("occasion", "").lower()
+                    or occasion_lower in d.get("category", "").lower()
                 ]
             
             # Semantic search by query (simple keyword matching for Phase 2)
