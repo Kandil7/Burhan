@@ -163,7 +163,7 @@ def download_embeddings_for_collection(collection_name: str) -> tuple:
     return embeddings_array, passages
 
 
-def upload_to_qdrant(collection_name: str, embeddings: np.ndarray, passages: list) -> dict:
+def upload_to_qdrant(collection_name: str, embeddings: np.ndarray, passages: list, batch_size: int = QDRANT_BATCH_SIZE) -> dict:
     """Upload embeddings and passages to Qdrant."""
     print(f"\n{'='*70}")
     print(f"📤 Uploading to Qdrant: {collection_name}")
@@ -192,8 +192,8 @@ def upload_to_qdrant(collection_name: str, embeddings: np.ndarray, passages: lis
     t0 = time.time()
     uploaded = 0
     
-    for start in range(0, total_points, QDRANT_BATCH_SIZE):
-        end = min(start + QDRANT_BATCH_SIZE, total_points)
+    for start in range(0, total_points, batch_size):
+        end = min(start + batch_size, total_points)
         batch_emb = embeddings[start:end]
         batch_pas = passages[start:end]
         
@@ -280,8 +280,8 @@ def main():
     
     args = parser.parse_args()
     
-    global QDRANT_BATCH_SIZE
-    QDRANT_BATCH_SIZE = args.batch_size
+    # Use provided batch size or default
+    batch_size = args.batch_size
     
     # Verify HF token
     if not HF_TOKEN:
@@ -307,7 +307,7 @@ def main():
     print(f"  HF Repo: {HF_REPO}")
     print(f"  Qdrant: {QDRANT_URL}")
     print(f"  Collections: {len(collections)}")
-    print(f"  Batch size: {QDRANT_BATCH_SIZE}")
+    print(f"  Batch size: {batch_size}")
     print("═"*70)
     
     total_start = time.time()
@@ -328,7 +328,7 @@ def main():
         
         # Upload to Qdrant
         upload_start = time.time()
-        result = upload_to_qdrant(coll, embeddings, passages)
+        result = upload_to_qdrant(coll, embeddings, passages, batch_size)
         upload_time = time.time() - upload_start
         
         result["download_time"] = download_time
