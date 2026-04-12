@@ -60,6 +60,9 @@ data/embeddings/
 data/seed/
 data/athar-datasets/
 data/processed_v1/
+data/processed/hf_embeddings/
+*.npy
+*.npy.gz
 output/
 output_page_analysis.txt
 
@@ -67,6 +70,10 @@ output_page_analysis.txt
 data/processed/lucene_*.json
 data/processed/lucene_pages/
 data/processed/*.jsonl
+
+# Logs
+download_fiqh.log
+download_6_collections.log
 
 # BUT include mini-dataset and key metadata
 !data/mini_dataset/

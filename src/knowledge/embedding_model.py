@@ -89,8 +89,9 @@ class EmbeddingModel:
         """
         Load embedding model from HuggingFace.
 
-        Optimizations:
+        Uses BAAI/bge-m3 with:
         - Half-precision (float16) on GPU
+        - Mean pooling for dense embeddings
         - Local caching if model already downloaded
         - HuggingFace token authentication
         """
