@@ -265,7 +265,7 @@ class BaseRAGAgent(BaseAgent):
 
         try:
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {"role": "system", "content": self.SYSTEM_PROMPT},
                     {

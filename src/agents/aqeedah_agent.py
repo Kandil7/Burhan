@@ -110,7 +110,7 @@ class AqeedahAgent(BaseAgent):
             return passages[:300]
         try:
             resp = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {"role": "system", "content": self.SYSTEM_PROMPT},
                     {"role": "user", "content": self.USER_PROMPT.format(query=query, language=language, passages=passages)}

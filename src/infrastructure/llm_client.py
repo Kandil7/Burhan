@@ -98,7 +98,7 @@ async def get_openai_client() -> AsyncOpenAI:
 
         logger.info(
             "llm.openai_initialized",
-            model=settings.openai_model
+            model=settings.llm_model
         )
 
     return llm_client
@@ -116,7 +116,7 @@ async def init_llm():
         logger.info(
             "llm.ready",
             provider=settings.llm_provider,
-            model=settings.openai_model,
+            model=settings.llm_model,
             temperature=settings.llm_temperature
         )
     except Exception as e:
@@ -160,7 +160,7 @@ async def generate_text(
         messages.append({"role": "user", "content": prompt})
         
         response = await client.chat.completions.create(
-            model=settings.openai_model,
+            model=settings.llm_model,
             messages=messages,
             temperature=temperature or settings.llm_temperature,
             max_tokens=max_tokens or settings.llm_max_tokens,
@@ -198,7 +198,7 @@ async def generate_json(
         messages.append({"role": "user", "content": prompt})
         
         response = await client.chat.completions.create(
-            model=settings.openai_model,
+            model=settings.llm_model,
             messages=messages,
             temperature=0.0,  # Deterministic
             max_tokens=settings.llm_max_tokens,

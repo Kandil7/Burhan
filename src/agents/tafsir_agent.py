@@ -158,7 +158,7 @@ class TafsirAgent(BaseAgent):
             return passages[:300]
         try:
             resp = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {"role": "system", "content": self.TAFSIR_SYSTEM_PROMPT},
                     {"role": "user", "content": self.TAFSIR_USER_PROMPT.format(query=query, language=language, passages=passages)},

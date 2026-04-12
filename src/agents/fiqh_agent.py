@@ -263,9 +263,10 @@ class FiqhAgent(BaseAgent):
                 query=query, language="العربية" if language == "ar" else "الإنجليزية", passages=passages
             )
 
-            # Call LLM - use settings for model
+            # Call LLM - use settings for model based on provider
+            model_name = settings.groq_model if settings.llm_provider == "groq" else settings.llm_model
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=model_name,
                 messages=[
                     {"role": "system", "content": self.FIQH_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},

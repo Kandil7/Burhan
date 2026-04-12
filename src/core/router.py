@@ -240,7 +240,7 @@ Query: {query}"""
             
             # Call LLM
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {
                         "role": "system",

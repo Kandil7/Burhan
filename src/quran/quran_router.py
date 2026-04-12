@@ -143,7 +143,7 @@ Query: {query}"""
             prompt = self.LLM_CLASSIFIER_PROMPT.format(query=query)
             
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=50
