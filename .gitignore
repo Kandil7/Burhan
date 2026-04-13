@@ -127,3 +127,9 @@ qdrant_data/
 *.tmp
 *.bak
 *.cache
+
+# Windows reserved names
+nul
+con
+prn
+aux
