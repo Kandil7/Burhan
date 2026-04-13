@@ -32,56 +32,70 @@ from src.config.logging_config import get_logger
 logger = get_logger()
 router = APIRouter(prefix="/query", tags=["Query"])
 
-# Component instances (reuse across requests)
+# Thread-safe singleton instances with locks
+import threading
+
 _chatbot = None
+_chatbot_lock = threading.Lock()
+
 _classifier = None
+_classifier_lock = threading.Lock()
+
 _fiqh_agent = None
+_fiqh_lock = threading.Lock()
+
 _general_agent = None
+_general_lock = threading.Lock()
+
 _agents_loaded = False
 
 def get_chatbot() -> ChatbotAgent:
-    """Get or create chatbot agent."""
+    """Get or create chatbot agent (thread-safe)."""
     global _chatbot
-    if _chatbot is None:
-        _chatbot = ChatbotAgent()
-    return _chatbot
+    with _chatbot_lock:
+        if _chatbot is None:
+            _chatbot = ChatbotAgent()
+        return _chatbot
 
 async def get_classifier() -> HybridQueryClassifier:
-    """Get or create query classifier."""
+    """Get or create query classifier (thread-safe)."""
     global _classifier
-    if _classifier is None:
-        llm_client = await get_llm_client()
-        _classifier = HybridQueryClassifier(llm_client=llm_client)
-    return _classifier
+    with _classifier_lock:
+        if _classifier is None:
+            llm_client = await get_llm_client()
+            _classifier = HybridQueryClassifier(llm_client=llm_client)
+        return _classifier
 
 async def get_fiqh_agent():
-    """Get or create FiqhAgent with lazy initialization."""
+    """Get or create FiqhAgent with lazy initialization (thread-safe)."""
     global _fiqh_agent, _agents_loaded
-    if _fiqh_agent is None and not _agents_loaded:
-        try:
-            _fiqh_agent = FiqhAgent()
-            await _fiqh_agent._initialize()
-            _agents_loaded = True
-            logger.info("query.fiqh_agent_initialized")
-        except Exception as e:
-            logger.warning("query.fiqh_agent_init_failed", error=str(e))
-            _agents_loaded = True  # Don't retry
-    return _fiqh_agent
+    with _fiqh_lock:
+        if _fiqh_agent is None and not _agents_loaded:
+            try:
+                _fiqh_agent = FiqhAgent()
+                await _fiqh_agent._initialize()
+                _agents_loaded = True
+                logger.info("query.fiqh_agent_initialized")
+            except Exception as e:
+                logger.warning("query.fiqh_agent_init_failed", error=str(e))
+                _agents_loaded = True  # Don't retry
+        return _fiqh_agent
 
 
 async def get_general_agent():
-    """Get or create GeneralIslamicAgent with lazy initialization."""
+    """Get or create GeneralIslamicAgent with lazy initialization (thread-safe)."""
     global _general_agent, _agents_loaded
-    if _general_agent is None and not _agents_loaded:
-        try:
-            _general_agent = GeneralIslamicAgent()
-            await _general_agent._initialize()
-            _agents_loaded = True
-            logger.info("query.general_agent_initialized")
-        except Exception as e:
-            logger.warning("query.general_agent_init_failed", error=str(e))
-            _agents_loaded = True
-    return _general_agent
+    with _general_lock:
+        if _general_agent is None and not _agents_loaded:
+            try:
+                _general_agent = GeneralIslamicAgent()
+                await _general_agent._initialize()
+                _agents_loaded = True
+                logger.info("query.general_agent_initialized")
+            except Exception as e:
+                logger.warning("query.general_agent_init_failed", error=str(e))
+                _agents_loaded = True
+        return _general_agent
 
 
 @router.post(

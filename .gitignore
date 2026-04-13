@@ -104,8 +104,26 @@ htmlcov/
 # Qdrant
 .qdrant/
 
-.opencode.json
-
 # ML Models
 models/
 cache/
+nul
+
+# Archive directories (historical files, not needed for production)
+scripts/archive/
+docs/archive/
+notebooks/archive/
+
+# Alembic (keep migrations but ignore auto-generated files)
+alembic/__pycache__/
+alembic/versions/__pycache__/
+
+# Docker volumes (production data)
+postgres_data/
+redis_data/
+qdrant_data/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache

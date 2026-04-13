@@ -13,7 +13,6 @@ Provides endpoints for:
 """
 
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -28,9 +27,6 @@ from src.config.logging_config import get_logger
 
 logger = get_logger()
 router = APIRouter(prefix="/quran", tags=["Quran"])
-
-# Thread pool for running sync DB operations
-_db_executor = ThreadPoolExecutor(max_workers=4)
 
 
 # ==========================================
@@ -151,9 +147,8 @@ async def list_surahs():
         with get_sync_session() as session:
             return session.query(Surah).order_by(Surah.number).all()
 
-    # Run sync query in thread pool
-    loop = asyncio.get_event_loop()
-    surahs = await loop.run_in_executor(_db_executor, _query_surahs)
+    # Run sync query in thread pool (Python 3.9+ asyncio.to_thread)
+    surahs = await asyncio.to_thread(_query_surahs)
 
     return [
         SurahResponse(
@@ -185,8 +180,7 @@ async def get_surah_details(surah_number: int):
             ayahs = session.query(Ayah).filter(Ayah.surah_id == surah.id).order_by(Ayah.number_in_surah).all()
             return {"surah": surah, "ayahs": ayahs}
 
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(_db_executor, _query_surah)
+    result = await asyncio.to_thread(_query_surah)
 
     if not result or result["surah"] is None:
         raise HTTPException(status_code=404, detail=f"Surah {surah_number} not found")

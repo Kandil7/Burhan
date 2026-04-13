@@ -17,7 +17,7 @@ Agents inherit and override only:
 
 This eliminates ~800 lines of duplication across 7 agents.
 """
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from src.agents.base import BaseAgent, AgentInput, AgentOutput
 from src.knowledge.embedding_model import EmbeddingModel
