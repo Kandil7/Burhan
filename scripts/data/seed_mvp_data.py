@@ -368,8 +368,16 @@ def build_quran_docs(target: int) -> list[dict]:
         return []
 
     try:
+        import os
+        db_url = os.environ.get("DATABASE_URL", "postgresql://athar:athar_password@localhost:5432/athar_db")
+        # Parse the URL for psycopg2 connection
+        from urllib.parse import urlparse
+        parsed = urlparse(db_url)
         db_conn = psycopg2.connect(
-            host="localhost", database="athar_db", user="athar", password="athar_password"
+            host=parsed.hostname or "localhost",
+            database=parsed.path.lstrip("/") or "athar_db",
+            user=parsed.username or "athar",
+            password=parsed.password or "athar_password"
         )
         cur = db_conn.cursor()
 

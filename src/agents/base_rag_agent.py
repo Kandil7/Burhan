@@ -17,7 +17,7 @@ Agents inherit and override only:
 
 This eliminates ~800 lines of duplication across 7 agents.
 """
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from src.agents.base import BaseAgent, AgentInput, AgentOutput
 from src.knowledge.embedding_model import EmbeddingModel
@@ -265,7 +265,7 @@ class BaseRAGAgent(BaseAgent):
 
         try:
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {"role": "system", "content": self.SYSTEM_PROMPT},
                     {

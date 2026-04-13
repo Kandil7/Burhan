@@ -32,6 +32,8 @@ env/
 *.swp
 *.swo
 *~
+.qwen/
+.opencode.json
 
 # Environment
 .env
@@ -60,6 +62,9 @@ data/embeddings/
 data/seed/
 data/athar-datasets/
 data/processed_v1/
+data/processed/hf_embeddings/
+*.npy
+*.npy.gz
 output/
 output_page_analysis.txt
 
@@ -67,6 +72,10 @@ output_page_analysis.txt
 data/processed/lucene_*.json
 data/processed/lucene_pages/
 data/processed/*.jsonl
+
+# Logs
+download_fiqh.log
+download_6_collections.log
 
 # BUT include mini-dataset and key metadata
 !data/mini_dataset/
@@ -95,8 +104,32 @@ htmlcov/
 # Qdrant
 .qdrant/
 
-.opencode.json
-
 # ML Models
 models/
 cache/
+nul
+
+# Archive directories (historical files, not needed for production)
+scripts/archive/
+docs/archive/
+notebooks/archive/
+
+# Alembic (keep migrations but ignore auto-generated files)
+alembic/__pycache__/
+alembic/versions/__pycache__/
+
+# Docker volumes (production data)
+postgres_data/
+redis_data/
+qdrant_data/
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Windows reserved names
+nul
+con
+prn
+aux

@@ -165,8 +165,16 @@ class FiqhAgent(BaseAgent):
 
             logger.info("fiq h_agent.retrieved", query=input.query[:50], passage_count=len(passages))
 
-            # Step 3: Filter by score threshold
-            good_passages = [p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD]
+            # Step 3: Filter by score threshold (check both score and hybrid_score)
+            # Note: hybrid scores from reciprocal rank fusion are typically 0.01-0.03
+            # while semantic cosine scores are 0.3-0.9
+            # For small collections (10K fiqh points), cosine similarity may be low
+            good_passages = [p for p in passages if p.get("hybrid_score", p.get("score", 0)) >= self.SCORE_THRESHOLD]
+
+            # Fallback: if no passages pass threshold, use top 3 anyway
+            # Better to give a partial answer than no answer
+            if not good_passages and passages:
+                good_passages = passages[:3]
 
             # Step 4: Format passages for LLM
             formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
@@ -255,9 +263,10 @@ class FiqhAgent(BaseAgent):
                 query=query, language="العربية" if language == "ar" else "الإنجليزية", passages=passages
             )
 
-            # Call LLM - use settings for model
+            # Call LLM - use settings for model based on provider
+            model_name = settings.groq_model if settings.llm_provider == "groq" else settings.llm_model
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=model_name,
                 messages=[
                     {"role": "system", "content": self.FIQH_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},

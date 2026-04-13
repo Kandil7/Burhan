@@ -90,14 +90,16 @@ INTENT_ROUTING = {
     Intent.DUA: "dua_tool",
     Intent.HIJRI_CALENDAR: "hijri_tool",
     Intent.PRAYER_TIMES: "prayer_tool",
-    # NEW: Specialized agents
+    # Active specialized agents
     Intent.HADITH: "hadith_agent",
-    Intent.TAFSIR: "tafsir_agent",
-    Intent.AQEEDAH: "aqeedah_agent",
     Intent.SEERAH: "seerah_agent",
-    Intent.USUL_FIQH: "usul_fiqh_agent",
-    Intent.ISLAMIC_HISTORY: "islamic_history_agent",
-    Intent.ARABIC_LANGUAGE: "arabic_language_agent",
+    # NOTE: tafsir, aqeedah, usul_fiqh, islamic_history, arabic_language agents
+    # were deleted as orphan files. These intents will fall back to general_islamic_agent.
+    Intent.TAFSIR: "general_islamic_agent",
+    Intent.AQEEDAH: "general_islamic_agent",
+    Intent.USUL_FIQH: "general_islamic_agent",
+    Intent.ISLAMIC_HISTORY: "general_islamic_agent",
+    Intent.ARABIC_LANGUAGE: "general_islamic_agent",
 }
 
 

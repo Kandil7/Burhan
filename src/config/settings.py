@@ -63,10 +63,15 @@ class Settings(BaseSettings):
     # HuggingFace
     hf_token: Optional[str] = None
 
+    @property
+    def llm_model(self) -> str:
+        """Return the correct model based on provider."""
+        return self.groq_model if self.llm_provider == "groq" else self.openai_model
+
     # ==========================================
     # Embeddings
     # ==========================================
-    embedding_model: str = "Qwen/Qwen3-Embedding-0.6B"
+    embedding_model: str = "BAAI/bge-m3"
     embedding_dimension: int = 1024
 
     # ==========================================

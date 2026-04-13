@@ -11,6 +11,10 @@ Phase 4: Added Groq support for faster, cheaper inference.
 from typing import Optional
 from openai import AsyncOpenAI
 
+class ConfigurationError(Exception):
+    """Raised when required configuration is missing."""
+    pass
+
 try:
     from groq import AsyncGroq
     GROQ_AVAILABLE = True
@@ -64,13 +68,18 @@ async def get_llm_client() -> AsyncOpenAI:
 
     if provider == "groq":
         if not GROQ_AVAILABLE:
-            logger.warning("llm.groq_not_installed", fallback_to="openai")
-            return await get_openai_client()
-        
+            logger.error("llm.groq_not_installed")
+            raise ConfigurationError(
+                "Groq package not installed. Run: pip install groq"
+            )
+
         if groq_client is None:
             if not settings.groq_api_key:
-                logger.warning("llm.no_groq_key", fallback_to="openai")
-                return await get_openai_client()
+                logger.error("llm.no_groq_key")
+                raise ConfigurationError(
+                    "GROQ_API_KEY environment variable is not set. "
+                    "Please set it in your .env file or environment."
+                )
 
             groq_client = AsyncGroq(api_key=settings.groq_api_key)
             logger.info(
@@ -88,17 +97,17 @@ async def get_openai_client() -> AsyncOpenAI:
 
     if llm_client is None:
         if not settings.openai_api_key:
-            logger.warning("llm.no_api_key", provider="openai")
-            llm_client = AsyncOpenAI(
-                api_key="sk-dummy-key-for-testing",
-                base_url=None,
+            logger.error("llm.no_openai_key", provider="openai")
+            raise ConfigurationError(
+                "OPENAI_API_KEY environment variable is not set. "
+                "Please set it in your .env file or environment."
             )
         else:
             llm_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
         logger.info(
             "llm.openai_initialized",
-            model=settings.openai_model
+            model=settings.llm_model
         )
 
     return llm_client
@@ -116,7 +125,7 @@ async def init_llm():
         logger.info(
             "llm.ready",
             provider=settings.llm_provider,
-            model=settings.openai_model,
+            model=settings.llm_model,
             temperature=settings.llm_temperature
         )
     except Exception as e:
@@ -160,7 +169,7 @@ async def generate_text(
         messages.append({"role": "user", "content": prompt})
         
         response = await client.chat.completions.create(
-            model=settings.openai_model,
+            model=settings.llm_model,
             messages=messages,
             temperature=temperature or settings.llm_temperature,
             max_tokens=max_tokens or settings.llm_max_tokens,
@@ -198,7 +207,7 @@ async def generate_json(
         messages.append({"role": "user", "content": prompt})
         
         response = await client.chat.completions.create(
-            model=settings.openai_model,
+            model=settings.llm_model,
             messages=messages,
             temperature=0.0,  # Deterministic
             max_tokens=settings.llm_max_tokens,

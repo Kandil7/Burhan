@@ -205,7 +205,7 @@ class HadithAgent(BaseAgent):
             )
 
             response = await self.llm_client.chat.completions.create(
-                model=settings.openai_model,
+                model=settings.llm_model,
                 messages=[
                     {"role": "system", "content": self.HADITH_SYSTEM_PROMPT},
                     {"role": "user", "content": user_prompt},

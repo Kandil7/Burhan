@@ -153,13 +153,16 @@ class AsyncDatabaseManager:
         """Initialize async connection pool."""
         try:
             import asyncpg
+            from urllib.parse import urlparse
 
+            # Parse DATABASE_URL for connection parameters
+            parsed = urlparse(settings.database_url)
             self._pool = await asyncpg.create_pool(
-                host="localhost",  # Parse from settings.database_url
-                port=5432,
-                user="athar",
-                password="athar_password",
-                database="athar_db",
+                host=parsed.hostname or "localhost",
+                port=parsed.port or 5432,
+                user=parsed.username or "athar",
+                password=parsed.password,
+                database=parsed.path.lstrip("/") or "athar_db",
                 min_size=5,
                 max_size=20,
             )

@@ -25,9 +25,9 @@ class RetrievalConfig:
     # Multiplier for initial retrieval (before reranking/fusion)
     TOP_K_MULTIPLIER: Final[int] = 2
 
-    # Score thresholds
-    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.4
-    HYBRID_SCORE_THRESHOLD: Final[float] = 0.65
+    # Score thresholds (adjusted for BGE-M3 + hybrid search compatibility)
+    SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.15  # Lowered from 0.4 → 0.35 → 0.15 for better recall
+    HYBRID_SCORE_THRESHOLD: Final[float] = 0.50   # Lowered from 0.65 for hybrid search
 
     # Reciprocal rank fusion parameter
     RRF_K: Final[int] = 60
@@ -93,7 +93,7 @@ class EmbeddingConfig:
     """Configuration for embedding models."""
 
     # Default model
-    DEFAULT_MODEL: Final[str] = "Qwen/Qwen3-Embedding-0.6B"
+    DEFAULT_MODEL: Final[str] = "BAAI/bge-m3"
     FALLBACK_MODEL: Final[str] = "sentence-transformers/all-MiniLM-L6-v2"
 
     # Dimensions
