@@ -14,13 +14,13 @@ class FiqhAgent(BaseRAGAgent):
     """
     وكيل الفقه الإسلامي - إجابات مبنية على النصوص المسترجاعة فقط.
 
-   _temperature: 0.1 (حتمي جداً)
+    Uses usul_fiqh collection which has 50,240 vectors in Qdrant.
     """
 
     name = "fiqh_agent"
 
     # === التكوين الأساسي (مطلوب من BaseRAGAgent) ===
-    COLLECTION: str = "fiqh_passages"
+    COLLECTION: str = "usul_fiqh"  # Changed from fiqh_passages (0 vectors) to usul_fiqh (50,240 vectors)
     TOP_K_RETRIEVAL: int = RetrievalConfig.TOP_K_FIQH
     TOP_K_RERANK: int = 5
     SCORE_THRESHOLD: float = RetrievalConfig.SEMANTIC_SCORE_THRESHOLD

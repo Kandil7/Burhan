@@ -4,15 +4,19 @@ Query route for Athar Islamic QA system.
 Routes queries to appropriate agents based on intent using AgentRegistry.
 Supports faceted search, hierarchical retrieval, and multi-language responses.
 
-Phase 6 Refactoring:
-- Replaced duplicate global+lock patterns with LazySingleton
-- Connected to AgentRegistry for dynamic routing (all 17 intents now work)
-- Eliminated _agents_loaded bug that prevented GeneralIslamicAgent from loading
+Refactoring goals:
+- Lazy singleton initialization for chatbot and classifier
+- Dynamic routing through AgentRegistry
+- Cleaner separation of concerns
+- Better fallback and error handling
 """
+
+from __future__ import annotations
 
 import time
 import traceback
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -22,28 +26,109 @@ from src.api.schemas.response import CitationResponse, QueryResponse
 from src.config.intents import Intent
 from src.config.logging_config import get_logger
 from src.core.registry import get_registry
+from src.infrastructure.llm_client import get_llm_client
 from src.utils.lazy_singleton import LazySingleton
 
 logger = get_logger()
 router = APIRouter(prefix="/query", tags=["Query"])
 
-# ==========================================
-# Phase 6 Refactoring: LazySingleton pattern
-# Replaces 40+ lines of duplicate global+lock+getter code
-# ==========================================
 
-_chatbot = LazySingleton(lambda: __import__('src.agents.chatbot_agent', fromlist=['ChatbotAgent']).ChatbotAgent())
+_chatbot = LazySingleton(
+    lambda: __import__(
+        "src.agents.chatbot_agent",
+        fromlist=["ChatbotAgent"]
+    ).ChatbotAgent()
+)
+
+
+async def _build_classifier():
+    from src.core.router import HybridQueryClassifier
+    llm_client = await get_llm_client()
+    return HybridQueryClassifier(llm_client=llm_client)
+
+
+_classifier = LazySingleton(_build_classifier)
 
 
 async def get_classifier():
-    """Get or create query classifier (async lazy initialization)."""
-    from src.core.router import HybridQueryClassifier
-    from src.infrastructure.llm_client import get_llm_client
+    """
+    Get or create query classifier.
 
-    if not hasattr(get_classifier, '_instance'):
-        llm_client = await get_llm_client()
-        get_classifier._instance = HybridQueryClassifier(llm_client=llm_client)
-    return get_classifier._instance
+    Supports lazy async initialization through LazySingleton.
+    """
+    classifier = _classifier.get()
+    if hasattr(classifier, "__await__"):
+        classifier = await classifier
+        _classifier._instance = classifier
+    return classifier
+
+
+def build_filters(
+    *,
+    author: str | None,
+    era: str | None,
+    book_id: int | None,
+    category: str | None,
+    death_year_min: int | None,
+    death_year_max: int | None,
+) -> dict[str, Any] | None:
+    """
+    Build optional faceted retrieval filters from query params.
+    """
+    filters: dict[str, Any] = {}
+
+    if author:
+        filters["author"] = author
+    if era:
+        filters["era"] = era
+    if book_id is not None:
+        filters["book_id"] = book_id
+    if category:
+        filters["category"] = category
+    if death_year_min is not None:
+        filters["author_death_min"] = death_year_min
+    if death_year_max is not None:
+        filters["author_death_max"] = death_year_max
+
+    return filters or None
+
+
+def build_agent_input(
+    request: QueryRequest,
+    *,
+    language: str,
+    filters: dict[str, Any] | None,
+    hierarchical: bool,
+) -> AgentInput:
+    """
+    Build common AgentInput payload for downstream agents/tools.
+    """
+    return AgentInput(
+        query=request.query,
+        language=language,
+        metadata={
+            "madhhab": request.madhhab,
+            "filters": filters,
+            "hierarchical": hierarchical,
+        },
+    )
+
+
+async def execute_fallback(chatbot, request: QueryRequest, language: str):
+    """
+    Fallback response when no suitable agent is found.
+    """
+    return await chatbot.execute(
+        AgentInput(
+            query=(
+                "أعتذر، لا يمكنني الإجابة على هذا السؤال حالياً. "
+                "يرجى إعادة صياغة السؤال أو السؤال عن موضوع إسلامي آخر.\n\n"
+                f"{request.query}"
+            ),
+            language=language,
+            metadata={"madhhab": request.madhhab},
+        )
+    )
 
 
 @router.post(
@@ -53,7 +138,6 @@ async def get_classifier():
 )
 async def handle_query(
     request: QueryRequest,
-    # Faceted search filters
     author: str | None = Query(None, description="Filter by author name"),
     era: str | None = Query(
         None,
@@ -63,7 +147,6 @@ async def handle_query(
     category: str | None = Query(None, description="Filter by category/madhhab"),
     death_year_min: int | None = Query(None, description="Minimum author death year (Hijri)"),
     death_year_max: int | None = Query(None, description="Maximum author death year (Hijri)"),
-    # Retrieval options
     hierarchical: bool = Query(False, description="Use hierarchical retrieval for coherent results"),
 ):
     """
@@ -71,27 +154,25 @@ async def handle_query(
 
     Flow:
     1. Classify intent
-    2. Build filters from query parameters
-    3. Route to appropriate agent with filters
-    4. Return structured response with rich citations
-
-    Faceted Search Examples:
-    - /api/v1/query?query=ما+حكم+الصلاة&author=Imam+Bukhari
-    - /api/v1/query?query=التوحيد&era=classical
-    - /api/v1/query?query=المواريث&death_year_min=200&death_year_max=500
-    - /api/v1/query?query=الفقه&hierarchical=true
+    2. Build filters
+    3. Resolve target agent via AgentRegistry
+    4. Execute target
+    5. Return structured response
     """
     start_time = time.time()
     query_id = str(uuid.uuid4())
 
     try:
-        logger.info("query.received", query_id=query_id, query=request.query[:50])
+        logger.info(
+            "query.received",
+            query_id=query_id,
+            query=request.query[:100],
+            requested_language=request.language,
+        )
 
-        # Get components
         chatbot = _chatbot.get()
         classifier = await get_classifier()
 
-        # Classify intent
         router_result = await classifier.classify(request.query)
         intent = router_result.intent
         language = request.language or router_result.language
@@ -101,82 +182,65 @@ async def handle_query(
             query_id=query_id,
             intent=intent.value,
             confidence=router_result.confidence,
+            method=router_result.method,
+            language=language,
         )
 
-        # ==========================================
-        # Phase 6 Refactoring: Use AgentRegistry for dynamic routing
-        # This replaces the hardcoded if/elif/else block
-        # Now ALL 17 intents work automatically!
-        # ==========================================
+        filters = build_filters(
+            author=author,
+            era=era,
+            book_id=book_id,
+            category=category,
+            death_year_min=death_year_min,
+            death_year_max=death_year_max,
+        )
 
-        # Build filters from query parameters
-        filters = None
-        if any([author, era, book_id, category, death_year_min, death_year_max]):
-            filters = {}
-            if author:
-                filters["author"] = author
-            if era:
-                filters["era"] = era
-            if book_id:
-                filters["book_id"] = book_id
-            if category:
-                filters["category"] = category
-            if death_year_min:
-                filters["author_death_min"] = death_year_min
-            if death_year_max:
-                filters["author_death_max"] = death_year_max
-
+        if filters:
             logger.info(
                 "query.filters_applied",
                 query_id=query_id,
-                filters=list(filters.keys()),
+                filters=filters,
             )
 
-        # Use AgentRegistry to get the right agent/tool for this intent
         registry = get_registry()
         agent, is_agent = registry.get_for_intent(intent)
-        
+
         logger.info(
             "query.registry_lookup",
             query_id=query_id,
             intent=intent.value,
-            agent=str(agent),
+            resolved=bool(agent),
             is_agent=is_agent,
             registry_status=registry.get_status(),
         )
 
-        # Build common agent input
-        agent_input = AgentInput(
-            query=request.query,
+        agent_input = build_agent_input(
+            request,
             language=language,
-            metadata={
-                "madhhab": request.madhhab,
-                "filters": filters,
-                "hierarchical": hierarchical,
-            }
+            filters=filters,
+            hierarchical=hierarchical,
         )
 
-        if agent:
-            # Route to registered agent or tool
+        if agent is not None:
             agent_result = await agent.execute(agent_input)
-            agent_name = getattr(agent, 'name', 'unknown_agent')
+            agent_name = getattr(agent, "name", agent.__class__.__name__)
             logger.info(
                 "query.routed_to_agent",
                 query_id=query_id,
+                intent=intent.value,
                 agent=agent_name,
                 is_agent=is_agent,
             )
         elif intent == Intent.GREETING:
-            # Fallback for greeting
             agent_result = await chatbot.execute(agent_input)
             agent_name = "chatbot_agent"
+            logger.info(
+                "query.greeting_fallback",
+                query_id=query_id,
+                agent=agent_name,
+            )
         else:
-            # Default fallback for unhandled intents
-            agent_result = await chatbot.execute(AgentInput(
-                query=f"أعتذر، لا يمكنني الإجابة على هذا السؤال حالياً. يرجى السؤال عن موضوع آخر.\n\n{request.query}",
-                language=language,
-                metadata={"madhhab": request.madhhab}
-            ))
+            agent_result = await execute_fallback(chatbot, request, language)
             agent_name = "chatbot_fallback"
             logger.warning(
                 "query.no_agent_for_intent",
@@ -201,7 +265,12 @@ async def handle_query(
             answer=agent_result.answer,
             citations=[
                 CitationResponse(
-                    id=c.id, type=c.type, source=c.source, reference=c.reference, url=c.url, text_excerpt=c.text_excerpt
+                    id=c.id,
+                    type=c.type,
+                    source=c.source,
+                    reference=c.reference,
+                    url=c.url,
+                    text_excerpt=c.text_excerpt,
                 )
                 for c in agent_result.citations
             ],
@@ -209,13 +278,21 @@ async def handle_query(
                 "agent": agent_name,
                 "processing_time_ms": processing_time,
                 "classification_method": router_result.method,
+                "language": language,
+                "hierarchical": hierarchical,
                 **agent_result.metadata,
             },
-            follow_up_suggestions=agent_result.metadata.get("follow_up_suggestions", []),
+            follow_up_suggestions=agent_result.metadata.get(
+                "follow_up_suggestions", []
+            ),
         )
 
     except ValueError as e:
-        logger.warning("query.validation_error", query_id=query_id, error=str(e))
+        logger.warning(
+            "query.validation_error",
+            query_id=query_id,
+            error=str(e),
+        )
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
@@ -228,12 +305,17 @@ async def handle_query(
             traceback=tb,
             exc_info=True,
         )
-        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error while processing the query",
+        ) from e
 
 
 @router.get("/test")
 async def test_query():
-    """Test endpoint to verify query router is working."""
+    """
+    Test endpoint to verify query router is working.
+    """
     chatbot = _chatbot.get()
     result = await chatbot.execute(
         AgentInput(query="السلام عليكم", language="ar", metadata={})

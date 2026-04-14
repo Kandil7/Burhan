@@ -16,6 +16,7 @@ Agents inherit and override only:
 - Agent name
 
 """
+
 from typing import Any
 
 from src.agents.base import AgentInput, AgentOutput, BaseAgent
@@ -93,7 +94,8 @@ class BaseRAGAgent(BaseAgent):
         # Initialize embedding model
         try:
             if not self.embedding_model:
-                self.embedding_model = EmbeddingModel()
+                # Disable cache to avoid async issues in agent execution
+                self.embedding_model = EmbeddingModel(cache_enabled=False)
                 await self.embedding_model.load_model()
         except Exception as e:
             logger.warning(f"{self.name}.embedding_failed", error=str(e))
@@ -186,9 +188,7 @@ class BaseRAGAgent(BaseAgent):
                     top_k=self.TOP_K_RETRIEVAL,
                     filters=filters,
                 )
-                good_passages = [
-                    p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
-                ][:self.TOP_K_RERANK]
+                good_passages = [p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD][: self.TOP_K_RERANK]
             else:
                 passages = await self.hybrid_searcher.search(
                     query=input.query,
@@ -196,9 +196,7 @@ class BaseRAGAgent(BaseAgent):
                     collection=self.COLLECTION,
                     top_k=self.TOP_K_RETRIEVAL,
                 )
-                good_passages = [
-                    p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD
-                ][:self.TOP_K_RERANK]
+                good_passages = [p for p in passages if p.get("score", 0) >= self.SCORE_THRESHOLD][: self.TOP_K_RERANK]
 
             # Enrich passages with title/chapter context
             if good_passages:
@@ -250,9 +248,7 @@ class BaseRAGAgent(BaseAgent):
         """Format passages for LLM input with citation markers."""
         if not passages:
             return ""
-        return "\n\n".join(
-            [f"[C{i}] {p.get('content', '')[:500]}" for i, p in enumerate(passages, 1)]
-        )
+        return "\n\n".join([f"[C{i}] {p.get('content', '')[:500]}" for i, p in enumerate(passages, 1)])
 
     async def _generate(self, query: str, passages: str, language: str) -> str:
         """Generate answer using LLM or fallback to passages."""
@@ -269,9 +265,7 @@ class BaseRAGAgent(BaseAgent):
                     {"role": "system", "content": self.SYSTEM_PROMPT},
                     {
                         "role": "user",
-                        "content": self.USER_PROMPT.format(
-                            query=query, language=language, passages=passages
-                        ),
+                        "content": self.USER_PROMPT.format(query=query, language=language, passages=passages),
                     },
                 ],
                 temperature=self.TEMPERATURE,
