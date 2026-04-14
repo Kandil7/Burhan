@@ -7,7 +7,10 @@ Provides unified interface for multiple LLM providers:
 - Local models (future)
 
 Phase 4: Added Groq support for faster, cheaper inference.
+Phase 6 Refactoring: Added asyncio.Lock for thread-safe client creation.
 """
+import asyncio
+import json
 from typing import Optional
 from openai import AsyncOpenAI
 
@@ -27,9 +30,11 @@ from src.config.logging_config import get_logger
 
 logger = get_logger()
 
-# Global LLM clients
+# Global LLM clients with thread-safe locks
 llm_client: Optional[AsyncOpenAI] = None
 groq_client: Optional[AsyncGroq] = None
+_client_lock: asyncio.Lock = asyncio.Lock()
+_openai_lock: asyncio.Lock = asyncio.Lock()
 
 
 # Available models per provider
@@ -50,6 +55,8 @@ MODELS = {
 async def get_llm_client() -> AsyncOpenAI:
     """
     Get or create LLM client instance.
+    
+    Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
 
     Supports multiple providers:
     - openai: OpenAI API (GPT-4o-mini, GPT-4)
@@ -74,41 +81,51 @@ async def get_llm_client() -> AsyncOpenAI:
             )
 
         if groq_client is None:
-            if not settings.groq_api_key:
-                logger.error("llm.no_groq_key")
-                raise ConfigurationError(
-                    "GROQ_API_KEY environment variable is not set. "
-                    "Please set it in your .env file or environment."
-                )
+            async with _client_lock:
+                # Double-checked locking
+                if groq_client is None:
+                    if not settings.groq_api_key:
+                        logger.error("llm.no_groq_key")
+                        raise ConfigurationError(
+                            "GROQ_API_KEY environment variable is not set. "
+                            "Please set it in your .env file or environment."
+                        )
 
-            groq_client = AsyncGroq(api_key=settings.groq_api_key)
-            logger.info(
-                "llm.groq_initialized",
-                model=MODELS["groq"]["default"]
-            )
+                    groq_client = AsyncGroq(api_key=settings.groq_api_key)
+                    logger.info(
+                        "llm.groq_initialized",
+                        model=MODELS["groq"]["default"]
+                    )
         return groq_client
     else:
         return await get_openai_client()
 
 
 async def get_openai_client() -> AsyncOpenAI:
-    """Get OpenAI client."""
+    """
+    Get OpenAI client.
+    
+    Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
+    """
     global llm_client
 
     if llm_client is None:
-        if not settings.openai_api_key:
-            logger.error("llm.no_openai_key", provider="openai")
-            raise ConfigurationError(
-                "OPENAI_API_KEY environment variable is not set. "
-                "Please set it in your .env file or environment."
-            )
-        else:
-            llm_client = AsyncOpenAI(api_key=settings.openai_api_key)
+        async with _openai_lock:
+            # Double-checked locking
+            if llm_client is None:
+                if not settings.openai_api_key:
+                    logger.error("llm.no_openai_key", provider="openai")
+                    raise ConfigurationError(
+                        "OPENAI_API_KEY environment variable is not set. "
+                        "Please set it in your .env file or environment."
+                    )
+                else:
+                    llm_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
-        logger.info(
-            "llm.openai_initialized",
-            model=settings.llm_model
-        )
+                logger.info(
+                    "llm.openai_initialized",
+                    model=settings.llm_model
+                )
 
     return llm_client
 
@@ -189,23 +206,23 @@ async def generate_json(
     """
     Generate JSON response using LLM.
     
+    Phase 6 Refactoring: Moved json import to module level.
+
     Args:
         prompt: User prompt
         system_prompt: Optional system prompt
-        
+
     Returns:
         Parsed JSON response
     """
-    import json
-    
     try:
         client = await get_llm_client()
-        
+
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        
+
         response = await client.chat.completions.create(
             model=settings.llm_model,
             messages=messages,
@@ -213,10 +230,10 @@ async def generate_json(
             max_tokens=settings.llm_max_tokens,
             response_format={"type": "json_object"}
         )
-        
+
         content = response.choices[0].message.content
         return json.loads(content)
-        
+
     except json.JSONDecodeError as e:
         logger.error("llm.json_decode_error", error=str(e))
         raise ValueError(f"LLM returned invalid JSON: {e}")

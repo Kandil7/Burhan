@@ -20,7 +20,7 @@
 - ✅ **10 hierarchical chunk files** created
 - ✅ Disk-based memory-efficient processing (<2 GB RAM)
 
-📖 **Full details:** [Lucene Merge Complete](docs/LUCENE_MERGE_COMPLETE.md)
+📖 **Full details:** [Lucene Merge Complete](docs/10-operations/LUCENE_MERGE_COMPLETE.md)
 
 ---
 
@@ -249,17 +249,17 @@ Athar/
 ## 📚 Documentation
 
 ### Getting Started
-- **[docs/getting-started/QUICK_START.md](docs/getting-started/QUICK_START.md)** - 30-minute setup guide
+- **[docs/1-getting-started/START_HERE.md](docs/1-getting-started/START_HERE.md)** - Entry point for new developers
 
 ### Core Documentation
-- **[docs/LUCENE_MERGE_COMPLETE.md](docs/LUCENE_MERGE_COMPLETE.md)** - ✅ **NEW: Complete merge statistics & guide**
-- **[docs/COMPLETE_DOCUMENTATION.md](docs/api/COMPLETE_DOCUMENTATION.md)** - Full system docs
-- **[docs/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** - Architecture decisions
-- **[docs/FILE_REFERENCE.md](docs/reference/FILE_REFERENCE.md)** - Complete file tree
+- **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md)** - ✅ **Complete merge statistics & guide**
+- **[docs/5-api/COMPLETE_DOCUMENTATION.md](docs/5-api/COMPLETE_DOCUMENTATION.md)** - Full system docs
+- **[docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md](docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md)** - Architecture decisions
+- **[docs/9-reference/FILE_REFERENCE.md](docs/9-reference/FILE_REFERENCE.md)** - Complete file tree
 
 ### Dataset Guides
-- **[docs/datasets/LUCENE_EXTRACTION_COMPLETE_GUIDE.md](docs/datasets/LUCENE_EXTRACTION_COMPLETE_GUIDE.md)** - Lucene extraction
-- **[docs/datasets/MASTER_DB_INTEGRATION_PLAN.md](docs/datasets/MASTER_DB_INTEGRATION_PLAN.md)** - Master.db integration
+- **[docs/6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md](docs/6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md)** - Lucene extraction
+- **[docs/6-data/MASTER_DB_INTEGRATION_PLAN.md](docs/6-data/MASTER_DB_INTEGRATION_PLAN.md)** - Master.db integration
 
 ### Full Documentation Index
 See **[docs/README.md](docs/README.md)** for complete documentation listing (60+ files).

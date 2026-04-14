@@ -1,161 +1,85 @@
 # Athar Documentation Index
 
 **Complete documentation for the Athar Islamic QA System**  
-**Last Updated:** April 7, 2026
+**Last Updated:** April 14, 2026
 
 ---
 
-## Start Here
+## Quick Start
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| [getting-started/QUICK_START.md](getting-started/QUICK_START.md) | Get running in 30 minutes | **First time setup** |
-| [getting-started/START_HERE.md](getting-started/START_HERE.md) | Entry point | **Start here** |
-| [../README.md](../README.md) | Project overview | Understanding the project |
+| [1-getting-started/START_HERE.md](1-getting-started/START_HERE.md) | Entry point | **Start here** |
+| [4-guides/setup.md](4-guides/setup.md) | Complete setup guide | First time setup |
+| [4-guides/running.md](4-guides/running.md) | How to run | After setup |
+| [4-guides/windows.md](4-guides/windows.md) | Windows guide | Windows users |
 
 ---
 
-## Core Documentation
+## Documentation by Category
 
-### 1. Architecture & Design
-- [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Architecture decisions & patterns
-  - Why multi-agent?
-  - Why hybrid intent classification?
-  - Component diagrams
-  - Data flows
-  - Design patterns
+### 1. Getting Started
+- [1-getting-started/START_HERE.md](1-getting-started/START_HERE.md) - Entry point for new developers
 
-### 2. Complete System Guide
-- [api/COMPLETE_DOCUMENTATION.md](api/COMPLETE_DOCUMENTATION.md) - Full system documentation
-  - Architecture overview
-  - System components
-  - Data pipeline
-  - Installation & setup
-  - API reference
-  - Deployment
-  - Testing
+### 2. Architecture & Design
+- [2-architecture/01_ARCHITECTURE_OVERVIEW.md](2-architecture/01_ARCHITECTURE_OVERVIEW.md) - System overview
+- [2-architecture/ARCHITECTURE_DETAILED.md](2-architecture/ARCHITECTURE_DETAILED.md) - Detailed architecture
+- [2-architecture/technical-architecture.md](2-architecture/technical-architecture.md) - Technical architecture
+- [2-architecture/branch-strategy.md](2-architecture/branch-strategy.md) - Git workflow
 
-### 3. File Reference
-- [reference/FILE_REFERENCE.md](reference/FILE_REFERENCE.md) - Complete file tree
-  - All files listed
-  - Purpose of each file
-  - Organization by category
+### 3. Core Features
+- [3-core-features/rag.md](3-core-features/rag.md) - RAG pipeline documentation
+- [3-core-features/quran.md](3-core-features/quran.md) - Quran module
 
----
+### 4. User Guides
+- [4-guides/setup.md](4-guides/setup.md) - Complete setup guide
+- [4-guides/running.md](4-guides/running.md) - How to run the application
+- [4-guides/windows.md](4-guides/windows.md) - Windows-specific guide
+- [4-guides/02_QUICK_REFERENCE.md](4-guides/02_QUICK_REFERENCE.md) - Quick reference
 
-## User Guides
+### 5. API Documentation
+- [5-api/COMPLETE_DOCUMENTATION.md](5-api/COMPLETE_DOCUMENTATION.md) - Full API documentation
 
-### Getting Started
-- [getting-started/QUICK_START.md](getting-started/QUICK_START.md) - 30-minute setup guide
-- [getting-started/START_HERE.md](getting-started/START_HERE.md) - Entry point
-- [getting-started/STRUCTURE.md](getting-started/STRUCTURE.md) - Project structure
-- [getting-started/index.md](getting-started/index.md) - Documentation index
+### 6. Data & Datasets
+- [6-data/huggingface_setup.md](6-data/huggingface_setup.md) - Upload to Hugging Face
+- [6-data/MINI_DATASET_COMPLETE.md](6-data/MINI_DATASET_COMPLETE.md) - Mini dataset guide
+- [6-data/DATASET_IMPROVEMENTS.md](6-data/DATASET_IMPROVEMENTS.md) - Dataset improvements
+- [6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md](6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md) - Lucene extraction
+- [6-data/MASTER_DB_ANALYSIS.md](6-data/MASTER_DB_ANALYSIS.md) - Database analysis
 
-### Guides
-- [guides/running.md](guides/running.md) - How to run the application
-- [guides/setup.md](guides/setup.md) - Complete setup guide
-- [guides/windows.md](guides/windows.md) - Windows guide
-- [guides/02_QUICK_REFERENCE.md](guides/02_QUICK_REFERENCE.md) - Quick reference
+### 7. Deployment
+- [7-deployment/index.md](7-deployment/index.md) - Deployment guide
 
-### Data & Datasets
-- [data/huggingface_setup.md](data/huggingface_setup.md) - Upload to Hugging Face
-- [data/MINI_DATASET_COMPLETE.md](data/MINI_DATASET_COMPLETE.md) - Mini dataset
-- [analysis/DATA_INVENTORY_AND_STRATEGY.md](analysis/DATA_INVENTORY_AND_STRATEGY.md) - Data strategy
+### 8. Development
+- [8-development/embeddings.md](8-development/embeddings.md) - Embedding model setup
+- [8-development/frontend.md](8-development/frontend.md) - Frontend development
 
----
+### 9. Reference
+- [9-reference/FILE_REFERENCE.md](9-reference/FILE_REFERENCE.md) - Complete file tree
+- [9-reference/40_project_plan.md](9-reference/40_project_plan.md) - Project plan
+- [9-reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md](9-reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md) - Project explanation
 
-## Documentation by Role
+### 10. Operations
+- [10-operations/CHANGELOG.md](10-operations/CHANGELOG.md) - Version history
+- [10-operations/PRODUCTION_READY.md](10-operations/PRODUCTION_READY.md) - Production readiness
+- [10-operations/BACKUP_AND_RESTORE_GUIDE.md](10-operations/BACKUP_AND_RESTORE_GUIDE.md) - Backup guide
+- [10-operations/BGE_M3_MIGRATION.md](10-operations/BGE_M3_MIGRATION.md) - Model migration
 
-### For New Developers
-1. [getting-started/QUICK_START.md](getting-started/QUICK_START.md) - Get running
-2. [api/COMPLETE_DOCUMENTATION.md](api/COMPLETE_DOCUMENTATION.md) - Learn the system
-3. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Understand design
-4. [reference/FILE_REFERENCE.md](reference/FILE_REFERENCE.md) - Find files
-
-### For Contributors
-1. [../README.md](../README.md) - Contributing guidelines
-2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Design patterns
-3. [reference/FILE_REFERENCE.md](reference/FILE_REFERENCE.md) - Where to make changes
-
-### For DevOps
-1. [api/COMPLETE_DOCUMENTATION.md](api/COMPLETE_DOCUMENTATION.md) - Deployment section
-2. [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) - Scalability
-3. [deployment/index.md](deployment/index.md) - Deployment guide
-4. [../docker/docker-compose.dev.yml](../docker/docker-compose.dev.yml) - Docker setup
-
-### For End Users
-1. [../README.md](../README.md) - What is Athar?
-2. [getting-started/QUICK_START.md](getting-started/QUICK_START.md) - How to use
-3. [api/COMPLETE_DOCUMENTATION.md](api/COMPLETE_DOCUMENTATION.md) - API reference
+### 11. Learning (Mentoring)
+- [11-learning/README.md](11-learning/README.md) - Learning resources
+- [11-learning/01_project_overview.md](11-learning/01_project_overview.md) - Project overview
+- [11-learning/02_folder_structure.md](11-learning/02_folder_structure.md) - Folder structure
+- [11-learning/learning_path.md](11-learning/learning_path.md) - Complete learning path
 
 ---
 
-## Technical Documentation
+## External Resources
 
-### Development
-- [development/index.md](development/index.md) - Development setup
-- [development/frontend.md](development/frontend.md) - Frontend guide
-- [development/embeddings.md](development/embeddings.md) - Embedding model setup
-
-### API
-- [api/reference.md](api/reference.md) - API documentation
-- [api/endpoints.md](api/endpoints.md) - API endpoints
-- [api/COMPLETE_DOCUMENTATION.md](api/COMPLETE_DOCUMENTATION.md) - Full technical docs
-
-### Core Features
-- [core-features/rag.md](core-features/rag.md) - RAG pipeline
-- [core-features/quran.md](core-features/quran.md) - Quran module
-
-### Architecture
-- [architecture/01_ARCHITECTURE_OVERVIEW.md](architecture/01_ARCHITECTURE_OVERVIEW.md) - System overview
-- [architecture/technical-architecture.md](architecture/technical-architecture.md) - Technical architecture
-- [architecture/branch-strategy.md](architecture/branch-strategy.md) - Git workflow
-
----
-
-## Project Reports & Status
-
-### Reports
-- [reports/30_FINAL_PROJECT_SUMMARY.md](reports/30_FINAL_PROJECT_SUMMARY.md) - Project summary
-- [reports/31_FIX_SUMMARY.md](reports/31_FIX_SUMMARY.md) - Fixes
-- [reports/32_TEST_RESULTS.md](reports/32_TEST_RESULTS.md) - Test results
-- [reports/33_COMPREHENSIVE_TEST_RESULTS.md](reports/33_COMPREHENSIVE_TEST_RESULTS.md) - Comprehensive tests
-- [reports/34_100_PERCENT_COMPLETE.md](reports/34_100_PERCENT_COMPLETE.md) - 100% completion
-
-### Status
-- [status/WORKING_NOW.md](status/WORKING_NOW.md) - Current working status
-- [status/WORKING_STATUS.md](status/WORKING_STATUS.md) - Working status
-- [status/CHECKPOINT_STATUS.md](status/CHECKPOINT_STATUS.md) - Checkpoint status
-
-### Planning
-- [planning/DATA_DRIVEN_AGENT_STRATEGY.md](planning/DATA_DRIVEN_AGENT_STRATEGY.md) - Agent strategy
-- [planning/COMPLETE_DATA_DRIVEN_PLAN.md](planning/COMPLETE_DATA_DRIVEN_PLAN.md) - Data-driven plan
-
-### Improvements
-- [improvements/phase-5.md](improvements/phase-5.md) - Phase 5 improvements
-- [improvements/code-review.md](improvements/code-review.md) - Code review
-
----
-
-## Reference
-
-- [reference/40_project_plan.md](reference/40_project_plan.md) - Project plan
-- [reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md](reference/41_COMPREHENSIVE_PROJECT_EXPLANATION.md) - Project explanation
-- [reference/FILE_REFERENCE.md](reference/FILE_REFERENCE.md) - File reference
-
----
-
-## Quick Links
-
-### GitHub
-- Repository: https://github.com/Kandil7/Athar
-- Issues: https://github.com/Kandil7/Athar/issues
-
-### External Resources
-- Fanar-Sadiq Paper: [PDF](Fanar-Sadiq%20A%20Multi-Agent%20Architecture%20for%20Grounded%20Islamic%20QA.pdf)
-- Groq API: https://console.groq.com
-- HuggingFace: https://huggingface.co
-- Qdrant: https://qdrant.tech
+- **GitHub:** https://github.com/Kandil7/Athar
+- **Fanar-Sadiq Paper:** [PDF](Fanar-Sadiq%20A%20Multi-Agent%20Architecture%20for%20Grounded%20Islamic%20QA.pdf)
+- **Groq API:** https://console.groq.com
+- **HuggingFace:** https://huggingface.co
+- **Qdrant:** https://qdrant.tech
 
 ---
 
@@ -163,51 +87,49 @@
 
 ```
 docs/
-├── README.md                   # This file
-├── getting-started/            # Entry point & quick start
-│   ├── index.md
-│   ├── START_HERE.md
-│   ├── QUICK_START.md
-│   └── STRUCTURE.md
-├── architecture/               # System architecture
+├── 1-getting-started/          # Entry point & quick start
+│   └── START_HERE.md
+├── 2-architecture/            # System architecture
 │   ├── 01_ARCHITECTURE_OVERVIEW.md
-│   ├── ARCHITECTURE.md
+│   ├── ARCHITECTURE_DETAILED.md
 │   ├── technical-architecture.md
 │   └── branch-strategy.md
-├── guides/                     # How-to guides
+├── 3-core-features/           # Core features
+│   ├── rag.md
+│   └── quran.md
+├── 4-guides/                   # How-to guides
 │   ├── running.md
 │   ├── setup.md
 │   ├── windows.md
 │   └── 02_QUICK_REFERENCE.md
-├── development/                 # Developer guides
-│   ├── index.md
-│   ├── frontend.md
-│   └── embeddings.md
-├── api/                         # API documentation
-│   ├── reference.md
-│   ├── endpoints.md
+├── 5-api/                      # API documentation
 │   └── COMPLETE_DOCUMENTATION.md
-├── core-features/               # Core features
-│   ├── rag.md
-│   └── quran.md
-├── deployment/                  # Deployment
-│   └── index.md
-├── data/                        # Data guides
+├── 6-data/                     # Data & datasets
 │   ├── huggingface_setup.md
-│   └── MINI_DATASET_COMPLETE.md
-├── analysis/                    # Analysis
-│   └── DATA_INVENTORY_AND_STRATEGY.md
-├── reports/                     # Project reports
-├── planning/                    # Planning docs
-├── status/                      # Status docs
-├── improvements/                # Improvements
-├── reference/                   # Reference
+│   ├── MINI_DATASET_COMPLETE.md
+│   ├── DATASET_IMPROVEMENTS.md
+│   └── *.md (various dataset guides)
+├── 7-deployment/               # Deployment
+│   └── index.md
+├── 8-development/              # Developer guides
+│   ├── embeddings.md
+│   └── frontend.md
+├── 9-reference/                 # Reference
 │   ├── FILE_REFERENCE.md
 │   ├── 40_project_plan.md
 │   └── 41_COMPREHENSIVE_PROJECT_EXPLANATION.md
-└── Fanar-Sadiq Paper.pdf        # Research paper
+├── 10-operations/               # Operations & maintenance
+│   ├── CHANGELOG.md
+│   ├── PRODUCTION_READY.md
+│   ├── BACKUP_AND_RESTORE_GUIDE.md
+│   └── BGE_M3_MIGRATION.md
+├── 11-learning/                 # Learning & mentoring
+│   ├── README.md
+│   ├── learning_path.md
+│   └── 01-17_*.md (learning modules)
+└── Fanar-Sadiq Paper.pdf       # Research paper
 ```
 
 ---
 
-*Documentation index - Version 2.0, April 7, 2026*
+*Documentation index - Version 3.0, April 14, 2026*
