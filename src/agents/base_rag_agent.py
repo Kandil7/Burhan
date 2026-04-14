@@ -159,7 +159,10 @@ class BaseRAGAgent(BaseAgent):
             query_embedding = await self.embedding_model.encode_query(input.query)
 
             # Retrieve passages (with optional facet filtering or hierarchical)
-            if hierarchical and self.hybrid_searcher:
+            if not self.hybrid_searcher:
+                logger.warning(f"{self.name}.searcher_unavailable", query=input.query)
+                good_passages = []
+            elif hierarchical:
                 # Get expanded results for hierarchical processing
                 expanded_passages = await self.hybrid_searcher.search_with_facets(
                     query=input.query,
@@ -180,7 +183,7 @@ class BaseRAGAgent(BaseAgent):
                 good_passages = self.hierarchical_retriever.get_flat_passages(
                     hierarchical_results, max_passages=self.TOP_K_RERANK
                 )
-            elif filters and self.hybrid_searcher:
+            elif filters:
                 passages = await self.hybrid_searcher.search_with_facets(
                     query=input.query,
                     query_embedding=query_embedding,

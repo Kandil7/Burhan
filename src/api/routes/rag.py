@@ -287,6 +287,10 @@ async def get_rag_stats():
         collections = {}
         total_docs = 0
 
+        # Check connection before iterating
+        if not vector_store.client:
+             raise HTTPException(status_code=503, detail="Vector store connection failed")
+
         for coll in vector_store.list_collections():
             try:
                 stats = vector_store.get_collection_stats(coll)
@@ -304,6 +308,9 @@ async def get_rag_stats():
 
     except Exception as e:
         logger.error("rag.stats_error", error=str(e))
+        # Re-raise to let global middleware handle connection errors with 503
+        if "connection" in str(e).lower() or "refused" in str(e).lower():
+             raise HTTPException(status_code=503, detail=f"Vector store unavailable: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 

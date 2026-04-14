@@ -57,19 +57,31 @@ async def error_handler_middleware(request: Request, call_next):
 
     except Exception as e:
         error_str = _safe_error_str(e)
+        
+        # Determine status code and public message
+        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        public_message = "An unexpected error occurred"
+        
+        # Infrastructure error detection
+        infra_keywords = ["Connection refused", "OperationalError", "ConnectionError", "Vector store not available"]
+        if any(kw in error_str for kw in infra_keywords) or "sqlalchemy" in str(type(e)).lower():
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            public_message = "Service temporarily unavailable. Database or search engine connection failed."
+
         logger.error(
             "api.unhandled_error",
             request_id=request_id,
             method=request.method,
             path=request.url.path,
-            error=error_str
+            error=error_str,
+            status_code=status_code
         )
 
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status_code,
             content={
-                "error": "Internal server error",
-                "detail": str(e) if request.app.debug else "An unexpected error occurred",
+                "error": "Internal Server Error" if status_code == 500 else "Service Unavailable",
+                "detail": error_str if request.app.debug else public_message,
                 "request_id": request_id
             }
         )
