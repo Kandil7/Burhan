@@ -130,7 +130,9 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.load_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to load embedding model: {str(e)}")
+            raise EmbeddingModelError(
+                f"Failed to load embedding model: {str(e)}"
+            ) from e
 
     async def encode(self, texts: list[str], batch_size: int | None = None) -> np.ndarray:
         """
@@ -251,7 +253,9 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.encode_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to encode texts: {str(e)}")
+            raise EmbeddingModelError(
+                f"Failed to encode texts: {str(e)}"
+            ) from e
 
     def _split_by_cache(self, texts: list[str]) -> tuple[list, list]:
         """

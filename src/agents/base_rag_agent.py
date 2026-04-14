@@ -15,7 +15,6 @@ Agents inherit and override only:
 - Temperature, max_tokens, thresholds
 - Agent name
 
-This eliminates ~800 lines of duplication across 7 agents.
 """
 from typing import Any
 

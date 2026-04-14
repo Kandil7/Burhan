@@ -108,7 +108,9 @@ class VerseRetrievalEngine:
             raise
         except Exception as e:
             logger.error("verse.lookup_error", reference=reference, error=str(e))
-            raise VerseRetrievalError(f"Error looking up verse: {str(e)}")
+            raise VerseRetrievalError(
+                f"Error looking up verse: {str(e)}"
+            ) from e
 
     async def lookup_by_number(
         self,

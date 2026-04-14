@@ -277,7 +277,7 @@ Query: {query}"""
 
         except json.JSONDecodeError as e:
             logger.error("router.llm_json_error", error=str(e))
-            raise ValueError(f"LLM returned invalid JSON: {e}")
+            raise ValueError(f"LLM returned invalid JSON: {e}") from e
         except Exception as e:
             logger.error("router.llm_error", error=str(e))
             raise

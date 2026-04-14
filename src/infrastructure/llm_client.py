@@ -26,8 +26,8 @@ except ImportError:
     AsyncGroq = None
     GROQ_AVAILABLE = False
 
-from src.config.logging_config import get_logger
-from src.config.settings import settings
+from src.config.logging_config import get_logger  
+from src.config.settings import settings  
 
 logger = get_logger()
 
@@ -237,7 +237,7 @@ async def generate_json(
 
     except json.JSONDecodeError as e:
         logger.error("llm.json_decode_error", error=str(e))
-        raise ValueError(f"LLM returned invalid JSON: {e}")
+        raise ValueError(f"LLM returned invalid JSON: {e}") from e
     except Exception as e:
         logger.error("llm.generate_error", error=str(e))
         raise

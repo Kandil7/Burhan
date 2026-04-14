@@ -277,9 +277,9 @@ class PrayerTimesTool(BaseTool):
 
         # Ecliptic longitude
         q = (280.459 + 0.98564736 * d) % 360
-        l = (q + 1.915 * math.sin(g_rad) +
-             0.020 * math.sin(2 * g_rad)) % 360
-        l_rad = math.radians(l)
+        lon = (q + 1.915 * math.sin(g_rad) +
+               0.020 * math.sin(2 * g_rad)) % 360
+        lon_rad = math.radians(lon)
 
         # Obliquity of ecliptic
         e = 23.439 - 0.00000036 * d
@@ -296,16 +296,16 @@ class PrayerTimesTool(BaseTool):
 
         q = (280.459 + 0.98564736 * d) % 360
 
-        l = (q + 1.915 * math.sin(g_rad) +
-             0.020 * math.sin(2 * g_rad)) % 360
-        l_rad = math.radians(l)
+        lon = (q + 1.915 * math.sin(g_rad) +
+               0.020 * math.sin(2 * g_rad)) % 360
+        lon_rad = math.radians(lon)
 
         e = 23.439 - 0.00000036 * d
         e_rad = math.radians(e)
 
         ra = math.degrees(math.atan2(
-            math.cos(e_rad) * math.sin(l_rad),
-            math.cos(l_rad)
+            math.cos(e_rad) * math.sin(lon_rad),
+            math.cos(lon_rad)
         )) / 15
 
         return (q / 15 - ra) % 24

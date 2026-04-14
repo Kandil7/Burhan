@@ -142,7 +142,9 @@ class TafsirRetrievalEngine:
             raise
         except Exception as e:
             logger.error("tafsir.retrieval_error", error=str(e))
-            raise TafsirRetrievalError(f"Error retrieving tafsir: {str(e)}")
+            raise TafsirRetrievalError(
+                f"Error retrieving tafsir: {str(e)}"
+            ) from e
 
     async def search_tafsir(
         self,
@@ -198,7 +200,9 @@ class TafsirRetrievalEngine:
 
         except Exception as e:
             logger.error("tafsir.search_error", error=str(e))
-            raise TafsirRetrievalError(f"Error searching tafsir: {str(e)}")
+            raise TafsirRetrievalError(
+                f"Error searching tafsir: {str(e)}"
+            ) from e
 
     def list_sources(self) -> list[dict]:
         """

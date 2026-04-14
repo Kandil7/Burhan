@@ -216,7 +216,9 @@ class NL2SQLEngine:
 
         except Exception as e:
             logger.error("nl2sql.execution_error", error=str(e))
-            raise NL2SQLExecutionError(f"SQL execution failed: {str(e)}")
+            raise NL2SQLExecutionError(
+                f"SQL execution failed: {str(e)}"
+            ) from e
 
     async def execute(self, query: str) -> dict:
         """

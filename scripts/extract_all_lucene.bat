@@ -96,10 +96,11 @@ echo.
 :: ============================================
 
 :: Function to extract an index
-:: Usage: call :extract_index INDEX_NAME MAX_DOCS
+:: Usage: call :extract_index INDEX_NAME MAX_DOCS STEP_NUMBER
 :extract_index
 set INDEX_NAME=%1
 set MAX_DOCS=%2
+set STEP_NUM=%3
 set INDEX_PATH=%STORE_DIR%\%INDEX_NAME%
 set OUTPUT_FILE=%OUTPUT_DIR%\lucene_%INDEX_NAME%.json
 
@@ -110,7 +111,7 @@ if not exist "%INDEX_PATH%" (
 )
 
 echo ======================================================================
-echo  STEP 2.%~3: Extracting %INDEX_NAME% index (%MAX_DOCS% docs)
+echo  STEP 2.%STEP_NUM%: Extracting %INDEX_NAME% index (%MAX_DOCS% docs)
 echo ======================================================================
 echo  Index path: %INDEX_PATH%
 echo  Output file: %OUTPUT_FILE%

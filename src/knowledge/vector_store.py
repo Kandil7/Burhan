@@ -122,7 +122,9 @@ class VectorStore:
 
         except Exception as e:
             logger.error("vectorstore.init_error", error=str(e))
-            raise VectorStoreError(f"Failed to initialize vector store: {str(e)}")
+            raise VectorStoreError(
+                f"Failed to initialize vector store: {str(e)}"
+            ) from e
 
     async def upsert(
         self,
@@ -187,7 +189,9 @@ class VectorStore:
 
         except Exception as e:
             logger.error("vectorstore.upsert_error", error=str(e))
-            raise VectorStoreError(f"Failed to upsert documents: {str(e)}")
+            raise VectorStoreError(
+                f"Failed to upsert documents: {str(e)}"
+            ) from e
 
     async def search(
         self,
@@ -261,7 +265,7 @@ class VectorStore:
 
         except Exception as e:
             logger.error("vectorstore.search_error", error=str(e))
-            raise VectorStoreError(f"Search failed: {str(e)}")
+            raise VectorStoreError(f"Search failed: {str(e)}") from e
 
     async def search_with_score_threshold(
         self,
