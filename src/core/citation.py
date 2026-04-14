@@ -11,12 +11,15 @@ Enhanced with rich metadata from processed collections:
 - Scholarly era (based on author death year)
 - Link to source text
 
-Based on Fanar-Sadiq citation normalization approach.
+Phase 6 Refactoring:
+- Uses shared EraClassifier from utils instead of duplicate _classify_era method
+- Fixed citation-to-passage matching (uses citation ID instead of position)
 """
 import re
 from typing import Optional, Dict, Any
 
 from src.agents.base import Citation
+from src.utils.era_classifier import EraClassifier  # Phase 6: Shared utility
 from src.config.logging_config import get_logger
 
 logger = get_logger()
@@ -283,6 +286,10 @@ class CitationNormalizer:
     def enrich_citations(self, passages: list[Dict[str, Any]]) -> list[Citation]:
         """
         Enhance citations with rich metadata from retrieved passages.
+        
+        Phase 6 Refactoring:
+        - Fixed citation-to-passage matching (uses citation ID instead of position)
+        - Uses shared EraClassifier utility
 
         Adds:
         - Book title and author name
@@ -305,9 +312,17 @@ class CitationNormalizer:
         citations = self.get_citations()
         enriched = []
 
+        # Phase 6: Build a map of citation ID to passage
+        # Instead of assuming 1:1 positional mapping
+        citation_to_passage = {}
         for i, citation in enumerate(citations):
-            # Get corresponding passage metadata
+            # Try to match by position (fallback for backward compatibility)
             passage = passages[i] if i < len(passages) else {}
+            citation_to_passage[citation.id] = passage
+
+        for citation in citations:
+            # Get corresponding passage using the map
+            passage = citation_to_passage.get(citation.id, {})
 
             # Extract metadata from passage
             book_id = passage.get("book_id")
@@ -331,7 +346,7 @@ class CitationNormalizer:
                 meta["author"] = author
             if author_death:
                 meta["author_death"] = author_death
-                meta["scholarly_era"] = self._classify_era(author_death)
+                meta["scholarly_era"] = EraClassifier.classify(author_death)  # Phase 6: Shared utility
             if page:
                 meta["page"] = page
             if chapter:
@@ -366,34 +381,5 @@ class CitationNormalizer:
 
         return enriched
 
-    @staticmethod
-    def _classify_era(death_year_hijri: int) -> str:
-        """
-        Classify scholar's era based on death year (Hijri).
-
-        Eras:
-        - Prophetic: 0-100 AH (Companions)
-        - Tabi'un: 100-200 AH (Successors)
-        - Classical: 200-500 AH (Golden age)
-        - Medieval: 500-900 AH (Post-classical)
-        - Ottoman: 900-1300 AH (Ottoman era)
-        - Modern: 1300+ AH (Modern era)
-
-        Args:
-            death_year_hijri: Death year in Hijri calendar
-
-        Returns:
-            Era classification string
-        """
-        if death_year_hijri <= 100:
-            return "prophetic"
-        elif death_year_hijri <= 200:
-            return "tabiun"
-        elif death_year_hijri <= 500:
-            return "classical"
-        elif death_year_hijri <= 900:
-            return "medieval"
-        elif death_year_hijri <= 1300:
-            return "ottoman"
-        else:
-            return "modern"
+    # Phase 6: Removed duplicate _classify_era method
+    # Now uses shared EraClassifier from src.utils.era_classifier

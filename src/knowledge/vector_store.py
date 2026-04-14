@@ -135,28 +135,35 @@ class VectorStore:
         """
         Upsert documents with embeddings to collection.
         
+        Phase 6 Refactoring: Uses deterministic IDs based on content hash
+        to prevent duplicate vectors on re-indexing.
+
         Args:
             collection: Collection name
             documents: List of document dicts
             embeddings: Numpy array of embeddings
-            
+
         Returns:
             Number of documents upserted
         """
         if not self._initialized:
             await self.initialize()
-        
+
         if collection not in self.COLLECTIONS:
             raise VectorStoreError(f"Collection '{collection}' does not exist")
-        
-        try:
-            import uuid
 
-            # Build points with UUID IDs for guaranteed uniqueness
+        try:
+            import hashlib
+
+            # Build points with deterministic IDs based on content
             points = []
             for i, (doc, embedding) in enumerate(zip(documents, embeddings)):
+                # Phase 6: Deterministic ID to prevent duplicates
+                content = doc.get("content", "")
+                doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]
+                
                 point = PointStruct(
-                    id=str(uuid.uuid4()),  # UUID for guaranteed uniqueness
+                    id=doc_id,  # Phase 6: Deterministic ID
                     vector=embedding.tolist(),
                     payload={
                         **doc.get("metadata", {}),
@@ -165,21 +172,21 @@ class VectorStore:
                     }
                 )
                 points.append(point)
-            
+
             # Upsert to Qdrant
             self.client.upsert(
                 collection_name=collection,
                 points=points,
             )
-            
+
             logger.info(
                 "vectorstore.upserted",
                 collection=collection,
                 count=len(points)
             )
-            
+
             return len(points)
-            
+
         except Exception as e:
             logger.error("vectorstore.upsert_error", error=str(e))
             raise VectorStoreError(f"Failed to upsert documents: {str(e)}")

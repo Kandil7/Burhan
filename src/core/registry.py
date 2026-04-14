@@ -165,20 +165,20 @@ def get_registry() -> AgentRegistry:
 
 def initialize_registry() -> AgentRegistry:
     """
-    Initialize registry with default agents and tools.
+    Initialize registry with all agents and tools.
 
     Call this during application startup.
+    Phase 6 Refactoring: Added all RAG agents (FiqhAgent, HadithAgent, GeneralIslamicAgent, SeerahAgent)
     """
     global _registry
     _registry = AgentRegistry()
 
-    # Import and register defaults
+    # Import and register tools
     from src.tools.zakat_calculator import ZakatCalculator
     from src.tools.inheritance_calculator import InheritanceCalculator
     from src.tools.prayer_times_tool import PrayerTimesTool
     from src.tools.hijri_calendar_tool import HijriCalendarTool
     from src.tools.dua_retrieval_tool import DuaRetrievalTool
-    from src.agents.chatbot_agent import ChatbotAgent
 
     # Register tools
     _registry.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
@@ -187,8 +187,38 @@ def initialize_registry() -> AgentRegistry:
     _registry.register_tool("hijri_tool", HijriCalendarTool())
     _registry.register_tool("dua_tool", DuaRetrievalTool())
 
-    # Register chatbot agent
+    # Import and register agents
+    from src.agents.chatbot_agent import ChatbotAgent
     _registry.register_agent("chatbot_agent", ChatbotAgent())
+
+    # Phase 6: Register RAG agents
+    try:
+        from src.agents.fiqh_agent import FiqhAgent
+        _registry.register_agent("fiqh_agent", FiqhAgent())
+        logger.info("registry.fiqh_agent_registered")
+    except Exception as e:
+        logger.warning("registry.fiqh_agent_registration_failed", error=str(e))
+
+    try:
+        from src.agents.hadith_agent import HadithAgent
+        _registry.register_agent("hadith_agent", HadithAgent())
+        logger.info("registry.hadith_agent_registered")
+    except Exception as e:
+        logger.warning("registry.hadith_agent_registration_failed", error=str(e))
+
+    try:
+        from src.agents.general_islamic_agent import GeneralIslamicAgent
+        _registry.register_agent("general_islamic_agent", GeneralIslamicAgent())
+        logger.info("registry.general_agent_registered")
+    except Exception as e:
+        logger.warning("registry.general_agent_registration_failed", error=str(e))
+
+    try:
+        from src.agents.seerah_agent import SeerahAgent
+        _registry.register_agent("seerah_agent", SeerahAgent())
+        logger.info("registry.seerah_agent_registered")
+    except Exception as e:
+        logger.warning("registry.seerah_agent_registration_failed", error=str(e))
 
     _registry._initialized = True
     logger.info("registry.initialized", status=_registry.get_status())

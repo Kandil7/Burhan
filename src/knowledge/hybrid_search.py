@@ -10,7 +10,8 @@ Enhanced with faceted search support:
 - Filter by category/madhhab
 - Multi-facet filtering
 
-Phase 4: Improves retrieval accuracy for fiqh and hadith queries.
+Phase 6 Refactoring:
+- Uses shared EraClassifier from utils instead of duplicate _classify_era method
 """
 import re
 from typing import Optional, Dict, Any, List
@@ -18,6 +19,7 @@ from typing import Optional, Dict, Any, List
 import numpy as np
 
 from src.knowledge.vector_store import VectorStore
+from src.utils.era_classifier import EraClassifier  # Phase 6: Shared utility
 from src.config.logging_config import get_logger
 
 logger = get_logger()
@@ -223,7 +225,7 @@ class HybridSearcher:
                 era_filter = filters["era"]
                 death_year = result.get("author_death")
                 if death_year:
-                    era = self._classify_era(death_year)
+                    era = EraClassifier.classify(death_year)  # Phase 6: Shared utility
                     if isinstance(era_filter, list):
                         if era not in era_filter:
                             match = False
@@ -237,22 +239,6 @@ class HybridSearcher:
 
         return filtered
 
-    @staticmethod
-    def _classify_era(death_year_hijri: int) -> str:
-        """Classify scholar's era based on death year (Hijri)."""
-        if death_year_hijri <= 100:
-            return "prophetic"
-        elif death_year_hijri <= 200:
-            return "tabiun"
-        elif death_year_hijri <= 500:
-            return "classical"
-        elif death_year_hijri <= 900:
-            return "medieval"
-        elif death_year_hijri <= 1300:
-            return "ottoman"
-        else:
-            return "modern"
-    
     def _keyword_search(
         self,
         query: str,
