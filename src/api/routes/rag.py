@@ -10,9 +10,9 @@ Note: RAG features require torch and transformers (optional dependency).
 Install with: poetry install --with rag
 """
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
 
 # RAG dependencies are optional - allow app to run without them
 try:
@@ -32,8 +32,6 @@ router = APIRouter(prefix="/rag", tags=["RAG"])
 
 # Only import RAG components if dependencies available
 if RAG_AVAILABLE:
-    from src.agents.fiqh_agent import FiqhAgent
-    from src.agents.general_islamic_agent import GeneralIslamicAgent
     from src.knowledge.embedding_model import EmbeddingModel
     from src.knowledge.vector_store import VectorStore
 
@@ -47,8 +45,8 @@ class RAGQueryRequest(BaseModel):
     """RAG query request."""
 
     query: str = Field(..., min_length=1, max_length=2000, description="User question")
-    language: Optional[str] = Field("ar", description="Response language")
-    madhhab: Optional[str] = Field(None, description="Preferred madhhab")
+    language: str | None = Field("ar", description="Response language")
+    madhhab: str | None = Field(None, description="Preferred madhhab")
     top_k: int = Field(10, ge=1, le=20, description="Number of passages to retrieve")
 
 
@@ -88,7 +86,7 @@ async def get_fiqh_agent():
             from src.agents.fiqh_agent import FiqhAgent
             from src.knowledge.embedding_model import EmbeddingModel
             from src.knowledge.vector_store import VectorStore
-            
+
             embedding_model = EmbeddingModel()
             await embedding_model.load_model()
 
@@ -116,7 +114,7 @@ async def get_general_agent():
             from src.agents.general_islamic_agent import GeneralIslamicAgent
             from src.knowledge.embedding_model import EmbeddingModel
             from src.knowledge.vector_store import VectorStore
-            
+
             embedding_model = EmbeddingModel()
             await embedding_model.load_model()
 
@@ -279,4 +277,4 @@ async def get_rag_stats():
 
     except Exception as e:
         logger.error("rag.stats_error", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

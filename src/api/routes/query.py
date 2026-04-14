@@ -10,17 +10,17 @@ Phase 6 Refactoring:
 - Eliminated _agents_loaded bug that prevented GeneralIslamicAgent from loading
 """
 
-import uuid
 import time
-from typing import Optional, List
-from fastapi import APIRouter, HTTPException, Depends, Query
+import uuid
 
-from src.api.schemas.request import QueryRequest
-from src.api.schemas.response import QueryResponse, CitationResponse
-from src.core.registry import get_registry
+from fastapi import APIRouter, HTTPException, Query
+
 from src.agents.base import AgentInput
+from src.api.schemas.request import QueryRequest
+from src.api.schemas.response import CitationResponse, QueryResponse
 from src.config.intents import Intent
 from src.config.logging_config import get_logger
+from src.core.registry import get_registry
 from src.utils.lazy_singleton import LazySingleton
 
 logger = get_logger()
@@ -38,7 +38,7 @@ async def get_classifier():
     """Get or create query classifier (async lazy initialization)."""
     from src.core.router import HybridQueryClassifier
     from src.infrastructure.llm_client import get_llm_client
-    
+
     if not hasattr(get_classifier, '_instance'):
         llm_client = await get_llm_client()
         get_classifier._instance = HybridQueryClassifier(llm_client=llm_client)
@@ -53,12 +53,15 @@ async def get_classifier():
 async def handle_query(
     request: QueryRequest,
     # Faceted search filters
-    author: Optional[str] = Query(None, description="Filter by author name"),
-    era: Optional[str] = Query(None, description="Filter by scholarly era (prophetic, tabiun, classical, medieval, ottoman, modern)"),
-    book_id: Optional[int] = Query(None, description="Filter by specific book ID"),
-    category: Optional[str] = Query(None, description="Filter by category/madhhab"),
-    death_year_min: Optional[int] = Query(None, description="Minimum author death year (Hijri)"),
-    death_year_max: Optional[int] = Query(None, description="Maximum author death year (Hijri)"),
+    author: str | None = Query(None, description="Filter by author name"),
+    era: str | None = Query(
+        None,
+        description="Filter by scholarly era (prophetic, tabiun, classical, medieval, ottoman, modern)",
+    ),
+    book_id: int | None = Query(None, description="Filter by specific book ID"),
+    category: str | None = Query(None, description="Filter by category/madhhab"),
+    death_year_min: int | None = Query(None, description="Minimum author death year (Hijri)"),
+    death_year_max: int | None = Query(None, description="Maximum author death year (Hijri)"),
     # Retrieval options
     hierarchical: bool = Query(False, description="Use hierarchical retrieval for coherent results"),
 ):
@@ -104,7 +107,7 @@ async def handle_query(
         # This replaces the hardcoded if/elif/else block
         # Now ALL 17 intents work automatically!
         # ==========================================
-        
+
         # Build filters from query parameters
         filters = None
         if any([author, era, book_id, category, death_year_min, death_year_max]):
@@ -131,7 +134,7 @@ async def handle_query(
         # Use AgentRegistry to get the right agent/tool for this intent
         registry = get_registry()
         agent, is_agent = registry.get_for_intent(intent)
-        
+
         # Build common agent input
         agent_input = AgentInput(
             query=request.query,
@@ -172,7 +175,7 @@ async def handle_query(
             )
 
         processing_time = int((time.time() - start_time) * 1000)
-        
+
         logger.info(
             "query.completed",
             query_id=query_id,
@@ -203,16 +206,23 @@ async def handle_query(
 
     except ValueError as e:
         logger.warning("query.validation_error", query_id=query_id, error=str(e))
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
         logger.error("query.error", query_id=query_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}") from e
 
 
 @router.get("/test")
 async def test_query():
     """Test endpoint to verify query router is working."""
-    chatbot = get_chatbot()
-    result = await chatbot.execute(AgentInput(query="السلام عليكم", language="ar", metadata={}))
-    return {"status": "ok", "chatbot": chatbot.name, "answer": result.answer, "agent_meta": result.metadata}
+    chatbot = _chatbot.get()
+    result = await chatbot.execute(
+        AgentInput(query="السلام عليكم", language="ar", metadata={})
+    )
+    return {
+        "status": "ok",
+        "chatbot": chatbot.name,
+        "answer": result.answer,
+        "agent_meta": result.metadata,
+    }

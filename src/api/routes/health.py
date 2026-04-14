@@ -4,6 +4,7 @@ Health check routes for Athar Islamic QA system.
 Provides endpoints for monitoring service health and readiness.
 """
 from fastapi import APIRouter
+
 from src.api.schemas.response import HealthResponse
 from src.config.settings import settings
 
@@ -70,17 +71,17 @@ async def readiness_check():
     postgres = await check_postgres()
     redis = await check_redis()
     qdrant = await check_qdrant()
-    
+
     services = {
         "api": "healthy",
         "postgres": postgres,
         "redis": redis,
         "qdrant": qdrant,
     }
-    
+
     # Determine overall status
     all_healthy = all("healthy" in v for v in services.values())
-    
+
     return HealthResponse(
         status="ok" if all_healthy else "degraded",
         version="0.5.0",

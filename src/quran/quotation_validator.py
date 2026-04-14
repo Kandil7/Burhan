@@ -8,13 +8,11 @@ Phase 3: Critical for Quran authenticity verification.
 """
 
 import re
-from typing import Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
-from src.data.models.quran import Ayah
 from src.config.logging_config import get_logger
+from src.data.models.quran import Ayah
 
 logger = get_logger()
 
@@ -129,7 +127,7 @@ class QuotationValidator:
 
         return text.strip()
 
-    async def _find_exact_match(self, normalized_text: str) -> Optional[dict]:
+    async def _find_exact_match(self, normalized_text: str) -> dict | None:
         """Find exact match in Quran text."""
         # Search in database
         ayahs = self.session.query(Ayah).filter(Ayah.text_uthmani.contains(normalized_text)).limit(1).all()
@@ -146,7 +144,7 @@ class QuotationValidator:
 
         return None
 
-    async def _find_fuzzy_match(self, normalized_text: str, threshold: float) -> Optional[dict]:
+    async def _find_fuzzy_match(self, normalized_text: str, threshold: float) -> dict | None:
         """
         Find fuzzy match using similarity.
 

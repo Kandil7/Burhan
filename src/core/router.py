@@ -9,17 +9,16 @@ Implements a three-tier classification approach:
 Based on Fanar-Sadiq architecture achieving ~90% accuracy.
 """
 import json
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
 from src.config.intents import (
-    Intent,
     INTENT_DESCRIPTIONS,
     KEYWORD_PATTERNS,
+    Intent,
 )
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
@@ -34,7 +33,7 @@ class RouterResult(BaseModel):
         default=True,
         description="Whether this query needs document retrieval (RAG)"
     )
-    sub_intent: Optional[str] = Field(
+    sub_intent: str | None = Field(
         default=None,
         description="Sub-intent for Quran queries (verse_lookup, interpretation, etc.)"
     )
@@ -44,19 +43,19 @@ class RouterResult(BaseModel):
 class HybridQueryClassifier:
     """
     Three-tier hybrid intent classifier.
-    
+
     Tier 1: Keyword matching (fast path, confidence >= 0.90)
     Tier 2: LLM classification (primary path, confidence >= threshold)
     Tier 3: Embedding similarity (fallback when LLM confidence is low)
-    
+
     Usage:
         classifier = HybridQueryClassifier(llm_client=openai_client)
         result = await classifier.classify("ما حكم زكاة المال؟")
         # RouterResult(intent=Intent.ZAKAT, confidence=0.92, method="keyword")
     """
-    
+
     CONFIDENCE_THRESHOLD = 0.75
-    
+
     LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Athar.
 
 Your task is to classify the user's query into exactly ONE intent from the list below.
@@ -99,25 +98,25 @@ Output:
 Now classify this query. Return ONLY valid JSON, no explanations.
 
 Query: {query}"""
-    
+
     def __init__(self, llm_client=None, embed_client=None):
         """
         Initialize the classifier.
-        
+
         Args:
             llm_client: OpenAI-compatible client for classification
             embed_client: Embedding client for fallback (Phase 5)
         """
         self.llm_client = llm_client
         self.embed_client = embed_client
-    
+
     async def classify(self, query: str) -> RouterResult:
         """
         Classify user query using three-tier approach.
-        
+
         Args:
             query: User's question
-            
+
         Returns:
             RouterResult with intent, confidence, and metadata
         """
@@ -128,7 +127,7 @@ Query: {query}"""
                 method="fallback",
                 reason="Empty query, defaulting to greeting"
             )
-        
+
         # ==========================================
         # Tier 1: Keyword matching (fast path)
         # ==========================================
@@ -141,7 +140,7 @@ Query: {query}"""
                 method="keyword"
             )
             return keyword_result
-        
+
         # ==========================================
         # Tier 2: LLM classification (primary)
         # ==========================================
@@ -159,7 +158,7 @@ Query: {query}"""
             except Exception as e:
                 logger.error("router.llm_error", error=str(e))
                 # Continue to fallback
-        
+
         # ==========================================
         # Tier 3: Embedding fallback (backup)
         # ==========================================
@@ -175,7 +174,7 @@ Query: {query}"""
                 return embed_result
             except Exception as e:
                 logger.error("router.embedding_error", error=str(e))
-        
+
         # ==========================================
         # Default fallback
         # ==========================================
@@ -184,7 +183,7 @@ Query: {query}"""
             query=query[:100],
             default_intent=Intent.ISLAMIC_KNOWLEDGE.value
         )
-        
+
         return RouterResult(
             intent=Intent.ISLAMIC_KNOWLEDGE,
             confidence=0.5,
@@ -192,17 +191,17 @@ Query: {query}"""
             language=self._detect_language(query),
             reason="No classifier matched with sufficient confidence, defaulting to general knowledge"
         )
-    
-    def _keyword_match(self, query: str) -> Optional[RouterResult]:
+
+    def _keyword_match(self, query: str) -> RouterResult | None:
         """
         Fast keyword-based intent detection.
-        
+
         Checks query against known keyword patterns for each intent.
         Returns result if match found with high confidence.
         """
         query_lower = query.lower()
         language = self._detect_language(query)
-        
+
         for intent, patterns in KEYWORD_PATTERNS.items():
             for pattern in patterns:
                 if pattern.lower() in query_lower:
@@ -218,13 +217,13 @@ Query: {query}"""
                         ],
                         reason=f"Keyword match: '{pattern}'"
                     )
-        
+
         return None
-    
+
     async def _llm_classify(self, query: str) -> RouterResult:
         """
         LLM-based intent classification.
-        
+
         Sends structured prompt to LLM and parses JSON response.
         """
         try:
@@ -232,12 +231,12 @@ Query: {query}"""
             intent_descriptions = "\n".join(
                 f"- {k.value}: {v}" for k, v in INTENT_DESCRIPTIONS.items()
             )
-            
+
             prompt = self.LLM_CLASSIFIER_PROMPT.format(
                 intent_descriptions=intent_descriptions,
                 query=query
             )
-            
+
             # Call LLM
             response = await self.llm_client.chat.completions.create(
                 model=settings.llm_model,
@@ -252,12 +251,12 @@ Query: {query}"""
                 max_tokens=300,
                 response_format={"type": "json_object"}
             )
-            
+
             content = response.choices[0].message.content.strip()
-            
+
             # Parse JSON response
             result = json.loads(content)
-            
+
             # Validate and normalize
             intent = Intent(result.get("intent", Intent.ISLAMIC_KNOWLEDGE))
             confidence = float(result.get("confidence", 0.8))
@@ -265,7 +264,7 @@ Query: {query}"""
             requires_retrieval = result.get("requires_retrieval", True)
             sub_intent = result.get("sub_intent")
             reason = result.get("reason", "LLM classification")
-            
+
             return RouterResult(
                 intent=intent,
                 confidence=confidence,
@@ -275,47 +274,47 @@ Query: {query}"""
                 sub_intent=sub_intent,
                 reason=reason
             )
-            
+
         except json.JSONDecodeError as e:
             logger.error("router.llm_json_error", error=str(e))
             raise ValueError(f"LLM returned invalid JSON: {e}")
         except Exception as e:
             logger.error("router.llm_error", error=str(e))
             raise
-    
+
     async def _embedding_classify(self, query: str) -> RouterResult:
         """
         Embedding-based fallback classification.
-        
+
         Compares query embedding to labeled examples.
         To be implemented in Phase 5 with embedding pipeline.
         """
         # Phase 1: Placeholder implementation
         # Phase 5: Will use Qwen3-Embedding + cosine similarity to labeled queries
-        
+
         logger.warning("router.embedding_not_implemented", fallback="islamic_knowledge")
-        
+
         return RouterResult(
             intent=Intent.ISLAMIC_KNOWLEDGE,
             confidence=0.6,
             method="embedding",
             reason="Embedding classifier not yet implemented (Phase 5)"
         )
-    
+
     def _detect_language(self, query: str) -> str:
         """
         Detect if query is Arabic or English.
-        
+
         Uses Unicode range detection for Arabic script.
         """
         arabic_chars = sum(
             1 for char in query
             if '\u0600' <= char <= '\u06FF' or '\u0750' <= char <= '\u077F'
         )
-        
+
         total_chars = len(query.replace(" ", ""))
         if total_chars == 0:
             return "ar"
-        
+
         arabic_ratio = arabic_chars / total_chars
         return "ar" if arabic_ratio > 0.3 else "en"

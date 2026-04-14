@@ -4,16 +4,16 @@ Tool API endpoints for Athar Islamic QA system.
 Provides direct access to tools bypassing the intent router.
 Useful for frontend forms (Zakat form, Prayer times form, etc.)
 """
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from typing import Optional
 
-from src.tools.zakat_calculator import ZakatCalculator, ZakatAssets, Madhhab
-from src.tools.inheritance_calculator import InheritanceCalculator, Heirs
-from src.tools.prayer_times_tool import PrayerTimesTool
-from src.tools.hijri_calendar_tool import HijriCalendarTool
-from src.tools.dua_retrieval_tool import DuaRetrievalTool
 from src.config.logging_config import get_logger
+from src.tools.dua_retrieval_tool import DuaRetrievalTool
+from src.tools.hijri_calendar_tool import HijriCalendarTool
+from src.tools.inheritance_calculator import Heirs, InheritanceCalculator
+from src.tools.prayer_times_tool import PrayerTimesTool
+from src.tools.zakat_calculator import Madhhab, ZakatAssets, ZakatCalculator
 
 logger = get_logger()
 router = APIRouter(prefix="/tools", tags=["Tools"])
@@ -36,20 +36,20 @@ class InheritanceRequest(BaseModel):
 class PrayerTimesRequest(BaseModel):
     lat: float = Field(..., ge=-90, le=90, description="Latitude")
     lng: float = Field(..., ge=-180, le=180, description="Longitude")
-    date: Optional[str] = Field(None, description="Date in YYYY-MM-DD format (default: today)")
+    date: str | None = Field(None, description="Date in YYYY-MM-DD format (default: today)")
     method: str = Field("egyptian", description="Calculation method")
     timezone: float = Field(0.0, description="UTC offset in hours")
 
 class HijriRequest(BaseModel):
-    gregorian_date: Optional[str] = Field(None, description="Gregorian date YYYY-MM-DD")
-    hijri_year: Optional[int] = Field(None, description="Hijri year")
-    hijri_month: Optional[int] = Field(None, description="Hijri month (1-12)")
-    hijri_day: Optional[int] = Field(None, description="Hijri day (1-30)")
+    gregorian_date: str | None = Field(None, description="Gregorian date YYYY-MM-DD")
+    hijri_year: int | None = Field(None, description="Hijri year")
+    hijri_month: int | None = Field(None, description="Hijri month (1-12)")
+    hijri_day: int | None = Field(None, description="Hijri day (1-30)")
 
 class DuaRequest(BaseModel):
-    query: Optional[str] = Field(None, description="Search query")
-    occasion: Optional[str] = Field(None, description="Occasion filter")
-    category: Optional[str] = Field(None, description="Category filter")
+    query: str | None = Field(None, description="Search query")
+    occasion: str | None = Field(None, description="Occasion filter")
+    category: str | None = Field(None, description="Category filter")
     limit: int = Field(5, ge=1, le=20, description="Max results")
 
 
@@ -103,16 +103,16 @@ def get_dua_retrieval_tool() -> DuaRetrievalTool:
 async def calculate_zakat(request: ZakatRequest):
     """
     Calculate zakat on wealth, gold, silver, and other assets.
-    
+
     Returns detailed breakdown with nisab calculation and madhhab-specific notes.
     """
     calculator = get_zakat_calculator()
-    
+
     assets = ZakatAssets(**request.assets)
     madhhab = Madhhab(request.madhhab.lower())
-    
+
     result = calculator.calculate(assets, debts=request.debts, madhhab=madhhab)
-    
+
     return {
         "nisab": {
             "gold": result.nisab_gold,
@@ -145,20 +145,20 @@ async def calculate_zakat(request: ZakatRequest):
 async def calculate_inheritance(request: InheritanceRequest):
     """
     Calculate inheritance distribution based on fara'id rules.
-    
+
     Returns detailed distribution with fractions, percentages, and amounts.
     """
     calculator = get_inheritance_calculator()
-    
+
     heirs = Heirs(**request.heirs)
-    
+
     result = calculator.calculate(
         request.estate_value,
         heirs,
         madhhab=request.madhhab,
         debts=request.debts
     )
-    
+
     return {
         "distribution": [
             {
@@ -189,11 +189,11 @@ async def calculate_inheritance(request: InheritanceRequest):
 async def get_prayer_times(request: PrayerTimesRequest):
     """
     Calculate prayer times and Qibla direction for a location.
-    
+
     Supports multiple calculation methods (Egyptian, MWL, ISNA, etc.)
     """
     tool = get_prayer_times_tool()
-    
+
     result = await tool.execute(
         lat=request.lat,
         lng=request.lng,
@@ -201,7 +201,7 @@ async def get_prayer_times(request: PrayerTimesRequest):
         method=request.method,
         timezone=request.timezone
     )
-    
+
     if result.success:
         return result.result
     else:
@@ -216,18 +216,18 @@ async def get_prayer_times(request: PrayerTimesRequest):
 async def convert_hijri(request: HijriRequest):
     """
     Convert between Gregorian and Hijri dates.
-    
+
     Detects special Islamic dates (Ramadan, Eid, etc.)
     """
     tool = get_hijri_calendar_tool()
-    
+
     result = await tool.execute(
         gregorian_date=request.gregorian_date,
         hijri_year=request.hijri_year,
         hijri_month=request.hijri_month,
         hijri_day=request.hijri_day
     )
-    
+
     if result.success:
         return result.result
     else:
@@ -242,19 +242,19 @@ async def convert_hijri(request: HijriRequest):
 async def get_duas(request: DuaRequest):
     """
     Retrieve verified duas and adhkar.
-    
+
     Searches by occasion, category, or query.
     All duas from authenticated sources only.
     """
     tool = get_dua_retrieval_tool()
-    
+
     result = await tool.execute(
         query=request.query,
         occasion=request.occasion,
         category=request.category,
         limit=request.limit
     )
-    
+
     if result.success:
         return result.result
     else:

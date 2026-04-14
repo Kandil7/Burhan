@@ -4,29 +4,29 @@ Redis client for Athar Islamic QA system.
 Provides async Redis connection for caching, session management,
 and rate limiting.
 """
-from typing import Optional
+
 import redis.asyncio as redis
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
 # Global Redis client
-redis_client: Optional[redis.Redis] = None
+redis_client: redis.Redis | None = None
 
 
 async def get_redis() -> redis.Redis:
     """
     Get or create Redis client instance.
-    
+
     Usage:
         redis = await get_redis()
         await redis.set("key", "value", ex=3600)
         value = await redis.get("key")
     """
     global redis_client
-    
+
     if redis_client is None:
         redis_client = redis.from_url(
             settings.redis_url,
@@ -34,14 +34,14 @@ async def get_redis() -> redis.Redis:
             decode_responses=True,
             health_check_interval=30,
         )
-    
+
     return redis_client
 
 
 async def init_redis():
     """
     Initialize Redis connection.
-    
+
     Phase 1: Verify connection
     Phase 2+: Test connection health
     """
@@ -49,7 +49,7 @@ async def init_redis():
         client = await get_redis()
         await client.ping()
         logger.info("redis.connected", url=settings.redis_url)
-        
+
     except Exception as e:
         logger.error("redis.connection_error", error=str(e))
         # Don't raise - Redis is optional in Phase 1
@@ -65,13 +65,13 @@ async def close_redis():
         logger.info("redis.disconnected")
 
 
-async def cache_get(key: str) -> Optional[str]:
+async def cache_get(key: str) -> str | None:
     """
     Get value from cache.
-    
+
     Args:
         key: Cache key
-        
+
     Returns:
         Cached value or None
     """
@@ -89,7 +89,7 @@ async def cache_get(key: str) -> Optional[str]:
 async def cache_set(key: str, value: str, ttl: int = 3600):
     """
     Set value in cache with TTL.
-    
+
     Args:
         key: Cache key
         value: Value to cache
@@ -106,7 +106,7 @@ async def cache_set(key: str, value: str, ttl: int = 3600):
 async def cache_delete(key: str):
     """
     Delete value from cache.
-    
+
     Args:
         key: Cache key
     """

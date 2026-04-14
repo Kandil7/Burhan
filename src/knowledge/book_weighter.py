@@ -13,7 +13,7 @@ Phase 2: +10% relevance, prioritizes canonical texts
 """
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 from src.config.logging_config import get_logger
 
@@ -45,31 +45,31 @@ class BookImportanceWeighter:
         "sunan": 0.9,
         "مسند": 0.85,             # Musnad
         "musnad": 0.85,
-        
+
         # Fiqh books
         "الفقه الحنفي": 0.9,
         "الفقه المالكي": 0.9,
         "الفقه الشافعي": 0.9,
         "الفقه الحنبلي": 0.9,
-        
+
         # Tafsir
         "التفسير": 0.85,
         "tafsir": 0.85,
-        
+
         # Aqeedah
         "العقيدة": 0.85,
         "aqeedah": 0.85,
-        
+
         # Seerah
         "السيرة": 0.8,
         "seerah": 0.8,
-        
+
         # General/Islamic history
         "general": 0.7,
         "history": 0.75,
     }
 
-    def __init__(self, master_catalog_path: Optional[Path] = None):
+    def __init__(self, master_catalog_path: Path | None = None):
         """
         Initialize weighter with master catalog.
 
@@ -77,7 +77,7 @@ class BookImportanceWeighter:
             master_catalog_path: Path to master_catalog.json
         """
         self.master_catalog_path = master_catalog_path or Path("data/processed/master_catalog.json")
-        self._books: Dict[int, Dict[str, Any]] = {}
+        self._books: dict[int, dict[str, Any]] = {}
         self._loaded = False
 
     def load_catalog(self):
@@ -91,7 +91,7 @@ class BookImportanceWeighter:
             return
 
         try:
-            with open(self.master_catalog_path, "r", encoding="utf-8") as f:
+            with open(self.master_catalog_path, encoding="utf-8") as f:
                 books_list = json.load(f)
 
             # Index by book_id
@@ -121,7 +121,7 @@ class BookImportanceWeighter:
             self.load_catalog()
 
         book = self._books.get(book_id, {})
-        
+
         # Get category weight
         category = book.get("category", "").lower()
         category_weight = self._get_category_weight(category)
@@ -149,7 +149,7 @@ class BookImportanceWeighter:
         """
         for passage in passages:
             book_id = passage.get("book_id")
-            
+
             if book_id:
                 importance = self.get_importance_score(book_id)
                 passage["book_importance_weight"] = importance
@@ -165,11 +165,11 @@ class BookImportanceWeighter:
                 return weight
         return 0.6  # Default for uncategorized
 
-    def _get_author_bonus(self, death_year: Optional[int]) -> float:
+    def _get_author_bonus(self, death_year: int | None) -> float:
         """Get bonus based on author era."""
         if not death_year:
             return 0.0
-        
+
         # Earlier = more bonus
         if death_year <= 200:
             return 0.1  # Tabi'un era

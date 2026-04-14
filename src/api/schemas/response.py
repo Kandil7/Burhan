@@ -3,14 +3,14 @@ API response schemas for Athar Islamic QA system.
 
 Pydantic models for response structure and documentation.
 """
+
 from pydantic import BaseModel, Field
-from typing import Optional
 
 
 class CitationResponse(BaseModel):
     """
     Citation in API response.
-    
+
     Structured reference for sources used in answer generation.
     """
     id: str = Field(description="Citation ID: C1, C2, C3, etc.")
@@ -20,12 +20,12 @@ class CitationResponse(BaseModel):
     )
     source: str = Field(description="Normalized source name")
     reference: str = Field(description="Specific reference (book, chapter, number)")
-    url: Optional[str] = Field(
+    url: str | None = Field(
         None,
         description="External URL for verification",
         examples=["https://quran.com/2/255", "https://sunnah.com/bukhari/1234"]
     )
-    text_excerpt: Optional[str] = Field(
+    text_excerpt: str | None = Field(
         None,
         description="Quoted passage from source"
     )
@@ -34,7 +34,7 @@ class CitationResponse(BaseModel):
 class QueryResponse(BaseModel):
     """
     Response model for POST /api/v1/query endpoint.
-    
+
     Contains answer, citations, and metadata for display.
     """
     query_id: str = Field(description="Unique query ID for tracking")
@@ -66,7 +66,7 @@ class QueryResponse(BaseModel):
 class HealthResponse(BaseModel):
     """
     Health check response for GET /health endpoint.
-    
+
     Returns service status and version information.
     """
     status: str = Field(default="ok", examples=["ok", "error"])
@@ -80,15 +80,15 @@ class HealthResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """
     Error response for failed requests.
-    
+
     Returned when request validation fails or internal error occurs.
     """
     error: str = Field(description="Error type or message")
-    detail: Optional[str] = Field(
+    detail: str | None = Field(
         None,
         description="Detailed error message for debugging"
     )
-    request_id: Optional[str] = Field(
+    request_id: str | None = Field(
         None,
         description="Request ID for error tracking"
     )

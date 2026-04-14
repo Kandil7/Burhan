@@ -13,7 +13,8 @@ Usage:
 """
 import asyncio
 import threading
-from typing import Callable, TypeVar, Generic, Optional
+from collections.abc import Callable
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
@@ -21,41 +22,41 @@ T = TypeVar("T")
 class LazySingleton(Generic[T]):
     """
     Thread-safe lazy singleton for synchronous factories.
-    
+
     Eliminates the need for:
         _instance = None
         _lock = threading.Lock()
-        
+
         def get_instance():
             global _instance
             with _lock:
                 if _instance is None:
                     _instance = Factory()
                 return _instance
-    
+
     Usage:
         _chatbot = LazySingleton(ChatbotAgent)
         chatbot = _chatbot.get()
-        
+
         # For testing
         _chatbot.reset()
     """
-    
+
     def __init__(self, factory: Callable[[], T]):
         """
         Initialize lazy singleton.
-        
+
         Args:
             factory: Callable that creates the instance (no arguments)
         """
         self._factory = factory
         self._lock = threading.Lock()
-        self._instance: Optional[T] = None
-    
+        self._instance: T | None = None
+
     def get(self) -> T:
         """
         Get or create the singleton instance.
-        
+
         Returns:
             The singleton instance
         """
@@ -65,12 +66,12 @@ class LazySingleton(Generic[T]):
                 if self._instance is None:
                     self._instance = self._factory()
         return self._instance
-    
+
     def reset(self) -> None:
         """Reset the instance (useful for testing)."""
         with self._lock:
             self._instance = None
-    
+
     @property
     def is_initialized(self) -> bool:
         """Check if instance has been created."""
@@ -80,29 +81,29 @@ class LazySingleton(Generic[T]):
 class AsyncLazySingleton(Generic[T]):
     """
     Async-safe lazy singleton for async factories.
-    
+
     Usage:
         _classifier = AsyncLazySingleton(
             lambda: HybridQueryClassifier(llm_client=...)
         )
         classifier = await _classifier.get()
     """
-    
+
     def __init__(self, factory: Callable[[], T]):
         """
         Initialize async lazy singleton.
-        
+
         Args:
             factory: Async callable that creates the instance
         """
         self._factory = factory
         self._lock = asyncio.Lock()
-        self._instance: Optional[T] = None
-    
+        self._instance: T | None = None
+
     async def get(self) -> T:
         """
         Get or create the singleton instance.
-        
+
         Returns:
             The singleton instance
         """
@@ -115,12 +116,12 @@ class AsyncLazySingleton(Generic[T]):
                     else:
                         self._instance = self._factory()
         return self._instance
-    
+
     async def reset(self) -> None:
         """Reset the instance (useful for testing)."""
         async with self._lock:
             self._instance = None
-    
+
     @property
     def is_initialized(self) -> bool:
         """Check if instance has been created."""

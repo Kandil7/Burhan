@@ -6,10 +6,9 @@ Uses Pydantic BaseSettings for automatic environment variable parsing.
 Phase 5: Added security, rate limiting, and caching settings.
 """
 
-from pydantic import Field, field_validator
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
-from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -43,7 +42,7 @@ class Settings(BaseSettings):
     # Qdrant (Vector Database)
     # ==========================================
     qdrant_url: str = "http://localhost:6333"
-    qdrant_api_key: Optional[str] = None
+    qdrant_api_key: str | None = None
     qdrant_collection_fiqh: str = "fiqh_passages"
     qdrant_collection_hadith: str = "hadith_passages"
     qdrant_collection_dua: str = "dua_passages"
@@ -53,15 +52,15 @@ class Settings(BaseSettings):
     # LLM Provider
     # ==========================================
     llm_provider: str = "openai"  # openai or groq
-    openai_api_key: Optional[str] = None
+    openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
-    groq_api_key: Optional[str] = None
+    groq_api_key: str | None = None
     groq_model: str = "qwen/qwen3-32b"
     llm_temperature: float = 0.1
     llm_max_tokens: int = 2048
 
     # HuggingFace
-    hf_token: Optional[str] = None
+    hf_token: str | None = None
 
     @property
     def llm_model(self) -> str:
@@ -139,7 +138,11 @@ class Settings(BaseSettings):
         if v == "change-this-in-production-please-use-random-string":
             import warnings
 
-            warnings.warn("Using default secret key! Change this in production.", UserWarning)
+            warnings.warn(
+                "Using default secret key! Change this in production.",
+                UserWarning,
+                stacklevel=2,
+            )
         return v
 
     @property

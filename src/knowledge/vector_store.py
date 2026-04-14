@@ -10,22 +10,20 @@ Provides:
 
 Phase 4: Foundation for all RAG retrieval pipelines.
 """
-from typing import Optional
 
 import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
-    VectorParams,
-    PointStruct,
-    Filter,
     FieldCondition,
+    Filter,
     MatchValue,
-    SearchRequest,
+    PointStruct,
+    VectorParams,
 )
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
@@ -38,21 +36,21 @@ class VectorStoreError(Exception):
 class VectorStore:
     """
     Qdrant vector store for Islamic text embeddings.
-    
+
     Collections:
     - fiqh_passages: Fiqh books, fatwas, rulings
     - hadith_passages: Hadith collections
     - quran_tafsir: Tafsir passages
     - general_islamic: History, biography, theology
     - duas_adhkar: Duas and adhkar
-    
+
     Usage:
         store = VectorStore()
         await store.initialize()
         await store.upsert("fiqh_passages", documents, embeddings)
         results = await store.search("fiqh_passages", query_embedding, top_k=10)
     """
-    
+
     COLLECTIONS = {
         "fiqh_passages": {"dimension": 1024, "description": "Fiqh books and fatwas"},
         "hadith_passages": {"dimension": 1024, "description": "Hadith collections"},
@@ -66,7 +64,7 @@ class VectorStore:
         "spirituality_passages": {"dimension": 1024, "description": "Spirituality and ethics"},
         "usul_fiqh": {"dimension": 1024, "description": "Principles of jurisprudence"},
     }
-    
+
     def __init__(self):
         """Initialize vector store."""
         self.client = None
@@ -76,7 +74,7 @@ class VectorStore:
         """Ensure a collection exists, create if not."""
         if not self._initialized:
             await self.initialize()
-        
+
         if not self.client.collection_exists(name):
             self.client.create_collection(
                 collection_name=name,
@@ -88,11 +86,11 @@ class VectorStore:
             logger.info("vectorstore.collection_created", collection=name, dimension=dimension)
             # Also add to COLLECTIONS dict
             self.COLLECTIONS[name] = {"dimension": dimension, "description": ""}
-    
+
     async def initialize(self) -> None:
         """
         Initialize Qdrant client and create collections.
-        
+
         Creates all collections if they don't exist.
         """
         try:
@@ -102,7 +100,7 @@ class VectorStore:
                 api_key=settings.qdrant_api_key if settings.qdrant_api_key else None,
                 timeout=60,
             )
-            
+
             # Create collections
             for collection_name, config in self.COLLECTIONS.items():
                 if not self.client.collection_exists(collection_name):
@@ -118,14 +116,14 @@ class VectorStore:
                         collection=collection_name,
                         dimension=config["dimension"]
                     )
-            
+
             self._initialized = True
             logger.info("vectorstore.initialized", collections=list(self.COLLECTIONS.keys()))
-            
+
         except Exception as e:
             logger.error("vectorstore.init_error", error=str(e))
             raise VectorStoreError(f"Failed to initialize vector store: {str(e)}")
-    
+
     async def upsert(
         self,
         collection: str,
@@ -134,7 +132,7 @@ class VectorStore:
     ) -> int:
         """
         Upsert documents with embeddings to collection.
-        
+
         Phase 6 Refactoring: Uses deterministic IDs based on content hash
         to prevent duplicate vectors on re-indexing.
 
@@ -157,11 +155,11 @@ class VectorStore:
 
             # Build points with deterministic IDs based on content
             points = []
-            for i, (doc, embedding) in enumerate(zip(documents, embeddings)):
+            for i, (doc, embedding) in enumerate(zip(documents, embeddings, strict=False)):
                 # Phase 6: Deterministic ID to prevent duplicates
                 content = doc.get("content", "")
                 doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]
-                
+
                 point = PointStruct(
                     id=doc_id,  # Phase 6: Deterministic ID
                     vector=embedding.tolist(),
@@ -190,29 +188,29 @@ class VectorStore:
         except Exception as e:
             logger.error("vectorstore.upsert_error", error=str(e))
             raise VectorStoreError(f"Failed to upsert documents: {str(e)}")
-    
+
     async def search(
         self,
         collection: str,
         query_embedding: np.ndarray,
         top_k: int = 10,
-        filters: Optional[dict] = None
+        filters: dict | None = None
     ) -> list[dict]:
         """
         Search for similar documents.
-        
+
         Args:
             collection: Collection name
             query_embedding: Query embedding vector
             top_k: Number of results
             filters: Metadata filters (e.g., {"madhhab": "hanafi"})
-            
+
         Returns:
             List of result dicts with scores
         """
         if not self._initialized:
             await self.initialize()
-        
+
         try:
             # Build filter if provided
             qdrant_filter = None
@@ -225,7 +223,7 @@ class VectorStore:
                     for key, value in filters.items()
                 ]
                 qdrant_filter = Filter(must=conditions)
-            
+
             # Search using query_points (new Qdrant API)
             response = self.client.query_points(
                 collection_name=collection,
@@ -233,7 +231,7 @@ class VectorStore:
                 query_filter=qdrant_filter,
                 limit=top_k,
             )
-            
+
             # Extract points from response (handle different response formats)
             if hasattr(response, 'points'):
                 results = response.points
@@ -241,7 +239,7 @@ class VectorStore:
                 results = response
             else:
                 results = []
-            
+
             # Format results
             formatted_results = []
             for result in results:
@@ -251,20 +249,20 @@ class VectorStore:
                     "content": result.payload.get("content", ""),
                     "metadata": {k: v for k, v in result.payload.items() if k != "content"},
                 })
-            
+
             logger.info(
                 "vectorstore.search",
                 collection=collection,
                 top_k=top_k,
                 results=len(formatted_results)
             )
-            
+
             return formatted_results
-            
+
         except Exception as e:
             logger.error("vectorstore.search_error", error=str(e))
             raise VectorStoreError(f"Search failed: {str(e)}")
-    
+
     async def search_with_score_threshold(
         self,
         collection: str,
@@ -274,23 +272,23 @@ class VectorStore:
     ) -> list[dict]:
         """
         Search with minimum score threshold.
-        
+
         Args:
             collection: Collection name
             query_embedding: Query embedding
             top_k: Max results
             score_threshold: Minimum similarity score
-            
+
         Returns:
             Filtered results above threshold
         """
         results = await self.search(collection, query_embedding, top_k=top_k * 2)
-        
+
         # Filter by score
         filtered = [r for r in results if r["score"] >= score_threshold]
-        
+
         return filtered[:top_k]
-    
+
     def get_collection_stats(self, collection: str) -> dict:
         """
         Get collection statistics.
@@ -316,7 +314,7 @@ class VectorStore:
 
             # Get collection info
             info = self.client.get_collection(collection)
-            
+
             # Extract vectors count - handle different Qdrant client versions
             # Qdrant 1.17+ uses points_count, older versions use vectors_count
             if hasattr(info, 'points_count'):
@@ -356,18 +354,18 @@ class VectorStore:
                 "vectors_count": 0,
                 "status": "error",
             }
-    
+
     def list_collections(self) -> list[str]:
         """List all collection names."""
         return list(self.COLLECTIONS.keys())
-    
+
     def delete_collection(self, collection: str) -> bool:
         """
         Delete a collection.
-        
+
         Args:
             collection: Collection name
-            
+
         Returns:
             True if deleted
         """

@@ -13,11 +13,10 @@ Phase 5: Security improvements and performance optimizations.
 """
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config.settings import settings
-from src.config.logging_config import setup_logging, get_logger
 from src.api.middleware.error_handler import error_handler_middleware
 from src.api.middleware.security import (
     RateLimitMiddleware,
@@ -25,9 +24,11 @@ from src.api.middleware.security import (
 )
 from src.api.routes.health import router as health_router
 from src.api.routes.query import router as query_router
-from src.api.routes.tools import router as tools_router
-from src.api.routes.rag import router as rag_router
 from src.api.routes.quran import router as quran_router
+from src.api.routes.rag import router as rag_router
+from src.api.routes.tools import router as tools_router
+from src.config.logging_config import get_logger, setup_logging
+from src.config.settings import settings
 
 logger = get_logger()
 

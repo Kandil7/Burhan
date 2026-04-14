@@ -11,8 +11,9 @@ Phase 6 Refactoring: Added asyncio.Lock for thread-safe client creation.
 """
 import asyncio
 import json
-from typing import Optional
+
 from openai import AsyncOpenAI
+
 
 class ConfigurationError(Exception):
     """Raised when required configuration is missing."""
@@ -25,14 +26,14 @@ except ImportError:
     AsyncGroq = None
     GROQ_AVAILABLE = False
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
 # Global LLM clients with thread-safe locks
-llm_client: Optional[AsyncOpenAI] = None
-groq_client: Optional[AsyncGroq] = None
+llm_client: AsyncOpenAI | None = None
+groq_client: AsyncGroq | None = None
 _client_lock: asyncio.Lock = asyncio.Lock()
 _openai_lock: asyncio.Lock = asyncio.Lock()
 
@@ -55,7 +56,7 @@ MODELS = {
 async def get_llm_client() -> AsyncOpenAI:
     """
     Get or create LLM client instance.
-    
+
     Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
 
     Supports multiple providers:
@@ -104,7 +105,7 @@ async def get_llm_client() -> AsyncOpenAI:
 async def get_openai_client() -> AsyncOpenAI:
     """
     Get OpenAI client.
-    
+
     Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
     """
     global llm_client
@@ -133,12 +134,12 @@ async def get_openai_client() -> AsyncOpenAI:
 async def init_llm():
     """
     Initialize LLM client.
-    
+
     Phase 1: Just create client
     Phase 2+: Verify API key, test connection
     """
     try:
-        client = await get_llm_client()
+        await get_llm_client()
         logger.info(
             "llm.ready",
             provider=settings.llm_provider,
@@ -161,39 +162,39 @@ async def close_llm():
 
 async def generate_text(
     prompt: str,
-    system_prompt: Optional[str] = None,
-    temperature: Optional[float] = None,
-    max_tokens: Optional[int] = None,
+    system_prompt: str | None = None,
+    temperature: float | None = None,
+    max_tokens: int | None = None,
 ) -> str:
     """
     Generate text using LLM.
-    
+
     Args:
         prompt: User prompt
         system_prompt: Optional system prompt
         temperature: Override temperature (default: from settings)
         max_tokens: Override max tokens (default: from settings)
-        
+
     Returns:
         Generated text response
     """
     try:
         client = await get_llm_client()
-        
+
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        
+
         response = await client.chat.completions.create(
             model=settings.llm_model,
             messages=messages,
             temperature=temperature or settings.llm_temperature,
             max_tokens=max_tokens or settings.llm_max_tokens,
         )
-        
+
         return response.choices[0].message.content
-        
+
     except Exception as e:
         logger.error("llm.generate_error", error=str(e))
         raise
@@ -201,11 +202,11 @@ async def generate_text(
 
 async def generate_json(
     prompt: str,
-    system_prompt: Optional[str] = None,
+    system_prompt: str | None = None,
 ) -> dict:
     """
     Generate JSON response using LLM.
-    
+
     Phase 6 Refactoring: Moved json import to module level.
 
     Args:

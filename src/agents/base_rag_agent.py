@@ -17,20 +17,20 @@ Agents inherit and override only:
 
 This eliminates ~800 lines of duplication across 7 agents.
 """
-from typing import Optional, Dict, Any
+from typing import Any
 
-from src.agents.base import BaseAgent, AgentInput, AgentOutput
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
-from src.knowledge.hybrid_search import HybridSearcher
-from src.knowledge.hierarchical_retriever import HierarchicalRetriever
-from src.knowledge.title_loader import TitleLoader
-from src.knowledge.hadith_grader import HadithAuthenticityGrader
-from src.knowledge.book_weighter import BookImportanceWeighter
-from src.core.citation import CitationNormalizer
+from src.agents.base import AgentInput, AgentOutput, BaseAgent
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+from src.core.citation import CitationNormalizer
 from src.infrastructure.llm_client import get_llm_client
+from src.knowledge.book_weighter import BookImportanceWeighter
+from src.knowledge.embedding_model import EmbeddingModel
+from src.knowledge.hadith_grader import HadithAuthenticityGrader
+from src.knowledge.hierarchical_retriever import HierarchicalRetriever
+from src.knowledge.hybrid_search import HybridSearcher
+from src.knowledge.title_loader import TitleLoader
+from src.knowledge.vector_store import VectorStore
 
 logger = get_logger()
 
@@ -125,7 +125,7 @@ class BaseRAGAgent(BaseAgent):
     async def execute(
         self,
         input: AgentInput,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         hierarchical: bool = False,
     ) -> AgentOutput:
         """

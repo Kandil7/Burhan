@@ -11,16 +11,13 @@ Phase 6 Refactoring:
 - Converted from sync redis to redis.asyncio to prevent event loop blocking
 - Proper async/await throughout
 """
-import json
 import pickle
-from typing import Optional
 
 import numpy as np
 import redis.asyncio as redis  # Phase 6: Async Redis client
 
-from src.config.settings import settings
-from src.infrastructure.redis import get_redis
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
@@ -28,9 +25,9 @@ logger = get_logger()
 class EmbeddingCache:
     """
     Async Redis-based cache for embedding vectors with connection pooling.
-    
+
     Phase 6 Refactoring: All methods are now async to use redis.asyncio
-    
+
     Key format: "embedding:{sha256_hash}"
     Value: Serialized numpy array
     TTL: 7 days (604800 seconds)
@@ -69,7 +66,7 @@ class EmbeddingCache:
             self._redis_pool = None
             self._redis_available = False
 
-    async def get(self, text_hash: str) -> Optional[np.ndarray]:
+    async def get(self, text_hash: str) -> np.ndarray | None:
         """
         Get embedding from cache (with async Redis + local fallback).
         Uses connection pool for efficiency.
@@ -107,7 +104,7 @@ class EmbeddingCache:
             self._misses += 1
             return None
 
-    async def set(self, text_hash: str, embedding: np.ndarray, ttl: Optional[int] = None) -> bool:
+    async def set(self, text_hash: str, embedding: np.ndarray, ttl: int | None = None) -> bool:
         """
         Set embedding in cache (with async Redis connection pool).
         """
@@ -153,17 +150,17 @@ class EmbeddingCache:
         except Exception as e:
             logger.warning("embedding_cache.clear_error", error=str(e))
             return False
-    
+
     def stats(self) -> dict:
         """
         Get cache statistics.
-        
+
         Returns:
             Dict with hits, misses, hit rate
         """
         total = self._hits + self._misses
         hit_rate = self._hits / total if total > 0 else 0.0
-        
+
         return {
             "hits": self._hits,
             "misses": self._misses,

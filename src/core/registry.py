@@ -5,12 +5,11 @@ Manages registration and retrieval of agents and tools.
 Following Single Responsibility Principle - separates registration logic from orchestration.
 """
 
-from typing import Optional, Type
 from dataclasses import dataclass, field
 
-from src.config.logging_config import get_logger
-from src.config.intents import Intent, INTENT_ROUTING
 from src.agents.base import BaseAgent
+from src.config.intents import INTENT_ROUTING, Intent
+from src.config.logging_config import get_logger
 from src.tools.base import BaseTool
 
 logger = get_logger()
@@ -97,15 +96,15 @@ class AgentRegistry:
 
         logger.info("registry.tool_registered", name=name, intents=[i.value for i in intents])
 
-    def get_agent(self, name: str) -> Optional[BaseAgent]:
+    def get_agent(self, name: str) -> BaseAgent | None:
         """Get agent by name."""
         return self.agents.get(name)
 
-    def get_tool(self, name: str) -> Optional[BaseTool]:
+    def get_tool(self, name: str) -> BaseTool | None:
         """Get tool by name."""
         return self.tools.get(name)
 
-    def get_for_intent(self, intent: Intent) -> tuple[Optional[BaseAgent | BaseTool], bool]:
+    def get_for_intent(self, intent: Intent) -> tuple[BaseAgent | BaseTool | None, bool]:
         """
         Get agent or tool for an intent.
 
@@ -152,7 +151,7 @@ class AgentRegistry:
 
 
 # Global registry instance
-_registry: Optional[AgentRegistry] = None
+_registry: AgentRegistry | None = None
 
 
 def get_registry() -> AgentRegistry:
@@ -174,11 +173,11 @@ def initialize_registry() -> AgentRegistry:
     _registry = AgentRegistry()
 
     # Import and register tools
-    from src.tools.zakat_calculator import ZakatCalculator
+    from src.tools.dua_retrieval_tool import DuaRetrievalTool
+    from src.tools.hijri_calendar_tool import HijriCalendarTool
     from src.tools.inheritance_calculator import InheritanceCalculator
     from src.tools.prayer_times_tool import PrayerTimesTool
-    from src.tools.hijri_calendar_tool import HijriCalendarTool
-    from src.tools.dua_retrieval_tool import DuaRetrievalTool
+    from src.tools.zakat_calculator import ZakatCalculator
 
     # Register tools
     _registry.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))

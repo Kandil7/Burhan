@@ -31,29 +31,29 @@ class Era(str, Enum):
 class EraClassifier:
     """
     Classifies scholars into eras based on death year.
-    
+
     Usage:
         era = EraClassifier.classify(179)  # "classical"
     """
-    
+
     # Era boundaries in Hijri years
     PROPHETIC_END = 100
     TABIUN_END = 200
     CLASSICAL_END = 500
     MEDIEVAL_END = 900
     OTTOMAN_END = 1300
-    
+
     @staticmethod
     def classify(death_year_hijri: int) -> str:
         """
         Classify scholar's era based on death year (Hijri).
-        
+
         Args:
             death_year_hijri: Death year in Hijri calendar
-            
+
         Returns:
             Era classification string
-            
+
         Examples:
             >>> EraClassifier.classify(50)    # Prophetic - Abu Bakr
             'prophetic'
@@ -80,15 +80,15 @@ class EraClassifier:
             return Era.OTTOMAN.value
         else:
             return Era.MODERN.value
-    
+
     @staticmethod
     def get_era_description(era: str) -> str:
         """
         Get human-readable description of an era.
-        
+
         Args:
             era: Era string from classify()
-            
+
         Returns:
             Description of the era
         """

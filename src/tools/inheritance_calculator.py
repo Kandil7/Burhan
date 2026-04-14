@@ -11,7 +11,6 @@ Based on Fanar-Sadiq architecture: No LLM involvement for calculations.
 
 from dataclasses import dataclass, field
 from fractions import Fraction
-from typing import Optional
 
 from src.config.logging_config import get_logger
 
@@ -86,7 +85,7 @@ class InheritanceResult:
     total_heirs: int
 
     # Optional fields (with defaults)
-    school_opinion: Optional[str] = None  # Madhhab-specific note
+    school_opinion: str | None = None  # Madhhab-specific note
     notes: list[str] = field(default_factory=list)
     references: list[str] = field(default_factory=list)
 
@@ -521,11 +520,11 @@ class InheritanceCalculator:
                 # Each son = 2 parts, each daughter = 1 part
                 total_parts = (count * 2) + daughters_count
                 part_value = remainder / total_parts
-                
+
                 son_fraction = part_value * 2 * count
                 son_amount = round(float(son_fraction) * estate_value, 2)
                 son_percentage = round(float(son_fraction) * 100, 2)
-                
+
                 shares.append(
                     InheritanceShare(
                         heir_name=f"Son{'s' if count > 1 else ''}",
@@ -536,12 +535,12 @@ class InheritanceCalculator:
                         notes=f"Residuary heir (2:1 ratio with {daughters_count} daughter{'s' if daughters_count > 1 else ''})",
                     )
                 )
-                
+
                 # Also add daughter's share
                 daughter_fraction = part_value * daughters_count
                 daughter_amount = round(float(daughter_fraction) * estate_value, 2)
                 daughter_percentage = round(float(daughter_fraction) * 100, 2)
-                
+
                 shares.append(
                     InheritanceShare(
                         heir_name=f"Daughter{'s' if daughters_count > 1 else ''}",
@@ -557,7 +556,7 @@ class InheritanceCalculator:
                 share_per_heir = remainder / count if count > 0 else Fraction(0)
                 amount = round(float(share_per_heir) * estate_value, 2)
                 percentage = round(float(share_per_heir * count) * 100, 2)
-                
+
                 shares.append(
                     InheritanceShare(
                         heir_name=f"Son{'s' if count > 1 else ''}",
@@ -647,7 +646,7 @@ class InheritanceCalculator:
 
         return distribution
 
-    def _get_madhhab_note(self, madhhab: str, heirs: Heirs, distribution: list[InheritanceShare]) -> Optional[str]:
+    def _get_madhhab_note(self, madhhab: str, heirs: Heirs, distribution: list[InheritanceShare]) -> str | None:
         """Get madhhab-specific notes for disputed cases."""
         if madhhab == "hanafi":
             # Hanafi: Maternal siblings can block paternal half-siblings in some cases

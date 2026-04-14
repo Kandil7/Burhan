@@ -13,17 +13,17 @@ Provides endpoints for:
 """
 
 import asyncio
-from fastapi import APIRouter, HTTPException, Query, Depends
-from pydantic import BaseModel, Field
-from typing import Optional
 
-from src.quran.verse_retrieval import VerseRetrievalEngine, VerseNotFoundError
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from src.config.logging_config import get_logger
+from src.data.models.quran import Ayah, Surah
+from src.infrastructure.db_sync import get_sync_session
 from src.quran.nl2sql import NL2SQLEngine, NL2SQLQueryError
 from src.quran.quotation_validator import QuotationValidator
-from src.quran.tafsir_retrieval import TafsirRetrievalEngine, TafsirNotFoundError
-from src.infrastructure.db_sync import get_sync_session
-from src.data.models.quran import Surah, Ayah, Translation, Tafsir
-from src.config.logging_config import get_logger
+from src.quran.tafsir_retrieval import TafsirNotFoundError, TafsirRetrievalEngine
+from src.quran.verse_retrieval import VerseNotFoundError, VerseRetrievalEngine
 
 logger = get_logger()
 router = APIRouter(prefix="/quran", tags=["Quran"])
@@ -51,11 +51,11 @@ class AyahResponse(BaseModel):
     surah_name_en: str
     ayah_number: int
     text_uthmani: str
-    text_simple: Optional[str]
+    text_simple: str | None
     juz: int
     page: int
     quran_url: str
-    translations: Optional[list[dict]] = None
+    translations: list[dict] | None = None
 
 
 class VerseSearchResponse(BaseModel):
@@ -76,8 +76,8 @@ class QuotationValidationResponse(BaseModel):
 
     is_quran: bool
     confidence: float
-    matched_ayah: Optional[AyahResponse]
-    suggestion: Optional[str]
+    matched_ayah: AyahResponse | None
+    suggestion: str | None
 
 
 class NL2SQLRequest(BaseModel):
@@ -217,8 +217,10 @@ async def get_ayah(surah: int, ayah: int, db_session=Depends(get_sync_session)):
     try:
         verse = await engine.lookup(f"{surah}:{ayah}", include_translation=True)
         return AyahResponse(**verse)
-    except VerseNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Verse {surah}:{ayah} not found")
+    except VerseNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail=f"Verse {surah}:{ayah} not found"
+        ) from e
 
 
 # ==========================================
@@ -234,7 +236,7 @@ class SearchRequest(BaseModel):
 
 
 @router.post("/search", response_model=VerseSearchResponse)
-async def search_verses(request: SearchRequest, db_session=Depends(get_sync_session)):
+async def search_verses(request: SearchRequest, db_session=Depends(get_sync_session)):  # noqa: B008
     """
     Search Quran verses by text.
 
@@ -252,7 +254,7 @@ async def search_verses(request: SearchRequest, db_session=Depends(get_sync_sess
 
 
 @router.post("/validate", response_model=QuotationValidationResponse)
-async def validate_quotation(request: QuotationValidationRequest, db_session=Depends(get_sync_session)):
+async def validate_quotation(request: QuotationValidationRequest, db_session=Depends(get_sync_session)):  # noqa: B008
     """
     Validate if text is from the Quran.
 
@@ -270,7 +272,7 @@ async def validate_quotation(request: QuotationValidationRequest, db_session=Dep
 
 
 @router.post("/analytics", response_model=NL2SQLResponse)
-async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_session)):
+async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_session)):  # noqa: B008
     """
     Execute analytics queries on Quran data.
 
@@ -286,7 +288,7 @@ async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_se
         result = await engine.execute(request.query)
         return NL2SQLResponse(**result)
     except NL2SQLQueryError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ==========================================
@@ -295,7 +297,7 @@ async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_se
 
 
 @router.get("/tafsir/{surah}:{ayah}", response_model=TafsirResponse)
-async def get_tafsir(surah: int, ayah: int, source: Optional[str] = None, db_session=Depends(get_sync_session)):
+async def get_tafsir(surah: int, ayah: int, source: str | None = None, db_session=Depends(get_sync_session)):  # noqa: B008
     """
     Get tafsir (commentary) for a specific ayah.
 
@@ -306,12 +308,14 @@ async def get_tafsir(surah: int, ayah: int, source: Optional[str] = None, db_ses
     try:
         result = await engine.get_tafsir(f"{surah}:{ayah}", source=source)
         return TafsirResponse(**result)
-    except TafsirNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Tafsir not found for {surah}:{ayah}")
+    except TafsirNotFoundError as e:
+        raise HTTPException(
+            status_code=404, detail=f"Tafsir not found for {surah}:{ayah}"
+        ) from e
 
 
 @router.get("/tafsir-sources", response_model=list[dict])
-async def list_tafsir_sources(db_session=Depends(get_sync_session)):
+async def list_tafsir_sources(db_session=Depends(get_sync_session)):  # noqa: B008
     """
     List all available tafsir sources.
 

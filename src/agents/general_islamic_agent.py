@@ -12,7 +12,7 @@ from src.agents.base_rag_agent import BaseRAGAgent
 class GeneralIslamicAgent(BaseRAGAgent):
     """
     وكيل المعرفة الإسلامية العامة - إجابات تعليمية بأسلوب واضح.
-    
+
     temperature: 0.3 (أكثر conversational للتعليم)
     """
 

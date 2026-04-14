@@ -6,7 +6,6 @@ along with Quran sub-intents and keyword patterns for fast-path classification.
 """
 
 from enum import Enum
-from typing import Optional
 
 
 class Intent(str, Enum):
@@ -25,7 +24,7 @@ class Intent(str, Enum):
     DUA = "dua"
     HIJRI_CALENDAR = "hijri_calendar"
     PRAYER_TIMES = "prayer_times"
-    
+
     # NEW: Specialized agents
     HADITH = "hadith"
     TAFSIR = "tafsir"
@@ -73,7 +72,10 @@ INTENT_DESCRIPTIONS = {
     Intent.SEERAH: "Prophet Muhammad's biography and life events (Seerah, prophetic history)",
     Intent.USUL_FIQH: "Principles of Islamic jurisprudence (methodology, sources of Islamic law)",
     Intent.ISLAMIC_HISTORY: "Islamic history and civilization (historical events, figures, culture)",
-    Intent.ARABIC_LANGUAGE: "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), literature, poetry, dictionaries",
+    Intent.ARABIC_LANGUAGE: (
+        "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), "
+        "literature, poetry, dictionaries"
+    ),
 }
 
 
@@ -271,7 +273,7 @@ def get_intent_description(intent: Intent) -> str:
     return INTENT_DESCRIPTIONS.get(intent, "Unknown intent")
 
 
-def get_agent_for_intent(intent: Intent) -> Optional[str]:
+def get_agent_for_intent(intent: Intent) -> str | None:
     """Get the agent/tool name for an intent."""
     return INTENT_ROUTING.get(intent)
 

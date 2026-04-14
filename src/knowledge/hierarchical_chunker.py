@@ -31,8 +31,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # ── Constants ─────────────────────────────────────────────────────────────
 
@@ -136,7 +135,7 @@ class BookMetadata:
     book_id: int
     title: str
     author: str = ""
-    author_death: Optional[int] = None
+    author_death: int | None = None
     category: str = ""
     category_en: str = ""
     file_path: str = ""
@@ -160,7 +159,7 @@ class BookMetadata:
         """Create from a books.json entry dict."""
         authors = entry.get("authors", [])
         main_author = ""
-        author_death: Optional[int] = None
+        author_death: int | None = None
         for a in authors:
             if a.get("role") == "main":
                 main_author = a.get("name", "")
@@ -189,12 +188,12 @@ class Chunk:
     book_id: int
     book_title: str
     author: str
-    author_death: Optional[int]
+    author_death: int | None
     category: str
     category_en: str
-    page_number: Optional[int]
+    page_number: int | None
     chapter_title: str
-    chapter_id: Optional[int]
+    chapter_id: int | None
     chunk_index: int
     content: str
     content_length: int
@@ -343,7 +342,7 @@ class HierarchicalChunker:
         chunks: list[Chunk] = []
         chunk_index = 0
 
-        for i, part in enumerate(parts[1:], start=1):
+        for _i, part in enumerate(parts[1:], start=1):
             # Reconstruct the QA pair
             qa_text = f"السؤال{part}"
 
@@ -671,7 +670,7 @@ class HierarchicalChunker:
 
     # ── Text Parsing Helpers ───────────────────────────────────────────
 
-    def _extract_chapters(self, text: str) -> list[tuple[str, Optional[int], str]]:
+    def _extract_chapters(self, text: str) -> list[tuple[str, int | None, str]]:
         """
         Extract chapters from text using span markers.
 
@@ -687,7 +686,7 @@ class HierarchicalChunker:
             cleaned = self._strip_header(cleaned)
             return [("المحتوى الرئيسي", None, cleaned)]
 
-        chapters: list[tuple[str, Optional[int], str]] = []
+        chapters: list[tuple[str, int | None, str]] = []
 
         for i, match in enumerate(markers):
             chapter_id = int(match.group(1))
@@ -708,7 +707,7 @@ class HierarchicalChunker:
 
         return chapters
 
-    def _split_by_pages(self, text: str) -> list[tuple[str, Optional[int]]]:
+    def _split_by_pages(self, text: str) -> list[tuple[str, int | None]]:
         """
         Split text by page boundaries [Page N].
 
@@ -719,7 +718,7 @@ class HierarchicalChunker:
         if not positions:
             return [(text, None)]
 
-        pages: list[tuple[str, Optional[int]]] = []
+        pages: list[tuple[str, int | None]] = []
         for i, (pos, page_num) in enumerate(positions):
             start = pos
             end = positions[i + 1][0] if i + 1 < len(positions) else len(text)
@@ -826,9 +825,9 @@ class HierarchicalChunker:
         content: str,
         metadata: BookMetadata,
         chunk_index: int,
-        page_number: Optional[int] = None,
+        page_number: int | None = None,
         chapter_title: str = "",
-        chapter_id: Optional[int] = None,
+        chapter_id: int | None = None,
         chunk_type: str = "content",
     ) -> Chunk:
         """Create a Chunk object with full metadata."""
@@ -869,7 +868,7 @@ class HierarchicalChunker:
             return text
         return text[-self.overlap_chars:]
 
-    def _extract_page_number(self, text: str) -> Optional[int]:
+    def _extract_page_number(self, text: str) -> int | None:
         """Extract page number from text."""
         match = self._page_pattern.search(text)
         return int(match.group(1)) if match else None

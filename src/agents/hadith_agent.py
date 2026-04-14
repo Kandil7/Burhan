@@ -12,7 +12,7 @@ from src.agents.base_rag_agent import BaseRAGAgent
 class HadithAgent(BaseRAGAgent):
     """
     وكيل الحديث النبوي - عرض الأحاديث مع المصدر والدرجة.
-    
+
     temperature: 0.1 (حتمي)
     """
 

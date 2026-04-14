@@ -7,7 +7,6 @@ This ensures consistency across the entire application.
 
 from typing import Final
 
-
 # ==========================================
 # Retrieval Configuration
 # ==========================================

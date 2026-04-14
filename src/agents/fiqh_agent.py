@@ -7,13 +7,13 @@ Fiqh RAG Agent for Athar Islamic QA system.
 """
 
 from src.agents.base_rag_agent import BaseRAGAgent
-from src.config.constants import RetrievalConfig, LLMConfig
+from src.config.constants import LLMConfig, RetrievalConfig
 
 
 class FiqhAgent(BaseRAGAgent):
     """
     وكيل الفقه الإسلامي - إجابات مبنية على النصوص المسترجاعة فقط.
-    
+
    _temperature: 0.1 (حتمي جداً)
     """
 

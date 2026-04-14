@@ -1,36 +1,78 @@
 # 🚀 START HERE - Athar Islamic QA System
 
-## ✅ Project Status: COMPLETE & READY TO RUN
+## ✅ Project Status: ACTIVE DEVELOPMENT
 
 ### 📊 What You Have
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **Code** | ✅ Complete | 52 Python files, 16 TypeScript files |
-| **Data** | ✅ Processed | 115,316 chunks from 100 books + 1,000 hadith |
-| **Infrastructure** | ✅ Running | PostgreSQL, Redis, Qdrant |
-| **Documentation** | ✅ Complete | 14 guides, 5,000+ lines |
-| **Build System** | ✅ Ready | build.bat + CLI tools |
+| **Code** | ✅ Active | 7 active agents, 5 deterministic tools, 18 API endpoints |
+| **Data** | ✅ Processed | 10 Qdrant collections, 11,147+ vectors |
+| **Infrastructure** | ✅ Ready | PostgreSQL, Redis, Qdrant (via Docker) |
+| **Documentation** | ✅ Complete | 60+ docs across 14 directories |
 
 ---
 
-## 🎯 Quick Start (Choose One)
+## 🎯 Quick Start
 
-### Option 1: Double-Click (Easiest!)
-```
-START.bat              # Start application
-STOP.bat               # Stop when done
-```
+### Prerequisites
+- Python 3.12+
+- Poetry (dependency management)
+- Docker Desktop (for PostgreSQL, Redis, Qdrant)
+- Groq API key (or OpenAI)
 
-### Option 2: Build System (Recommended!)
+### Step 1: Install Dependencies
 ```bash
-build.bat start        # Start everything
-build.bat test         # Verify it works
+# Clone repository (if not already done)
+git clone https://github.com/Kandil7/Athar.git
+cd Athar
+
+# Install Python dependencies
+make install-dev
+
+# Install RAG dependencies (optional, for embeddings)
+poetry install --with rag
 ```
 
-### Option 3: Command Line
+### Step 2: Configure Environment
 ```bash
-python scripts/cli.py start
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your API keys and database URLs
+# Required: GROQ_API_KEY (or OpenAI key)
+# Required: HF_TOKEN (for embedding model)
+```
+
+### Step 3: Start Infrastructure
+```bash
+# Start PostgreSQL, Redis, Qdrant
+docker compose -f docker/docker-compose.dev.yml up -d
+
+# Run database migrations
+make db-migrate
+```
+
+### Step 4: Start Development Server
+```bash
+# Option A: Using Make (port 8000)
+make dev
+
+# Option B: Custom port (recommended for Windows)
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
+```
+
+### Step 5: Verify Installation
+```bash
+# Run tests
+make test
+
+# Check health endpoint
+curl http://localhost:8000/health
+
+# View API documentation
+# Swagger UI: http://localhost:8000/docs
+# ReDoc: http://localhost:8000/redoc
 ```
 
 ---
@@ -39,22 +81,23 @@ python scripts/cli.py start
 
 ### Getting Started
 - **[START_HERE.md](START_HERE.md)** ← You are here!
-- **[QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** - Command cheat sheet
-- **[README.md](README.md)** - Full project overview
+- **[setup.md](../4-guides/setup.md)** - Detailed setup guide
+- **[running.md](../4-guides/running.md)** - Running the application
+- **[windows.md](../4-guides/windows.md)** - Windows-specific guide
 
-### Architecture & Guides
-- **[ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md)** - System diagrams
-- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Developer guide
-- **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Deployment guide
-- **[API.md](docs/API.md)** - API reference
+### Architecture & Core Features
+- **[Architecture Overview](../2-architecture/01_ARCHITECTURE_OVERVIEW.md)** - System design
+- **[Quran System](../3-core-features/quran.md)** - Quran pipeline
+- **[RAG Pipeline](../3-core-features/rag.md)** - Retrieval-augmented generation
 
-### Specialized Guides
-- **[RAG_GUIDE.md](docs/RAG_GUIDE.md)** - RAG pipeline
-- **[QURAN_GUIDE.md](docs/QURAN_GUIDE.md)** - Quran system
-- **[FRONTEND.md](docs/FRONTEND.md)** - Frontend guide
-- **[WINDOWS_GUIDE.md](docs/guides/WINDOWS_GUIDE.md)** - Windows users
+### API Reference
+- **[Complete API Docs](../5-api/COMPLETE_DOCUMENTATION.md)** - All 18 endpoints
 
-**Full index:** [docs/README.md](docs/README.md)
+### Data & Embeddings
+- [Datasets Guide](../6-data/QUICK_START_DATASETS.md)** - Dataset management
+- **[Embeddings Guide](../8-development/embeddings.md)** - Embedding pipeline
+
+**Full index:** [docs/README.md](../README.md)
 
 ---
 
@@ -66,34 +109,37 @@ Once started:
 |---------|-----|
 | **API Documentation** | http://localhost:8000/docs |
 | **Alternative Docs** | http://localhost:8000/redoc |
-| **Frontend Chat** | http://localhost:3000 |
 | **Health Check** | http://localhost:8000/health |
+| **Readiness Probe** | http://localhost:8000/ready |
 
 ---
 
-## 📜 Scripts Organization
+## 📜 Project Structure
 
 ```
-Project Root:
-├── build.bat              # Main build system (20+ commands)
-├── START.bat              # Quick start shortcut
-├── STOP.bat               # Quick stop shortcut
+Athar/
+├── src/                          # Python backend (FastAPI)
+│   ├── api/                      # API routes (18 endpoints)
+│   ├── agents/                   # 7 active agents
+│   ├── tools/                    # 5 deterministic tools
+│   ├── quran/                    # Quran pipeline (6 modules)
+│   ├── knowledge/                # RAG infrastructure
+│   ├── core/                     # Router, orchestrator, citation
+│   └── config/                   # Settings, intents, constants
 │
-├── scripts/
-│   ├── windows/           # Windows batch scripts
-│   │   ├── start.bat
-│   │   ├── stop.bat
-│   │   ├── test.bat
-│   │   └── ...
-│   ├── cli.py             # Python CLI
-│   └── [Python utilities]
+├── scripts/                      # Utility scripts (40+)
+│   ├── data/                     # Data processing & seeding
+│   ├── ingestion/                # Data ingestion pipelines
+│   └── tests/                    # Test scripts
 │
-└── docs/                  # All documentation
-    ├── README.md          # Documentation index
-    ├── QUICK_REFERENCE.md
-    ├── ARCHITECTURE_OVERVIEW.md
-    ├── guides/            # User guides
-    └── [Technical docs]
+├── data/                         # Datasets
+│   ├── mini_dataset/             # GitHub-friendly mini-dataset (1.7 MB)
+│   └── seed/                     # Seed data (duas, quran samples)
+│
+├── docs/                         # Documentation (60+ files)
+├── tests/                        # Pytest test suite
+├── docker/                       # Docker configuration
+└── migrations/                   # Database migrations
 ```
 
 ---
@@ -101,28 +147,62 @@ Project Root:
 ## 🎯 Common Commands
 
 ```bash
-build.bat start           # Start application
-build.bat stop            # Stop everything
-build.bat test            # Run tests
-build.bat status          # Check status
-build.bat data:ingest     # Process more data
-build.bat db:migrate      # Run migrations
-build.bat help            # Show all commands
+# Development
+make install-dev          # Install dependencies
+make dev                  # Start development server (port 8000)
+make test                 # Run tests with coverage
+make lint                 # Run linters (ruff + mypy)
+make format               # Auto-format code
+
+# Docker
+make docker-up            # Start Docker services (postgres, redis, qdrant)
+make docker-down          # Stop Docker services
+
+# Database
+make db-migrate           # Run database migrations
+
+# Custom port (Windows)
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
+```
+
+### Windows Batch Files
+```batch
+build.bat                 # Main build system
+start-athar.bat           # Quick start
+stop-athar.bat            # Quick stop
+download-embeddings-to-qdrant.bat  # Download embeddings
 ```
 
 ---
 
-## 🆘 Need Help?
+## 🆘 Troubleshooting
 
+### Port Already in Use
 ```bash
-# Show all commands
-build.bat help
+# Use a different port
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
+```
 
-# Check status
-build.bat status
+### Docker Services Not Starting
+```bash
+# Check Docker status
+docker ps
 
-# View documentation
-start docs\README.md
+# View logs
+docker compose -f docker/docker-compose.dev.yml logs
+```
+
+### Missing Environment Variables
+```bash
+# Ensure .env file exists and is configured
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+### Import Errors
+```bash
+# Reinstall dependencies
+poetry install --with rag
 ```
 
 ---
@@ -132,19 +212,26 @@ start docs\README.md
 | Requirement | Status | Notes |
 |-------------|--------|-------|
 | Python 3.12+ | ✅ Required | For backend |
-| Node.js 20+ | ✅ Optional | For frontend |
-| Docker | ✅ Required | For databases |
-| 8GB RAM | ✅ Minimum | 16GB recommended |
+| Poetry | ✅ Required | Dependency management |
+| Docker | ✅ Required | For databases (PostgreSQL, Redis, Qdrant) |
+| 8GB RAM | ✅ Minimum | 16GB recommended for embeddings |
 | 20GB Disk | ✅ Minimum | For data & Docker |
+| Groq API Key | ✅ Required | For LLM inference |
+| HuggingFace Token | ✅ Required | For embedding model |
 
 ---
 
 ## 🎉 You're Ready!
 
-**Next Step:** Run `build.bat start` or double-click `START.bat`! 🕌✨
+**Next Steps:**
+1. Run `make dev` to start the server
+2. Visit http://localhost:8000/docs to explore the API
+3. Try a query: `POST /api/v1/query` with `{"query": "What is zakat?"}`
+
+**Full Documentation:** [docs/README.md](../README.md)  
+**API Reference:** [Complete API Docs](../5-api/COMPLETE_DOCUMENTATION.md)  
+**Architecture:** [Architecture Overview](../2-architecture/01_ARCHITECTURE_OVERVIEW.md)
 
 ---
 
-**Full Documentation:** [docs/README.md](docs/README.md)  
-**Quick Reference:** [docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)  
-**Architecture:** [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md)
+**Built with ❤️ for the Muslim community** 🕌
