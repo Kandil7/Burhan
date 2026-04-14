@@ -4,25 +4,32 @@ REM ═════════════════════════�
 REM 🕌  ATHAR - Download Embeddings from HuggingFace & Upload to Qdrant
 REM ═══════════════════════════════════════════════════════════════════════
 REM
-REM This script downloads 5.7M embeddings from HuggingFace and uploads
-REM them to your local Qdrant instance.
+REM This script downloads embeddings from HuggingFace and uploads to Qdrant.
+REM Smart features:
+REM   - Checks existing Qdrant data first
+REM   - Only downloads what's missing (incremental sync)
+REM   - Shows sync plan before execution
+REM   - Supports --verify-only, --dry-run, --force options
 REM
 REM Prerequisites:
 REM   - Qdrant running on localhost:6333
 REM   - HF_TOKEN configured in .env
 REM   - Poetry environment set up
 REM
-REM Usage: Double-click or run: download-embeddings-to-qdrant.bat
+REM Usage:
+REM   download-embeddings-to-qdrant.bat           (smart sync - only what's missing)
+REM   download-embeddings-to-qdrant.bat --verify-only   (just check Qdrant)
+REM   download-embeddings-to-qdrant.bat --force         (reupload everything)
 REM ═══════════════════════════════════════════════════════════════════════
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
-echo 🕌  ATHAR - Download Embeddings & Upload to Qdrant
+echo 🕌  ATHAR - Smart Embeddings Sync
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
-REM Check Qdrant is running using PowerShell
-echo [1/3] Checking Qdrant connection...
+REM Check Qdrant is running
+echo [1/4] Checking Qdrant connection...
 powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:6333/collections' -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }"
 if !ERRORLEVEL! neq 0 (
     echo ❌ Qdrant is NOT running on localhost:6333
@@ -37,7 +44,7 @@ echo ✅ Qdrant is running
 echo.
 
 REM Check HF_TOKEN exists in .env
-echo [2/3] Checking HuggingFace token...
+echo [2/4] Checking HuggingFace token...
 if not exist ".env" (
     echo ❌ .env file not found!
     echo    Copy .env.example to .env and configure HF_TOKEN
@@ -59,27 +66,36 @@ if !ERRORLEVEL! neq 0 (
 echo ✅ HF_TOKEN configured
 echo.
 
+REM Parse command line arguments
+set "ARGS=%*"
+if "%ARGS%"=="" (
+    set "PYTHON_ARGS=--dry-run"
+    set "MODE=Smart Sync (Dry Run)"
+) else (
+    set "PYTHON_ARGS=%ARGS%"
+    set "MODE=Custom Mode"
+)
+
 REM Check the upload script exists
+echo [3/4] Checking upload script...
 if not exist "scripts\download_embeddings_and_upload_qdrant.py" (
     echo ❌ Upload script not found: scripts\download_embeddings_and_upload_qdrant.py
     echo.
     pause
     exit /b 1
 )
-
-REM Run the download and upload script
-echo [3/3] Starting download and upload...
-echo ═══════════════════════════════════════════════════════════════════════
-echo 🚀  This will:
-echo   1. Download embedding files from HuggingFace (~20-30 GB)
-echo   2. Upload vectors to Qdrant
-echo   3. Verify all collections
+echo ✅ Script found
 echo.
-echo Estimated time: 30-60 minutes (depends on internet speed)
+
+REM Run the script
+echo [4/4] Running sync...
+echo ═══════════════════════════════════════════════════════════════════════
+echo Mode: %MODE%
+echo Arguments: %PYTHON_ARGS%
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
-poetry run python scripts/download_embeddings_and_upload_qdrant.py
+poetry run python scripts/download_embeddings_and_upload_qdrant.py %PYTHON_ARGS%
 set RESULT=!ERRORLEVEL!
 
 echo.
