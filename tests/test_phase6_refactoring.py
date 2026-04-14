@@ -189,7 +189,7 @@ class TestEraClassifier:
 
     def test_classical_era(self):
         """200-500 AH should be classical era."""
-        assert EraClassifier.classify(179) == "classical"  # Imam Malik
+        assert EraClassifier.classify(250) == "classical"  # Imam al-Shafi'i era
         assert EraClassifier.classify(500) == "classical"
 
     def test_medieval_era(self):

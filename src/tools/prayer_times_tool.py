@@ -286,7 +286,7 @@ class PrayerTimesTool(BaseTool):
         e_rad = math.radians(e)
 
         # Declination
-        return math.degrees(math.asin(math.sin(e_rad) * math.sin(l_rad)))
+        return math.degrees(math.asin(math.sin(e_rad) * math.sin(lon_rad)))
 
     def _equation_of_time(self, jd: float) -> float:
         """Calculate equation of time (in hours)."""
