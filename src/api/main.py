@@ -50,6 +50,14 @@ async def lifespan(app: FastAPI):
         environment=settings.app_env,
     )
 
+    # Initialize agent registry with all agents and tools
+    try:
+        from src.core.registry import initialize_registry
+        initialize_registry()
+        logger.info("app.registry_initialized")
+    except Exception as e:
+        logger.warning("app.registry_init_failed", error=str(e))
+
     yield
 
     # Shutdown

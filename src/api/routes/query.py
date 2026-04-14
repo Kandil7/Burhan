@@ -11,6 +11,7 @@ Phase 6 Refactoring:
 """
 
 import time
+import traceback
 import uuid
 
 from fastapi import APIRouter, HTTPException, Query
@@ -134,6 +135,15 @@ async def handle_query(
         # Use AgentRegistry to get the right agent/tool for this intent
         registry = get_registry()
         agent, is_agent = registry.get_for_intent(intent)
+        
+        logger.info(
+            "query.registry_lookup",
+            query_id=query_id,
+            intent=intent.value,
+            agent=str(agent),
+            is_agent=is_agent,
+            registry_status=registry.get_status(),
+        )
 
         # Build common agent input
         agent_input = AgentInput(
@@ -209,7 +219,15 @@ async def handle_query(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
-        logger.error("query.error", query_id=query_id, error=str(e), exc_info=True)
+        tb = traceback.format_exc()
+        logger.error(
+            "query.error",
+            query_id=query_id,
+            error=str(e),
+            error_type=type(e).__name__,
+            traceback=tb,
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"Internal error: {str(e)}") from e
 
 

@@ -11,6 +11,7 @@ Phase 6 Refactoring: Added asyncio.Lock for thread-safe client creation.
 """
 import asyncio
 import json
+from typing import Optional
 
 from openai import AsyncOpenAI
 
@@ -23,17 +24,18 @@ try:
     from groq import AsyncGroq
     GROQ_AVAILABLE = True
 except ImportError:
-    AsyncGroq = None
+    AsyncGroq = None  # type: ignore[misc,assignment]
     GROQ_AVAILABLE = False
 
-from src.config.logging_config import get_logger  
-from src.config.settings import settings  
+from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
 # Global LLM clients with thread-safe locks
-llm_client: AsyncOpenAI | None = None
-groq_client: AsyncGroq | None = None
+# NOTE: Use Optional[] instead of | None because AsyncGroq may be None at import time
+llm_client: Optional[AsyncOpenAI] = None
+groq_client = None  # type will be AsyncGroq or None depending on import
 _client_lock: asyncio.Lock = asyncio.Lock()
 _openai_lock: asyncio.Lock = asyncio.Lock()
 

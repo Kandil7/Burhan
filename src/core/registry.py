@@ -155,10 +155,10 @@ _registry: AgentRegistry | None = None
 
 
 def get_registry() -> AgentRegistry:
-    """Get global agent registry instance."""
+    """Get global agent registry instance. Auto-initializes if not yet initialized."""
     global _registry
-    if _registry is None:
-        _registry = AgentRegistry()
+    if _registry is None or not _registry._initialized:
+        _registry = initialize_registry()
     return _registry
 
 
