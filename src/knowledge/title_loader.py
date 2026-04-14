@@ -15,7 +15,6 @@ Phase 2: +25% retrieval accuracy with title context
 """
 import json
 from pathlib import Path
-from typing import Optional, Dict, List
 
 from src.config.logging_config import get_logger
 
@@ -38,7 +37,7 @@ class TitleLoader:
         chapter = loader.get_chapter_for_page(622, 45)
     """
 
-    def __init__(self, titles_dir: Optional[Path] = None):
+    def __init__(self, titles_dir: Path | None = None):
         """
         Initialize title loader.
 
@@ -46,10 +45,10 @@ class TitleLoader:
             titles_dir: Path to titles/ directory (default: data/processed/lucene_pages/titles/)
         """
         self.titles_dir = titles_dir or Path("data/processed/lucene_pages/titles")
-        self._titles_cache: Dict[int, Dict[int, str]] = {}  # book_id -> {page -> title}
+        self._titles_cache: dict[int, dict[int, str]] = {}  # book_id -> {page -> title}
         self._loaded_books = set()
 
-    def get_title_for_page(self, book_id: int, page_num: int) -> Optional[str]:
+    def get_title_for_page(self, book_id: int, page_num: int) -> str | None:
         """
         Get title for a specific page in a book.
 
@@ -66,7 +65,7 @@ class TitleLoader:
         page_titles = self._titles_cache.get(book_id, {})
         return page_titles.get(page_num)
 
-    def get_chapter_for_page(self, book_id: int, page_num: int) -> Optional[str]:
+    def get_chapter_for_page(self, book_id: int, page_num: int) -> str | None:
         """
         Get chapter title for a page (nearest preceding title).
 
@@ -96,7 +95,7 @@ class TitleLoader:
 
         return nearest_title
 
-    def get_titles_for_book(self, book_id: int) -> Dict[int, str]:
+    def get_titles_for_book(self, book_id: int) -> dict[int, str]:
         """
         Get all titles for a book.
 
@@ -128,7 +127,7 @@ class TitleLoader:
 
         try:
             titles = {}
-            with open(title_file, "r", encoding="utf-8") as f:
+            with open(title_file, encoding="utf-8") as f:
                 for line in f:
                     try:
                         doc = json.loads(line)

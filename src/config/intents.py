@@ -6,7 +6,6 @@ along with Quran sub-intents and keyword patterns for fast-path classification.
 """
 
 from enum import Enum
-from typing import Optional
 
 
 class Intent(str, Enum):
@@ -25,7 +24,7 @@ class Intent(str, Enum):
     DUA = "dua"
     HIJRI_CALENDAR = "hijri_calendar"
     PRAYER_TIMES = "prayer_times"
-    
+
     # NEW: Specialized agents
     HADITH = "hadith"
     TAFSIR = "tafsir"
@@ -73,7 +72,10 @@ INTENT_DESCRIPTIONS = {
     Intent.SEERAH: "Prophet Muhammad's biography and life events (Seerah, prophetic history)",
     Intent.USUL_FIQH: "Principles of Islamic jurisprudence (methodology, sources of Islamic law)",
     Intent.ISLAMIC_HISTORY: "Islamic history and civilization (historical events, figures, culture)",
-    Intent.ARABIC_LANGUAGE: "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), literature, poetry, dictionaries",
+    Intent.ARABIC_LANGUAGE: (
+        "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), "
+        "literature, poetry, dictionaries"
+    ),
 }
 
 
@@ -108,34 +110,13 @@ INTENT_ROUTING = {
 # ==========================================
 # These patterns are checked first before LLM classification.
 # If a pattern matches with high confidence (>=0.90), we skip LLM call.
+# NOTE: Order matters - more specific intents should come before broad ones.
 KEYWORD_PATTERNS = {
-    Intent.FIQH: [
-        "حكم",
-        "fiqh",
-        "halal",
-        "haram",
-        "Islamic law",
-        "ما حكم",
-        "هل يجوز",
-        "هل هو حلال",
-        "هل هو حرام",
-    ],
-    Intent.ISLAMIC_KNOWLEDGE: [
-        "من هو",
-        "ما هو",
-        "ما هي",
-        "who is",
-        "what is",
-        "explain",
-        "شرح",
-        "معلومات عن",
-    ],
+    # Specific intents (checked first)
     Intent.ZAKAT: [
         "زكاة",
         "zakat",
-        "زكاة المال",
         "نصاب",
-        "زكاة الذهب",
         "zakat calculator",
     ],
     Intent.INHERITANCE: [
@@ -144,7 +125,6 @@ KEYWORD_PATTERNS = {
         "تركة",
         "فرائض",
         "عصبة",
-        "inheritance calculator",
         "توزيع الميراث",
     ],
     Intent.QURAN: [
@@ -154,7 +134,6 @@ KEYWORD_PATTERNS = {
         "ayah",
         "surah",
         "quran",
-        "تفسير",
         "كم عدد آيات",
         "أطول سورة",
     ],
@@ -162,7 +141,8 @@ KEYWORD_PATTERNS = {
         "prayer times",
         "مواقيت الصلاة",
         "وقت الصلاة",
-        "qibla direction",
+        "وقت صلاة",
+        "qibla",
         "قبلة",
     ],
     Intent.HIJRI_CALENDAR: [
@@ -171,16 +151,14 @@ KEYWORD_PATTERNS = {
         "رمضان",
         "eid",
         "عيد",
-        "تاريخ",
         "hijri date",
         "متى رمضان",
     ],
     Intent.DUA: [
         "دعاء",
         "dua",
-        "ذكر",
-        "adhkar",
         "أذكار",
+        "adhkar",
         "استغفار",
         "دعاء الصباح",
         "hisn al-muslim",
@@ -195,7 +173,6 @@ KEYWORD_PATTERNS = {
         "ramadan kareem",
         "عيد مبارك",
     ],
-    # NEW: Specialized agent patterns
     Intent.HADITH: [
         "حديث",
         "hadith",
@@ -205,7 +182,6 @@ KEYWORD_PATTERNS = {
         "صحيح",
         "ضعيف",
         "الإسناد",
-        "المحدث",
     ],
     Intent.TAFSIR: [
         "تفسير",
@@ -213,19 +189,16 @@ KEYWORD_PATTERNS = {
         "معنى الآية",
         "شرح الآية",
         "تفسير ابن كثير",
-        "تفسير الجلالين",
     ],
     Intent.AQEEDAH: [
         "عقيدة",
         "توحيد",
-        "إيمان",
         "aqeedah",
         "tawhid",
         "أركان الإيمان",
     ],
     Intent.SEERAH: [
         "سيرة",
-        "النبي",
         "seerah",
         "prophet biography",
         "حياة النبي",
@@ -244,21 +217,31 @@ KEYWORD_PATTERNS = {
         "islamic history",
         "الدولة الأموية",
         "الدولة العباسية",
-        "الخلفاء",
+        "الخلفاء الراشدين",
     ],
     Intent.ARABIC_LANGUAGE: [
         "نحو",
         "صرف",
         "بلاغة",
-        "معجم",
+        "arabic grammar",
+        "معنى كلمة",
         "قاموس",
-        "شعر",
-        "أدب",
-        "grammar",
-        "rhetoric",
-        "poetry",
-        "arabic language",
-        "اللغة العربية",
+    ],
+    # Broad intents (checked last)
+    Intent.FIQH: [
+        "ما حكم",
+        "هل يجوز",
+        "هل هو حلال",
+        "هل هو حرام",
+        "fiqh",
+        "halal",
+        "haram",
+        "Islamic law",
+    ],
+    Intent.ISLAMIC_KNOWLEDGE: [
+        "شرح",
+        "معلومات عن",
+        "explain",
     ],
 }
 
@@ -271,7 +254,7 @@ def get_intent_description(intent: Intent) -> str:
     return INTENT_DESCRIPTIONS.get(intent, "Unknown intent")
 
 
-def get_agent_for_intent(intent: Intent) -> Optional[str]:
+def get_agent_for_intent(intent: Intent) -> str | None:
     """Get the agent/tool name for an intent."""
     return INTENT_ROUTING.get(intent)
 

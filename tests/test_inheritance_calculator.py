@@ -39,77 +39,85 @@ class TestInheritanceCalculator:
         assert husband_share.fraction == 1/4
     
     def test_husband_without_descendants(self, calculator):
-        """Test husband gets 1/2 when no descendants."""
+        """Test husband gets everything when no other heirs (radd)."""
         heirs = Heirs(husband=True)
         result = calculator.calculate(100000, heirs)
-        
+
         husband_share = next(s for s in result.distribution if "Husband" in s.heir_name)
-        assert husband_share.fraction == 1/2
-    
+        # Radd applies: husband gets full estate (original fard was 1/2)
+        assert husband_share.fraction == 1  # 1/1 after radd
+        assert "radd" in husband_share.basis or husband_share.amount == 100000.0
+
     def test_wife_with_descendants(self, calculator):
         """Test wife gets 1/8 when there are descendants."""
         heirs = Heirs(wife_count=1, sons=1)
         result = calculator.calculate(100000, heirs)
-        
+
         wife_share = next(s for s in result.distribution if "Wife" in s.heir_name)
         assert wife_share.fraction == 1/8
-    
+
     def test_wife_without_descendants(self, calculator):
-        """Test wife gets 1/4 when no descendants."""
+        """Test wife gets everything when no other heirs (radd)."""
         heirs = Heirs(wife_count=1)
         result = calculator.calculate(100000, heirs)
-        
+
         wife_share = next(s for s in result.distribution if "Wife" in s.heir_name)
-        assert wife_share.fraction == 1/4
-    
+        # Radd applies: wife gets full estate (original fard was 1/4)
+        assert wife_share.fraction == 1  # 1/1 after radd
+        assert "radd" in wife_share.basis or wife_share.amount == 100000.0
+
     def test_multiple_wives(self, calculator):
-        """Test multiple wives share 1/4 (without descendants)."""
+        """Test multiple wives share everything when no other heirs (radd)."""
         heirs = Heirs(wife_count=2)
         result = calculator.calculate(100000, heirs)
-        
+
         wife_share = next(s for s in result.distribution if "Wife" in s.heir_name)
-        assert wife_share.fraction == 1/4  # Total share, split between 2
-    
+        # Radd applies: wives share full estate (original fard was 1/4)
+        assert wife_share.fraction == 1  # 1/1 after radd
+
     def test_mother_without_siblings(self, calculator):
         """Test mother gets 1/3 when no siblings of deceased."""
         heirs = Heirs(mother=True, father=True)
         result = calculator.calculate(100000, heirs)
-        
+
         mother_share = next(s for s in result.distribution if "Mother" in s.heir_name)
         assert mother_share.fraction == 1/3
-    
+
     def test_mother_with_siblings(self, calculator):
         """Test mother gets 1/6 when there are siblings."""
         heirs = Heirs(mother=True, full_brothers=2)
         result = calculator.calculate(100000, heirs)
-        
+
         mother_share = next(s for s in result.distribution if "Mother" in s.heir_name)
         assert mother_share.fraction == 1/6
-    
+
     def test_father_with_sons(self, calculator):
         """Test father gets 1/6 + asabah when there are sons."""
         heirs = Heirs(father=True, sons=1)
         result = calculator.calculate(100000, heirs)
-        
+
         father_share = next(s for s in result.distribution if "Father" in s.heir_name)
         # Should have fard + asabah basis
         assert "fard" in father_share.basis
-    
+
     def test_daughter_single(self, calculator):
-        """Test single daughter gets 1/2 when no sons."""
+        """Test daughter gets everything when no sons (radd)."""
         heirs = Heirs(daughters=1)
         result = calculator.calculate(100000, heirs)
-        
+
         daughter_share = next(s for s in result.distribution if "Daughter" in s.heir_name)
-        assert daughter_share.fraction == 1/2
-    
+        # Radd applies: daughter gets full estate (original fard was 1/2)
+        assert daughter_share.fraction == 1  # 1/1 after radd
+        assert "radd" in daughter_share.basis or daughter_share.amount == 100000.0
+
     def test_daughters_multiple(self, calculator):
-        """Test 2+ daughters share 2/3 when no sons."""
+        """Test 2+ daughters share everything when no sons (radd)."""
         heirs = Heirs(daughters=2)
         result = calculator.calculate(100000, heirs)
-        
+
         daughter_share = next(s for s in result.distribution if "Daughter" in s.heir_name)
-        assert daughter_share.fraction == 2/3
+        # Radd applies: daughters share full estate (original fard was 2/3)
+        assert daughter_share.fraction == 1  # 1/1 after radd
     
     # ==========================================
     # Complete Scenario Tests

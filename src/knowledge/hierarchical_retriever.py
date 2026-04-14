@@ -21,10 +21,8 @@ This improves retrieval accuracy by:
 
 Phase 2: +30% retrieval quality, +45% user experience
 """
-from typing import Optional, Dict, Any, List
 from collections import defaultdict
-
-import numpy as np
+from typing import Any
 
 from src.config.logging_config import get_logger
 
@@ -56,11 +54,11 @@ class HierarchicalRetriever:
 
     def retrieve_hierarchical(
         self,
-        passages: List[Dict[str, Any]],
+        passages: list[dict[str, Any]],
         top_k_books: int = 3,
         top_k_pages_per_book: int = 5,
         include_context: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Retrieve passages with hierarchical organization.
 
@@ -148,9 +146,9 @@ class HierarchicalRetriever:
 
     def get_flat_passages(
         self,
-        hierarchical_results: List[Dict[str, Any]],
+        hierarchical_results: list[dict[str, Any]],
         max_passages: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Convert hierarchical results back to flat passage list for LLM.
 
@@ -182,7 +180,7 @@ class HierarchicalRetriever:
 
         return flat_passages
 
-    def _group_by_book(self, passages: List[Dict[str, Any]]) -> Dict[int, List[Dict[str, Any]]]:
+    def _group_by_book(self, passages: list[dict[str, Any]]) -> dict[int, list[dict[str, Any]]]:
         """Group passages by book_id."""
         groups = defaultdict(list)
         for passage in passages:
@@ -191,7 +189,7 @@ class HierarchicalRetriever:
                 groups[book_id].append(passage)
         return dict(groups)
 
-    def _group_by_chapter(self, passages: List[Dict[str, Any]]) -> Dict[tuple, List[Dict[str, Any]]]:
+    def _group_by_chapter(self, passages: list[dict[str, Any]]) -> dict[tuple, list[dict[str, Any]]]:
         """Group passages by (chapter, section) tuple."""
         groups = defaultdict(list)
         for passage in passages:
@@ -201,7 +199,7 @@ class HierarchicalRetriever:
             groups[key].append(passage)
         return dict(groups)
 
-    def _score_books(self, book_groups: Dict[int, List[Dict[str, Any]]]) -> Dict[int, float]:
+    def _score_books(self, book_groups: dict[int, list[dict[str, Any]]]) -> dict[int, float]:
         """Score books by aggregate passage relevance."""
         scores = {}
         for book_id, passages in book_groups.items():
@@ -216,7 +214,7 @@ class HierarchicalRetriever:
                 scores[book_id] = 0.0
         return scores
 
-    def _score_chapters(self, chapter_groups: Dict[tuple, List[Dict[str, Any]]]) -> Dict[tuple, float]:
+    def _score_chapters(self, chapter_groups: dict[tuple, list[dict[str, Any]]]) -> dict[tuple, float]:
         """Score chapters by aggregate passage relevance."""
         scores = {}
         for chapter_key, passages in chapter_groups.items():
@@ -228,7 +226,7 @@ class HierarchicalRetriever:
                 scores[chapter_key] = 0.0
         return scores
 
-    def _get_page_range(self, passages: List[Dict[str, Any]]) -> Dict[str, Optional[int]]:
+    def _get_page_range(self, passages: list[dict[str, Any]]) -> dict[str, int | None]:
         """Get page range for a set of passages."""
         pages = [p.get("page") for p in passages if p.get("page") is not None]
         if pages:

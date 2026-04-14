@@ -15,9 +15,9 @@ Format: {"id": "{book_id}-{page}", "hadeeth": "{hadith_num}", "esnad": "{narrato
 Phase 2: +20% user trust, scholarly accuracy
 """
 import json
-from pathlib import Path
-from typing import Optional, Dict, List, Any
 from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
 from src.config.logging_config import get_logger
 
@@ -46,7 +46,7 @@ class HadithAuthenticityGrader:
         passages = grader.enrich_passages_with_authenticity(passages)
     """
 
-    def __init__(self, esnad_dir: Optional[Path] = None):
+    def __init__(self, esnad_dir: Path | None = None):
         """
         Initialize grader with esnad directory.
 
@@ -54,10 +54,10 @@ class HadithAuthenticityGrader:
             esnad_dir: Path to esnad/ directory
         """
         self.esnad_dir = esnad_dir or Path("data/processed/lucene_pages/esnad")
-        self._esnad_cache: Dict[str, Dict[str, Any]] = {}  # "{book_id}-{page}" -> esnad_data
+        self._esnad_cache: dict[str, dict[str, Any]] = {}  # "{book_id}-{page}" -> esnad_data
         self._loaded_books = set()
 
-    def get_esnad_for_hadith(self, book_id: int, page: int) -> Optional[Dict[str, Any]]:
+    def get_esnad_for_hadith(self, book_id: int, page: int) -> dict[str, Any] | None:
         """
         Get esnad data for a specific hadith.
 
@@ -69,13 +69,13 @@ class HadithAuthenticityGrader:
             Esnad data dict or None
         """
         key = f"{book_id}-{page}"
-        
+
         if book_id not in self._loaded_books:
             self._load_esnad_for_book(book_id)
 
         return self._esnad_cache.get(key)
 
-    def grade_hadith(self, book_id: int, page: int) -> Dict[str, Any]:
+    def grade_hadith(self, book_id: int, page: int) -> dict[str, Any]:
         """
         Grade hadith authenticity.
 
@@ -146,7 +146,7 @@ class HadithAuthenticityGrader:
         enriched = []
         for passage in passages:
             collection = passage.get("collection", "")
-            
+
             # Only grade hadith collections
             if "hadith" in collection.lower():
                 book_id = passage.get("book_id")
@@ -195,7 +195,7 @@ class HadithAuthenticityGrader:
             # Group by hadith number
             hadith_chains = defaultdict(list)
 
-            with open(esnad_file, "r", encoding="utf-8") as f:
+            with open(esnad_file, encoding="utf-8") as f:
                 for line in f:
                     try:
                         doc = json.loads(line)

@@ -142,7 +142,7 @@ echo [✓] Docker found
 echo.
 
 echo [2/5] Installing Python dependencies...
-pip install -e . --quiet
+poetry install --with rag --quiet
 if !errorlevel! neq 0 (
     echo [X] Installation failed
     pause
@@ -186,18 +186,22 @@ echo [1/3] Checking Docker services...
 call :check_docker
 echo.
 
-echo [2/3] Starting Backend API...
-start "Athar API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"
+echo [2/3] Starting Backend API on port 8002...
+start "Athar API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
 timeout /t 5 >nul
-echo [✓] API starting on port 8000
+echo [✓] API starting on port 8002
 echo.
 
 echo [3/3] Starting Frontend...
-cd frontend
-start "Athar Frontend" cmd /k "npm run dev"
-cd ..
-timeout /t 5 >nul
-echo [✓] Frontend starting on port 3000
+if exist "frontend\package.json" (
+    cd frontend
+    start "Athar Frontend" cmd /k "npm run dev"
+    cd ..
+    timeout /t 5 >nul
+    echo [✓] Frontend starting on port 3000
+) else (
+    echo [!] Frontend not found, skipping
+)
 echo.
 
 echo ============================================================
@@ -205,31 +209,35 @@ echo ✓ Application Starting!
 echo ============================================================
 echo.
 echo Services:
-echo   • API:        http://localhost:8000
-echo   • API Docs:   http://localhost:8000/docs
-echo   • Frontend:   http://localhost:3000
+echo   • API:        http://localhost:8002
+echo   • API Docs:   http://localhost:8002/docs
+echo   • Frontend:   http://localhost:3000 (if installed)
 echo.
 echo Opening API docs in 5 seconds...
 timeout /t 5 >nul
-start http://localhost:8000/docs
+start http://localhost:8002/docs
 echo.
 pause
 goto :eof
 
 :start_api
 echo.
-echo Starting Backend API only...
-start "Athar API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"
+echo Starting Backend API only on port 8002...
+start "Athar API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
 timeout /t 3 >nul
-start http://localhost:8000/docs
+start http://localhost:8002/docs
 goto :eof
 
 :start_frontend
 echo.
 echo Starting Frontend only...
-cd frontend
-start "Athar Frontend" cmd /k "npm run dev"
-cd ..
+if exist "frontend\package.json" (
+    cd frontend
+    start "Athar Frontend" cmd /k "npm run dev"
+    cd ..
+) else (
+    echo [!] Frontend not found at frontend\ directory
+)
 goto :eof
 
 :stop
@@ -274,7 +282,7 @@ goto :eof
 :test_unit
 echo.
 echo Running Python unit tests...
-pytest tests/ -v --tb=short
+poetry run pytest tests/ -v --tb=short
 pause
 goto :eof
 
@@ -383,13 +391,13 @@ goto :eof
 echo.
 echo 🔢 Generating Embeddings
 echo.
-echo This requires Qwen3-Embedding model (~1GB download first time)
+echo This requires embedding model (download first time)
 echo GPU recommended for fast processing
 echo.
 set /p count="Number of chunks to embed (default 1000): "
 if "!count!"=="" set count=1000
 
-python scripts/generate_embeddings.py --collection fiqh_passages --limit !count!
+poetry run python scripts/generate_embeddings.py --collection fiqh_passages --limit !count!
 pause
 goto :eof
 
@@ -397,7 +405,7 @@ goto :eof
 echo.
 echo 📖 Seeding Quran Database
 echo.
-python scripts/seed_quran_data.py --sample
+poetry run python scripts/seed_quran_data.py --sample
 pause
 goto :eof
 

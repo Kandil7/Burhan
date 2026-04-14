@@ -9,13 +9,14 @@ import sys
 from typing import Any
 
 import structlog
+
 from src.config.settings import settings
 
 
 def setup_logging() -> None:
     """
     Configure logging for the application.
-    
+
     Development: Human-readable colored output
     Production: Structured JSON for log aggregation
     """
@@ -25,7 +26,7 @@ def setup_logging() -> None:
         stream=sys.stdout,
         level=getattr(logging, settings.log_level),
     )
-    
+
     # Configure structlog
     structlog.configure(
         processors=[
@@ -34,10 +35,10 @@ def setup_logging() -> None:
             structlog.processors.add_log_level,
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
-            
+
             # Format output
             structlog.processors.TimeStamper(fmt="iso"),
-            
+
             # JSON in production, console in development
             structlog.processors.JSONRenderer() if settings.log_format == "json"
             else structlog.dev.ConsoleRenderer()
@@ -53,7 +54,7 @@ def setup_logging() -> None:
 def get_logger(*args: Any, **kwargs: Any) -> Any:
     """
     Get a logger instance.
-    
+
     Usage:
         logger = get_logger()
         logger.info("query.received", query_id="123", query="...")

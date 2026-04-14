@@ -69,9 +69,10 @@ class TestZakatCalculator:
     
     def test_zakat_below_nisab(self, calculator):
         """Test no zakat when wealth is below nisab."""
-        assets = ZakatAssets(cash=1000)
+        # Cash=500 is below silver nisab (535.50)
+        assets = ZakatAssets(cash=500)
         result = calculator.calculate(assets, debts=0, madhhab=Madhhab.GENERAL)
-        
+
         assert not result.is_zakatable
         assert result.zakat_amount == 0
     

@@ -15,15 +15,13 @@ Phase 4: Foundation for all RAG retrieval pipelines.
 
 import hashlib
 import os
-from typing import Optional
-from pathlib import Path
 
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoModel, AutoTokenizer
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 from src.knowledge.embedding_cache import EmbeddingCache
 
 logger = get_logger()
@@ -95,7 +93,6 @@ class EmbeddingModel:
         - Local caching if model already downloaded
         - HuggingFace token authentication
         """
-        import os
 
         if self._loaded:
             logger.info("embedding.already_loaded")
@@ -133,9 +130,11 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.load_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to load embedding model: {str(e)}")
+            raise EmbeddingModelError(
+                f"Failed to load embedding model: {str(e)}"
+            ) from e
 
-    async def encode(self, texts: list[str], batch_size: Optional[int] = None) -> np.ndarray:
+    async def encode(self, texts: list[str], batch_size: int | None = None) -> np.ndarray:
         """
         Encode multiple texts to embeddings.
 
@@ -173,7 +172,7 @@ class EmbeddingModel:
                     new_embeddings = await self._encode_batch([t for t, _ in uncached])
 
                     # Cache them
-                    for (text, text_hash), embedding in zip(uncached, new_embeddings):
+                    for (_text, text_hash), embedding in zip(uncached, new_embeddings, strict=False):
                         self.cache.set(text_hash, embedding)
 
                     embeddings_from_cache.extend(new_embeddings)
@@ -254,7 +253,9 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.encode_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to encode texts: {str(e)}")
+            raise EmbeddingModelError(
+                f"Failed to encode texts: {str(e)}"
+            ) from e
 
     def _split_by_cache(self, texts: list[str]) -> tuple[list, list]:
         """

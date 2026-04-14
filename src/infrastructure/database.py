@@ -6,15 +6,15 @@ for sync operations to avoid blocking the event loop.
 """
 
 import asyncio
-from typing import Optional, Generator
+from collections.abc import Generator
 from contextlib import contextmanager
 
-from sqlalchemy import create_engine, event, Index
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from sqlalchemy import Index, create_engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
@@ -93,7 +93,6 @@ class QuranModels:
     def create_tables():
         """Create all tables with indexes."""
         # Import here to avoid circular imports
-        from src.data.models.quran import Surah, Ayah, Translation, Tafsir
 
         Base.metadata.create_all(bind=sync_engine)
         logger.info("database.tables_created")
@@ -101,7 +100,7 @@ class QuranModels:
     @staticmethod
     def create_indexes():
         """Create performance indexes."""
-        from src.data.models.quran import Surah, Ayah, Translation, Tafsir
+        from src.data.models.quran import Ayah, Surah, Tafsir, Translation
 
         # Create indexes
         indexes = [
@@ -147,13 +146,14 @@ class AsyncDatabaseManager:
     """
 
     def __init__(self):
-        self._pool: Optional[object] = None
+        self._pool: object | None = None
 
     async def initialize(self):
         """Initialize async connection pool."""
         try:
-            import asyncpg
             from urllib.parse import urlparse
+
+            import asyncpg
 
             # Parse DATABASE_URL for connection parameters
             parsed = urlparse(settings.database_url)
@@ -203,7 +203,7 @@ class AsyncDatabaseManager:
 
 
 # Global async database instance
-_async_db: Optional[AsyncDatabaseManager] = None
+_async_db: AsyncDatabaseManager | None = None
 
 
 async def get_async_db() -> AsyncDatabaseManager:

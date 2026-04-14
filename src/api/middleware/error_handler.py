@@ -3,10 +3,12 @@ Error handling middleware for Athar Islamic QA system.
 
 Catches all exceptions and returns structured error responses.
 """
-import uuid
 import traceback
+import uuid
+
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
+
 from src.config.logging_config import get_logger
 
 logger = get_logger()
@@ -15,7 +17,7 @@ logger = get_logger()
 def _safe_error_str(e: Exception) -> str:
     """
     Get a safe string representation of an exception.
-    
+
     Handles ExceptionGroup and other complex exceptions that
     produce multi-line output with special characters.
     """
@@ -25,7 +27,7 @@ def _safe_error_str(e: Exception) -> str:
         if sub_exceptions:
             first = sub_exceptions[0]
             return f"{type(e).__name__}: {type(first).__name__}: {str(first)[:500]}"
-    
+
     # Get traceback summary instead of full str() for complex exceptions
     try:
         tb = traceback.format_exception_only(type(e), e)
@@ -35,7 +37,7 @@ def _safe_error_str(e: Exception) -> str:
     except Exception as e:
         logger.warning("error_handler.safe_str_failed", error=str(e))
         pass
-    
+
     # Fallback to type name only
     return f"{type(e).__name__}"
 

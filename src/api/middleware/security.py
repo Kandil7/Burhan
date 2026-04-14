@@ -7,18 +7,17 @@ Provides:
 - Input sanitization
 """
 
-from fastapi import Request, HTTPException, Depends
+import hashlib
+import time
+from collections import defaultdict
+
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response, JSONResponse
-from typing import Optional
-import time
-import hashlib
-from collections import defaultdict
-from datetime import datetime, timedelta
+from starlette.responses import JSONResponse
 
-from src.config.settings import settings
 from src.config.logging_config import get_logger
+from src.config.settings import settings
 
 logger = get_logger()
 
@@ -178,7 +177,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         "/api/v1/rag",
     ]
 
-    def __init__(self, app, api_key: Optional[str] = None):
+    def __init__(self, app, api_key: str | None = None):
         super().__init__(app)
         self.api_key = api_key or settings.secret_key
 
@@ -290,7 +289,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-async def verify_api_key(api_key: Optional[str] = Depends(api_key_header)) -> str:
+async def verify_api_key(api_key: str | None = Depends(api_key_header)) -> str:
     """Dependency to verify API key in routes."""
     from src.config.settings import settings
 

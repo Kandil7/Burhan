@@ -7,12 +7,10 @@ Detects special Islamic dates (Ramadan, Eid, Arafah, etc.).
 Based on Fanar-Sadiq architecture: Deterministic calculations with moon sighting disclaimer.
 """
 
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional
+from datetime import date, datetime
 
-from src.tools.base import BaseTool, ToolOutput
 from src.config.logging_config import get_logger
+from src.tools.base import BaseTool, ToolOutput
 
 logger = get_logger()
 
@@ -89,10 +87,10 @@ class HijriCalendarTool(BaseTool):
     async def execute(
         self,
         query: str = "",
-        gregorian_date: Optional[str] = None,
-        hijri_year: Optional[int] = None,
-        hijri_month: Optional[int] = None,
-        hijri_day: Optional[int] = None,
+        gregorian_date: str | None = None,
+        hijri_year: int | None = None,
+        hijri_month: int | None = None,
+        hijri_day: int | None = None,
         **kwargs,
     ) -> ToolOutput:
         """
