@@ -29,7 +29,7 @@ UNAVAILABLE = _Unavailable()
 # ── Compiled regexes ─────────────────────────────────────────────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _CARRIAGE_RE = re.compile(r"\r")
-
+_THINK_RE    = re.compile(r"<think>.*?</think>", re.DOTALL)
 # ── Schemas ───────────────────────────────────────────────────────────
 class RAGQueryRequest(BaseModel):
     query:    str        = Field(..., min_length=1, max_length=2000)
@@ -100,6 +100,7 @@ def _clean_content(text: str) -> str:
     text = _HTML_TAG_RE.sub("", text)
     text = _CARRIAGE_RE.sub("\n", text)
     return text.strip()
+
 def _strip_thinking(text: str) -> str:
     """
     Remove <think>…</think> reasoning blocks emitted by Qwen3.
@@ -248,26 +249,47 @@ async def simple_rag_query(
 ):
     _require_rag_available()
     start = time.time()
+    
+    # Debug: Print types
+    import sys
+    print(f"DEBUG: embedding_model type = {type(embedding_model).__name__}", file=sys.stderr)
+    print(f"DEBUG: vector_store type = {type(vector_store).__name__}", file=sys.stderr)
 
     # 1. Embed
     try:
+        print(f"DEBUG: Calling encode_query...", file=sys.stderr)
         query_embedding = await embedding_model.encode_query(request.query)
+        print(f"DEBUG: encode_query returned type = {type(query_embedding).__name__}", file=sys.stderr)
+        logger.info("rag.simple_encode_start", 
+                     query=request.query[:50],
+                     model_type=type(embedding_model).__name__)
+        logger.info("rag.simple_encode_success", 
+                     embedding_shape=query_embedding.shape if hasattr(query_embedding, 'shape') else 'unknown',
+                     embedding_type=type(query_embedding).__name__)
     except Exception as e:
         logger.error("rag.simple_encode_error", error=str(e), exc_info=True)
-        raise HTTPException(503, detail="Failed to encode query.") from e
+        raise HTTPException(503, detail=f"Failed to encode query: {str(e)}") from e
 
     # 2. Search
     try:
+        logger.info("rag.simple_search_start", 
+                     collection=request.collection,
+                     top_k=request.top_k,
+                     embedding_shape=query_embedding.shape if hasattr(query_embedding, 'shape') else 'unknown')
         results = await vector_store.search(
             collection=request.collection,
             query_embedding=query_embedding,
             top_k=request.top_k,
             filters=None,
         )
+        logger.info("rag.simple_search_success", results_count=len(results))
     except Exception as e:
-        logger.error("rag.simple_search_error", collection=request.collection,
-                     error=str(e), exc_info=True)
-        raise HTTPException(503, detail="Vector store search failed.") from e
+        logger.error("rag.simple_search_error", 
+                     collection=request.collection,
+                     error=str(e), 
+                     error_type=type(e).__name__,
+                     exc_info=True)
+        raise HTTPException(503, detail=f"Vector store search failed: {str(e)}") from e
 
     if not results:
         return SimpleRAGResponse(

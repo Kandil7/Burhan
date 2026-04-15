@@ -90,6 +90,13 @@ class Settings(BaseSettings):
     embedding_dimension: int = 1024
 
     # ==========================================
+    # RAG Configuration
+    # ==========================================
+    rag_temperature: float = 0.1
+    rag_max_tokens: int = 2048
+    rag_top_k: int = 10
+
+    # ==========================================
     # Routing
     # ==========================================
     router_confidence_threshold: float = 0.75

@@ -53,7 +53,7 @@ class EmbeddingModel:
     MODEL_NAME = "BAAI/bge-m3"
     DIMENSION = 1024
     MAX_LENGTH = 8192  # BGE-M3 supports up to 8192 tokens
-    BATCH_SIZE = 64    # Optimized for GPU batch processing
+    BATCH_SIZE = 64  # Optimized for GPU batch processing
 
     def __init__(self, cache_enabled: bool = True):
         """
@@ -113,9 +113,7 @@ class EmbeddingModel:
             dtype = torch.float16 if self.device == "cuda" else torch.float32
 
             # Load tokenizer with auth token
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.MODEL_NAME, trust_remote_code=True, token=token
-            )
+            self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, trust_remote_code=True, token=token)
 
             # Load model with auth token
             self.model = AutoModel.from_pretrained(
@@ -130,9 +128,7 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.load_error", error=str(e))
-            raise EmbeddingModelError(
-                f"Failed to load embedding model: {str(e)}"
-            ) from e
+            raise EmbeddingModelError(f"Failed to load embedding model: {str(e)}") from e
 
     async def encode(self, texts: list[str], batch_size: int | None = None) -> np.ndarray:
         """
@@ -157,12 +153,12 @@ class EmbeddingModel:
 
             # Check cache first
             if self.cache_enabled:
-                cached, uncached = self._split_by_cache(batch)
+                cached, uncached = await self._split_by_cache(batch)
                 embeddings_from_cache = []
 
                 if cached:
-                    # Get cached embeddings directly using stored hash
-                    cached_embeddings = [self.cache.get(text_hash) for _, text_hash in cached]
+                    # Get cached embeddings directly using stored hash (await async method)
+                    cached_embeddings = [await self.cache.get(text_hash) for _, text_hash in cached]
                     # Filter out any None values (failed cache lookups)
                     cached_embeddings = [e for e in cached_embeddings if e is not None]
                     embeddings_from_cache.extend(cached_embeddings)
@@ -171,9 +167,9 @@ class EmbeddingModel:
                     # Encode uncached texts
                     new_embeddings = await self._encode_batch([t for t, _ in uncached])
 
-                    # Cache them
+                    # Cache them (await async method)
                     for (_text, text_hash), embedding in zip(uncached, new_embeddings, strict=False):
-                        self.cache.set(text_hash, embedding)
+                        await self.cache.set(text_hash, embedding)
 
                     embeddings_from_cache.extend(new_embeddings)
 
@@ -253,11 +249,9 @@ class EmbeddingModel:
 
         except Exception as e:
             logger.error("embedding.encode_error", error=str(e))
-            raise EmbeddingModelError(
-                f"Failed to encode texts: {str(e)}"
-            ) from e
+            raise EmbeddingModelError(f"Failed to encode texts: {str(e)}") from e
 
-    def _split_by_cache(self, texts: list[str]) -> tuple[list, list]:
+    async def _split_by_cache(self, texts: list[str]) -> tuple[list, list]:
         """
         Split texts into cached and uncached lists.
 
@@ -269,8 +263,13 @@ class EmbeddingModel:
 
         for text in texts:
             text_hash = self._get_hash(text)
-            if self.cache and self.cache.get(text_hash) is not None:
-                cached.append((text, text_hash))
+            if self.cache:
+                # Check cache asynchronously
+                cached_emb = await self.cache.get(text_hash)
+                if cached_emb is not None:
+                    cached.append((text, text_hash))
+                else:
+                    uncached.append((text, text_hash))
             else:
                 uncached.append((text, text_hash))
 

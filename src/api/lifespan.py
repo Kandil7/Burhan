@@ -30,11 +30,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ========================================
     # LLM Clients (always needed)
     # ========================================
-    from src.infrastructure.llm_clients import LLMClients
+    from src.infrastructure.llm_client import LLMClients
 
-    app.state.llm_clients = await LLMClients.create()
-    yield
-    await app.state.llm_clients.close()
+    llm_clients = await LLMClients.create()
+    app.state.llm_clients = llm_clients
+    # Also expose as llm_client for RAG routes (use .client property)
+    app.state.llm_client = llm_clients.client
+    logger.info("lifespan.llm.initialised")
 
     # ========================================
     # Chatbot Agent (always needed)
@@ -73,6 +75,42 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.info("lifespan.classifier.fallback.hybrid")
 
     # ========================================
+    # Vector Store & Embedding Model (for RAG)
+    # ========================================
+    try:
+        from src.knowledge.embedding_model import EmbeddingModel
+        from src.knowledge.vector_store import VectorStore
+
+        embedding_model = EmbeddingModel(cache_enabled=True)
+        await embedding_model.load_model()
+        app.state.embedding_model = embedding_model
+        logger.info("lifespan.embedding.initialised")
+
+        vector_store = VectorStore()
+        await vector_store.initialize()
+        app.state.vector_store = vector_store
+        logger.info("lifespan.vector_store.initialised")
+    except Exception as e:
+        logger.warning("lifespan.rag_init_failed", error=str(e))
+        app.state.embedding_model = None
+        app.state.vector_store = None
+
+    # ========================================
+    # RAG Agents (Fiqh & General Islamic)
+    # ========================================
+    try:
+        from src.agents.fiqh_agent import FiqhAgent
+        from src.agents.general_islamic_agent import GeneralIslamicAgent
+
+        app.state.fiqh_agent = FiqhAgent()
+        app.state.general_agent = GeneralIslamicAgent()
+        logger.info("lifespan.rag_agents.initialised")
+    except Exception as e:
+        logger.warning("lifespan.rag_agents_failed", error=str(e))
+        app.state.fiqh_agent = None
+        app.state.general_agent = None
+
+    # ========================================
     # Agent Registry (always needed)
     # ========================================
     from src.core.registry import get_registry
@@ -90,8 +128,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ========================================
     logger.info("lifespan.shutdown.begin")
 
+    # Close LLM clients
+    if hasattr(app.state, "llm_clients"):
+        await app.state.llm_clients.close()
+
     # Close classifier if it has cleanup method
-    if hasattr(app.state.classifier, "close"):
+    if hasattr(app.state, "classifier") and hasattr(app.state.classifier, "close"):
         await app.state.classifier.close()
 
     logger.info("lifespan.shutdown.complete")
