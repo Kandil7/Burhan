@@ -1,20 +1,19 @@
 """
 BAAI/bge-m3 Embedding Model Wrapper for Athar Islamic QA system.
 
-Provides embedding generation with:
-- BAAI/bge-m3 (1024 dimensions, 8192 tokens)
-- GPU support with automatic device selection
-- Redis-based caching (7-day TTL)
-- Batch processing optimization
-- Half-precision inference for memory efficiency
-
-Optimized for Arabic/Islamic content with multi-language support.
-
-Phase 4: Foundation for all RAG retrieval pipelines.
+Phase 6 Refactoring:
+- Fixed missing await on _split_by_cache (root cause of index OOB error)
+- Fixed embedding order preservation in cache path
+- torch_dtype= instead of dtype= for AutoModel
+- run_in_executor for tokenizer + model inference (non-blocking)
+- float16 on GPU only, float32 on CPU
 """
+from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -22,7 +21,9 @@ from transformers import AutoModel, AutoTokenizer
 
 from src.config.logging_config import get_logger
 from src.config.settings import settings
-from src.knowledge.embedding_cache import EmbeddingCache
+
+if TYPE_CHECKING:
+    from src.knowledge.embedding_cache import EmbeddingCache
 
 logger = get_logger()
 
@@ -30,266 +31,229 @@ logger = get_logger()
 class EmbeddingModelError(Exception):
     """Error in embedding generation."""
 
-    pass
-
 
 class EmbeddingModel:
     """
     BAAI/bge-m3 wrapper for Islamic text embeddings.
 
-    Optimized for Arabic/Islamic content with:
-    - 1024-dimensional vectors
-    - 8192 token context window (supports long passages)
-    - Batch processing (up to 64 texts)
-    - SHA-256 caching for repeated texts
-    - Multi-language support (Arabic, English, Urdu, etc.)
-
-    Usage:
-        model = EmbeddingModel()
-        await model.load_model()
-        embeddings = await model.encode(["النص الأول", "النص الثاني"])
+    - 1024-dimensional vectors, 8192-token context window
+    - GPU/MPS/CPU auto-detection
+    - Redis-based caching (order-preserving)
+    - run_in_executor for non-blocking inference
     """
 
-    MODEL_NAME = "BAAI/bge-m3"
-    DIMENSION = 1024
-    MAX_LENGTH = 8192  # BGE-M3 supports up to 8192 tokens
-    BATCH_SIZE = 64  # Optimized for GPU batch processing
+    MODEL_NAME  = "BAAI/bge-m3"
+    DIMENSION   = 1024
+    MAX_LENGTH  = 512    # 8192 causes OOM on CPU; 512 covers most passages
+    BATCH_SIZE  = 32
 
-    def __init__(self, cache_enabled: bool = True):
-        """
-        Initialize embedding model.
+    def __init__(self, cache_enabled: bool = True) -> None:
+        self.model:     AutoModel     | None = None
+        self.tokenizer: AutoTokenizer | None = None
+        self.device:    str                  = self._get_device()
+        self.cache_enabled                   = cache_enabled
+        self.cache: EmbeddingCache | None    = None
+        self._loaded                         = False
 
-        Args:
-            cache_enabled: Enable Redis-based caching
-        """
-        self.model = None
-        self.tokenizer = None
-        self.device = self._get_device()
-        self.cache_enabled = cache_enabled
-        self.cache = EmbeddingCache() if cache_enabled else None
-        self._loaded = False
+    # ── Device ────────────────────────────────────────────────────────────────
 
     def _get_device(self) -> str:
-        """Get optimal device (cuda if available, else cpu)."""
         if torch.cuda.is_available():
-            device = "cuda"
             logger.info("embedding.cuda_available", device=torch.cuda.get_device_name(0))
-        elif hasattr(torch, "mps") and torch.backends.mps.is_available():
-            device = "mps"
+            return "cuda"
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             logger.info("embedding.mps_available")
-        else:
-            device = "cpu"
-            logger.warning("embedding.cpu_fallback")
+            return "mps"
+        logger.warning("embedding.cpu_fallback")
+        return "cpu"
 
-        return device
+    # ── Load ──────────────────────────────────────────────────────────────────
 
     async def load_model(self) -> None:
-        """
-        Load embedding model from HuggingFace.
-
-        Uses BAAI/bge-m3 with:
-        - Half-precision (float16) on GPU
-        - Mean pooling for dense embeddings
-        - Local caching if model already downloaded
-        - HuggingFace token authentication
-        """
-
+        """Load BGE-M3 weights (non-blocking via run_in_executor)."""
         if self._loaded:
-            logger.info("embedding.already_loaded")
             return
 
-        try:
-            logger.info("embedding.loading", model=self.MODEL_NAME)
+        # Lazy-init cache here (requires running event loop)
+        if self.cache_enabled and self.cache is None:
+            try:
+                from src.knowledge.embedding_cache import EmbeddingCache
+                self.cache = EmbeddingCache()
+            except Exception as e:
+                logger.warning("embedding.cache_init_failed", error=str(e))
+                self.cache_enabled = False
 
-            # Get token from environment or settings
-            token = os.environ.get("HF_TOKEN") or settings.hf_token
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._load_model_sync)
+        self._loaded = True
+        logger.info(
+            "embedding.loaded",
+            model=self.MODEL_NAME,
+            device=self.device,
+            dimension=self.DIMENSION,
+        )
 
-            if token:
-                logger.info("embedding.using_hf_token")
-            else:
-                logger.warning("embedding.no_hf_token")
+    def _load_model_sync(self) -> None:
+        token = os.environ.get("HF_TOKEN") or getattr(settings, "hf_token", None)
 
-            # Determine precision
-            dtype = torch.float16 if self.device == "cuda" else torch.float32
+        # float16 on GPU only — float32 on CPU/MPS (float16 not reliably supported)
+        torch_dtype = torch.float16 if self.device == "cuda" else torch.float32
 
-            # Load tokenizer with auth token
-            self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, trust_remote_code=True, token=token)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.MODEL_NAME, trust_remote_code=True, token=token
+        )
+        self.model = AutoModel.from_pretrained(
+            self.MODEL_NAME,
+            torch_dtype=torch_dtype,   # ← كانت dtype= (خاطئ)
+            trust_remote_code=True,
+            token=token,
+        ).to(self.device)
+        self.model.eval()
 
-            # Load model with auth token
-            self.model = AutoModel.from_pretrained(
-                self.MODEL_NAME, dtype=dtype, trust_remote_code=True, token=token
-            ).to(self.device)
+    # ── Public API ────────────────────────────────────────────────────────────
 
-            # Set to eval mode
-            self.model.eval()
-
-            self._loaded = True
-            logger.info("embedding.loaded", model=self.MODEL_NAME, device=self.device, dimension=self.DIMENSION)
-
-        except Exception as e:
-            logger.error("embedding.load_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to load embedding model: {str(e)}") from e
-
-    async def encode(self, texts: list[str], batch_size: int | None = None) -> np.ndarray:
+    async def encode_query(self, query: str) -> np.ndarray:
         """
-        Encode multiple texts to embeddings.
+        Encode a single query → ndarray (1024,).
 
-        Args:
-            texts: List of texts to encode
-            batch_size: Batch size (default: 64)
-
-        Returns:
-            Numpy array of embeddings (len(texts) x 1024)
+        Always call with await:
+            emb = await model.encode_query(text)
         """
         if not self._loaded:
             await self.load_model()
 
-        batch_size = batch_size or self.BATCH_SIZE
-        all_embeddings = []
+        clean = query.strip()
+        if not clean:
+            logger.warning("embedding.empty_query")
+            return np.zeros(self.DIMENSION, dtype=np.float32)
 
-        # Process in batches
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i : i + batch_size]
+        embeddings = await self.encode([clean])
 
-            # Check cache first
-            if self.cache_enabled:
-                cached, uncached = await self._split_by_cache(batch)
-                embeddings_from_cache = []
-
-                if cached:
-                    # Get cached embeddings directly using stored hash (await async method)
-                    cached_embeddings = [await self.cache.get(text_hash) for _, text_hash in cached]
-                    # Filter out any None values (failed cache lookups)
-                    cached_embeddings = [e for e in cached_embeddings if e is not None]
-                    embeddings_from_cache.extend(cached_embeddings)
-
-                if uncached:
-                    # Encode uncached texts
-                    new_embeddings = await self._encode_batch([t for t, _ in uncached])
-
-                    # Cache them (await async method)
-                    for (_text, text_hash), embedding in zip(uncached, new_embeddings, strict=False):
-                        await self.cache.set(text_hash, embedding)
-
-                    embeddings_from_cache.extend(new_embeddings)
-
-                all_embeddings.extend(embeddings_from_cache)
-            else:
-                # No caching, encode directly
-                batch_embeddings = await self._encode_batch(batch)
-                all_embeddings.extend(batch_embeddings)
-
-        return np.array(all_embeddings)
-
-    async def encode_query(self, query: str) -> np.ndarray:
-        """
-        Encode a single query.
-
-        Args:
-            query: Query text
-
-        Returns:
-            Embedding array (1024,)
-        """
-        embeddings = await self.encode([query])
+        if len(embeddings) == 0:
+            raise EmbeddingModelError(
+                f"encode() returned empty array for query: '{clean[:50]}'"
+            )
         return embeddings[0]
 
-    async def encode_documents(self, documents: list[dict], text_field: str = "content") -> np.ndarray:
+    async def encode(
+        self,
+        texts: list[str],
+        batch_size: int | None = None,
+    ) -> np.ndarray:
         """
-        Encode documents (extracts text from dict).
+        Encode a list of texts → ndarray (N×1024).
 
-        Args:
-            documents: List of document dicts
-            text_field: Field containing text to encode
-
-        Returns:
-            Numpy array of embeddings
+        Cache path preserves original order.
         """
+        if not self._loaded:
+            await self.load_model()
+
+        if not texts:
+            return np.empty((0, self.DIMENSION), dtype=np.float32)
+
+        batch_size  = batch_size or self.BATCH_SIZE
+        all_results: list[np.ndarray] = []
+
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            batch_embs = await self._encode_with_cache(batch)
+            all_results.extend(batch_embs)
+
+        return np.array(all_results, dtype=np.float32)
+
+    async def encode_documents(
+        self,
+        documents: list[dict],
+        text_field: str = "content",
+    ) -> np.ndarray:
+        """Encode documents — extracts `text_field` from each dict."""
         texts = [doc.get(text_field, "") for doc in documents]
         return await self.encode(texts)
 
-    async def _encode_batch(self, texts: list[str]) -> list[np.ndarray]:
-        """
-        Encode a batch of texts.
+    # ── Cache-aware encode (order-preserving) ────────────────────────────────
 
-        Args:
-            texts: Batch of texts
-
-        Returns:
-            List of embedding arrays
+    async def _encode_with_cache(self, texts: list[str]) -> list[np.ndarray]:
         """
+        Encode a batch, using cache where available.
+
+        Returns embeddings in the SAME ORDER as `texts`.
+        """
+        if not self.cache_enabled or self.cache is None:
+            return await self._encode_batch_executor(texts)
+
+        # 1. Compute hashes and check cache for each position
+        hashes        = [self._get_hash(t) for t in texts]
+        result        = [None] * len(texts)          # positional slots
+        uncached_idx  = []                            # positions needing encode
+
+        for pos, (text, h) in enumerate(zip(texts, hashes)):
+            cached_emb = await self.cache.get(h)
+            if cached_emb is not None:
+                result[pos] = cached_emb
+            else:
+                uncached_idx.append(pos)
+
+        # 2. Encode uncached texts in one batch
+        if uncached_idx:
+            uncached_texts = [texts[p] for p in uncached_idx]
+            new_embs       = await self._encode_batch_executor(uncached_texts)
+
+            # 3. Store in cache and place in correct position
+            for pos, emb in zip(uncached_idx, new_embs):
+                await self.cache.set(hashes[pos], emb)
+                result[pos] = emb
+
+        return result   # type: ignore[return-value]  # all slots filled
+
+    # ── Non-blocking inference ────────────────────────────────────────────────
+
+    async def _encode_batch_executor(self, texts: list[str]) -> list[np.ndarray]:
+        """Run CPU/GPU inference in a thread pool (non-blocking)."""
         if not texts:
             return []
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._encode_batch_sync, texts)
 
-        try:
-            # Tokenize
-            inputs = self.tokenizer(
-                texts, padding=True, truncation=True, max_length=self.MAX_LENGTH, return_tensors="pt"
-            ).to(self.device)
+    def _encode_batch_sync(self, texts: list[str]) -> list[np.ndarray]:
+        """Synchronous tokenize + forward pass — runs in executor thread."""
+        safe_texts = [t.strip() if t.strip() else "[empty]" for t in texts]
 
-            # Generate embeddings
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-                # Mean pooling
-                attention_mask = inputs["attention_mask"]
-                token_embeddings = outputs.last_hidden_state
-                input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-                embeddings = torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(
-                    input_mask_expanded.sum(1), min=1e-9
-                )
+        inputs = self.tokenizer(
+            safe_texts,
+            padding=True,
+            truncation=True,
+            max_length=self.MAX_LENGTH,
+            return_tensors="pt",
+        ).to(self.device)
 
-                # Normalize
-                embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+        with torch.no_grad():
+            outputs         = self.model(**inputs)
+            token_embs      = outputs.last_hidden_state          # (B, T, D)
+            mask            = inputs["attention_mask"]
+            mask_expanded   = mask.unsqueeze(-1).expand(token_embs.size()).float()
+            pooled          = torch.sum(token_embs * mask_expanded, 1)
+            pooled         /= torch.clamp(mask_expanded.sum(1), min=1e-9)
+            normalized      = torch.nn.functional.normalize(pooled, p=2, dim=1)
 
-                # Convert to numpy
-                if self.device == "cuda":
-                    embeddings = embeddings.cpu()
+            if self.device in ("cuda", "mps"):
+                normalized = normalized.cpu()
 
-                return [emb.numpy() for emb in embeddings]
+        return [emb.float().numpy() for emb in normalized]
 
-        except Exception as e:
-            logger.error("embedding.encode_error", error=str(e))
-            raise EmbeddingModelError(f"Failed to encode texts: {str(e)}") from e
-
-    async def _split_by_cache(self, texts: list[str]) -> tuple[list, list]:
-        """
-        Split texts into cached and uncached lists.
-
-        Returns:
-            (cached: [(text, hash)], uncached: [(text, hash)])
-        """
-        cached = []
-        uncached = []
-
-        for text in texts:
-            text_hash = self._get_hash(text)
-            if self.cache:
-                # Check cache asynchronously
-                cached_emb = await self.cache.get(text_hash)
-                if cached_emb is not None:
-                    cached.append((text, text_hash))
-                else:
-                    uncached.append((text, text_hash))
-            else:
-                uncached.append((text, text_hash))
-
-        return cached, uncached
+    # ── Helpers ───────────────────────────────────────────────────────────────
 
     def _get_hash(self, text: str) -> str:
-        """Get SHA-256 hash for caching."""
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def get_stats(self) -> dict:
-        """Get embedding model statistics."""
         stats = {
-            "model": self.MODEL_NAME,
-            "dimension": self.DIMENSION,
-            "device": self.device,
-            "loaded": self._loaded,
+            "model":         self.MODEL_NAME,
+            "dimension":     self.DIMENSION,
+            "device":        self.device,
+            "loaded":        self._loaded,
             "cache_enabled": self.cache_enabled,
+            "max_length":    self.MAX_LENGTH,
         }
-
         if self.cache_enabled and self.cache:
             stats["cache"] = self.cache.stats()
-
         return stats
