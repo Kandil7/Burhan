@@ -24,7 +24,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         description=_API_DESCRIPTION,
-        version=settings.app_version,  # FIX 2: مصدر واحد للـ version
+        version=settings.app_version,  
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -35,18 +35,18 @@ def create_app() -> FastAPI:
     # ── Middleware (LIFO: آخر مُضاف = أول يُنفَّذ) ───────────────────────
     app.add_middleware(SecurityHeadersMiddleware)
 
-    if settings.rate_limit_enabled:  # FIX 4: من settings
+    if settings.rate_limit_enabled:  
         app.add_middleware(
             RateLimitMiddleware,
-            requests_per_minute=settings.rate_limit_rpm,  # FIX 4
+            requests_per_minute=settings.rate_limit_rpm,  
         )
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=settings.cors_methods,  # FIX 7: من settings
-        allow_headers=settings.cors_headers,  # FIX 7: من settings
+        allow_methods=settings.cors_methods,  
+        allow_headers=settings.cors_headers,  
     )
 
     app.middleware("http")(error_handler_middleware)

@@ -5,6 +5,7 @@ General Islamic Knowledge RAG Agent for Athar Islamic QA system.
 يوفر فقط: COLLECTION, SYSTEM_PROMPT, USER_PROMPT, وخصائص التكوين
 يقوم BaseRAGAgent بكل عمل الاسترجاع والتوليد تلقائياً
 """
+from __future__ import annotations
 
 from src.agents.base_rag_agent import BaseRAGAgent
 
@@ -13,33 +14,44 @@ class GeneralIslamicAgent(BaseRAGAgent):
     """
     وكيل المعرفة الإسلامية العامة - إجابات تعليمية بأسلوب واضح.
 
-    temperature: 0.3 (أكثر conversational للتعليم)
     """
 
-    name = "general_islamic_agent"
+    name = "general_islamic"          # حُذفت "_agent" لتطابق RouterAgent
 
-    # === التكوين الأساسي (مطلوب من BaseRAGAgent) ===
-    COLLECTION: str = "general_islamic"
-    TOP_K_RETRIEVAL: int = 10
-    TOP_K_RERANK: int = 5
-    TEMPERATURE: float = 0.3
-    MAX_TOKENS: int = 1536
+    # ── التكوين الأساسي ────────────────────────────────────────────────────
+    COLLECTION:        str   = "general_islamic"
+    TOP_K_RETRIEVAL:   int   = 10
+    TOP_K_RERANK:      int   = 5
+    SCORE_THRESHOLD: float = 0.35 
+    TEMPERATURE:       float = 0.3
+    MAX_TOKENS:        int   = 1536
 
-    # === نصوص التوليد (مطلوب من BaseRAGAgent) ===
-    SYSTEM_PROMPT: str = """أنت معلم للمعرفة الإسلامية.
+    # ── Fix #1: أجبر على وجود embedding_model عند البناء ─────────────────
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        if getattr(self, "embedding_model", None) is None:
+            raise ValueError(
+                f"{self.__class__.__name__} requires 'embedding_model' — "
+                "pass it to the constructor or register it in the DI container."
+            )
 
-المهم:
-- قدم إجابات تعليمية بأسلوب واضح ومفهوم
-- استخدم المصادر المقدمة فقط
-- أضف السياق التاريخي عند الاقتضاء
-- استخدم المراجع [C1]، [C2] لكل مصدر
-- اعترف إذا لم تتوفر معلومات كافية"""
+    # ── نصوص التوليد ──────────────────────────────────────────────────────
+    SYSTEM_PROMPT: str = """أنت معلم إسلامي متخصص يُجيب بأسلوب تعليمي واضح.
+
+التعليمات:
+- استند **حصراً** إلى المصادر المُقدَّمة، لا تستحضر معلومات خارجها.
+- استخدم مراجع المصادر [C1]، [C2]... بعد كل جملة مستمدة منها.
+- أضف السياق التاريخي أو الفقهي عند الاقتضاء.
+- إذا تعارضت المصادر، اذكر الخلاف بأمانة.
+- إذا كانت المصادر المُقدَّمة غير كافية للإجابة، قل:
+  "لم أجد في المصادر المتاحة ما يُجيب على هذا السؤال بدقة."
+  ولا تُكمل بمعلومات من خارجها."""
 
     USER_PROMPT: str = """السؤال: {query}
 
 اللغة المطلوبة: {language}
 
-المصادر:
+المصادر المتاحة ({num_passages} مقطع):
 {passages}
 
-قدم إجابة تعليمية مبنية على المصادر أعلاه."""
+قدم إجابة تعليمية مُنظَّمة مبنية على المصادر أعلاه."""
