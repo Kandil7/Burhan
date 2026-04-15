@@ -1,10 +1,10 @@
 """
 Base Agent abstraction for Athar Islamic QA system.
-
-All agents (Fiqh, Quran, General Islamic, etc.) inherit from BaseAgent
-and implement the execute() method with standardized input/output.
 """
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -12,106 +12,93 @@ from pydantic import BaseModel, Field
 class Citation(BaseModel):
     """
     Normalized citation reference.
-
-    Every agent returns citations in this standardized format,
-    which are then normalized to [C1], [C2], etc. for display.
+    Returned by every agent — mapped to CitationResponse at the API layer.
     """
-    id: str = Field(description="Citation ID: C1, C2, C3, etc.")
-    type: str = Field(description="Type: quran, hadith, fatwa, fiqh_book, dua")
-    source: str = Field(description="Normalized source name")
-    reference: str = Field(description="Specific reference (book, chapter, number)")
-    url: str | None = Field(default=None, description="External URL (quran.com, sunnah.com)")
-    text_excerpt: str | None = Field(default=None, description="Quoted passage")
+    id:           str      = Field(description="Citation ID: C1, C2, C3, …")
+    type:         str      = Field(description="quran | hadith | fatwa | fiqh_book | dua")
+    source:       str      = Field(description="Normalized source name")
+    reference:    str      = Field(description="Book / chapter / hadith number")
+    url:          str | None = Field(default=None,  description="External URL")
+    text_excerpt: str | None = Field(default=None,  description="Quoted passage (≤ 300 chars)")
+
+    @classmethod
+    def from_passage(cls, passage: dict, index: int) -> "Citation":
+        """
+        Build a Citation directly from a retrieved passage dict.
+
+        Centralises the mapping so BaseRAGAgent and any future agent
+        don't duplicate the field logic.
+        """
+        meta = passage.get("metadata", {})
+        author      = meta.get("author", "")
+        death_year  = meta.get("author_death", "")
+        page        = meta.get("page_number", "")
+
+        ref_parts = filter(None, [
+            author,
+            f"ت {death_year} هـ" if death_year else "",
+            f"ص{page}"           if page       else "",
+        ])
+
+        return cls(
+            id=f"C{index}",
+            type="fiqh_book",
+            source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
+            reference=" — ".join(ref_parts),
+            url=None,
+            text_excerpt=passage.get("content", "")[:300] or None,
+        )
 
 
 class AgentInput(BaseModel):
-    """
-    Standardized input for all agents.
-
-    Contains query text, language preference, optional context,
-    and metadata from the intent classifier.
-    """
-    query: str = Field(description="User's question")
-    language: str = Field(default="ar", description="Response language: ar or en")
-    context: dict | None = Field(
-        default=None,
-        description="Conversation context (previous queries, user preferences)"
-    )
-    retrieved_passages: list | None = Field(
-        default=None,
-        description="Retrieved documents from RAG (if applicable)"
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Additional metadata (location, madhhab, session_id)"
-    )
+    """Standardized input for all agents."""
+    query:              str        = Field(description="User's question")
+    language:           str        = Field(default="ar", description="ar | en")
+    context:            dict | None = Field(default=None)
+    retrieved_passages: list | None = Field(default=None)
+    metadata:           dict       = Field(default_factory=dict)
 
 
 class AgentOutput(BaseModel):
-    """
-    Standardized output for all agents.
-
-    Contains answer, citations, and metadata for response assembly.
-    """
-    answer: str = Field(description="Agent's answer text")
-    citations: list[Citation] = Field(
-        default_factory=list,
-        description="List of citations with structured references"
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Metadata (agent name, processing time, madhhab, etc.)"
-    )
-    confidence: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=1.0,
-        description="Confidence in the answer (0.0-1.0)"
-    )
-    requires_human_review: bool = Field(
-        default=False,
-        description="Flag if this response needs scholarly review"
-    )
+    """Standardized output for all agents."""
+    answer:               str           = Field(description="Agent answer text")
+    citations:            list[Citation] = Field(default_factory=list)
+    metadata:             dict           = Field(default_factory=dict)
+    confidence:           float          = Field(default=1.0, ge=0.0, le=1.0)
+    requires_human_review: bool          = Field(default=False)
 
 
 class BaseAgent(ABC):
     """
     Abstract base class for all agents.
 
-    Agents handle queries requiring knowledge retrieval, reasoning,
-    or text generation. Examples: FiqhAgent, QuranAgent, GeneralIslamicAgent.
-
     Usage:
         class FiqhAgent(BaseAgent):
             name = "fiqh_agent"
 
             async def execute(self, input: AgentInput) -> AgentOutput:
-                # Implementation
                 return AgentOutput(answer="...", citations=[...])
-
-        agent = FiqhAgent()
-        result = await agent.execute(AgentInput(query="ما حكم الصلاة؟"))
     """
 
-    name: str = "base_agent"
+    # ClassVar — excluded from Pydantic field scanning
+    name: ClassVar[str] = "base_agent"
 
     @abstractmethod
     async def execute(self, input: AgentInput) -> AgentOutput:
+        """Execute agent logic and return standardized result."""
+        ...
+
+    async def __call__(self, input: AgentInput | None = None, **kwargs) -> AgentOutput:
         """
-        Execute agent logic and return result.
+        Allow agent to be called directly.
 
-        Args:
-            input: Standardized agent input with query and metadata
-
-        Returns:
-            AgentOutput with answer, citations, and metadata
+        Accepts either a pre-built AgentInput or raw kwargs:
+            await agent(AgentInput(query="…"))
+            await agent(query="…", language="ar")
         """
-        pass
-
-    async def __call__(self, **kwargs) -> AgentOutput:
-        """Allow agent to be called directly like a function."""
-        input_data = AgentInput(**kwargs)
-        return await self.execute(input_data)
+        if input is None:
+            input = AgentInput(**kwargs)
+        return await self.execute(input)
 
     def __repr__(self) -> str:
         return f"<Agent: {self.name}>"
