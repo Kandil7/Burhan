@@ -9,10 +9,8 @@ Creates and configures the FastAPI application with:
 - Route registration
 - OpenAPI documentation
 
-Phase 5: Security improvements and performance optimizations.
+Phase 8: Updated to use new lifespan module with classifier factory.
 """
-
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,55 +26,15 @@ from src.api.routes.classification import router as classification_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.rag import router as rag_router
 from src.api.routes.tools import router as tools_router
+from src.api.lifespan import lifespan
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
 
 logger = get_logger()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Application lifespan handler.
-
-    Runs on startup and shutdown.
-    Phase 5: Includes security and performance optimizations.
-    """
-    # Startup
-    setup_logging()
-    logger.info(
-        "app.startup",
-        app_name=settings.app_name,
-        version="0.5.0",
-        environment=settings.app_env,
-    )
-
-    # Initialize agent registry with all agents and tools
-    try:
-        from src.core.registry import initialize_registry
-
-        initialize_registry()
-        logger.info("app.registry_initialized")
-    except Exception as e:
-        logger.warning("app.registry_init_failed", error=str(e))
-
-    # Initialize classifier router for /classify endpoint
-    try:
-        from src.application.hybrid_classifier import HybridIntentClassifier
-        from src.application.router import RouterAgent
-
-        classifier = HybridIntentClassifier(low_conf_threshold=0.55)
-        app.state.router = RouterAgent(classifier=classifier)
-        logger.info("app.classifier_initialized")
-    except Exception as e:
-        logger.warning("app.classifier_init_failed", error=str(e))
-
-    yield
-
-    # Shutdown - close classifier if initialized
-    if hasattr(app.state, "router") and app.state.router:
-        await app.state.router.close()
-    logger.info("app.shutdown")
+# Setup logging on module import (before app creation)
+setup_logging()
 
 
 def create_app() -> FastAPI:
