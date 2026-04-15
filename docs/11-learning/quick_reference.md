@@ -5,9 +5,39 @@
 نظام إجابة على الأسئلة الإسلامية يستخدم:
 - **13 وكيل متخصص** (Agents)
 - **5 أدوات حتمية** (Tools)
-- **16 نوع نية** (Intents)
+- **16 نوع نية** (Intents) + 4 فرعية للقرآن
+- **10 مستويات أولوية** (المرحلة 8)
 - **10 مجموعات متجهية** (Vector Collections)
 - **5.7 مليون وثيقة** جاهزة للـ RAG
+- **11.3 مليون** وثيقة لوكين
+- **42.6 GB** بيانات على HuggingFace
+
+---
+
+## 🎉 المرحلة 8: مصنف النية الهجين (15 أبريل 2026)
+
+الآن النظام يتضمن:
+
+```bash
+# جرب نقطة النهاية الجديدة
+POST /classify
+{
+  "query": "ما حكم صلاة الجمعة؟"
+}
+
+# النتيجة
+{
+  "result": {
+    "intent": "fiqh",
+    "confidence": 0.90,
+    "method": "keyword",
+    "requires_retrieval": true
+  },
+  "route": "fiqh_agent"
+}
+```
+
+**السرعة:** <50ms (بدلاً من ~500ms مع LLM)
 
 ---
 
@@ -15,7 +45,14 @@
 
 ```
 src/
-├── api/              → 18 endpoint (FastAPI)
+├── api/              → 20 endpoint (FastAPI) ← جديد: /classify
+├── application/     → طبقة التطبيق (المرحلة 8)
+│   ├── hybrid_classifier.py  ← مصنف النية الهجين
+│   ├── router.py             ← توجيه الوكيل
+│   └── interfaces.py         ← بروتوكولات
+├── domain/          ← تعريفات النطاق
+│   ├── intents.py            ← 16 نوع نية + أولويات
+│   └── models.py             ← ClassificationResult
 ├── config/           → إعدادات، intents، ثوابت
 ├── core/             → تصنيف النية، توجيه، اقتباسات
 ├── agents/           → 13 وكيل (6 منفذين)
@@ -28,34 +65,47 @@ src/
 
 ---
 
-## 🔑 أهم 10 ملفات
+## 🔑 أهم 15 ملف (محدث!)
 
 | الأولوية | الملف | الوصف |
 |----------|-------|-------|
 | 1 | `src/api/main.py` | نقطة الدخول |
 | 2 | `src/config/settings.py` | الإعدادات (37 متغير) |
 | 3 | `src/config/intents.py` | 16 نوع نية |
-| 4 | `src/core/router.py` | تصنيف النية (3-tier) |
-| 5 | `src/agents/base.py` | الفئات الأساسية |
-| 6 | `src/agents/fiqh_agent.py` | وكيل RAG كامل |
-| 7 | `src/knowledge/embedding_model.py` | BAAI/bge-m3 |
-| 8 | `src/knowledge/vector_store.py` | Qdrant |
-| 9 | `src/knowledge/hybrid_search.py` | Semantic + BM25 |
-| 10 | `src/quran/nl2sql.py` | لغة طبيعية → SQL |
+| 4 | `src/application/hybrid_classifier.py` | **جديد!** مصنف النية الهجين |
+| 5 | `src/domain/intents.py` | **جديد!** 16 نوع نية مع أولويات |
+| 6 | `src/core/router.py` | تصنيف النية (3-tier) |
+| 7 | `src/agents/base.py` | الفئات الأساسية |
+| 8 | `src/agents/fiqh_agent.py` | وكيل RAG كامل |
+| 9 | `src/knowledge/embedding_model.py` | BAAI/bge-m3 |
+| 10 | `src/knowledge/vector_store.py` | Qdrant |
+| 11 | `src/knowledge/hybrid_search.py` | Semantic + BM25 |
+| 12 | `src/quran/nl2sql.py` | لغة طبيعية → SQL |
+| 13 | `src/api/routes/classification.py` | **جديد!** نقطة /classify |
+| 14 | `src/application/router.py` | **جديد!** توجيه الوكيل |
+| 15 | `src/tools/zakat_calculator.py` | حاسبة الزكاة |
 
 ---
 
-## 🔄 تدفق الاستعلام
+## 🔄 تدفق الاستعلام (محدث!)
 
 ```
 مستخدم يسأل: "ما حكم صلاة العيد؟"
     ↓
 POST /api/v1/query {"query": "..."}
     ↓
-HybridQueryClassifier (3-tier)
-    ├─ Tier 1: Keyword (0.92) ← سريع
-    ├─ Tier 2: LLM (0.75)     ← دقيق
-    └─ Tier 3: Embedding (0.60) ← fallback
+**HybridIntentClassifier (المرحلة 8)**
+    ├─ Keyword Match: "ما حكم" → fiqh (0.92) ← سريع!
+    ├─ Jaccard Fallback: (if keyword fails)
+    └─ Confidence Gating: if < 0.5 → ISLAMIC_KNOWLEDGE
+    ↓
+Priority Resolution: 10 levels (TAFSIR=10 down to ISLAMIC_KNOWLEDGE=1)
+    ↓
+Quran Sub-intent Detection (if quran):
+    ├─ VERSE_LOOKUP: "ما رقم سورة..."
+    ├─ ANALYTICS: "كم مرة ذكر..."
+    ├─ INTERPRETATION: "ما تفسير..."
+    └─ QUOTATION_VALIDATION: "هل صحيح..."
     ↓
 Intent: fiqh → FiqhAgent
     ↓
@@ -70,32 +120,45 @@ CitationNormalizer → [C1], [C2], [C3]
 QueryResponse {
     "answer": "صلاة العيد سنة مؤكدة...",
     "citations": [...],
-    "confidence": 0.89
+    "confidence": 0.89,
+    "intent": "fiqh"
 }
 ```
 
 ---
 
-## 📊 16 Intent
+## 📊 16 Intent + الأولويات (محدث!)
 
-| Intent | Agent/Tool | مثال |
-|--------|-----------|------|
-| fiqh | fiqh_agent | "ما حكم صلاة العيد؟" |
-| quran | quran_pipeline | "ما تفسير آية الكرسي؟" |
-| islamic_knowledge | general_islamic_agent | "ما فضل الصيام؟" |
-| greeting | chatbot_agent | "السلام عليكم" |
-| zakat | zakat_tool | "كيف أحسب الزكاة؟" |
-| inheritance | inheritance_tool | "كيف أقسم الميراث؟" |
-| dua | dua_tool | "دعاء السفر" |
-| hijri_calendar | hijri_tool | "متى يبدأ رمضان؟" |
-| prayer_times | prayer_times_tool | "متى صلاة الفجر؟" |
-| hadith | hadith_agent | "ما حكم الحديث هذا؟" |
-| tafsir | tafsir_agent | "ما تفسير هذه الآية؟" |
-| aqeedah | aqeedah_agent | "ما معنى التوحيد؟" |
-| seerah | seerah_agent | "متى ولد النبي؟" |
-| usul_fiqh | usul_fiqh_agent | "ما هي مصادر التشريع؟" |
-| islamic_history | islamic_history_agent | "متى كانت غزوة بدر؟" |
-| arabic_language | arabic_language_agent | "ما معنى هذه الكلمة؟" |
+| الأولوية | Intent | Agent/Tool | مثال |
+|----------|--------|-----------|------|
+| 10 | tafsir | general_islamic_agent | "ما تفسير آية كذا؟" |
+| 9 | quran | quran_pipeline | "آية عن كذا" |
+| 9 | hadith | hadith_agent | "حديث عن كذا" |
+| 8 | seerah | seerah_agent | "متى ولد النبي؟" |
+| 7 | islamic_history | islamic_history_agent | "متى كانت غزوة بدر؟" |
+| 6 | arabic_language | arabic_language_agent | "ما معنى هذه الكلمة؟" |
+| 5 | fiqh | fiqh_agent | "ما حكم صلاة العيد؟" |
+| 5 | aqeedah | aqeedah_agent | "ما معنى التوحيد؟" |
+| 4 | usul_fiqh | usul_fiqh_agent | "ما هي مصادر التشريع؟" |
+| 3 | spirituality | general_islamic_agent | "ما هي طريق التصوف؟" |
+| 2 | greeting | chatbot_agent | "السلام عليكم" |
+| 2 | dua | dua_tool | "دعاء السفر" |
+| 2 | hijri_calendar | hijri_tool | "متى يبدأ رمضان؟" |
+| 2 | prayer_times | prayer_times_tool | "متى صلاة الفجر؟" |
+| 2 | zakat | zakak_tool | "كيف أحسب الزكاة؟" |
+| 2 | inheritance | inheritance_tool | "كيف أقسم الميراث؟" |
+| 1 | islamic_knowledge | general_islamic_agent | (fallback) |
+
+---
+
+## 📊 Quran Sub-intents (جديد!)
+
+| النوع | الوصف | مثال |
+|-------|-------|------|
+| VERSE_LOOKUP | البحث عن آية | "ما رقم سورة الإخلاص؟" |
+| ANALYTICS | إحصاء القرآن | "كم مرة упомина اسم الله؟" |
+| INTERPRETATION | تفسير الآيات | "ما تفسير آية الكرسي؟" |
+| QUOTATION_VALIDATION | التحقق من الإقتباس | "هل صحيح قولهم...؟" |
 
 ---
 
@@ -117,12 +180,13 @@ QueryResponse {
 - **النموذج**: BAAI/bge-m3
 - **الأبعاد**: 1024
 - **الرموز**: 8192 token
-- **الجهاز**: CPU (يدعم CUDA)
+- **اللغات**: 100+
+- **الجهاز**: GPU (Colab T4) / CPU
 
 ### Vector Database
 - **النظام**: Qdrant
 - **المجموعات**: 10
-- **المتجهات**: 5.7 مليون
+- **المتجهات**: 5.7 مليون (حالياً على HuggingFace)
 - **الفهرسة**: HNSW
 - **المسافة**: Cosine
 
@@ -139,20 +203,25 @@ QueryResponse {
 
 ---
 
-## 📈 إحصائيات سريعة
+## 📈 إحصائيات سريعة (محدث!)
 
 | المقياس | القيمة |
 |---------|--------|
-| الأسطر البرمجية | ~14,200 |
-| الملفات | ~120 |
+| الأسطر البرمجية | ~15,500 |
+| الملفات | ~130 |
 | الاختبارات | 9 ملفات (~91% تغطية) |
-| الـ endpoints | 18 |
-| الوكلاء | 13 (6 منفذين) |
+| **الـ endpoints** | **20** (+2 من المرحلة 8) |
+| الوكلاء | 13 |
 | الأدوات | 5 |
-| المتجهات | 5.7 مليون |
+| أنواع النية | 16 + 4 فرعية للقرآن |
+| **مستويات الأولوية** | **10** |
+| لوكين Documents | 11,316,717 |
+| RAG Documents | 5,717,177 |
+| HuggingFace Data | 42.6 GB |
 | المستندات | 8,425 كتاب |
 | العلماء | 3,146 عالم |
 | دقة التصنيف | ~90% |
+| **سرعة /classify** | **<50ms** |
 | سرعة الاستجابة (RAG) | ~257ms |
 | سرعة الاستجابة (تحية) | <100ms |
 
@@ -188,10 +257,11 @@ make clean
 
 ---
 
-## 🌐 Endpoints رئيسية
+## 🌐 20 Endpoints (محدث!)
 
 | Endpoint | Method | الوصف |
 |----------|--------|-------|
+| **جديد** `/classify` | POST | تصنيف النية السريع (<50ms) |
 | `/api/v1/query` | POST | السؤال الرئيسي |
 | `/api/v1/tools/zakat` | POST | حساب الزكاة |
 | `/api/v1/tools/inheritance` | POST | تقسيم الميراث |
@@ -199,148 +269,76 @@ make clean
 | `/api/v1/tools/hijri` | POST | التاريخ الهجري |
 | `/api/v1/tools/duas` | POST | الأدعية |
 | `/api/v1/quran/surahs` | GET | قائمة السور |
+| `/api/v1/quran/surahs/{n}` | GET | تفاصيل سورة |
 | `/api/v1/quran/ayah/{s}:{a}` | GET | آية محددة |
-| `/api/v1/quran/search` | POST | البحث في القرآن |
-| `/api/v1/quran/validate` | POST | التحقق من الاقتباس |
-| `/api/v1/quran/analytics` | POST | تحليلات NL2SQL |
-| `/api/v1/rag/fiqh` | POST | RAG للفتاوى |
-| `/api/v1/rag/general` | POST | RAG عام |
+| `/api/v1/quran/search` | POST | بحث في القرآن |
+| `/api/v1/quran/validate` | POST | التحقق من إقتباس |
+| `/api/v1/quran/analytics` | POST | إحصائيات القرآن |
+| `/api/v1/quran/tafsir/{s}:{a}` | GET | تفسير آية |
+| `/api/v1/rag/fiqh` | POST | سؤال فقه |
+| `/api/v1/rag/general` | POST | سؤال عام |
+| `/api/v1/rag/stats` | GET | إحصائيات RAG |
 | `/health` | GET | فحص الصحة |
 | `/ready` | GET | فحص الجاهزية |
+| `/docs` | GET | توثيق Swagger |
 
 ---
 
-## 🔧 إعدادات مهمة
+## 🔑 الفرق بين /classify و /api/v1/query
 
-### البيئة (`.env`)
+| الميزة | `/classify` | `/api/v1/query` |
+|--------|-------------|-----------------|
+| السرعة | <50ms | ~500ms |
+| الطريقة | Keyword + Jaccard | LLM + RAG |
+| الاستخدام | تحديد نوع السؤال | إجابة كاملة |
+| الاسترجاع | لا | نعم |
+| النتيجة | intent + confidence | answer + sources |
+
+---
+
+## 💡 نصائح سريعة
+
+### استخدام /classify
 ```bash
-# LLM
-LLM_PROVIDER=groq
-GROQ_API_KEY=your-key
-GROQ_MODEL=qwen/qwen3-32b
+# سريع - للتصنيف فقط
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم الزكاة؟"}'
 
-# Embeddings
-EMBEDDING_MODEL=BAAI/bge-m3
-EMBEDDING_DIMENSION=1024
-
-# Database
-DATABASE_URL=postgresql+asyncpg://...
-REDIS_URL=redis://localhost:6379/0
-QDRANT_URL=http://localhost:6333
+# كامل - للإجابة
+curl -X POST http://localhost:8000/api/v1/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم الزكاة؟"}'
 ```
 
-### الثوابت
-```python
-# Retrieval
-TOP_K_FIQH = 15
-TOP_K_GENERAL = 10
-SEMANTIC_THRESHOLD = 0.15
-RRF_K = 60
-
-# Classification
-KEYWORD_CONFIDENCE = 0.92
-LLM_CONFIDENCE = 0.75
-EMBEDDING_CONFIDENCE = 0.60
-
-# LLM
-TEMPERATURE_FIQH = 0.1
-TEMPERATURE_GENERAL = 0.3
-TEMPERATURE_CHATBOT = 0.5
-```
+### اختيار Agent
+- **أسئلة دينية** → `/classify` أولاً ثم `/api/v1/query`
+- **حسابات** (زكاة، مواريث) → `/api/v1/tools/*` مباشرة
+- **أسئلة القرآن** → `/api/v1/quran/*`
 
 ---
 
-## 📚 دليل التوجيه
+## 📚 مصادر سريعة
 
-| الملف | الوصف |
-|-------|-------|
-| [`docs/mentoring/README.md`](docs/mentoring/README.md) | فهرس الدليل |
-| [`docs/mentoring/01_project_overview.md`](docs/mentoring/01_project_overview.md) | نظرة عامة |
-| [`docs/mentoring/02_folder_structure.md`](docs/mentoring/02_folder_structure.md) | شرح المجلدات |
-| [`docs/mentoring/03_api_main_entrypoint.md`](docs/mentoring/03_api_main_entrypoint.md) | نقطة الدخول |
-| [`docs/mentoring/learning_path.md`](docs/mentoring/learning_path.md) | خطة التعلم |
+- [docs/11-learning/README.md](docs/11-learning/README.md) - دليل التوجيه
+- [docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md) - المرحلة 7
+- [notebooks/COLAB_GPU_EMBEDDING_GUIDE.md](notebooks/COLAB_GPU_EMBEDDING_GUIDE.md) - تشغيل التضمين
+- [https://huggingface.co/datasets/Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets) - البيانات
 
 ---
 
-## 🎯 نصائح سريعة
+## 🎯 الخلاصة
 
-### للمبتدئين
-1. ابدأ بـ `README.md`
-2. شغل التطبيق
-3. جرب Swagger UI
-4. اقرأ `01_project_overview.md`
+- **20 endpoint** (جديد: `/classify`)
+- **<50ms** لتصنيف النية (المرحلة 8)
+- **16 intent + 4 فرعية للقرآن**
+- **10 مستويات أولوية**
+- **5.7M متجه** على HuggingFace
+- **~91% اختبار تغطية**
 
-### للمتوسطين
-1. اقرأ `settings.py`
-2. اقرأ `intents.py`
-3. اقرأ `router.py`
-4. تتبع سؤال من البداية للنهاية
-
-### للمتقدمين
-1. اقرأ `fiqh_agent.py`
-2. اقرأ `embedding_model.py`
-3. اقرأ `vector_store.py`
-4. اقرأ `hybrid_search.py`
+**المرحلة 8 مكتملة!** 🎉
 
 ---
 
-## ⚠️ نقاط مهمة
-
-### نقاط القوة
-- ✅ Factory Pattern في `create_app()`
-- ✅ 3-tier classification
-- ✅ Hybrid search (semantic + BM25)
-- ✅ Citation normalization
-- ✅ Deterministic tools (zakat, inheritance)
-
-### نقاط التحسين
-- ⚠️ تكرار الكود في الوكلاء
-- ⚠️ 23 bare except clauses
-- ⚠️ بعض الملفات hardcoded model names
-- ⚠️ `inheritance_calculator.py` مبتور عند سطر 662
-
-### الأمن
-- 🔒 Rate limiting (60/min)
-- 🔒 API key middleware
-- 🔒 Input sanitization
-- 🔒 Security headers
-- 🔒 CORS configuration
-
----
-
-## 📖 المصطلحات الأساسية
-
-| المصطلح | التعريف |
-|---------|---------|
-| RAG | Retrieval-Augmented Generation |
-| Embedding | تمثيل رقمي للنص كمتجه |
-| Vector DB | قاعدة بيانات للمتجهات |
-| Semantic Search | بحث حسب المعنى |
-| BM25 | بحث حسب الكلمات |
-| Intent | نية المستخدم من السؤال |
-| Agent | وكيل يستخدم LLM |
-| Tool | أداة حتمية بدون LLM |
-| Citation | مرجع موثق للإجابة |
-| Middleware | طبقة معالجة الطلبات |
-
----
-
-## 🔗 روابط مهمة
-
-- **المستودع**: https://github.com/Kandil7/Athar
-- **Swagger**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- **HuggingFace**: https://huggingface.co/datasets/Kandil7/Athar-Datasets
-- **الشمela**: https://shamela.ws/
-
----
-
-**🚀 ابدأ التعلم:** [`docs/mentoring/README.md`](docs/mentoring/README.md)
-
-**📖 الدليل الكامل:** [`docs/mentoring/`](docs/mentoring/)
-
----
-
-**آخر تحديث:** أبريل 2026  
-**الإصدار:** 0.5.0  
-**المعمارية:** Fanar-Sadiq Multi-Agent
+*ملخص سريع - الإصدار 2.0 - أبريل 2026*
+*Built with ❤️ for the Muslim community*

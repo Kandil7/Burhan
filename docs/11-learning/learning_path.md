@@ -12,6 +12,20 @@
 
 ---
 
+## 🎉 أحدث إنجاز: المرحلة الثامنة مكتملة (15 أبريل 2026)
+
+### مصنف النية الهجين (Hybrid Intent Classifier)
+
+اعتباراً من **15 أبريل 2026**، النظام يتضمن الآن:
+
+- ✅ **تصنيف سريع مبني على الكلمات المفتاحية** (100+ نمط)
+- ✅ **نقطة نهاية `/classify` جديدة** (<50 مللي ثانية)
+- ✅ **10 مستويات أولوية** لحلConflicts
+- ✅ **4 أنواع فرعية للقرآن** (VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
+- ✅ **بوابة الثقة مع احتياطي**
+
+---
+
 ## 📊 المستويات
 
 ```
@@ -24,6 +38,10 @@
 المستوى 3: فهم متقدم (تعرف التفاصيل التقنية)
     ↓
 المستوى 4: فهم عميق (تستطيع الشرح والتعديل)
+    ↓
+المستوى 5: إتقان (تستطيع إضافة ميزات)
+    ↓
+المستوى 6: المرحلة 8 (مصنف النية الهجين) - جديد!
 ```
 
 ---
@@ -39,8 +57,8 @@
 ### الملفات المطلوبة
 ```
 1. README.md                      ← اقرأه كاملاً
-2. docs/mentoring/01_project_overview.md
-3. docs/mentoring/02_folder_structure.md
+2. docs/11-learning/01_project_overview.md
+3. docs/11-learning/02_folder_structure.md
 ```
 
 ### التمارين
@@ -54,9 +72,9 @@
 #### تمرين 2: الإجابة على الأسئلة
 أجب بدون الرجوع للشروح:
 1. ما هو Athar؟
-2. كم عدد الـ endpoints؟
+2. كم عدد الـ endpoints؟ (الإجابة: 20)
 3. ما هي الـ 5 أدوات حتمية؟
-4. كم مجموعة متجهية في Qdrant؟
+4. كم مجموعة متجهية في Qdrant؟ (الإجابة: 10)
 5. ما هو الـ RAG؟
 
 #### تمرين 3: تشغيل التطبيق
@@ -93,7 +111,7 @@ curl http://localhost:8002/health
 
 ### الملفات المطلوبة
 ```
-1. docs/mentoring/03_api_main_entrypoint.md
+1. docs/11-learning/03_api_main_entrypoint.md
 2. src/api/main.py                  ← اقرأه سطر سطر
 3. src/config/settings.py           ← اقرأه سطر سطر
 4. src/config/intents.py            ← اقرأه سطر سطر
@@ -156,8 +174,8 @@ curl http://localhost:8002/health
 4. src/agents/base.py               ← اقرأه سطر سطر
 5. src/agents/chatbot_agent.py      ← اقرأه سطر سطر
 6. src/agents/fiqh_agent.py         ← اقرأه سطر سطر
-7. src/tools/base.py                ← اقرأه سطر سطر
-8. src/tools/zakat_calculator.py    ← اقرأه سطر سطر
+7. src/tools/base.py               ← اقرأه سطر سطر
+8. src/tools/zakat_calculator.py   ← اقرأه سطر سطر
 ```
 
 ### التمارين
@@ -219,14 +237,14 @@ curl http://localhost:8002/health
 
 #### تمرين 1: فهم Embedding
 في `embedding_model.py`:
-1. ما نموذج التضمين المستخدم؟
-2. كم dimension للمتجه؟
+1. ما نموذج التضمين المستخدم؟ (الإجابة: BAAI/bge-m3)
+2. كم dimension للمتجه؟ (الإجابة: 1024)
 3. كيف يتعامل مع CUDA vs CPU؟
 4. كيف يعمل الـ caching؟
 
 #### تمرين 2: فهم Vector Store
 في `vector_store.py`:
-1. كم مجموعة (collection) موجود؟
+1. كم مجموعة (collection) موجود؟ (الإجابة: 10)
 2. كيف يستورد المتجهات؟
 3. كيف يبحث؟
 4. ما هو HNSW؟
@@ -250,7 +268,7 @@ curl http://localhost:8002/health
 
 ---
 
-## 🟣 المستوى 5: إتقان (اليوم 31+)
+## 🟣 المستوى 5: إتقان (اليوم 31-40)
 
 ### الأهداف
 - [ ] فهم كل الوكلاء
@@ -271,16 +289,9 @@ src/tools/hijri_calendar_tool.py
 src/tools/dua_retrieval_tool.py
 src/api/routes/query.py
 src/api/routes/tools.py
-src/api/routes.quran.py
-src/api/routes.rag.py
-src/api/routes.health.py
-src/api.middleware.security.py
-src/api.middleware.error_handler.py
-src/api.schemas.request.py
-src/api.schemas.response.py
-src.infrastructure.database.py
-src.infrastructure.redis.py
-src.infrastructure.llm_client.py
+src/api/routes/quran.py
+src/api/routes/rag.py
+src/api/routes/health.py
 ```
 
 ### التمارين
@@ -302,6 +313,86 @@ src.infrastructure.llm_client.py
 
 ### ✅ علامة الانتهاء
 عندما تستطيع إضافة ميزة جديدة بدون مساعدة.
+
+---
+
+## 🔵 المستوى 6: المرحلة 8 - مصنف النية الهجين (اليوم 41-50) - جديد!
+
+### الأهداف (جديد!)
+- [ ] فهم مصنف النية الهجين (HybridIntentClassifier)
+- [ ] فهم نظام الأولويات (10 مستويات)
+- [ ] فهم النيات الفرعية للقرآن
+- [ ] استخدام نقطة النهاية `/classify`
+- [ ] فهم بوابة الثقة (Confidence Gating)
+
+### الملفات المطلوبة (جديد!)
+```
+1. src/application/hybrid_classifier.py   ← المصنف الهجين
+2. src/domain/intents.py                   ← 16 نوع نية + أولويات
+3. src/application/interfaces.py          ← بروتوكولات
+4. src/application/router.py              ← توجيه الوكيل
+5. src/api/routes/classification.py       ← نقطة النهاية /classify
+6. src/config/intents.py                   ← الأنماط القديمة (التوافق)
+```
+
+### التمارين (جديد!)
+
+#### تمرين 1: فهم HybridIntentClassifier
+في `hybrid_classifier.py`:
+1. ما الفرق بين keyword و jaccard و llm؟
+2. ما هي بوابة الثقة (confidence gating)؟
+3. ماذا يحدث عندما تكون الثقة < 0.5؟
+4. كيف يعمل احتياطي ISLAMIC_KNOWLEDGE؟
+
+#### تمرين 2: فهم نظام الأولويات
+في `domain/intents.py`:
+1. رتب الـ 16 intent حسب الأولوية
+2. ما الذي يحدث عندما يتطابق سؤال مع نيتين؟
+3. لماذا TAFSIR له أولوية 10؟
+
+#### تمرين 3: فهم النيات الفرعية للقرآن
+في `domain/intents.py`:
+1. ما هي الأنواع الفرعية الأربع؟
+2. كيف يميز النظام بينها؟
+3. أعط مثالاً لكل نوع
+
+#### تمرين 4: تجربة /classify
+```bash
+# جرب النقطتين:
+# 1. سؤال فقه
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم ترك صلاة الجمعة؟"}'
+
+# 2. سؤال قرآن - آية
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما رقم سورة الإخلاص؟"}'
+
+# 3. سؤال قرآن - تفسير
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما تفسير آية الكرسي؟"}'
+
+# 4. سؤال قرآن - إحصاء
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "كم مرة упомина اسم الله في القرآن؟"}'
+```
+
+#### تمرين 5: تتبع تدفق /classify
+ارسم diagram لتدفق `/classify`:
+```
+استعلام → Keyword Match → Priority Resolution → 
+  Confidence Check → (ناجح/احتياطي) → Routing
+```
+
+### ✅ علامة الانتهاء
+عندما تستطيع:
+1. شرح كيف يعمل مصنف النية الهجين
+2. إضافة نمط keyword جديد
+3. تغيير أولويات النيات
+4. اختبار `/classify` مع أنواع مختلفة من الأسئلة
 
 ---
 
@@ -346,10 +437,21 @@ src.infrastructure.llm_client.py
 | 1 | قراءة verse_retrieval.py | src/quran/verse_retrieval.py |
 | 2 | قراءة nl2sql.py | src/quran/nl2sql.py |
 | 3 | قراءة quotation_validator.py | src/quran/quotation_validator.py |
-| 4 | قراءة zakat_calculator.py | src/tools/zakat_calculator.py |
+| 4 | قراءة zakak_calculator.py | src/tools/zakat_calculator.py |
 | 5 | قراءة inheritance_calculator.py | src/tools/inheritance_calculator.py |
 | 6 | قراءة الأدوات الأخرى | src/tools/*.py |
 | 7 | مراجعة وتمارين | كل ما سبق |
+
+### الأسبوع 5-6: المرحلة 8 - مصنف النية الهجين (جديد!)
+| اليوم | المهمة | الملفات |
+|-------|--------|---------|
+| 1 | قراءة hybrid_classifier.py | src/application/hybrid_classifier.py |
+| 2 | قراءة domain/intents.py | src/domain/intents.py |
+| 3 | قراءة application/router.py | src/application/router.py |
+| 4 | قراءة classification endpoint | src/api/routes/classification.py |
+| 5 | تجربة /classify | Swagger UI |
+| 6 | إضافة نمط keyword جديد | src/domain/intents.py |
+| 7 | مراجعة وتمارين شاملة | كل ما سبق + Phase 8 |
 
 ---
 
@@ -373,7 +475,7 @@ src.infrastructure.llm_client.py
 - ج) 18
 - د) 20
 
-**الإجابة:** ج
+**الإجابة:** د (المرحلة 8 أضافت /classify)
 
 ---
 
@@ -434,10 +536,52 @@ src.infrastructure.llm_client.py
 **السؤال 2:** لماذا k=60 في RRF؟
 - أ) لأنه رقم عشوائي
 - ب) لأنه最优 في معظم الحالات
-- ج لأنه مدروس تجريبياً
+- ج) لأنه مدروس تجريبياً
 - د) لأنه مذكور في论文
 
 **الإجابة:** ج (تجريبياً وجد أنه最优)
+
+---
+
+### اختبار المرحلة 8 (بعد اليوم 50) - جديد!
+
+**السؤال 1:** ما هو مصنف النية الهجين (HybridIntentClassifier)؟
+- أ) مصنف يستخدم LLM فقط
+- ب) مصنف يجمع بين keyword و Jaccard و confidence gating
+- ج) مصنف يستخدم embeddings فقط
+- د) مصنف بسيط يعتمد على regex
+
+**الإجابة:** ب
+
+---
+
+**السؤال 2:** ما هي مستويات الأولوية في النظام؟
+- أ) 5 مستويات
+- ب) 8 مستويات
+- ج) 10 مستويات
+- د) 16 مستوى
+
+**الإجابة:** ج
+
+---
+
+**السؤال 3:** ما هي النيات الفرعية للقرآن؟
+- أ) verse, chapter, page, line
+- ب) VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION
+- ج) quran, tafsir, hadith, fiqh
+- د) none of the above
+
+**الإجابة:** ب
+
+---
+
+**السؤال 4:** ماذا يحدث عندما تكون الثقة < 0.5؟
+- أ) يرجع خطأ
+- ب) يستخدم احتياطي ISLAMIC_KNOWLEDGE
+- ج) يستخدم LLM كاحتياطي
+- د) يرجع null
+
+**الإجابة:** ب
 
 ---
 
@@ -446,7 +590,7 @@ src.infrastructure.llm_client.py
 ### للمستوى 1 (مبتدئ)
 - لا تستعجل
 - اقرأ بتمعن
-- نفذ التمارين
+-نفذ التمارين
 - شغل التطبيق
 
 ### للمستوى 2 (متوسط)
@@ -469,6 +613,12 @@ src.infrastructure.llm_client.py
 - راجع كود الآخرين
 - اشرح لغيرك
 
+### للمستوى 6 (المرحلة 8 - جديد!)
+- جرب `/classify` مع أنواع مختلفة من الأسئلة
+- أضف أنماط keyword جديدة
+- غير الأولويات وجرب النتائج
+- ارسم diagrams لتدفق التصنيف
+
 ---
 
 ## 📚 مصادر إضافية
@@ -481,6 +631,8 @@ docs/api/                      ← توثيق الـ API
 docs/core-features/            ← الميزات
 docs/data/                     ← البيانات
 docs/deployment/               ← النشر
+docs/11-learning/              ← دليل التوجيه (هذا!)
+docs/10-operations/            ← مرحلة 8 وثائق
 ```
 
 ### أبحاث وأوراق علمية
@@ -492,14 +644,14 @@ docs/Fanar-Sadiq A Multi-Agent Architecture for Grounded Islamic QA.pdf
 ```
 https://qdrant.tech/documentation/     ← Qdrant docs
 https://fastapi.tiangolo.com/          ← FastAPI docs
-https://www.sbert.net/                 ← Sentence Transformers
+https://huggingface.co/BAAI/bge-m3     ← BGE-m3 model
 ```
 
 ---
 
 ## 🎓 الخلاصة
 
-هذه الخطة مصممة لتأخذك من **الصفر** إلى **الإتقان**.
+هذه الخطة مصممة لتأخذك من **الصفر** إلى **الإتقان** مع إضافة **المرحلة 8**.
 
 **المفتاح:**
 1. اتبع الترتيب
@@ -511,6 +663,24 @@ https://www.sbert.net/                 ← Sentence Transformers
 **الهدف النهائي:**
 تستطيع فهم، تعديل، وإضافة ميزات جديدة للمشروع بثقة.
 
+**الإضافة الجديدة (المرحلة 8):**
+تستطيع استخدام مصنف النية الهجين وفهم كيف يعمل التصنيف السريع (<50ms).
+
+---
+
+## 📊 ملخص المستويات
+
+| المستوى | المدة | الموضوع |
+|---------|-------|---------|
+| 1 | 3 أيام | أساسيات |
+| 2 | 7 أيام | تصنيف متوسط |
+| 3 | 10 أيام | RAG متقدم |
+| 4 | 10 أيام | فهم عميق |
+| 5 | 10 أيام | إتقان |
+| 6 | 10 أيام | المرحلة 8 (جديد!) |
+
+**الإجمالي:** ~50 يوماً من الصفر إلى الإتقان + المرحلة 8
+
 ---
 
 **🚀 ابدأ الآن:** [`01_project_overview.md`](01_project_overview.md)
@@ -519,8 +689,11 @@ https://www.sbert.net/                 ← Sentence Transformers
 
 **🔗 ثم:** [`03_api_main_entrypoint.md`](03_api_main_entrypoint.md)
 
+**🎉 ثم:** المستوى 6 (المرحلة 8) ← [`src/application/hybrid_classifier.py`](src/application/hybrid_classifier.py)
+
 ---
 
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
-**الإصدار:** 1.0
+**الإصدار:** 2.0  
+**المشروع:** Athar Islamic QA System v0.8.0 (Phase 8 Complete)
