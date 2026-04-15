@@ -364,7 +364,6 @@ The new classifier provides:
 
 ### Core Documentation
 - **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md)** - ✅ **Complete merge statistics & guide**
-- **[docs/9-reference/classifer_plan.md](docs/9-reference/classifer_plan.md)** - ✅ **Hybrid Intent Classifier (NEW)**
 - **[docs/5-api/COMPLETE_DOCUMENTATION.md](docs/5-api/COMPLETE_DOCUMENTATION.md)** - Full system docs
 - **[docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md](docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md)** - Architecture decisions
 - **[docs/9-reference/FILE_REFERENCE.md](docs/9-reference/FILE_REFERENCE.md)** - Complete file tree
