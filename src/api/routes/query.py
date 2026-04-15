@@ -338,6 +338,14 @@ async def handle_query(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
+        # Print to stdout for debugging
+        import sys
+
+        print(f"ERROR in query: {type(e).__name__}: {e}", file=sys.stderr)
+        import traceback
+
+        traceback.print_exc(file=sys.stderr)
+
         logger.error(  # FIX 6: exc_info=True alone — no duplicate traceback field
             "query.error",
             query_id=query_id,
