@@ -4,11 +4,27 @@ Application settings with environment variable support.
 Uses Pydantic BaseSettings for automatic environment variable parsing.
 
 Phase 5: Added security, rate limiting, and caching settings.
+Phase 8: Added ClassifierBackend for intent classifier selection.
 """
 
+from enum import Enum
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ClassifierBackend(str, Enum):
+    """
+    Selects the active intent classifier implementation.
+
+    hybrid → HybridIntentClassifier   (keyword + Jaccard, no external deps)
+    llm    → LLMIntentClassifier       (OpenAI-compatible API, requires API key)
+    chain  → FallbackChainClassifier   (LLM primary → Hybrid fallback on error)
+    """
+
+    HYBRID = "hybrid"
+    LLM = "llm"
+    CHAIN = "chain"
 
 
 class Settings(BaseSettings):
@@ -78,6 +94,17 @@ class Settings(BaseSettings):
     # ==========================================
     router_confidence_threshold: float = 0.75
     router_fallback_enabled: bool = True
+
+    # ==========================================
+    # Intent Classifier (Phase 8)
+    # ==========================================
+    classifier_backend: ClassifierBackend = Field(
+        default=ClassifierBackend.HYBRID,
+    )
+    low_conf_threshold: float = 0.55
+    openai_base_url: str = "https://api.openai.com/v1"
+    llm_temperature: float = 0.0
+    llm_max_tokens: int = 350
 
     # ==========================================
     # Rate Limiting

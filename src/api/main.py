@@ -24,6 +24,7 @@ from src.api.middleware.security import (
 )
 from src.api.routes.health import router as health_router
 from src.api.routes.query import router as query_router
+from src.api.routes.classification import router as classification_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.rag import router as rag_router
 from src.api.routes.tools import router as tools_router
@@ -53,14 +54,28 @@ async def lifespan(app: FastAPI):
     # Initialize agent registry with all agents and tools
     try:
         from src.core.registry import initialize_registry
+
         initialize_registry()
         logger.info("app.registry_initialized")
     except Exception as e:
         logger.warning("app.registry_init_failed", error=str(e))
 
+    # Initialize classifier router for /classify endpoint
+    try:
+        from src.application.hybrid_classifier import HybridIntentClassifier
+        from src.application.router import RouterAgent
+
+        classifier = HybridIntentClassifier(low_conf_threshold=0.55)
+        app.state.router = RouterAgent(classifier=classifier)
+        logger.info("app.classifier_initialized")
+    except Exception as e:
+        logger.warning("app.classifier_init_failed", error=str(e))
+
     yield
 
-    # Shutdown
+    # Shutdown - close classifier if initialized
+    if hasattr(app.state, "router") and app.state.router:
+        await app.state.router.close()
     logger.info("app.shutdown")
 
 
@@ -128,6 +143,7 @@ Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
     # Routes
     # ==========================================
     app.include_router(health_router)
+    app.include_router(classification_router)
     app.include_router(query_router, prefix=settings.api_v1_prefix)
     app.include_router(tools_router, prefix=settings.api_v1_prefix)
     app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")
