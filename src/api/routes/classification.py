@@ -37,40 +37,21 @@ router = APIRouter(prefix="", tags=["Classification"])
 
 def get_router(request: Request) -> RouterAgent:
     """Inject the shared RouterAgent from app state."""
-    return request.app.state.router
+    # Try 'router' first (from lifespan), then 'classifier'
+    if hasattr(request.app.state, "router"):
+        return request.app.state.router
+    if hasattr(request.app.state, "classifier"):
+        return request.app.state.classifier
 
-
-# ============================================================================
-# Exception handler
-# ============================================================================
-
-
-@router.exception_handler(Exception)
-async def generic_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle uncaught exceptions."""
-    logger.error("unhandled_error", exc_info=exc)
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error. Please try again."},
-    )
-
-
-# ============================================================================
-# Routes
-# ============================================================================
-
-
-@router.get("/health", response_model=HealthResponse, tags=["ops"])
-async def health() -> HealthResponse:
-    """Health check endpoint for classification service."""
-    return HealthResponse(status="ok", version=APP_VERSION)
+    # Emergency fallback: create a new classifier (should not happen)
+    raise RuntimeError(f"Classifier not initialized. Available state: {list(request.app.state.__dict__.keys())}")
 
 
 @router.post(
     "/classify",
     response_model=RoutingDecisionSchema,
     summary="Classify a query and return intent + route",
-    tags=["router"],
+    tags=["classifier"],
 )
 async def classify(
     req: ClassifyRequest,

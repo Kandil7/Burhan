@@ -43,7 +43,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from src.application.router import RouterAgent
 
         classifier = build_classifier()
-        app.state.classifier = RouterAgent(classifier=classifier)
+        # Store as 'router' for consistency with classification route
+        app.state.router = RouterAgent(classifier=classifier)
         logger.info(
             "lifespan.classifier.initialised",
             classifier_type=type(classifier).__name__,
@@ -59,15 +60,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from src.application.router import RouterAgent
 
         classifier = HybridIntentClassifier(low_conf_threshold=0.55)
-        app.state.classifier = RouterAgent(classifier=classifier)
+        app.state.router = RouterAgent(classifier=classifier)
         logger.info("lifespan.classifier.fallback.hybrid")
 
     # ========================================
     # Agent Registry (always needed)
     # ========================================
-    from src.core.registry import build_registry
+    from src.core.registry import get_registry
 
-    app.state.registry = build_registry()
+    app.state.registry = get_registry()
     logger.info(
         "lifespan.startup.complete",
         registry_status=app.state.registry.get_status(),

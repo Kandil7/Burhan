@@ -37,6 +37,7 @@ _CHATBOT_INTENTS: frozenset[Intent] = frozenset()
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def build_filters(
     *,
     author: str | None,
@@ -110,10 +111,7 @@ def build_response_metadata(
     FIX 5: follow_up_suggestions is stripped from agent_metadata here since
     it's already surfaced as a top-level field on QueryResponse.
     """
-    agent_meta_clean = {
-        k: v for k, v in agent_metadata.items()
-        if k != "follow_up_suggestions"
-    }
+    agent_meta_clean = {k: v for k, v in agent_metadata.items() if k != "follow_up_suggestions"}
     return {
         "agent": agent_name,
         "processing_time_ms": processing_time_ms,
@@ -148,13 +146,14 @@ async def _run_with_timeout(coro, *, timeout: float, label: str, query_id: str) 
 # Route
 # ---------------------------------------------------------------------------
 
+
 @query_router.post(
     "",
     response_model=QueryResponse,
     summary="Submit query to Athar Islamic QA system",
 )
 async def handle_query(
-    raw_request: Request,           # FIX 3+4: access app.state for injected singletons
+    raw_request: Request,  # FIX 3+4: access app.state for injected singletons
     request: QueryRequest,
     author: str | None = Query(None, description="Filter by author name"),
     era: str | None = Query(
@@ -180,7 +179,7 @@ async def handle_query(
     """
     start_time = time.time()
     query_id = str(uuid.uuid4())
-    agent_name: str = "unknown"     # FIX 9: safe default — never UnboundLocalError
+    agent_name: str = "unknown"  # FIX 9: safe default — never UnboundLocalError
 
     try:
         logger.info(
@@ -194,14 +193,15 @@ async def handle_query(
         # The API layer no longer constructs infrastructure objects.
         app_state = raw_request.app.state
         chatbot = app_state.chatbot
-        classifier = app_state.classifier
+        router = app_state.router
         registry = app_state.registry  # FIX 3: not rebuilt on every request
 
-        router_result = await classifier.classify(request.query)
-        intent = router_result.intent
+        # Router returns a RoutingDecision, not ClassificationResult
+        router_decision = await router.route(request.query)
+        intent = router_decision.result.intent
 
         # FIX 8: validate language, fall back to Arabic
-        raw_language = request.language or router_result.language
+        raw_language = request.language or router_decision.result.language
         language = raw_language if raw_language in SUPPORTED_LANGUAGES else "ar"
         if language != raw_language:
             logger.warning(
@@ -215,8 +215,8 @@ async def handle_query(
             "query.classified",
             query_id=query_id,
             intent=intent.value,
-            confidence=router_result.confidence,
-            method=router_result.method,
+            confidence=router_decision.result.confidence,
+            method=router_decision.result.method,
             language=language,
         )
 
@@ -306,7 +306,7 @@ async def handle_query(
         return QueryResponse(
             query_id=query_id,
             intent=intent.value,
-            intent_confidence=router_result.confidence,
+            intent_confidence=router_decision.result.confidence,
             answer=agent_result.answer,
             citations=[
                 CitationResponse(
@@ -322,7 +322,7 @@ async def handle_query(
             metadata=build_response_metadata(
                 agent_name=agent_name,
                 processing_time_ms=processing_time,
-                classification_method=router_result.method,
+                classification_method=router_decision.result.method,
                 language=language,
                 hierarchical=hierarchical,
                 agent_metadata=agent_result.metadata,  # FIX 5: stripped inside helper
@@ -338,12 +338,12 @@ async def handle_query(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
-        logger.error(                   # FIX 6: exc_info=True alone — no duplicate traceback field
+        logger.error(  # FIX 6: exc_info=True alone — no duplicate traceback field
             "query.error",
             query_id=query_id,
             error=str(e),
             error_type=type(e).__name__,
-            agent=agent_name,           # helps pinpoint which agent failed
+            agent=agent_name,  # helps pinpoint which agent failed
             exc_info=True,
         )
         raise HTTPException(
@@ -356,13 +356,12 @@ async def handle_query(
 # Test endpoint
 # ---------------------------------------------------------------------------
 
+
 @query_router.get("/test")
 async def test_query(raw_request: Request):
     """Test endpoint to verify query router is working."""
     chatbot = raw_request.app.state.chatbot
-    result = await chatbot.execute(
-        AgentInput(query="السلام عليكم", language="ar", metadata={})
-    )
+    result = await chatbot.execute(AgentInput(query="السلام عليكم", language="ar", metadata={}))
     return {
         "status": "ok",
         "chatbot": chatbot.name,

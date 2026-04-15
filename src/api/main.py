@@ -1,27 +1,12 @@
-"""
-FastAPI application factory for Athar Islamic QA system.
-
-Creates and configures the FastAPI application with:
-- Security middleware (rate limiting, API key, security headers)
-- CORS middleware
-- Error handling
-- Request logging
-- Route registration
-- OpenAPI documentation
-
-Phase 8: Updated to use new lifespan module with classifier factory.
-"""
+from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.middleware.error_handler import error_handler_middleware
-from src.api.middleware.security import (
-    RateLimitMiddleware,
-    SecurityHeadersMiddleware,
-)
+from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 from src.api.routes.health import router as health_router
-from src.api.routes.query import router as query_router
+from src.api.routes.query import query_router
 from src.api.routes.classification import router as classification_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.rag import router as rag_router
@@ -30,43 +15,16 @@ from src.api.lifespan import lifespan
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
 
-logger = get_logger()
-
-
-# Setup logging on module import (before app creation)
-setup_logging()
-
 
 def create_app() -> FastAPI:
-    """
-    Create and configure FastAPI application.
+    # ── Logging: هنا فقط، مرة واحدة ─────────────────────────────────────
+    setup_logging()
+    logger = get_logger()
 
-    Returns:
-        Configured FastAPI application instance
-    """
     app = FastAPI(
         title=settings.app_name,
-        description="""
-# Athar Islamic QA System API
-
-Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
-
-## Features
-- **Intent Classification**: Automatically detects query type (fiqh, quran, zakat, etc.)
-- **Grounded Answers**: All answers backed by verified sources with citations
-- **Deterministic Calculators**: Zakat and inheritance calculations
-- **Multi-language**: Arabic and English support
-- **Madhhab-aware**: Handles differences between Islamic schools
-- **Rate Limiting**: Protected against abuse
-- **API Key Authentication**: Secure access
-
-## Security
-- API Key required for query endpoints
-- Rate limiting: 60 requests/minute default
-- Security headers on all responses
-
-        """,
-        version="0.5.0",
+        description=_API_DESCRIPTION,
+        version=settings.app_version,  # FIX 2: مصدر واحد للـ version
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -74,72 +32,64 @@ Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
         debug=settings.debug,
     )
 
-    # ==========================================
-    # Middleware (order matters - last added runs first)
-    # ==========================================
-
-    # Security headers (outermost - runs last)
+    # ── Middleware (LIFO: آخر مُضاف = أول يُنفَّذ) ───────────────────────
     app.add_middleware(SecurityHeadersMiddleware)
 
-    # Rate limiting
-    if settings.app_env == "production":
-        app.add_middleware(RateLimitMiddleware, requests_per_minute=60)
+    if settings.rate_limit_enabled:  # FIX 4: من settings
+        app.add_middleware(
+            RateLimitMiddleware,
+            requests_per_minute=settings.rate_limit_rpm,  # FIX 4
+        )
 
-    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=settings.cors_methods,  # FIX 7: من settings
+        allow_headers=settings.cors_headers,  # FIX 7: من settings
     )
 
-    # Error handling
     app.middleware("http")(error_handler_middleware)
 
-    # ==========================================
-    # Routes
-    # ==========================================
+    # ── Routes ───────────────────────────────────────────────────────────
+    # Health + classification: intentionally without api_v1_prefix (public endpoints)
     app.include_router(health_router)
     app.include_router(classification_router)
-    app.include_router(query_router, prefix=settings.api_v1_prefix)
-    app.include_router(tools_router, prefix=settings.api_v1_prefix)
-    app.include_router(rag_router, prefix=f"{settings.api_v1_prefix}")
-    app.include_router(quran_router, prefix=f"{settings.api_v1_prefix}")
 
-    # ==========================================
-    # Root endpoint
-    # ==========================================
+    v1 = settings.api_v1_prefix
+    app.include_router(query_router, prefix=v1)
+    app.include_router(tools_router, prefix=v1)
+    app.include_router(rag_router, prefix=v1)
+    app.include_router(quran_router, prefix=v1)
+
+    # ── Root ─────────────────────────────────────────────────────────────
     @app.get("/", tags=["Root"])
     async def root():
-        """Root endpoint with API information."""
         return {
             "name": settings.app_name,
-            "version": "0.5.0",
-            "phase": "5 - Security & Performance",
+            "version": settings.app_version,
             "docs": "/docs",
             "health": "/health",
-            "authentication": "API Key required (X-API-Key header)",
-            "query_endpoint": f"{settings.api_v1_prefix}/query",
-            "quran_endpoints": {
-                "surahs": f"{settings.api_v1_prefix}/quran/surahs",
-                "ayah": f"{settings.api_v1_prefix}/quran/ayah/{{surah}}:{{ayah}}",
-                "search": f"{settings.api_v1_prefix}/quran/search",
-                "validate": f"{settings.api_v1_prefix}/quran/validate",
-                "analytics": f"{settings.api_v1_prefix}/quran/analytics",
-                "tafsir": f"{settings.api_v1_prefix}/quran/tafsir/{{surah}}:{{ayah}}",
-            },
-            "tool_endpoints": {
-                "zakat": f"{settings.api_v1_prefix}/tools/zakat",
-                "inheritance": f"{settings.api_v1_prefix}/tools/inheritance",
-                "prayer_times": f"{settings.api_v1_prefix}/tools/prayer-times",
-                "hijri": f"{settings.api_v1_prefix}/tools/hijri",
-                "duas": f"{settings.api_v1_prefix}/tools/duas",
-            },
+            "query_endpoint": f"{v1}/query",
         }
 
+    logger.info("app.created", version=settings.app_version, debug=settings.debug)
     return app
 
 
-# Create app instance
+_API_DESCRIPTION = """
+# Athar Islamic QA System
+
+Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
+
+## Features
+- Intent classification (fiqh, quran, hadith, seerah, …)
+- Grounded answers with citations
+- Deterministic calculators (zakat, inheritance)
+- Arabic & English support
+
+## Authentication
+All query endpoints require an `X-API-Key` header.
+"""
+
 app = create_app()

@@ -141,6 +141,19 @@ class Settings(BaseSettings):
     api_timeout: int = 30
     max_query_length: int = 1000
 
+    # ==========================================
+    # API Configuration
+    # ==========================================
+    api_timeout: int = 30
+    app_version: str = Field(default="0.5.0", alias="APP_VERSION")
+    rate_limit_enabled: bool = Field(default=False, alias="RATE_LIMIT_ENABLED")
+    rate_limit_rpm: int = Field(default=60, alias="RATE_LIMIT_RPM")
+    cors_methods: list[str] = Field(default=["GET", "POST"], alias="CORS_METHODS")
+    cors_headers: list[str] = Field(
+        default=["Content-Type", "X-API-Key", "Authorization"],
+        alias="CORS_HEADERS",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
