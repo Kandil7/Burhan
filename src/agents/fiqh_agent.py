@@ -1,11 +1,7 @@
 """
 Fiqh RAG Agent for Athar Islamic QA system.
 
-Fixes v2:
-  - Bug #1: name = "fiqh" (no _agent suffix)
-  - Bug #2: __init__ validates embedding_model at construction time
-  - Bug #3: SYSTEM_PROMPT fully in Arabic — no mixed language
-  - Bug #4: NO_PASSAGES_MESSAGE guides user to rephrase fiqh query
+
 """
 from src.agents.base_rag_agent import BaseRAGAgent
 from src.config.constants import LLMConfig, RetrievalConfig
@@ -18,7 +14,7 @@ class FiqhAgent(BaseRAGAgent):
     Uses usul_fiqh collection (50,240 vectors in Qdrant).
     """
 
-    name = "fiqh"   # Fix #1 — consistent with RouterAgent
+    name = "fiqh"
 
     # ── التكوين ────────────────────────────────────────────────────────────
     COLLECTION:      str   = "usul_fiqh"
@@ -28,14 +24,12 @@ class FiqhAgent(BaseRAGAgent):
     TEMPERATURE:     float = LLMConfig.FIQH_TEMPERATURE
     MAX_TOKENS:      int   = LLMConfig.DEFAULT_MAX_TOKENS
 
-    # Fix #4 — رسالة مخصصة لسياق الفقه
     NO_PASSAGES_MESSAGE: str = (
         "لم أجد نصوصاً فقهية كافية للإجابة على هذا السؤال تحديداً. "
         "يُنصح بإعادة صياغة السؤال بمصطلحات فقهية أدق، "
         "أو استشارة عالم متخصص للحالات الخاصة."
     )
 
-    # Fix #2 — تحقق من الـ embedding_model عند البناء
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if getattr(self, "embedding_model", None) is None:
@@ -45,7 +39,6 @@ class FiqhAgent(BaseRAGAgent):
             )
 
     # ── نصوص التوليد ──────────────────────────────────────────────────────
-    # Fix #3 — SYSTEM_PROMPT بالعربية الكاملة بدون خلط لغوي
     SYSTEM_PROMPT: str = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.
 
 التعليمات:
