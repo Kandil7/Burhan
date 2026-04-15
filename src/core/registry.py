@@ -167,7 +167,7 @@ def initialize_registry() -> AgentRegistry:
     Initialize registry with all agents and tools.
 
     Call this during application startup.
-    Phase 6 Refactoring: Added all RAG agents (FiqhAgent, HadithAgent, GeneralIslamicAgent, SeerahAgent)
+     Refactoring: Added all RAG agents (FiqhAgent, HadithAgent, GeneralIslamicAgent, SeerahAgent)
     """
     global _registry
     _registry = AgentRegistry()
@@ -190,7 +190,7 @@ def initialize_registry() -> AgentRegistry:
     from src.agents.chatbot_agent import ChatbotAgent
     _registry.register_agent("chatbot_agent", ChatbotAgent())
 
-    # Phase 6: Register RAG agents
+    #  Register RAG agents
     try:
         from src.agents.fiqh_agent import FiqhAgent
         _registry.register_agent("fiqh_agent", FiqhAgent())

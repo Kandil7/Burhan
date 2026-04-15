@@ -25,7 +25,7 @@ main.py
 
 ## 2️⃣ نظرة عامة على محتويات الملف
 
-###imports
+### imports
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,19 +42,19 @@ from src.api.middleware.security import (
 from src.api.routes import health, query, tools, rag, quran
 ```
 
-###constants
+### constants
 - `APP_NAME`: "Athar Islamic QA System"
 - `APP_VERSION`: "0.5.0"
 - `PHASE`: "Phase 5: Security & Performance"
 
-###classes
+### classes
 - لا يوجد classes مباشرة في الملف (يستخدم factory function)
 
-###functions
+### functions
 - `lifespan(app: FastAPI)`: يُنفذ عند البدء وعند الإيقاف
 - `create_app() -> FastAPI`: الدالة الرئيسية لإنشاء التطبيق
 
-###main execution block
+### main execution block
 ```python
 app = create_app()
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 ## 3️⃣ شرح الملف جزء جزء
 
-###imports Block
+### imports Block
 
 ```python
 from fastapi import FastAPI
@@ -86,7 +86,7 @@ from contextlib import asynccontextmanager
 
 ---
 
-###إعدادات التطبيق الأساسية
+### إعدادات التطبيق الأساسية
 
 ```python
 from src.config.settings import settings
@@ -103,7 +103,7 @@ from src.config.logging_config import setup_logging
 
 ---
 
-###Middleware imports
+### Middleware imports
 
 ```python
 from src.api.middleware.error_handler import error_handler_middleware
@@ -139,7 +139,7 @@ from src.api.middleware.security import (
 
 ---
 
-###Routes imports
+### Routes imports
 
 ```python
 from src.api.routes import health, query, tools, rag, quran
@@ -158,7 +158,7 @@ from src.api.routes import health, query, tools, rag, quran
 
 ---
 
-###Lifespan Function
+### Lifespan Function
 
 ```python
 @asynccontextmanager
@@ -184,7 +184,7 @@ async def lifespan(app: FastAPI):
 
 ---
 
-###Create App Function (الدالة الرئيسية)
+### Create App Function (الدالة الرئيسية)
 
 ```python
 def create_app() -> FastAPI:
@@ -211,7 +211,7 @@ def create_app() -> FastAPI:
 
 ---
 
-###إضافة Middleware
+### إضافة Middleware
 
 ```python
     # Security headers (always enabled)
@@ -267,7 +267,7 @@ Internet → error_handler → API_key → sanitize → CORS → rate_limit → 
 
 ---
 
-###تسجيل Routers
+### تسجيل Routers
 
 ```python
     # Include routers
@@ -297,7 +297,7 @@ Internet → error_handler → API_key → sanitize → CORS → rate_limit → 
 
 ---
 
-###إعدادات إضافية
+### إعدادات إضافية
 
 ```python
     # Health check endpoint for Docker
@@ -326,7 +326,7 @@ Internet → error_handler → API_key → sanitize → CORS → rate_limit → 
 
 ---
 
-###Return و Run
+### Return و Run
 
 ```python
     return app
@@ -355,7 +355,7 @@ if __name__ == "__main__":
 
 ## 4️⃣ شرح سطر سطر
 
-###الأسطر 1-10: Imports الأساسية
+### الأسطر 1-10: Imports الأساسية
 ```python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -363,7 +363,7 @@ from contextlib import asynccontextmanager
 ```
 - يستورد المكونات الأساسية من FastAPI
 
-###الأسطر 11-20: Imports من المشروع
+### الأسطر 11-20: Imports من المشروع
 ```python
 from src.config.settings import settings
 from src.config.logging_config import setup_logging
@@ -373,7 +373,7 @@ from src.api.routes import health, query, tools, rag, quran
 ```
 - يستورد كل المكونات من المشروع
 
-###الأسطر 21-35: Lifespan function
+### الأسطر 21-35: Lifespan function
 ```python
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -384,7 +384,7 @@ async def lifespan(app: FastAPI):
 ```
 - يدير دورة حياة التطبيق
 
-###الأسطر 36-70: Create app function
+### الأسطر 36-70: Create app function
 ```python
 def create_app() -> FastAPI:
     app = FastAPI(...)
@@ -394,7 +394,7 @@ def create_app() -> FastAPI:
 ```
 - ينشئ التطبيق ويهيئه
 
-###الأسطر 71-85: Run
+### الأسطر 71-85: Run
 ```python
 app = create_app()
 if __name__ == "__main__":
