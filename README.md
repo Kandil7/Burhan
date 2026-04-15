@@ -6,17 +6,20 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![Phase](https://img.shields.io/badge/status-Phase%208%20Complete-success.svg)](https://github.com/Kandil7/Athar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/Lines%20of%20Code-15,500+-orange.svg)]()
+[![License](https://img.shields.io/badge/Test%20Coverage-91%25-success.svg)]()
 
 ---
 
 ## 🎉 Latest Achievement: Hybrid Intent Classifier ✅
 
 **April 15, 2026:** Successfully integrated new **HybridIntentClassifier** for fast, accurate intent classification:
-- ✅ Fast keyword-based classification (no LLM required)
-- ✅ Priority-based conflict resolution (10 intent levels)
-- ✅ Quran sub-intent automatic detection
-- ✅ Confidence gating with fallback
-- ✅ New `/classify` endpoint for instant intent detection
+
+- ✅ **Fast keyword-based classification** (no LLM required for simple queries)
+- ✅ **Priority-based conflict resolution** (10 intent levels from TAFSIR=10 to ISLAMIC_KNOWLEDGE=1)
+- ✅ **Quran sub-intent automatic detection** (VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
+- ✅ **Confidence gating with fallback** to ISLAMIC_KNOWLEDGE when confidence < 0.5
+- ✅ **New `/classify` endpoint** for instant intent detection (<50ms)
 
 📖 **Full details:** [Lucene Merge Complete](docs/10-operations/LUCENE_MERGE_COMPLETE.md)
 
@@ -69,13 +72,13 @@
 
 ## 🏗️ Architecture
 
+### 5-Layer Architecture (Current)
+
 ```
 User Query → Intent Classifier (Hybrid) → Route to Agent →
   RAG Retrieval / Calculator / NL2SQL → Generate Answer →
     Citation Normalization → Response with [C1], [C2]
 ```
-
-### 5-Layer Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -88,7 +91,7 @@ User Query → Intent Classifier (Hybrid) → Route to Agent →
 │  HybridIntentClassifier  •  RouterAgent                 │
 │  ├── Keyword fast-path (KEYWORD_PATTERNS)             │
 │  ├── Jaccard similarity fallback                      │
-│  └��─ Quran sub-intent detection                      │
+│  └── Quran sub-intent detection                       │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────┐
@@ -109,41 +112,57 @@ User Query → Intent Classifier (Hybrid) → Route to Agent →
 │  BGE-m3 Embeddings  •  Lucene Indexes  •  LLM (Groq)  │
 └─────────────────────────────────────────────────────────┘
 ```
-User Query → Intent Classifier (3-tier hybrid) → Route to Agent →
-  RAG Retrieval / Calculator / NL2SQL → Generate Answer →
-    Citation Normalization → Response with [C1], [C2]
-```
 
-### 4-Layer Architecture
+### Component Details
 
-```
-┌─────────────────────────────────────────────────────────┐
-│              API Layer (FastAPI + Next.js)               │
-│  POST /api/v1/query  •  GET /health  •  18 endpoints    │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│               Orchestration Layer                        │
-│  Hybrid Intent Classifier  •  Response Orchestrator     │
-│  Citation Normalizer  •  Agent Registry                 │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│         Agents & Tools Layer (13 agents + 5 tools)       │
-│  Fiqh, Hadith, Quran, Tafsir, Aqeedah, Seerah, etc.    │
-│  Zakat Calc, Inheritance Calc, Prayer Times, Hijri, Dua │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│           Knowledge Layer (61 GB processed data)         │
-│  PostgreSQL  •  Qdrant (10 collections)  •  Redis       │
-│  Lucene Indexes  •  Master Catalog  •  LLM (Groq)       │
-└─────────────────────────────────────────────────────────┘
-```
+#### Application Layer (NEW - Phase 8)
+
+The new Application Layer provides the first line of defense in intent classification:
+
+| Component | Purpose | Features |
+|-----------|---------|----------|
+| `HybridIntentClassifier` | Fast intent detection | Keyword patterns, Jaccard similarity, confidence gating |
+| `RouterAgent` | Route to appropriate agent | Priority-based resolution, metadata attachment |
+| `Intent` (domain model) | 16 intent types | 10 primary + 6 Quran sub-intents |
+| `KEYWORD_PATTERNS` | 100+ keyword patterns | Arabic & English support |
+
+#### Intent Priority System
+
+| Intent | Priority | Agent | Retrieval |
+|--------|----------|-------|-----------|
+| TAFSIR | 10 | general_islamic_agent | ✅ |
+| QURAN | 9 | quran:* (+ sub-intent) | depends |
+| HADITH | 9 | hadith_agent | ✅ |
+| SEERAH | 8 | seerah_agent | ✅ |
+| ISLAMIC_HISTORY | 7 | islamic_history_agent | ✅ |
+| ARABIC_LANGUAGE | 6 | arabic_language_agent | ✅ |
+| FIQH | 5 | fiqh_agent | ✅ |
+| AQEDAH | 5 | aqeedah_agent | ✅ |
+| USUL_FIQH | 4 | fiqh_usul_agent | ✅ |
+| SPIRITUALITY | 3 | general_islamic_agent | ✅ |
+| ZAKAT | 2 | Calculator (no RAG) | ❌ |
+| INHERITANCE | 2 | Calculator (no RAG) | ❌ |
+| GREETING | 2 | chatbot_agent | ❌ |
+| DUA | 2 | Calculator (no RAG) | ❌ |
+| HIJRI_CALENDAR | 2 | Calculator (no RAG) | ❌ |
+| PRAYER_TIMES | 2 | Calculator (no RAG) | ❌ |
+| ISLAMIC_KNOWLEDGE | 1 | general_islamic_agent | ✅ |
 
 ---
 
 ## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.12+
+- Poetry (dependency management)
+- PostgreSQL 16+
+- Redis 7+
+- Qdrant (vector database)
+- Groq API key (or OpenAI)
+- HuggingFace token (for embedding model)
+
+### Installation
 
 ```bash
 # 1. Clone & setup
@@ -161,6 +180,13 @@ make db-migrate
 make dev
 
 # 4. Open http://localhost:8000/docs
+```
+
+### Alternative: Run on Custom Port (Windows)
+
+```bash
+# Recommended for Windows - avoids port conflicts
+python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
 ```
 
 ---
@@ -182,7 +208,7 @@ make dev
 | `/api/v1/rag/*` | GET/POST | RAG endpoints (3) | ✅ |
 | `/health`, `/ready` | GET | Health checks | ✅ |
 
-### NEW: Fast Intent Classification
+### NEW: Fast Intent Classification Endpoint
 
 ```
 POST /classify
@@ -205,16 +231,27 @@ Response:
 }
 ```
 
-### Intent Routing
+### Query Endpoint
 
-| Intent | Priority | Route | Requires Retrieval |
-|--------|----------|-------|--------------|
-| TAFSIR | 10 | general_islamic_agent | ✅ |
-| QURAN | 9 | quran:* (+ sub-intent) | depends |
-| HADITH | 9 | hadith_agent | ✅ |
-| SEERAH | 8 | seerah_agent | ✅ |
-| FIQH | 5 | fiqh_agent | ✅ |
-| ISLAMIC_KNOWLEDGE | 1 | general_islamic_agent | ✅ |
+```
+POST /api/v1/query
+{
+  "query": "ما هو حكم الله في صلاة الجمعة؟",
+  "language": "ar"
+}
+
+Response:
+{
+  "answer": "...",
+  "sources": [
+    {"type": "quran", "ref": "62:9", "text": "..."},
+    {"type": "hadith", "ref": "صحيح مسلم", "text": "..."}
+  ],
+  "citations": ["[C1]", "[C2]"],
+  "intent": "fiqh",
+  "confidence": 0.92
+}
+```
 
 **Interactive docs:** http://localhost:8000/docs
 
@@ -244,6 +281,7 @@ ElShamela Library → Extraction → Merge & Enrichment → Collections → Chun
 | **Lucene Extraction** | 11,316,717 | 16.49 GB | ✅ Complete |
 | **Merge & Enrichment** | 5,717,177 | ~61 GB | ✅ Complete |
 | **Hierarchical Chunking** | 10 files | ~88 GB | ✅ Complete |
+| **HuggingFace Upload** | 42.6 GB | 10 collections | ✅ Complete |
 | **Embedding** | - | - | ⏳ TODO (Colab GPU) |
 | **Qdrant Import** | - | - | ⏳ TODO |
 
@@ -261,6 +299,13 @@ ElShamela Library → Extraction → Merge & Enrichment → Collections → Chun
 | spirituality_passages | 79,233 | 1.4% |
 | seerah_passages | 74,972 | 1.3% |
 | usul_fiqh | 73,043 | 1.3% |
+
+### HuggingFace Dataset
+
+- **Repository:** [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- **Size:** 42.6 GB (10 collections)
+- **Format:** JSONL with rich metadata
+- **Status:** ✅ Fully uploaded and verified
 
 ---
 
@@ -290,8 +335,32 @@ Athar/
 │   │   └── models.py          # ClassificationResult
 │   ├── core/                    # Router, orchestrator, citation
 │   ├── agents/                   # 13 specialized agents
+│   │   ├── base.py
+│   │   ├── fiqh_agent.py
+│   │   ├── hadith_agent.py
+│   │   ├── tafsir_agent.py
+│   │   ├── aqeedah_agent.py
+│   │   ├── seerah_agent.py
+│   │   ├── islamic_history_agent.py
+│   │   ├── fiqh_usul_agent.py
+│   │   ├── arabic_language_agent.py
+│   │   ├── general_islamic_agent.py
+│   │   ├── chatbot_agent.py
+│   │   └── quran_agent.py
 │   ├── tools/                    # 5 deterministic tools
+│   │   ├── base.py
+│   │   ├── zakat_calculator.py
+│   │   ├── inheritance_calculator.py
+│   │   ├── prayer_times_tool.py
+│   │   ├── hijri_calendar_tool.py
+│   │   └── dua_retrieval_tool.py
 │   ├── quran/                    # Quran pipeline
+│   │   ├── verse_retrieval.py
+│   │   ├── nl2sql.py
+│   │   ├── quotation_validator.py
+│   │   ├── tafsir_retrieval.py
+│   │   ├── quran_router.py
+│   │   └── quran_agent.py
 │   ├── knowledge/                # RAG infrastructure
 │   │   ├── embedding_model.py  # BGE-m3
 │   │   ├── vector_store.py    # Qdrant
@@ -308,6 +377,9 @@ Athar/
 │
 ├── data/
 │   ├── mini_dataset/             # GitHub-friendly (1.7 MB)
+│   │   ├── fiqh_passages.jsonl
+│   │   ├── hadith_passages.jsonl
+│   │   └── ... (8 collections)
 │   └── processed/                # ✅ 61 GB processed data
 │       ├── master_catalog.json   # 8,425 books
 │       ├── category_mapping.json # 40→10 mapping
@@ -318,10 +390,19 @@ Athar/
 │
 ├── datasets/                     # Full datasets (14.4 GB, excluded from Git)
 ├── scripts/                      # 40+ utility scripts
+│   ├── analysis/                 # Diagnostic scripts
+│   ├── data/                     # Data generation
+│   ├── ingestion/                # Data pipelines
+│   ├── tests/                    # Test scripts
+│   └── utils/                    # Shared utilities
 ├── notebooks/                    # Colab notebooks
+│   ├── 02_upload_and_embed.ipynb # Main notebook
+│   ├── verify_upload.ipynb       # Verification
+│   └── COLAB_GPU_EMBEDDING_GUIDE.md
 ├── tests/                        # Test suite (9 files)
 ├── docker/                       # Docker configuration
-└── docs/                         # Documentation (60+ files)
+├── docs/                         # Documentation (60+ files)
+└── alembic/                      # Database migrations
 ```
 
 ---
@@ -339,18 +420,33 @@ Athar/
 | **Phase 7** | ✅ Complete | Full Lucene Merge (11.3M docs, 10 collections) |
 | **Phase 8** | ✅ **COMPLETE** | **Hybrid Intent Classifier** (keyword + embedding) |
 
-### Latest: Phase 8 - Hybrid Intent Classifier ✅
+### Phase 8: Hybrid Intent Classifier ✅ (April 15, 2026)
 
 The new classifier provides:
-- **Fast keyword-based classification** (no LLM required)
-- **Priority-based intent resolution** (10 levels)
-- **Quran sub-intent detection** (VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
-- **Confidence gating** with fallback to ISLAMIC_KNOWLEDGE
-- **New `/classify` endpoint** for instant intent detection
 
-### Next Steps (Phase 9)
+1. **Fast keyword-based classification** (no LLM required for simple queries)
+   - 100+ Arabic/English keyword patterns
+   - Covers 16 intent types
 
-1. **LLM Intent Classifier** - Full LLM-based classification
+2. **Priority-based intent resolution** (10 levels)
+   - TAFSIR (10) → ISLAMIC_KNOWLEDGE (1)
+   - Automatic conflict resolution
+
+3. **Quran sub-intent detection** (4 types)
+   - VERSE_LOOKUP: "ما رقم سورة كذا"
+   - ANALYTICS: "كم مرة упомина كذا"
+   - INTERPRETATION: "ما تفسير كذا"
+   - QUOTATION_VALIDATION: "هل صحيح قول كذا"
+
+4. **Confidence gating with fallback**
+   - If confidence < 0.5, defaults to ISLAMIC_KNOWLEDGE
+   - Falls back to Jaccard similarity if no keyword match
+
+5. **New `/classify` endpoint** for instant intent detection (<50ms)
+
+### Next Steps (Phase 9 - Future)
+
+1. **LLM Intent Classifier** - Full LLM-based classification for complex queries
 2. **Embedding Classifier** - Qwen3-Embedding cosine similarity
 3. **Production Testing** - End-to-end verification
 4. **Deploy to Production** - Full system launch
@@ -363,7 +459,7 @@ The new classifier provides:
 - **[docs/1-getting-started/START_HERE.md](docs/1-getting-started/START_HERE.md)** - Entry point for new developers
 
 ### Core Documentation
-- **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md)** - ✅ **Complete merge statistics & guide**
+- **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md)** - ✅ Complete merge statistics & guide
 - **[docs/5-api/COMPLETE_DOCUMENTATION.md](docs/5-api/COMPLETE_DOCUMENTATION.md)** - Full system docs
 - **[docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md](docs/2-architecture/01_ARCHITECTURE_OVERVIEW.md)** - Architecture decisions
 - **[docs/9-reference/FILE_REFERENCE.md](docs/9-reference/FILE_REFERENCE.md)** - Complete file tree
@@ -371,6 +467,11 @@ The new classifier provides:
 ### Dataset Guides
 - **[docs/6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md](docs/6-data/LUCENE_EXTRACTION_COMPLETE_GUIDE.md)** - Lucene extraction
 - **[docs/6-data/MASTER_DB_INTEGRATION_PLAN.md](docs/6-data/MASTER_DB_INTEGRATION_PLAN.md)** - Master.db integration
+- **[docs/10-operations/BACKUP_AND_RESTORE_GUIDE.md](docs/10-operations/BACKUP_AND_RESTORE_GUIDE.md)** - Backup guide
+
+### Learning Resources
+- **[docs/11-learning/README.md](docs/11-learning/README.md)** - Complete learning path
+- **[docs/11-learning/12_learning_path_detailed_explanation.md](docs/11-learning/12_learning_path_detailed_explanation.md)** - Deep dive
 
 ### Full Documentation Index
 See **[docs/README.md](docs/README.md)** for complete documentation listing (60+ files).
@@ -401,6 +502,36 @@ make test             # Run tests
 make lint             # Run linters
 make format           # Auto-format code
 make docker-up        # Start Docker services
+make db-migrate       # Run database migrations
+```
+
+---
+
+## 🧪 Testing
+
+### Test Coverage
+
+| Test File | Coverage | Tests |
+|-----------|----------|-------|
+| test_router.py | ~100% | Intent classification |
+| test_api.py | ~97% | API endpoints |
+| test_zakat_calculator.py | ~95% | Zakat calculations |
+| test_inheritance_calculator.py | ~95% | Inheritance rules |
+| test_dua_retrieval_tool.py | ~90% | Dua retrieval |
+| test_hijri_calendar_tool.py | ~90% | Date conversion |
+| test_prayer_times_tool.py | ~90% | Prayer times |
+
+### Run Tests
+
+```bash
+# Run all tests
+make test
+
+# Run with coverage
+poetry run pytest tests/ -v --cov=src --cov-report=term-missing
+
+# Run specific test
+python -m pytest tests/test_router.py -v
 ```
 
 ---
@@ -415,10 +546,22 @@ make docker-up        # Start Docker services
 
 ### Code Style
 
-- Python: PEP 8 with type hints
-- Linting: Ruff (line length 120)
-- Type Checking: MyPy (strict mode)
-- Testing: pytest with coverage (~91%)
+- **Python:** PEP 8 with type hints
+- **Linting:** Ruff (line length 120)
+- **Type Checking:** MyPy (strict mode)
+- **Testing:** pytest with coverage (~91%)
+
+---
+
+## 🙏 Acknowledgments
+
+- **Fanar-Sadiq Paper:** Research paper that inspired this architecture
+- **ElShamela Library:** 8,425 Islamic books (المكتبة الشاملة)
+- **Quran.com:** For Quran text and API
+- **Sunnah.com:** For hadith collections
+- **IslamWeb & IslamOnline:** For fatwa sources
+- **Azkar-DB:** https://github.com/osamayy/azkar-db for duas
+- **Sanadset:** 650,986 hadith dataset
 
 ---
 

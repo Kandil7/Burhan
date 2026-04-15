@@ -6,6 +6,29 @@
 
 ---
 
+## 🎉 أحدث إنجاز: المرحلة الثامنة مكتملة (15 أبريل 2026)
+
+### مصنف النية الهجين (Hybrid Intent Classifier)
+
+اعتباراً من **15 أبريل 2026**، النظام يتضمن الآن:
+
+- ✅ **تصنيف سريع مبني على الكلمات المفتاحية** (لا يتطلب LLM للاستعلامات البسيطة)
+- ✅ **نقطة نهاية `/classify` جديدة** لكشف النية الفوري (<50 مللي ثانية)
+- ✅ **10 مستويات أولوية** لحلConflicts بين النيات المتعددة
+- ✅ **كشف النيات الفرعية للقرآن** (4 أنواع: VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
+- ✅ **بوابة الثقة مع احتياطي** إلى ISLAMIC_KNOWLEDGE عندما تكون الثقة < 0.5
+
+### ما الجديد في المرحلة 8
+
+| المكون | الوصف |
+|--------|-------|
+| `src/application/hybrid_classifier.py` | مصنف النية الهجين الجديد |
+| `src/application/router.py` | توجيه الوكيل |
+| `src/domain/intents.py` | 16 نوع نية مع الأولويات |
+| `src/api/routes/classification.py` | نقطة نهاية `/classify` |
+
+---
+
 ## 📋 محتويات الدليل
 
 ### الجزء الأول: نظرة عامة على المشروع
@@ -33,21 +56,16 @@
 - أين تبدأ القراءة في كل مجلد
 
 **المجلدات المغطاة:**
-1. `src/api/` - طبقة واجهة البرمجة
-2. `src/config/` - الإعدادات والثوابت
-3. `src/core/` - المنطق الأساسي
-4. `src/agents/` - الوكلاء المتخصصون
-5. `src/tools/` - الأدوات الحتمية
-6. `src/quran/` - خط إنتاج القرآن
-7. `src/knowledge/` - بنية الـ RAG
-8. `src/infrastructure/` - الخدمات الخارجية
-9. `src/data/` - نماذج البيانات
-10. `data/` - البيانات الخام
-11. `scripts/` - السكريبتات المساعدة
-12. `tests/` - الاختبارات
-13. `docs/` - التوثيق
-14. `notebooks/` - دفاتر Colab
-15. `docker/` - Docker Compose
+1. `src/api/` - طبقة واجهة البرمجة (20 endpoint)
+2. `src/application/` - طبقة التطبيق الجديدة (المرحلة 8)
+3. `src/domain/` - تعريفات النطاق (intents, models)
+4. `src/config/` - الإعدادات والثوابت
+5. `src/core/` - المنطق الأساسي
+6. `src/agents/` - الوكلاء المتخصصون (13 وكيل)
+7. `src/tools/` - الأدوات الحتمية (5 أدوات)
+8. `src/quran/` - خط إنتاج القرآن
+9. `src/knowledge/` - بنية الـ RAG
+10. `src/infrastructure/` - الخدمات الخارجية
 
 **المدة المتوقعة:** 45-60 دقيقة
 
@@ -95,6 +113,15 @@
 اليوم 3-4:  src/agents/fiqh_agent.py     ← وكيل RAG كامل
 اليوم 5-6:  src/knowledge/embedding_model.py  ← التضمين
 اليوم 7-8:  src/knowledge/vector_store.py     ← Qdrant
+```
+
+### للمتقدمين جداً (أسبوع 7-8) - جديد!
+
+```
+اليوم 1-2:  src/application/hybrid_classifier.py  ← مصنف النية الهجين
+اليوم 3-4:  src/domain/intents.py          ← 16 نوع نية مع الأولويات
+اليوم 5-6:  src/api/routes/classification.py  ← نقطة نهاية /classify
+اليوم 7-8:  تجربة التصنيف الجديد
 ```
 
 ---
@@ -177,7 +204,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - نصوص متشابهة = متجهات متشابهة
 - يمكننا حساب التشابه بين النصوص
 
-**في Athar**: BAAI/bge-m3 (1024 dimensions)
+**في Athar**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
 
 ---
 
@@ -192,14 +219,17 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 
 ---
 
-### Intent Classification (تصنيف النية)
+### Intent Classification (تصنيف النية) - مُحدث!
 **تعريف**: فهم ما يريده المستخدم من السؤال.
 
 **لماذا مهم**:
 - يوجه السؤال للوكيل الصحيح
 - يحسن دقة الإجابة
 
-**في Athar**: 3-tier (keyword → LLM → embedding)
+**في Athar**: 
+- **المرحلة 8**: Hybrid (keyword → Jaccard → confidence gating)
+- **16 نوع نية** مع 10 مستويات أولوية
+- **4 أنواع فرعية للقرآن**
 
 ---
 
@@ -222,7 +252,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - [ ] قراءة `02_folder_structure.md`
 - [ ] قراءة `03_api_main_entrypoint.md`
 - [ ] تشغيل التطبيق
-- [ ] تجربة الـ 18 endpoint عبر Swagger
+- [ ] تجربة الـ 20 endpoint عبر Swagger
 
 ### المرحلة 2: فهم التصنيف (أسبوع 3-4)
 - [ ] قراءة `src/config/intents.py`
@@ -254,21 +284,32 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - [ ] قراءة `src/tools/inheritance_calculator.py`
 - [ ] فهم deterministic tools
 
+### المرحلة 7: المرحلة الثامنة - مصنف النية الهجين (أسبوع 13-14) - جديد!
+- [ ] قراءة `src/application/hybrid_classifier.py`
+- [ ] قراءة `src/domain/intents.py`
+- [ ] قراءة `src/application/router.py`
+- [ ] قراءة `src/api/routes/classification.py`
+- [ ] تجربة نقطة نهاية `/classify`
+
 ---
 
-## 📊 إحصائيات المشروع
+## 📊 إحصائيات المشروع المُحدثة
 
 | المقياس | القيمة |
 |---------|--------|
-| **الأسطر البرمجية** | ~14,200 سطر |
-| **الملفات** | ~120 ملف |
+| **الأسطر البرمجية** | ~15,500 سطر |
+| **الملفات** | ~130 ملف |
 | **الاختبارات** | 9 ملفات (~91% تغطية) |
-| **الـ Endpoints** | 18 endpoint |
-| **الوكلاء** | 13 وكيل (6 منفذين) |
+| **الـ Endpoints** | 20 endpoint (جديد: /classify) |
+| **الوكلاء** | 13 وكيل |
 | **الأدوات** | 5 أدوات حتمية |
+| **أنواع النية** | 16 نوع + 4 فرعية للقرآن |
+| **مستويات الأولوية** | 10 مستويات |
 | **المتجهات** | 5.7 مليون متجه |
 | **المستندات** | 8,425 كتاب |
 | **العلماء** | 3,146 عالم |
+| **لوكين Documents** | 11,316,717 وثيقة |
+| **بيانات HuggingFace** | 42.6 GB |
 
 ---
 
@@ -310,7 +351,12 @@ make dev
 # افتح Swagger UI
 http://localhost:8000/docs
 
-# جرب endpoint /api/v1/query
+# جرب endpoint /classify الجديد (المرحلة 8)
+{
+  "query": "ما حكم صلاة الجمعة؟"
+}
+
+# أو جرب endpoint /api/v1/query
 {
   "query": "ما حكم صلاة العيد؟"
 }
@@ -349,10 +395,18 @@ http://localhost:8000/docs
 ```
 
 ### تمرين 3: عدد الـ Endpoints
-افتح Swagger UI وعد الـ endpoints. كم وجدت؟
+افتح Swagger UI وعد الـ endpoints. كم وجدت؟ (الإجابة: 20)
 
 ### تمرين 4: قراءة ملف
-افتح `src/config/intents.py`. اقرأه دون شرح. ماذا فهمت؟
+افتح `src/domain/intents.py`. اقرأه دون شرح. ماذا فهمت؟
+
+### تمرين 5: اختبار /classify (جديد!)
+جرب نقطة النهاية الجديدة:
+```bash
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم الزكاة؟"}'
+```
 
 ---
 
@@ -368,6 +422,15 @@ http://localhost:8000/docs
 3. إضافة ميزات جديدة
 4. مراجعة كود الآخرين
 5. شرح المشروع لغيرك
+6. **استخدام مصنف النية الهجين الجديد** (المرحلة 8)
+
+---
+
+## 📚 مصادر إضافية للمرحلة 8
+
+- **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](../10-operations/LUCENE_MERGE_COMPLETE.md)** - تفاصيل المرحلة 7
+- **[docs/10-operations/BACKUP_AND_RESTORE_GUIDE.md](../10-operations/BACKUP_AND_RESTORE_GUIDE.md)** - النسخ الاحتياطي
+- **[notebooks/COLAB_GPU_EMBEDDING_GUIDE.md](../notebooks/COLAB_GPU_EMBEDDING_GUIDE.md)** - تشغيل التضمين على GPU
 
 ---
 
@@ -381,5 +444,5 @@ http://localhost:8000/docs
 
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
-**الإصدار:** 1.0  
-**المشروع:** Athar Islamic QA System v0.5.0
+**الإصدار:** 2.0  
+**المشروع:** Athar Islamic QA System v0.8.0 (Phase 8 Complete)

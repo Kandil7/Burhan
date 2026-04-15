@@ -1,18 +1,31 @@
 # 🕌 Athar - Complete Notebooks Guide
 
-**Last Updated:** April 8, 2026  
-**Status:** Production-Ready  
-**Phase:** 7 Complete (Lucene Merge), Phase 8 (Upload & Embedding)
+**Last Updated:** April 15, 2026  
+**Status:** Phase 8 Complete - Ready for GPU Embedding  
+**Phase:** Hybrid Intent Classifier Active
 
 ---
 
 ## Overview
 
 Production-ready Google Colab notebooks for:
-1. **Uploading** 5.7M Islamic documents to Hugging Face
-2. **Embedding** all collections with BGE-M3 on GPU
+1. **Uploading** 5.7M Islamic documents to Hugging Face ✅ COMPLETE
+2. **Embedding** all collections with BGE-m3 on GPU
 3. **Importing** to Qdrant vector database
 4. **Verifying** everything works
+
+---
+
+## 🎉 Phase 8 Complete: Hybrid Intent Classifier Active
+
+As of **April 15, 2026**, the system now includes:
+
+- ✅ **Fast keyword-based classification** (no LLM required)
+- ✅ **New `/classify` endpoint** for instant intent detection (<50ms)
+- ✅ **10 priority levels** for conflict resolution
+- ✅ **Quran sub-intent detection** (4 types)
+
+This means the API is ready to route queries while we wait for the embedding pipeline to complete.
 
 ---
 
@@ -20,43 +33,40 @@ Production-ready Google Colab notebooks for:
 
 | Notebook | Purpose | GPU Time | Status |
 |----------|---------|----------|--------|
-| **02_upload_and_embed.ipynb** | Upload + Embed + Import | ~13 hours | ✅ **MAIN - USE THIS** |
-| **verify_upload.ipynb** | Verify uploads work | 10 min | ✅ Verification |
+| **02_upload_and_embed.ipynb** | Complete pipeline (Upload → Embed → Import) | ~13 hours (T4) | ✅ Ready |
+| **verify_upload.ipynb** | Verify HuggingFace uploads | 10 min | ✅ Ready |
 | **COLAB_GPU_EMBEDDING_GUIDE.md** | Complete setup guide | - | ✅ Documentation |
-| README.md | This guide | - | ✅ Current |
 
-### Archived (Not Recommended)
+### Recommended Workflow
 
-| Notebook | Why Archived | Location |
-|----------|--------------|----------|
-| 01_embed_all_collections.ipynb | Uses old model (Qwen3 instead of BGE-M3) | `archive/` |
-| 04_upload_to_huggingface.ipynb | Duplicates Python scripts | `archive/` |
-| 05_upload_to_kaggle.ipynb | Kaggle is backup option only | `archive/` |
-| setup_colab_env.ipynb | Superseded by main notebook | Deleted |
+```
+1. HuggingFace Upload ✅ COMPLETE (42.6 GB)
+       ↓
+2. Run Colab GPU Embedding ⏳ PENDING (~13 hours)
+       ↓
+3. Import to Qdrant ⏳ PENDING (auto in notebook)
+       ↓
+4. Verify & Test ⏳ PENDING
+```
 
 ---
 
 ## Quick Start (Recommended Flow)
 
-### Step 1: Upload Data to Hugging Face (Local Machine)
+### Step 1: Verify HuggingFace Upload (Already Done ✅)
 
-**Time:** ~1.5 hours  
-**Cost:** FREE
+The data has been uploaded to HuggingFace:
 
 ```bash
-# Already running on your machine!
-# PID: 18364
-
-# Check progress
-dir data\processed\lucene_pages\upload_ready\*.gz
-
-# Verify when done
+# Verify uploads
 poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 ```
 
+**Status:** ✅ All 10 collections uploaded (42.6 GB total)
+
 ### Step 2: Embed on Colab GPU
 
-**Time:** ~13 hours (free T4) or ~4 hours (paid A100)
+**Time:** ~13 hours (free T4) or ~4 hours (paid A100)  
 **Cost:** FREE (T4 GPU) or ~$10-15 (A100)
 
 1. Open Google Colab: https://colab.research.google.com
@@ -84,33 +94,30 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 
 **Steps:**
 1. Setup environment (install packages)
-2. Login to Hugging Face
-3. Compress collections (optional)
-4. Upload to Hugging Face
-5. Verify upload
-6. Embed all collections with BGE-M3
-7. Import to Qdrant
-8. Test retrieval
+2. Login to HuggingFace
+3. Download collections from HuggingFace
+4. Load BGE-m3 embedding model
+5. Embed all collections with GPU
+6. Import to Qdrant
+7. Test retrieval
 
 **Requirements:**
 - Google Colab with T4 GPU (free)
-- Hugging Face token
-- ~2 hours runtime
+- HuggingFace token
+- ~13 hours runtime
 
 **Outputs:**
-- Collections on Hugging Face
+- Collections on HuggingFace (already done)
 - Embeddings (.npy files)
 - Qdrant collections populated
 - Working RAG retrieval
-
----
 
 ### verify_upload.ipynb
 
 **Purpose:** Verify uploaded datasets work correctly
 
 **Steps:**
-1. Load each collection from Hugging Face
+1. Load each collection from HuggingFace
 2. Check document counts
 3. Verify data quality
 4. Show sample documents
@@ -119,10 +126,46 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 - Google Colab (CPU is fine)
 - 10 minutes runtime
 
-**Outputs:**
-- Verification report
-- Collection statistics
-- Sample documents
+---
+
+## Current Status
+
+### Upload Progress ✅ COMPLETE
+
+```
+Repository: Kandil7/Athar-Datasets
+Status: Complete ✅
+
+Collections uploaded:
+  ✅ hadith_passages.jsonl (11.0 GB)
+  ✅ fiqh_passages.jsonl (7.0 GB)
+  ✅ general_islamic.jsonl (6.5 GB)
+  ✅ islamic_history_passages.jsonl (6.0 GB)
+  ✅ quran_tafsir.jsonl (5.2 GB)
+  ✅ arabic_language_passages.jsonl (2.3 GB)
+  ✅ aqeedah_passages.jsonl (1.8 GB)
+  ✅ usul_fiqh.jsonl (0.9 GB)
+  ✅ spirituality_passages.jsonl (1.1 GB)
+  ✅ seerah_passages.jsonl (0.8 GB)
+   
+Total: 42.6 GB ✅ COMPLETE
+```
+
+### Embedding Progress ⏳ PENDING
+
+| Collection | Documents | Embedding Time (T4) |
+|------------|-----------|-------------------|
+| hadith_passages | 1,551,964 | ~3.5 hours |
+| general_islamic | 1,193,626 | ~2 hours |
+| islamic_history_passages | 1,186,189 | ~1.7 hours |
+| fiqh_passages | 676,577 | ~2.2 hours |
+| quran_tafsir | 550,989 | ~1.5 hours |
+| aqeedah_passages | 183,086 | ~40 min |
+| arabic_language_passages | 147,498 | ~30 min |
+| spirituality_passages | 79,233 | ~20 min |
+| seerah_passages | 74,972 | ~20 min |
+| usul_fiqh | 73,043 | ~20 min |
+| **Total** | **5,717,177** | **~13 hours** |
 
 ---
 
@@ -133,7 +176,7 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 Keep data on your local machine, upload via scripts:
 
 ```bash
-# Upload to Hugging Face
+# Upload to HuggingFace
 poetry run python scripts/final_upload.py --upload --compress
 
 # Verify
@@ -142,7 +185,7 @@ poetry run python scripts/final_upload.py --verify
 
 **Pros:**
 - No need to upload to Google Drive first
-- Direct upload to Hugging Face
+- Direct upload to HuggingFace
 - Faster (no double upload)
 
 ### For Google Drive Storage (OPTIONAL)
@@ -164,13 +207,6 @@ Google Drive/
         └── output/
             ├── embeddings/
             └── qdrant/
-```
-
-**Upload to Drive:**
-```bash
-# Install Google Drive CLI
-# Or use Google Drive Desktop app
-# Copy data/processed/lucene_pages/collections/ to Drive
 ```
 
 ---
@@ -200,52 +236,27 @@ Google Drive/
 
 ---
 
-## Current Status
+## Next Steps
 
-### Upload Progress
+### Immediate
 
-```
-Repository: Kandil7/Athar-Datasets
-Status: Created ✅
-Upload: Running (PID: 18364)
+1. ⏳ **Open Colab:** https://colab.research.google.com
+2. ⏳ **Upload notebook:** `notebooks/02_upload_and_embed.ipynb`
+3. ⏳ **Set HF_TOKEN** in notebook
+4. ⏳ **Select T4 GPU:** Runtime → Change runtime type → GPU
+5. ⏳ **Run all cells** (~13 hours on T4)
+6. ⏳ **Verify:** `notebooks/verify_upload.ipynb`
 
-Collections to upload:
-  ✓ hadith_passages.jsonl (11.0 GB)
-  ✓ fiqh_passages.jsonl (7.0 GB)
-  ✓ general_islamic.jsonl (6.5 GB)
-  ✓ islamic_history_passages.jsonl (6.0 GB)
-  ✓ quran_tafsir.jsonl (5.2 GB)
-  ✓ arabic_language_passages.jsonl (2.3 GB)
-  ✓ aqeedah_passages.jsonl (1.8 GB)
-  ✓ usul_fiqh.jsonl (0.9 GB)
-  ✓ spirituality_passages.jsonl (1.1 GB)
-  ✓ seerah_passages.jsonl (0.8 GB)
-  
-Total: 42.6 GB → ~15 GB compressed
-```
+### After Embedding
 
-### Next Steps
-
-1. ⏳ **Wait for upload to complete** (~1 hour)
-2. ⏳ **Verify upload** (`scripts/final_upload.py --verify`)
-3. ⏳ **Open Colab** (notebooks/02_upload_and_embed.ipynb)
-4. ⏳ **Embed collections** (~1 hour on T4)
-5. ⏳ **Import to Qdrant** (30 min)
-6. ⏳ **Test retrieval** (10 min)
+1. ⏳ **Import to Qdrant** (notebook does this automatically)
+2. ⏳ **Test retrieval** (notebook includes tests)
+3. ⏳ **Update API** to use BGE-m3 embeddings
+4. ⏳ **Deploy to production**
 
 ---
 
 ## Troubleshooting
-
-### Upload Stuck
-
-```powershell
-# Check if running
-tasklist | findstr python
-
-# If stuck, restart
-poetry run python scripts/final_upload.py --upload --compress
-```
 
 ### Colab GPU Not Available
 
@@ -278,10 +289,23 @@ login(token="hf_YOUR_TOKEN_HERE")
 
 - **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Colab:** https://colab.research.google.com
-- **BGE-M3 Model:** https://huggingface.co/BAAI/bge-m3
+- **BGE-m3 Model:** https://huggingface.co/BAAI/bge-m3
 - **Athar GitHub:** https://github.com/Kandil7/Athar
 - **Qdrant Docs:** https://qdrant.tech/documentation
+- **Phase 8 Details:** [docs/10-operations/LUCENE_MERGE_COMPLETE.md](/docs/10-operations/LUCENE_MERGE_COMPLETE.md)
 
 ---
 
-*Last updated: April 8, 2026*
+## 📊 Phase Progress
+
+| Phase | Status | Key Achievement |
+|-------|--------|-----------------|
+| Phase 7 | ✅ Complete | 11.3M Lucene documents merged |
+| **Phase 8** | ✅ **Complete** | **Hybrid Intent Classifier** |
+| Phase 9 | ⏳ Pending | GPU Embedding & Qdrant Import |
+
+---
+
+*Last updated: April 15, 2026*
+
+*Built with ❤️ for the Muslim community*

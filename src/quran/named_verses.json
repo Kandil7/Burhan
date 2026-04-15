@@ -1,5 +1,38 @@
 {
+  "_meta": {
+    "version": "2.0",
+    "description": "Comprehensive named Quran verses and well-known surahs for AtharRAG",
+    "sources": [
+      "Sahih Bukhari",
+      "Sahih Muslim",
+      "Sunan Abi Dawud",
+      "Al-Itqan fi Ulum al-Quran (Al-Suyuti)",
+      "Jamharat al-Ulum"
+    ],
+    "categories": [
+      "named_single_verses",
+      "named_verse_groups",
+      "famous_short_surahs",
+      "famous_long_surahs"
+    ],
+    "note": "Every entry has: surah (int), ayah OR ayah_range (list), name_ar, name_en, aliases (list), category, notes"
+  },
   "ayat_al_kursi": {
+    "surah": 2,
+    "ayah": 255,
+    "name_ar": "آية الكرسي",
+    "name_en": "Ayat al-Kursi",
+    "aliases": [
+      "آية الكرسي",
+      "اية الكرسي",
+      "ayat alkursi",
+      "throne verse",
+      "سيدة آي القرآن"
+    ],
+    "category": "named_single_verses",
+    "notes": "أعظم آية في القرآن. رواه أبو هريرة في صحيح البخاري."
+  },
+  "آية_الكرسي": {
     "surah": 2,
     "ayah": 255,
     "name_ar": "آية الكرسي",
@@ -8,79 +41,1665 @@
   "ayat_ad_dayn": {
     "surah": 2,
     "ayah": 282,
-    "name_ar": "آية الدين",
+    "name_ar": "آية الدَّين",
+    "name_en": "Ayat ad-Dayn",
+    "aliases": [
+      "آية الدين",
+      "آية الدَّين",
+      "اية الدين",
+      "verse of debt",
+      "آية المداينة"
+    ],
+    "category": "named_single_verses",
+    "notes": "أطول آية في القرآن الكريم. قال ابن شهاب: آخر القرآن عهداً بالعرش آيةُ الربا وآيةُ الدَّين."
+  },
+  "آية_الدين": {
+    "surah": 2,
+    "ayah": 282,
+    "name_ar": "آية الدَّين",
     "name_en": "Ayat ad-Dayn"
+  },
+  "ayat_ar_riba": {
+    "surah": 2,
+    "ayah": 275,
+    "name_ar": "آية الربا",
+    "name_en": "Ayat ar-Riba",
+    "aliases": [
+      "آية الربا",
+      "اية الربا",
+      "verse of usury"
+    ],
+    "category": "named_single_verses",
+    "notes": "وَأَحَلَّ اللَّهُ الْبَيْعَ وَحَرَّمَ الرِّبَا. من آخر ما نزل من القرآن."
+  },
+  "آية_الربا": {
+    "surah": 2,
+    "ayah": 275,
+    "name_ar": "آية الربا",
+    "name_en": "Ayat ar-Riba"
+  },
+  "ayat_al_birr": {
+    "surah": 2,
+    "ayah": 177,
+    "name_ar": "آية البِرّ",
+    "name_en": "Ayat al-Birr",
+    "aliases": [
+      "آية البر",
+      "اية البر",
+      "verse of righteousness"
+    ],
+    "category": "named_single_verses",
+    "notes": "لَيْسَ الْبِرَّ أَن تُوَلُّوا وُجُوهَكُمْ... جمعت أركان الإيمان والعمل الصالح."
+  },
+  "آية_البر": {
+    "surah": 2,
+    "ayah": 177,
+    "name_ar": "آية البِرّ",
+    "name_en": "Ayat al-Birr"
+  },
+  "ayat_as_sayf": {
+    "surah": 9,
+    "ayah": 5,
+    "name_ar": "آية السيف",
+    "name_en": "Ayat as-Sayf",
+    "aliases": [
+      "آية السيف",
+      "اية السيف",
+      "verse of the sword"
+    ],
+    "category": "named_single_verses",
+    "notes": "فَإِذَا انسَلَخَ الأَشْهُرُ الْحُرُمُ فَاقْتُلُوا الْمُشْرِكِينَ."
+  },
+  "آية_السيف": {
+    "surah": 9,
+    "ayah": 5,
+    "name_ar": "آية السيف",
+    "name_en": "Ayat as-Sayf"
+  },
+  "ayat_al_hijab": {
+    "surah": 33,
+    "ayah": 53,
+    "name_ar": "آية الحجاب",
+    "name_en": "Ayat al-Hijab",
+    "aliases": [
+      "آية الحجاب",
+      "اية الحجاب",
+      "verse of the veil"
+    ],
+    "category": "named_single_verses",
+    "notes": "رواه أنس بن مالك في صحيح البخاري. يَا أَيُّهَا الَّذِينَ آمَنُوا لَا تَدْخُلُوا بُيُوتَ النَّبِيِّ..."
+  },
+  "آية_الحجاب": {
+    "surah": 33,
+    "ayah": 53,
+    "name_ar": "آية الحجاب",
+    "name_en": "Ayat al-Hijab"
+  },
+  "ayat_an_nur": {
+    "surah": 24,
+    "ayah": 35,
+    "name_ar": "آية النور",
+    "name_en": "Ayat an-Nur",
+    "aliases": [
+      "آية النور",
+      "اية النور",
+      "verse of light",
+      "اللَّهُ نُورُ السَّمَاوَاتِ"
+    ],
+    "category": "named_single_verses",
+    "notes": "اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ. من أعمق آيات القرآن معنىً."
+  },
+  "آية_النور": {
+    "surah": 24,
+    "ayah": 35,
+    "name_ar": "آية النور",
+    "name_en": "Ayat an-Nur"
+  },
+  "ayat_al_jald": {
+    "surah": 24,
+    "ayah": 2,
+    "name_ar": "آية الجلد",
+    "name_en": "Ayat al-Jald",
+    "aliases": [
+      "آية الجلد",
+      "اية الجلد",
+      "verse of flogging"
+    ],
+    "category": "named_single_verses",
+    "notes": "الزَّانِيَةُ وَالزَّانِي فَاجْلِدُوا كُلَّ وَاحِدٍ مِّنْهُمَا مِائَةَ جَلْدَةٍ."
+  },
+  "آية_الجلد": {
+    "surah": 24,
+    "ayah": 2,
+    "name_ar": "آية الجلد",
+    "name_en": "Ayat al-Jald"
+  },
+  "ayat_at_tayammum": {
+    "surah": 4,
+    "ayah": 43,
+    "name_ar": "آية التيمم",
+    "name_en": "Ayat at-Tayammum",
+    "aliases": [
+      "آية التيمم",
+      "اية التيمم",
+      "verse of dry ablution"
+    ],
+    "category": "named_single_verses",
+    "notes": "نزلت في قصة قلادة عائشة رضي الله عنها. رواها البخاري."
+  },
+  "آية_التيمم": {
+    "surah": 4,
+    "ayah": 43,
+    "name_ar": "آية التيمم",
+    "name_en": "Ayat at-Tayammum"
+  },
+  "ayat_al_qasr": {
+    "surah": 4,
+    "ayah": 101,
+    "name_ar": "آية القصر",
+    "name_en": "Ayat al-Qasr",
+    "aliases": [
+      "آية القصر",
+      "اية القصر",
+      "verse of shortening prayer"
+    ],
+    "category": "named_single_verses",
+    "notes": "وَإِذَا ضَرَبْتُمْ فِي الْأَرْضِ فَلَيْسَ عَلَيْكُمْ جُنَاحٌ أَن تَقْصُرُوا مِنَ الصَّلَاةِ."
+  },
+  "آية_القصر": {
+    "surah": 4,
+    "ayah": 101,
+    "name_ar": "آية القصر",
+    "name_en": "Ayat al-Qasr"
+  },
+  "ayat_al_muharaba": {
+    "surah": 5,
+    "ayah": 33,
+    "name_ar": "آية المحاربة",
+    "name_en": "Ayat al-Muharaba",
+    "aliases": [
+      "آية المحاربة",
+      "اية المحاربة",
+      "verse of highway robbery"
+    ],
+    "category": "named_single_verses",
+    "notes": "إِنَّمَا جَزَاءُ الَّذِينَ يُحَارِبُونَ اللَّهَ وَرَسُولَهُ. نزلت في العُرنيين."
+  },
+  "آية_المحاربة": {
+    "surah": 5,
+    "ayah": 33,
+    "name_ar": "آية المحاربة",
+    "name_en": "Ayat al-Muharaba"
+  },
+  "ayat_al_mubahalah": {
+    "surah": 3,
+    "ayah": 61,
+    "name_ar": "آية المباهلة",
+    "name_en": "Ayat al-Mubahala",
+    "aliases": [
+      "آية المباهلة",
+      "اية المباهلة",
+      "verse of mubahala",
+      "آية الابتهال"
+    ],
+    "category": "named_single_verses",
+    "notes": "فَمَنْ حَاجَّكَ فِيهِ مِن بَعْدِ مَا جَاءَكَ مِنَ الْعِلْمِ. نزلت في وفد نجران."
+  },
+  "آية_المباهلة": {
+    "surah": 3,
+    "ayah": 61,
+    "name_ar": "آية المباهلة",
+    "name_en": "Ayat al-Mubahala"
+  },
+  "ayat_al_kursi_followup": {
+    "surah": 2,
+    "ayah_range": [
+      256,
+      257
+    ],
+    "name_ar": "آيتان بعد الكرسي",
+    "name_en": "Two Verses After al-Kursi",
+    "aliases": [
+      "لا إكراه في الدين",
+      "لا اكراه في الدين",
+      "ayataan baad al kursi"
+    ],
+    "category": "named_verse_groups",
+    "notes": "لَا إِكْرَاهَ فِي الدِّينِ و اللَّهُ وَلِيُّ الَّذِينَ آمَنُوا. ذُكرتا في حديث من قرأ عشر آيات من البقرة."
+  },
+  "ayat_al_kalala": {
+    "surah": 4,
+    "ayah": 176,
+    "name_ar": "آية الكلالة",
+    "name_en": "Ayat al-Kalala",
+    "aliases": [
+      "آية الكلالة",
+      "آية الصيف",
+      "اية الكلالة",
+      "اية الصيف",
+      "verse of kalala",
+      "verse of summer"
+    ],
+    "category": "named_single_verses",
+    "notes": "يَسْتَفْتُونَكَ قُلِ اللَّهُ يُفْتِيكُمْ فِي الْكَلَالَةِ. قال النبيﷺ لعمر: ألا تكفيك آية الصيف؟ رواه مسلم."
+  },
+  "آية_الكلالة": {
+    "surah": 4,
+    "ayah": 176,
+    "name_ar": "آية الكلالة",
+    "name_en": "Ayat al-Kalala"
+  },
+  "آية_الصيف": {
+    "surah": 4,
+    "ayah": 176,
+    "name_ar": "آية الكلالة (الصيف)",
+    "name_en": "Ayat al-Kalala (Ayat as-Sayf)"
+  },
+  "ayat_al_mawarith": {
+    "surah": 4,
+    "ayah_range": [
+      11,
+      12
+    ],
+    "name_ar": "آية المواريث",
+    "name_en": "Ayat al-Mawarith",
+    "aliases": [
+      "آية المواريث",
+      "آية الفرائض",
+      "آية الميراث",
+      "آية الفرض",
+      "اية المواريث",
+      "verse of inheritance"
+    ],
+    "category": "named_verse_groups",
+    "notes": "يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ. نزلت حين سأل جابر رضي الله عنه النبيﷺ عن ميراثه. رواه البخاري."
+  },
+  "آية_المواريث": {
+    "surah": 4,
+    "ayah_range": [
+      11,
+      12
+    ],
+    "name_ar": "آية المواريث",
+    "name_en": "Ayat al-Mawarith"
+  },
+  "آية_الفرائض": {
+    "surah": 4,
+    "ayah_range": [
+      11,
+      12
+    ],
+    "name_ar": "آية المواريث",
+    "name_en": "Ayat al-Faraid"
+  },
+  "ayat_al_lian": {
+    "surah": 24,
+    "ayah_range": [
+      6,
+      9
+    ],
+    "name_ar": "آية اللِّعان",
+    "name_en": "Ayat al-Lian",
+    "aliases": [
+      "آية الملاعنة",
+      "آية اللعان",
+      "آية المتلاعنين",
+      "اية اللعان",
+      "verse of mutual cursing"
+    ],
+    "category": "named_verse_groups",
+    "notes": "وَالَّذِينَ يَرْمُونَ أَزْوَاجَهُمْ... رواه أبو داود عن أبي هريرة."
+  },
+  "آية_اللعان": {
+    "surah": 24,
+    "ayah_range": [
+      6,
+      9
+    ],
+    "name_ar": "آية اللِّعان",
+    "name_en": "Ayat al-Lian"
+  },
+  "ayat_al_idhn": {
+    "surah": 24,
+    "ayah_range": [
+      27,
+      29
+    ],
+    "name_ar": "آية الإذن",
+    "name_en": "Ayat al-Idhn",
+    "aliases": [
+      "آية الإذن",
+      "آية الاستئذان",
+      "اية الاذن",
+      "verse of permission"
+    ],
+    "category": "named_verse_groups",
+    "notes": "يَا أَيُّهَا الَّذِينَ آمَنُوا لَا تَدْخُلُوا بُيُوتًا غَيْرَ بُيُوتِكُمْ."
+  },
+  "آية_الاستئذان": {
+    "surah": 24,
+    "ayah_range": [
+      27,
+      29
+    ],
+    "name_ar": "آية الإذن",
+    "name_en": "Ayat al-Idhn"
+  },
+  "ayat_at_takhyir": {
+    "surah": 33,
+    "ayah_range": [
+      28,
+      29
+    ],
+    "name_ar": "آية التخيير",
+    "name_en": "Ayat at-Takhyir",
+    "aliases": [
+      "آية التخيير",
+      "آية الخيار",
+      "آية النساء",
+      "اية التخيير",
+      "verse of choice"
+    ],
+    "category": "named_verse_groups",
+    "notes": "يَا أَيُّهَا النَّبِيُّ قُل لِّأَزْوَاجِكَ... نزلت في تخيير أزواج النبيﷺ."
+  },
+  "آية_التخيير": {
+    "surah": 33,
+    "ayah_range": [
+      28,
+      29
+    ],
+    "name_ar": "آية التخيير",
+    "name_en": "Ayat at-Takhyir"
+  },
+  "ayat_al_ila": {
+    "surah": 2,
+    "ayah_range": [
+      226,
+      227
+    ],
+    "name_ar": "آية الإيلاء",
+    "name_en": "Ayat al-Ila",
+    "aliases": [
+      "آية الإيلاء",
+      "آية الايلاء",
+      "اية الايلاء",
+      "verse of ila"
+    ],
+    "category": "named_verse_groups",
+    "notes": "لِلَّذِينَ يُؤْلُونَ مِن نِّسَائِهِمْ تَرَبُّصُ أَرْبَعَةِ أَشْهُرٍ."
+  },
+  "آية_الإيلاء": {
+    "surah": 2,
+    "ayah_range": [
+      226,
+      227
+    ],
+    "name_ar": "آية الإيلاء",
+    "name_en": "Ayat al-Ila"
+  },
+  "ayat_al_mutah": {
+    "surah": 4,
+    "ayah": 24,
+    "name_ar": "آية المتعة",
+    "name_en": "Ayat al-Mutah",
+    "aliases": [
+      "آية المتعة",
+      "اية المتعة",
+      "verse of temporary marriage"
+    ],
+    "category": "named_single_verses",
+    "notes": "فَمَا اسْتَمْتَعْتُم بِهِ مِنْهُنَّ. محل خلاف فقهي بين المذاهب."
+  },
+  "آية_المتعة": {
+    "surah": 4,
+    "ayah": 24,
+    "name_ar": "آية المتعة",
+    "name_en": "Ayat al-Mutah"
+  },
+  "ayat_as_sabr": {
+    "surah": 2,
+    "ayah_range": [
+      155,
+      157
+    ],
+    "name_ar": "آية الصبر",
+    "name_en": "Ayat as-Sabr",
+    "aliases": [
+      "آية الصبر",
+      "اية الصبر",
+      "إنا لله وإنا إليه راجعون",
+      "verse of patience"
+    ],
+    "category": "named_verse_groups",
+    "notes": "وَلَنَبْلُوَنَّكُم بِشَيْءٍ مِّنَ الْخَوْفِ... وَبَشِّرِ الصَّابِرِينَ."
+  },
+  "آية_الصبر": {
+    "surah": 2,
+    "ayah_range": [
+      155,
+      157
+    ],
+    "name_ar": "آية الصبر",
+    "name_en": "Ayat as-Sabr"
+  },
+  "ayat_as_siyam": {
+    "surah": 2,
+    "ayah_range": [
+      183,
+      187
+    ],
+    "name_ar": "آية الصيام",
+    "name_en": "Ayat as-Siyam",
+    "aliases": [
+      "آية الصيام",
+      "آية الصوم",
+      "اية الصيام",
+      "اية الصوم",
+      "verse of fasting"
+    ],
+    "category": "named_verse_groups",
+    "notes": "يَا أَيُّهَا الَّذِينَ آمَنُوا كُتِبَ عَلَيْكُمُ الصِّيَامُ. شهر رمضان الذي أُنزل فيه القرآن."
+  },
+  "آية_الصيام": {
+    "surah": 2,
+    "ayah_range": [
+      183,
+      187
+    ],
+    "name_ar": "آية الصيام",
+    "name_en": "Ayat as-Siyam"
+  },
+  "aman_ar_rasul": {
+    "surah": 2,
+    "ayah_range": [
+      285,
+      286
+    ],
+    "name_ar": "آمَنَ الرَّسُول",
+    "name_en": "Aman ar-Rasul",
+    "aliases": [
+      "آمن الرسول",
+      "امن الرسول",
+      "خاتمة البقرة",
+      "آخر البقرة",
+      "last two verses of baqarah"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأهما في ليلة كفتاه. رواه البخاري. لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا."
+  },
+  "آمن_الرسول": {
+    "surah": 2,
+    "ayah_range": [
+      285,
+      286
+    ],
+    "name_ar": "آمَنَ الرَّسُول",
+    "name_en": "Aman ar-Rasul"
+  },
+  "ayat_al_hujurat": {
+    "surah": 49,
+    "ayah": 13,
+    "name_ar": "آية التعارف",
+    "name_en": "Ayat at-Taʿaruf",
+    "aliases": [
+      "آية الحجرات",
+      "آية التعارف",
+      "اية التعارف",
+      "يا أيها الناس إنا خلقناكم",
+      "verse of brotherhood"
+    ],
+    "category": "named_single_verses",
+    "notes": "يَا أَيُّهَا النَّاسُ إِنَّا خَلَقْنَاكُم مِّن ذَكَرٍ وَأُنثَىٰ وَجَعَلْنَاكُمْ شُعُوبًا وَقَبَائِلَ لِتَعَارَفُوا."
+  },
+  "آية_التعارف": {
+    "surah": 49,
+    "ayah": 13,
+    "name_ar": "آية التعارف",
+    "name_en": "Ayat at-Taʿaruf"
+  },
+  "ayat_al_iz": {
+    "surah": 17,
+    "ayah": 111,
+    "name_ar": "آية العِزّ",
+    "name_en": "Ayat al-Izz",
+    "aliases": [
+      "آية العز",
+      "اية العز",
+      "الحمد لله الذي لم يتخذ ولداً"
+    ],
+    "category": "named_single_verses",
+    "notes": "قال النبيﷺ: آية العِزّ {الحمد لله الذي لم يتخذ ولداً}. رواه أحمد عن معاذ بن أنس."
+  },
+  "آية_العز": {
+    "surah": 17,
+    "ayah": 111,
+    "name_ar": "آية العِزّ",
+    "name_en": "Ayat al-Izz"
+  },
+  "ayat_ar_rizq": {
+    "surah": 11,
+    "ayah": 6,
+    "name_ar": "آية الرزق",
+    "name_en": "Ayat ar-Rizq",
+    "aliases": [
+      "آية الرزق",
+      "اية الرزق",
+      "وما من دابة في الأرض",
+      "verse of sustenance"
+    ],
+    "category": "named_single_verses",
+    "notes": "وَمَا مِن دَابَّةٍ فِي الْأَرْضِ إِلَّا عَلَى اللَّهِ رِزْقُهَا."
+  },
+  "آية_الرزق": {
+    "surah": 11,
+    "ayah": 6,
+    "name_ar": "آية الرزق",
+    "name_en": "Ayat ar-Rizq"
+  },
+  "ayat_ar_rahma": {
+    "surah": 7,
+    "ayah": 156,
+    "name_ar": "آية الرحمة",
+    "name_en": "Ayat ar-Rahma",
+    "aliases": [
+      "آية الرحمة",
+      "اية الرحمة",
+      "ورحمتي وسعت كل شيء",
+      "verse of mercy"
+    ],
+    "category": "named_single_verses",
+    "notes": "وَرَحْمَتِي وَسِعَتْ كُلَّ شَيْءٍ."
+  },
+  "آية_الرحمة": {
+    "surah": 7,
+    "ayah": 156,
+    "name_ar": "آية الرحمة",
+    "name_en": "Ayat ar-Rahma"
+  },
+  "ayat_al_masabira": {
+    "surah": 3,
+    "ayah": 200,
+    "name_ar": "آية المصابرة",
+    "name_en": "Ayat al-Musabara",
+    "aliases": [
+      "آية المصابرة",
+      "اية المصابرة"
+    ],
+    "category": "named_single_verses",
+    "notes": "يَا أَيُّهَا الَّذِينَ آمَنُوا اصْبِرُوا وَصَابِرُوا وَرَابِطُوا."
+  },
+  "آية_المصابرة": {
+    "surah": 3,
+    "ayah": 200,
+    "name_ar": "آية المصابرة",
+    "name_en": "Ayat al-Musabara"
+  },
+  "ayat_al_amana": {
+    "surah": 33,
+    "ayah": 72,
+    "name_ar": "آية الأمانة",
+    "name_en": "Ayat al-Amana",
+    "aliases": [
+      "آية الأمانة",
+      "اية الامانة",
+      "إنا عرضنا الأمانة",
+      "verse of the trust"
+    ],
+    "category": "named_single_verses",
+    "notes": "إِنَّا عَرَضْنَا الْأَمَانَةَ عَلَى السَّمَاوَاتِ وَالْأَرْضِ وَالْجِبَالِ."
+  },
+  "آية_الأمانة": {
+    "surah": 33,
+    "ayah": 72,
+    "name_ar": "آية الأمانة",
+    "name_en": "Ayat al-Amana"
+  },
+  "ayat_al_mawadda": {
+    "surah": 42,
+    "ayah": 23,
+    "name_ar": "آية المودة",
+    "name_en": "Ayat al-Mawadda",
+    "aliases": [
+      "آية المودة",
+      "اية المودة",
+      "verse of affection"
+    ],
+    "category": "named_single_verses",
+    "notes": "قُل لَّا أَسْأَلُكُمْ عَلَيْهِ أَجْرًا إِلَّا الْمَوَدَّةَ فِي الْقُرْبَىٰ."
+  },
+  "آية_المودة": {
+    "surah": 42,
+    "ayah": 23,
+    "name_ar": "آية المودة",
+    "name_en": "Ayat al-Mawadda"
+  },
+  "ayat_al_wudu": {
+    "surah": 5,
+    "ayah": 6,
+    "name_ar": "آية الوضوء",
+    "name_en": "Ayat al-Wudu",
+    "aliases": [
+      "آية الوضوء",
+      "اية الوضوء",
+      "verse of ablution"
+    ],
+    "category": "named_single_verses",
+    "notes": "يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا قُمْتُمْ إِلَى الصَّلَاةِ فَاغْسِلُوا وُجُوهَكُمْ."
+  },
+  "آية_الوضوء": {
+    "surah": 5,
+    "ayah": 6,
+    "name_ar": "آية الوضوء",
+    "name_en": "Ayat al-Wudu"
+  },
+  "ayat_al_qibla": {
+    "surah": 2,
+    "ayah": 144,
+    "name_ar": "آية القِبلة",
+    "name_en": "Ayat al-Qibla",
+    "aliases": [
+      "آية القبلة",
+      "اية القبلة",
+      "verse of qibla",
+      "فَوَلِّ وَجْهَكَ"
+    ],
+    "category": "named_single_verses",
+    "notes": "فَوَلِّ وَجْهَكَ شَطْرَ الْمَسْجِدِ الْحَرَامِ. نزلت عند تحويل القبلة."
+  },
+  "آية_القبلة": {
+    "surah": 2,
+    "ayah": 144,
+    "name_ar": "آية القِبلة",
+    "name_en": "Ayat al-Qibla"
+  },
+  "ayat_al_kursy_surround": {
+    "surah": 2,
+    "ayah_range": [
+      255,
+      257
+    ],
+    "name_ar": "آية الكرسي وتواليها",
+    "name_en": "Ayat al-Kursi and Following",
+    "aliases": [
+      "عشر آيات من البقرة من المنتصف",
+      "آية الكرسي وآيتان بعدها"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأ عشر آيات من البقرة عند منامه لم ينسَ القرآن: أربعٌ من أولها وآية الكرسي وآيتان بعدها وثلاث من آخرها."
   },
   "al_fatihah": {
     "surah": 1,
-    "ayah_range": [1, 7],
+    "ayah_range": [
+      1,
+      7
+    ],
+    "name_ar": "الفاتحة",
+    "name_en": "Al-Fatihah",
+    "aliases": [
+      "الفاتحة",
+      "فاتحة الكتاب",
+      "أم القرآن",
+      "أم الكتاب",
+      "السبع المثاني",
+      "الواقية",
+      "الكافية",
+      "الشافية",
+      "الأساس",
+      "الحمد",
+      "al fatihah",
+      "al fatiha",
+      "opening"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "أعظم سورة في القرآن. لا صلاة إلا بها. لها أكثر من عشرين اسماً."
+  },
+  "الفاتحة": {
+    "surah": 1,
+    "ayah_range": [
+      1,
+      7
+    ],
+    "name_ar": "الفاتحة",
+    "name_en": "Al-Fatihah"
+  },
+  "أم_القرآن": {
+    "surah": 1,
+    "ayah_range": [
+      1,
+      7
+    ],
     "name_ar": "الفاتحة",
     "name_en": "Al-Fatihah"
   },
   "al_ikhlas": {
     "surah": 112,
-    "ayah_range": [1, 4],
+    "ayah_range": [
+      1,
+      4
+    ],
     "name_ar": "الإخلاص",
+    "name_en": "Al-Ikhlas",
+    "aliases": [
+      "الإخلاص",
+      "الاخلاص",
+      "سورة التوحيد",
+      "قل هو الله أحد",
+      "قل هو الله احد",
+      "al ikhlas",
+      "al-ikhlas",
+      "sincerity",
+      "unity"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "تعدل ثلث القرآن. رواه البخاري ومسلم."
+  },
+  "الإخلاص": {
+    "surah": 112,
+    "ayah_range": [
+      1,
+      4
+    ],
+    "name_ar": "الإخلاص",
+    "name_en": "Al-Ikhlas"
+  },
+  "التوحيد": {
+    "surah": 112,
+    "ayah_range": [
+      1,
+      4
+    ],
+    "name_ar": "الإخلاص (سورة التوحيد)",
     "name_en": "Al-Ikhlas"
   },
   "al_falaq": {
     "surah": 113,
-    "ayah_range": [1, 5],
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "الفلق",
+    "name_en": "Al-Falaq",
+    "aliases": [
+      "الفلق",
+      "قل أعوذ برب الفلق",
+      "al falaq",
+      "al-falaq",
+      "daybreak"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "من المعوذتين. لم تر مثلهن رواه مسلم."
+  },
+  "الفلق": {
+    "surah": 113,
+    "ayah_range": [
+      1,
+      5
+    ],
     "name_ar": "الفلق",
     "name_en": "Al-Falaq"
   },
+  "المعوذتان": {
+    "surah": 113,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "الفلق (المعوذتان)",
+    "name_en": "Al-Falaq (Al-Muawwithan)"
+  },
   "an_nas": {
     "surah": 114,
-    "ayah_range": [1, 6],
+    "ayah_range": [
+      1,
+      6
+    ],
+    "name_ar": "الناس",
+    "name_en": "An-Nas",
+    "aliases": [
+      "الناس",
+      "قل أعوذ برب الناس",
+      "an nas",
+      "an-nas",
+      "mankind"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "من المعوذتين. خاتمة القرآن الكريم."
+  },
+  "الناس": {
+    "surah": 114,
+    "ayah_range": [
+      1,
+      6
+    ],
     "name_ar": "الناس",
     "name_en": "An-Nas"
   },
   "al_asr": {
     "surah": 103,
-    "ayah_range": [1, 3],
+    "ayah_range": [
+      1,
+      3
+    ],
+    "name_ar": "العصر",
+    "name_en": "Al-Asr",
+    "aliases": [
+      "العصر",
+      "والعصر",
+      "al asr",
+      "al-asr",
+      "the declining day"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "قال الشافعي: لو لم يُنزّل الله حجةً على خلقه إلا هذه السورة لكفتهم."
+  },
+  "العصر": {
+    "surah": 103,
+    "ayah_range": [
+      1,
+      3
+    ],
     "name_ar": "العصر",
     "name_en": "Al-Asr"
   },
   "al_kawthar": {
     "surah": 108,
-    "ayah_range": [1, 3],
+    "ayah_range": [
+      1,
+      3
+    ],
+    "name_ar": "الكوثر",
+    "name_en": "Al-Kawthar",
+    "aliases": [
+      "الكوثر",
+      "al kawthar",
+      "al-kawthar",
+      "abundance"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "أقصر سورة في القرآن الكريم."
+  },
+  "الكوثر": {
+    "surah": 108,
+    "ayah_range": [
+      1,
+      3
+    ],
     "name_ar": "الكوثر",
     "name_en": "Al-Kawthar"
   },
   "al_kafirun": {
     "surah": 109,
-    "ayah_range": [1, 6],
+    "ayah_range": [
+      1,
+      6
+    ],
+    "name_ar": "الكافرون",
+    "name_en": "Al-Kafirun",
+    "aliases": [
+      "الكافرون",
+      "الكافرين",
+      "قل يا أيها الكافرون",
+      "al kafirun",
+      "al-kafirun",
+      "the disbelievers"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "تعدل ربع القرآن. يُقرأ في سنة الفجر ومع الإخلاص في ركعتي الطواف."
+  },
+  "الكافرون": {
+    "surah": 109,
+    "ayah_range": [
+      1,
+      6
+    ],
     "name_ar": "الكافرون",
     "name_en": "Al-Kafirun"
   },
   "an_nasr": {
     "surah": 110,
-    "ayah_range": [1, 3],
+    "ayah_range": [
+      1,
+      3
+    ],
+    "name_ar": "النصر",
+    "name_en": "An-Nasr",
+    "aliases": [
+      "النصر",
+      "an nasr",
+      "an-nasr",
+      "divine support",
+      "إذا جاء نصر الله"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "آخر سورة نزلت كاملة. آذنت بقرب وفاة النبيﷺ."
+  },
+  "النصر": {
+    "surah": 110,
+    "ayah_range": [
+      1,
+      3
+    ],
     "name_ar": "النصر",
     "name_en": "An-Nasr"
   },
   "al_lahab": {
     "surah": 111,
-    "ayah_range": [1, 5],
+    "ayah_range": [
+      1,
+      5
+    ],
     "name_ar": "المسد",
+    "name_en": "Al-Masad / Al-Lahab",
+    "aliases": [
+      "المسد",
+      "اللهب",
+      "تبّت يدا أبي لهب",
+      "al masad",
+      "al lahab",
+      "al-lahab",
+      "al-masad",
+      "palm fiber"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "تَبَّتْ يَدَا أَبِي لَهَبٍ وَتَبَّ. لها اسمان: المسد واللهب."
+  },
+  "المسد": {
+    "surah": 111,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "المسد",
+    "name_en": "Al-Masad"
+  },
+  "اللهب": {
+    "surah": 111,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "المسد (اللهب)",
     "name_en": "Al-Lahab"
+  },
+  "al_fajr": {
+    "surah": 89,
+    "ayah_range": [
+      1,
+      30
+    ],
+    "name_ar": "الفجر",
+    "name_en": "Al-Fajr",
+    "aliases": [
+      "الفجر",
+      "al fajr",
+      "al-fajr",
+      "the dawn"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "وَالْفَجْرِ وَلَيَالٍ عَشْرٍ. من السور المكية الجميلة."
+  },
+  "الفجر": {
+    "surah": 89,
+    "ayah_range": [
+      1,
+      30
+    ],
+    "name_ar": "الفجر",
+    "name_en": "Al-Fajr"
+  },
+  "ad_duha": {
+    "surah": 93,
+    "ayah_range": [
+      1,
+      11
+    ],
+    "name_ar": "الضحى",
+    "name_en": "Ad-Duha",
+    "aliases": [
+      "الضحى",
+      "ad duha",
+      "ad-duha",
+      "the morning brightness"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "وَالضُّحَى وَاللَّيْلِ إِذَا سَجَى. نزلت تسلية للنبيﷺ بعد انقطاع الوحي."
+  },
+  "الضحى": {
+    "surah": 93,
+    "ayah_range": [
+      1,
+      11
+    ],
+    "name_ar": "الضحى",
+    "name_en": "Ad-Duha"
+  },
+  "ash_sharh": {
+    "surah": 94,
+    "ayah_range": [
+      1,
+      8
+    ],
+    "name_ar": "الشرح",
+    "name_en": "Ash-Sharh",
+    "aliases": [
+      "الشرح",
+      "الانشراح",
+      "ألم نشرح",
+      "ash sharh",
+      "ash-sharh",
+      "the expansion"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ. مرتبطة بسورة الضحى."
+  },
+  "الشرح": {
+    "surah": 94,
+    "ayah_range": [
+      1,
+      8
+    ],
+    "name_ar": "الشرح",
+    "name_en": "Ash-Sharh"
+  },
+  "الانشراح": {
+    "surah": 94,
+    "ayah_range": [
+      1,
+      8
+    ],
+    "name_ar": "الشرح (الانشراح)",
+    "name_en": "Ash-Sharh"
+  },
+  "az_zalzalah": {
+    "surah": 99,
+    "ayah_range": [
+      1,
+      8
+    ],
+    "name_ar": "الزلزلة",
+    "name_en": "Az-Zalzalah",
+    "aliases": [
+      "الزلزلة",
+      "az zalzalah",
+      "az-zalzalah",
+      "the earthquake",
+      "إذا زلزلت"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "تعدل نصف القرآن عند بعض العلماء."
+  },
+  "الزلزلة": {
+    "surah": 99,
+    "ayah_range": [
+      1,
+      8
+    ],
+    "name_ar": "الزلزلة",
+    "name_en": "Az-Zalzalah"
+  },
+  "al_qadr": {
+    "surah": 97,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "القدر",
+    "name_en": "Al-Qadr",
+    "aliases": [
+      "القدر",
+      "ليلة القدر",
+      "al qadr",
+      "al-qadr",
+      "the power",
+      "night of decree"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ."
+  },
+  "القدر": {
+    "surah": 97,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "القدر",
+    "name_en": "Al-Qadr"
+  },
+  "al_fil": {
+    "surah": 105,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "الفيل",
+    "name_en": "Al-Fil",
+    "aliases": [
+      "الفيل",
+      "ألم تر كيف",
+      "al fil",
+      "al-fil",
+      "the elephant"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ."
+  },
+  "الفيل": {
+    "surah": 105,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "الفيل",
+    "name_en": "Al-Fil"
+  },
+  "quraysh": {
+    "surah": 106,
+    "ayah_range": [
+      1,
+      4
+    ],
+    "name_ar": "قريش",
+    "name_en": "Quraysh",
+    "aliases": [
+      "قريش",
+      "لإيلاف قريش",
+      "quraysh",
+      "al-quraysh"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "لِإِيلَافِ قُرَيْشٍ. مرتبطة بسورة الفيل."
+  },
+  "قريش": {
+    "surah": 106,
+    "ayah_range": [
+      1,
+      4
+    ],
+    "name_ar": "قريش",
+    "name_en": "Quraysh"
+  },
+  "al_maun": {
+    "surah": 107,
+    "ayah_range": [
+      1,
+      7
+    ],
+    "name_ar": "الماعون",
+    "name_en": "Al-Maun",
+    "aliases": [
+      "الماعون",
+      "أرأيت الذي يكذب",
+      "al maun",
+      "al-maun",
+      "small kindnesses"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "أَرَأَيْتَ الَّذِي يُكَذِّبُ بِالدِّينِ."
+  },
+  "الماعون": {
+    "surah": 107,
+    "ayah_range": [
+      1,
+      7
+    ],
+    "name_ar": "الماعون",
+    "name_en": "Al-Maun"
+  },
+  "al_muzzammil": {
+    "surah": 73,
+    "ayah_range": [
+      1,
+      20
+    ],
+    "name_ar": "المزمل",
+    "name_en": "Al-Muzzammil",
+    "aliases": [
+      "المزمل",
+      "al muzzammil",
+      "al-muzzammil",
+      "the enshrouded one"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "يَا أَيُّهَا الْمُزَّمِّلُ. من أوائل ما نزل. فيها الأمر بقيام الليل."
+  },
+  "المزمل": {
+    "surah": 73,
+    "ayah_range": [
+      1,
+      20
+    ],
+    "name_ar": "المزمل",
+    "name_en": "Al-Muzzammil"
+  },
+  "al_muddaththir": {
+    "surah": 74,
+    "ayah_range": [
+      1,
+      56
+    ],
+    "name_ar": "المدثر",
+    "name_en": "Al-Muddaththir",
+    "aliases": [
+      "المدثر",
+      "al muddaththir",
+      "al-muddaththir",
+      "the cloaked one"
+    ],
+    "category": "famous_short_surahs",
+    "notes": "يَا أَيُّهَا الْمُدَّثِّرُ. من أوائل ما نزل. أمر بالإنذار والتبليغ."
+  },
+  "المدثر": {
+    "surah": 74,
+    "ayah_range": [
+      1,
+      56
+    ],
+    "name_ar": "المدثر",
+    "name_en": "Al-Muddaththir"
   },
   "ar_rahman": {
     "surah": 55,
-    "ayah_range": [1, 78],
+    "ayah_range": [
+      1,
+      78
+    ],
     "name_ar": "الرحمن",
+    "name_en": "Ar-Rahman",
+    "aliases": [
+      "الرحمن",
+      "عروس القرآن",
+      "ar rahman",
+      "ar-rahman",
+      "the beneficent"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "عروس القرآن. فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ مكررة 31 مرة."
+  },
+  "الرحمن": {
+    "surah": 55,
+    "ayah_range": [
+      1,
+      78
+    ],
+    "name_ar": "الرحمن",
+    "name_en": "Ar-Rahman"
+  },
+  "عروس_القرآن": {
+    "surah": 55,
+    "ayah_range": [
+      1,
+      78
+    ],
+    "name_ar": "الرحمن (عروس القرآن)",
     "name_en": "Ar-Rahman"
   },
   "yasin": {
     "surah": 36,
-    "ayah_range": [1, 83],
+    "ayah_range": [
+      1,
+      83
+    ],
     "name_ar": "يس",
+    "name_en": "Yasin",
+    "aliases": [
+      "يس",
+      "ياسين",
+      "قلب القرآن",
+      "yasin",
+      "ya-sin",
+      "heart of the quran"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "قلب القرآن. رواه أحمد والترمذي. تُقرأ عند المحتضر وعلى القبور."
+  },
+  "يس": {
+    "surah": 36,
+    "ayah_range": [
+      1,
+      83
+    ],
+    "name_ar": "يس",
+    "name_en": "Yasin"
+  },
+  "ياسين": {
+    "surah": 36,
+    "ayah_range": [
+      1,
+      83
+    ],
+    "name_ar": "يس",
+    "name_en": "Yasin"
+  },
+  "قلب_القرآن": {
+    "surah": 36,
+    "ayah_range": [
+      1,
+      83
+    ],
+    "name_ar": "يس (قلب القرآن)",
     "name_en": "Yasin"
   },
   "al_mulk": {
     "surah": 67,
-    "ayah_range": [1, 30],
+    "ayah_range": [
+      1,
+      30
+    ],
+    "name_ar": "الملك",
+    "name_en": "Al-Mulk",
+    "aliases": [
+      "الملك",
+      "تبارك",
+      "المانعة",
+      "الواقية",
+      "al mulk",
+      "al-mulk",
+      "sovereignty",
+      "dominion"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "المانعة الواقية من عذاب القبر. من قرأها كل ليلة وقته من عذاب القبر. رواه الترمذي."
+  },
+  "الملك": {
+    "surah": 67,
+    "ayah_range": [
+      1,
+      30
+    ],
     "name_ar": "الملك",
     "name_en": "Al-Mulk"
+  },
+  "تبارك": {
+    "surah": 67,
+    "ayah_range": [
+      1,
+      30
+    ],
+    "name_ar": "الملك (تبارك)",
+    "name_en": "Al-Mulk"
+  },
+  "al_waqiah": {
+    "surah": 56,
+    "ayah_range": [
+      1,
+      96
+    ],
+    "name_ar": "الواقعة",
+    "name_en": "Al-Waqiah",
+    "aliases": [
+      "الواقعة",
+      "al waqiah",
+      "al-waqiah",
+      "the inevitable"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "من قرأ الواقعة كل ليلة لم تصبه فاقة. رواه البيهقي."
+  },
+  "الواقعة": {
+    "surah": 56,
+    "ayah_range": [
+      1,
+      96
+    ],
+    "name_ar": "الواقعة",
+    "name_en": "Al-Waqiah"
+  },
+  "al_kahf": {
+    "surah": 18,
+    "ayah_range": [
+      1,
+      110
+    ],
+    "name_ar": "الكهف",
+    "name_en": "Al-Kahf",
+    "aliases": [
+      "الكهف",
+      "al kahf",
+      "al-kahf",
+      "the cave"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "من قرأ أول عشر آيات من الكهف عُصم من الدجال. تُقرأ يوم الجمعة."
+  },
+  "الكهف": {
+    "surah": 18,
+    "ayah_range": [
+      1,
+      110
+    ],
+    "name_ar": "الكهف",
+    "name_en": "Al-Kahf"
+  },
+  "al_baqarah_openings": {
+    "surah": 2,
+    "ayah_range": [
+      1,
+      5
+    ],
+    "name_ar": "فواتح البقرة",
+    "name_en": "Opening verses of Al-Baqarah",
+    "aliases": [
+      "فواتح البقرة",
+      "أربع من أول البقرة",
+      "أوائل البقرة"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأ عشر آيات من البقرة عند منامه لم ينسَ القرآن: أربعٌ من أولها..."
+  },
+  "al_baqarah_endings": {
+    "surah": 2,
+    "ayah_range": [
+      284,
+      286
+    ],
+    "name_ar": "خواتيم البقرة",
+    "name_en": "Last verses of Al-Baqarah",
+    "aliases": [
+      "خواتيم البقرة",
+      "آخر البقرة",
+      "خاتمة البقرة",
+      "ثلاث من آخر البقرة",
+      "last verses baqarah"
+    ],
+    "category": "named_verse_groups",
+    "notes": "لله ما في السموات... آمن الرسول... لا يكلف الله نفساً إلا وسعها."
+  },
+  "خواتيم_البقرة": {
+    "surah": 2,
+    "ayah_range": [
+      284,
+      286
+    ],
+    "name_ar": "خواتيم البقرة",
+    "name_en": "Last verses of Al-Baqarah"
+  },
+  "al_baqarah_first10": {
+    "surah": 2,
+    "ayah_range": [
+      1,
+      10
+    ],
+    "name_ar": "عشر آيات من البقرة (الأولى)",
+    "name_en": "First 10 verses of Al-Baqarah",
+    "aliases": [
+      "عشر آيات من البقرة",
+      "أول عشر آيات من البقرة"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأ عشر آيات من البقرة عند منامه لم ينسَ القرآن."
+  },
+  "al_kahf_first10": {
+    "surah": 18,
+    "ayah_range": [
+      1,
+      10
+    ],
+    "name_ar": "أوائل الكهف",
+    "name_en": "First 10 verses of Al-Kahf",
+    "aliases": [
+      "أول عشر الكهف",
+      "أوائل الكهف",
+      "first 10 kahf",
+      "مستهل الكهف"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأ أول عشر آيات من الكهف عُصم من الدجال. رواه مسلم."
+  },
+  "أوائل_الكهف": {
+    "surah": 18,
+    "ayah_range": [
+      1,
+      10
+    ],
+    "name_ar": "أوائل الكهف",
+    "name_en": "First 10 verses of Al-Kahf"
+  },
+  "al_kahf_last10": {
+    "surah": 18,
+    "ayah_range": [
+      101,
+      110
+    ],
+    "name_ar": "خواتيم الكهف",
+    "name_en": "Last 10 verses of Al-Kahf",
+    "aliases": [
+      "خواتيم الكهف",
+      "آخر عشر الكهف",
+      "last 10 kahf"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من حفظ عشر آيات من آخر الكهف عُصم من فتنة الدجال. رواه مسلم."
+  },
+  "خواتيم_الكهف": {
+    "surah": 18,
+    "ayah_range": [
+      101,
+      110
+    ],
+    "name_ar": "خواتيم الكهف",
+    "name_en": "Last 10 verses of Al-Kahf"
+  },
+  "az_zumar": {
+    "surah": 39,
+    "ayah_range": [
+      1,
+      75
+    ],
+    "name_ar": "الزمر",
+    "name_en": "Az-Zumar",
+    "aliases": [
+      "الزمر",
+      "az zumar",
+      "az-zumar",
+      "the groups"
+    ],
+    "category": "famous_long_surahs",
+    "notes": "قُلْ يَا عِبَادِيَ الَّذِينَ أَسْرَفُوا عَلَى أَنفُسِهِمْ لَا تَقْنَطُوا مِن رَّحْمَةِ اللَّهِ. (آية 53)"
+  },
+  "الزمر": {
+    "surah": 39,
+    "ayah_range": [
+      1,
+      75
+    ],
+    "name_ar": "الزمر",
+    "name_en": "Az-Zumar"
+  },
+  "al_hashr_endings": {
+    "surah": 59,
+    "ayah_range": [
+      22,
+      24
+    ],
+    "name_ar": "خواتيم الحشر",
+    "name_en": "Last 3 verses of Al-Hashr",
+    "aliases": [
+      "خواتيم الحشر",
+      "آخر الحشر",
+      "ثلاث خواتيم الحشر",
+      "هو الله الذي لا إله إلا هو"
+    ],
+    "category": "named_verse_groups",
+    "notes": "من قرأهن حين يصبح وكّل الله به سبعين ألف ملك يصلون عليه. رواه الترمذي والدارمي."
+  },
+  "خواتيم_الحشر": {
+    "surah": 59,
+    "ayah_range": [
+      22,
+      24
+    ],
+    "name_ar": "خواتيم الحشر",
+    "name_en": "Last 3 verses of Al-Hashr"
+  },
+  "al_muminun_openings": {
+    "surah": 23,
+    "ayah_range": [
+      1,
+      11
+    ],
+    "name_ar": "فواتح المؤمنون",
+    "name_en": "Opening verses of Al-Muminun",
+    "aliases": [
+      "فواتح المؤمنون",
+      "قد أفلح المؤمنون",
+      "أوائل المؤمنون"
+    ],
+    "category": "named_verse_groups",
+    "notes": "قَدْ أَفْلَحَ الْمُؤْمِنُونَ الَّذِينَ هُمْ فِي صَلَاتِهِمْ خَاشِعُونَ."
+  },
+  "قد_أفلح_المؤمنون": {
+    "surah": 23,
+    "ayah_range": [
+      1,
+      11
+    ],
+    "name_ar": "فواتح المؤمنون",
+    "name_en": "Opening of Al-Muminun"
+  },
+  "ayat_at_tawba_qunut": {
+    "surah": 9,
+    "ayah_range": [
+      128,
+      129
+    ],
+    "name_ar": "خاتمة التوبة",
+    "name_en": "Last two verses of At-Tawba",
+    "aliases": [
+      "خاتمة التوبة",
+      "آخر التوبة",
+      "لقد جاءكم رسول",
+      "last two verses tawba"
+    ],
+    "category": "named_verse_groups",
+    "notes": "لَقَدْ جَاءَكُمْ رَسُولٌ مِّنْ أَنفُسِكُمْ. حسبي الله لا إله إلا هو عليه توكلت."
+  },
+  "خاتمة_التوبة": {
+    "surah": 9,
+    "ayah_range": [
+      128,
+      129
+    ],
+    "name_ar": "خاتمة التوبة",
+    "name_en": "Last two verses of At-Tawba"
+  },
+  "ayat_isra_last": {
+    "surah": 17,
+    "ayah": 110,
+    "name_ar": "آية الأسماء الحسنى",
+    "name_en": "Verse of the Beautiful Names",
+    "aliases": [
+      "آية الأسماء الحسنى",
+      "قل ادعوا الله",
+      "أسماء الله الحسنى"
+    ],
+    "category": "named_single_verses",
+    "notes": "قُلِ ادْعُوا اللَّهَ أَوِ ادْعُوا الرَّحْمَٰنَ أَيًّا مَّا تَدْعُوا فَلَهُ الْأَسْمَاءُ الْحُسْنَى."
+  },
+  "آية_الأسماء_الحسنى": {
+    "surah": 17,
+    "ayah": 110,
+    "name_ar": "آية الأسماء الحسنى",
+    "name_en": "Verse of the Beautiful Names"
   }
 }
