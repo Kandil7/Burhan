@@ -73,7 +73,7 @@ def create_app() -> FastAPI:
             "query_endpoint": f"{v1}/query",
         }
 
-    logger.info("app.created", version=settings.app_version, debug=settings.debug)
+    logger.info(f"Athar API v{settings.app_version} created (debug={settings.debug})")
     return app
 
 

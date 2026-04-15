@@ -4,6 +4,7 @@ Application lifespan management for Athar Islamic QA system.
 Single source of truth for all infrastructure construction.
 Everything is injected — no agent builds its own dependencies.
 """
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -29,12 +30,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     llm_clients = await LLMClients.create()
     app.state.llm_clients = llm_clients
+    app.state.llm_client = llm_clients.client  # For RAG endpoints
     logger.info("lifespan.llm.initialised")
 
     # ── 2. Chatbot Agent ──────────────────────────────────────────────────────
     from src.agents.chatbot_agent import ChatbotAgent
 
-    app.state.chatbot = ChatbotAgent(llm_client=llm_clients.client)
+    app.state.chatbot = ChatbotAgent()
     logger.info("lifespan.chatbot.initialised")
 
     # ── 3. Classifier + Router ────────────────────────────────────────────────
@@ -58,7 +60,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # ── 4. Embedding Model + Vector Store ─────────────────────────────────────
     embedding_model = None
-    vector_store    = None
+    vector_store = None
 
     try:
         from src.knowledge.embedding_model import EmbeddingModel
@@ -76,7 +78,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.warning("lifespan.rag_infra.failed", error=str(e))
 
     app.state.embedding_model = embedding_model
-    app.state.vector_store    = vector_store
+    app.state.vector_store = vector_store
 
     # ── 5. RAG Agents (shared infrastructure injected) ────────────────────────
     _rag_kwargs = dict(
@@ -90,21 +92,21 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from src.agents.general_islamic_agent import GeneralIslamicAgent
         from src.agents.seerah_agent import SeerahAgent
 
-        app.state.fiqh_agent    = FiqhAgent(**_rag_kwargs)
+        app.state.fiqh_agent = FiqhAgent(**_rag_kwargs)
         app.state.general_agent = GeneralIslamicAgent(**_rag_kwargs)
-        app.state.seerah_agent  = SeerahAgent(**_rag_kwargs)
+        app.state.seerah_agent = SeerahAgent(**_rag_kwargs)
         logger.info("lifespan.rag_agents.initialised")
 
     except Exception as e:
         logger.warning("lifespan.rag_agents.failed", error=str(e))
-        app.state.fiqh_agent    = None
+        app.state.fiqh_agent = None
         app.state.general_agent = None
-        app.state.seerah_agent  = None
+        app.state.seerah_agent = None
 
     # ── 6. Agent Registry ─────────────────────────────────────────────────────
-    from src.core.registry import build_registry   # ← دالة builder، ليست get_registry
+    from src.core.registry import get_registry  # ← دالة builder
 
-    app.state.registry = build_registry(app.state)
+    app.state.registry = get_registry()
     logger.info(
         "lifespan.startup.complete",
         registry_status=app.state.registry.get_status(),
@@ -131,11 +133,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 # ── Dependency helpers (TYPE_CHECKING avoids circular imports) ────────────────
 
+
 def get_chatbot_from_state(app: FastAPI) -> "ChatbotAgent":
     return app.state.chatbot
 
+
 def get_router_from_state(app: FastAPI) -> "RouterAgent":
     return app.state.router
+
 
 def get_registry_from_state(app: FastAPI) -> "AgentRegistry":
     return app.state.registry
