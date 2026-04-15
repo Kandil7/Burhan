@@ -2,164 +2,322 @@
 LLM client abstraction for Athar Islamic QA system.
 
 Provides unified interface for multiple LLM providers:
-- OpenAI (GPT-4o-mini, GPT-4)
-- Groq (Qwen3-32B, Llama 3.3 70B, Mixtral 8x7B)
-- Local models (future)
+- OpenAI  (GPT-4o-mini, GPT-4)
+- Groq    (Qwen3-32B, Llama-3.3-70B)
+- Local   (future — any OpenAI-compatible endpoint)
 
-Phase 4: Added Groq support for faster, cheaper inference.
-Phase 6 Refactoring: Added asyncio.Lock for thread-safe client creation.
+Design principles
+─────────────────
+- No module-level asyncio.Lock (created inside event loop only).
+- No global mutable singletons — clients built in lifespan, injected
+  via app.state / FastAPI Depends.
+- _strip_thinking() applied to every text response.
+- generate_json() gracefully skips response_format on Groq.
+- close_all() properly closes both clients.
+- temperature=0.0 handled correctly (not treated as falsy).
 """
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Optional
+import re
+from typing import Any
 
 from openai import AsyncOpenAI
-
-
-class ConfigurationError(Exception):
-    """Raised when required configuration is missing."""
-    pass
-
-try:
-    from groq import AsyncGroq
-    GROQ_AVAILABLE = True
-except ImportError:
-    AsyncGroq = None  # type: ignore[misc,assignment]
-    GROQ_AVAILABLE = False
 
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 
 logger = get_logger()
 
-# Global LLM clients with thread-safe locks
-# NOTE: Use Optional[] instead of | None because AsyncGroq may be None at import time
-llm_client: Optional[AsyncOpenAI] = None
-groq_client = None  # type will be AsyncGroq or None depending on import
-_client_lock: asyncio.Lock = asyncio.Lock()
-_openai_lock: asyncio.Lock = asyncio.Lock()
+# ── Optional Groq import ──────────────────────────────────────────────────────
+try:
+    from groq import AsyncGroq
+    GROQ_AVAILABLE = True
+except ImportError:
+    AsyncGroq = None          # type: ignore[misc,assignment]
+    GROQ_AVAILABLE = False
 
+# ── Regex ─────────────────────────────────────────────────────────────────────
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
-# Available models per provider
-MODELS = {
+# ── Available models ──────────────────────────────────────────────────────────
+MODELS: dict[str, dict[str, str]] = {
     "openai": {
         "default": "gpt-4o-mini",
-        "fast": "gpt-4o-mini",
-        "smart": "gpt-4o",
+        "fast":    "gpt-4o-mini",
+        "smart":   "gpt-4o",
     },
     "groq": {
         "default": "qwen/qwen3-32b",
-        "fast": "meta-llama/llama-3.3-70b-versatile",
-        "smart": "qwen/qwen3-32b",
-    }
+        "fast":    "meta-llama/llama-3.3-70b-versatile",
+        "smart":   "qwen/qwen3-32b",
+    },
 }
 
+# ── Providers that do NOT support response_format ────────────────────────────
+_NO_RESPONSE_FORMAT: frozenset[str] = frozenset({"groq"})
 
-async def get_llm_client() -> AsyncOpenAI:
+# ── Providers that support thinking disable via extra_body ───────────────────
+_SUPPORTS_THINKING_DISABLE: frozenset[str] = frozenset({"groq", "openrouter"})
+
+
+class ConfigurationError(Exception):
+    """Raised when required configuration is missing or invalid."""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pure helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _strip_thinking(text: str) -> str:
     """
-    Get or create LLM client instance.
+    Remove <think>…</think> blocks emitted by Qwen3 and similar models.
 
-    Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
-
-    Supports multiple providers:
-    - openai: OpenAI API (GPT-4o-mini, GPT-4)
-    - groq: Groq API (Qwen3-32B, Llama 3.3 70B)
-
-    Usage:
-        client = await get_llm_client()
-        response = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": "Hello"}]
-        )
+    Applied to every text response so callers never see raw reasoning.
     """
-    global llm_client, groq_client
-
-    provider = settings.llm_provider.lower()
-
-    if provider == "groq":
-        if not GROQ_AVAILABLE:
-            logger.error("llm.groq_not_installed")
-            raise ConfigurationError(
-                "Groq package not installed. Run: pip install groq"
-            )
-
-        if groq_client is None:
-            async with _client_lock:
-                # Double-checked locking
-                if groq_client is None:
-                    if not settings.groq_api_key:
-                        logger.error("llm.no_groq_key")
-                        raise ConfigurationError(
-                            "GROQ_API_KEY environment variable is not set. "
-                            "Please set it in your .env file or environment."
-                        )
-
-                    groq_client = AsyncGroq(api_key=settings.groq_api_key)
-                    logger.info(
-                        "llm.groq_initialized",
-                        model=MODELS["groq"]["default"]
-                    )
-        return groq_client
-    else:
-        return await get_openai_client()
+    return _THINK_RE.sub("", text).strip()
 
 
-async def get_openai_client() -> AsyncOpenAI:
+def _supports_response_format(provider: str) -> bool:
+    """Return True if the provider accepts response_format=json_object."""
+    return provider.lower() not in _NO_RESPONSE_FORMAT
+
+
+def _thinking_extra_body(provider: str) -> dict[str, Any]:
     """
-    Get OpenAI client.
-
-    Phase 6 Refactoring: Uses asyncio.Lock for thread-safe creation.
+    Return extra_body to disable chain-of-thought if the provider supports it.
+    Returns {} for providers that don't support the field (avoids 400 errors).
     """
-    global llm_client
+    if provider.lower() in _SUPPORTS_THINKING_DISABLE:
+        return {"thinking": {"type": "disabled"}}
+    return {}
 
-    if llm_client is None:
-        async with _openai_lock:
-            # Double-checked locking
-            if llm_client is None:
-                if not settings.openai_api_key:
-                    logger.error("llm.no_openai_key", provider="openai")
-                    raise ConfigurationError(
-                        "OPENAI_API_KEY environment variable is not set. "
-                        "Please set it in your .env file or environment."
-                    )
-                else:
-                    llm_client = AsyncOpenAI(api_key=settings.openai_api_key)
 
-                logger.info(
-                    "llm.openai_initialized",
-                    model=settings.llm_model
+# ─────────────────────────────────────────────────────────────────────────────
+# LLMClients — single object injected into app.state
+# ─────────────────────────────────────────────────────────────────────────────
+
+class LLMClients:
+    """
+    Container for all initialised LLM clients.
+
+    Instantiated once in lifespan() and stored at app.state.llm_clients.
+    Never use module-level globals — always inject this object.
+
+    Usage (lifespan):
+        app.state.llm_clients = await LLMClients.create()
+
+    Usage (endpoint via Depends):
+        def get_llm(request: Request) -> LLMClients:
+            return request.app.state.llm_clients
+    """
+
+    def __init__(
+        self,
+        openai_client: AsyncOpenAI | None,
+        groq_client: Any | None,          # AsyncGroq | None
+        active_provider: str,
+    ) -> None:
+        self._openai  = openai_client
+        self._groq    = groq_client
+        self._provider = active_provider.lower()
+
+    # ── Factory ───────────────────────────────────────────────────────────────
+
+    @classmethod
+    async def create(cls) -> "LLMClients":
+        """
+        Build and validate all configured LLM clients.
+
+        Called exactly once from lifespan().
+        Raises ConfigurationError on missing keys or unknown provider.
+        """
+        provider = settings.llm_provider.lower()
+        openai_client: AsyncOpenAI | None = None
+        groq_client: Any = None
+
+        if provider == "groq":
+            if not GROQ_AVAILABLE:
+                raise ConfigurationError(
+                    "Groq package not installed. Run: pip install groq"
                 )
+            if not settings.groq_api_key:
+                raise ConfigurationError(
+                    "GROQ_API_KEY is not set. Add it to your .env file."
+                )
+            groq_client = AsyncGroq(api_key=settings.groq_api_key)
+            logger.info("llm.groq_initialized", model=MODELS["groq"]["default"])
 
-    return llm_client
+        else:   # openai (default)
+            if not settings.openai_api_key:
+                raise ConfigurationError(
+                    "OPENAI_API_KEY is not set. Add it to your .env file."
+                )
+            openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+            logger.info("llm.openai_initialized", model=settings.llm_model)
+
+        return cls(openai_client, groq_client, provider)
+
+    # ── Active client ─────────────────────────────────────────────────────────
+
+    @property
+    def client(self) -> AsyncOpenAI | Any:
+        """Return the active client for the configured provider."""
+        if self._provider == "groq":
+            return self._groq
+        return self._openai
+
+    @property
+    def provider(self) -> str:
+        return self._provider
+
+    # ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    async def close(self) -> None:
+        """Close all open clients gracefully."""
+        if self._openai:
+            await self._openai.close()
+            logger.info("llm.openai_closed")
+        if self._groq and hasattr(self._groq, "close"):
+            await self._groq.close()
+            logger.info("llm.groq_closed")
+
+    # ── High-level API ────────────────────────────────────────────────────────
+
+    async def generate_text(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
+        """
+        Generate a plain-text response.
+
+        - <think> blocks are stripped automatically.
+        - temperature=0.0 is handled correctly (not treated as falsy).
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        # None → use settings; 0.0 → keep as 0.0 (not falsy)
+        _temp   = settings.llm_temperature if temperature is None else temperature
+        _tokens = settings.llm_max_tokens  if max_tokens  is None else max_tokens
+
+        try:
+            response = await self.client.chat.completions.create(
+                model=settings.llm_model,
+                messages=messages,
+                temperature=_temp,
+                max_tokens=_tokens,
+                **(_thinking_extra_body(self._provider)),
+            )
+        except Exception as e:
+            logger.error("llm.generate_text_error", error=str(e), exc_info=True)
+            raise
+
+        return _strip_thinking(response.choices[0].message.content)
+
+    async def generate_json(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+    ) -> dict:
+        """
+        Generate a JSON response and parse it.
+
+        - response_format=json_object used only for providers that support it.
+        - Groq (and other unsupported providers) rely on prompt-level JSON
+          instruction instead.
+        - <think> blocks stripped before JSON parsing.
+        """
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        else:
+            # Fallback system prompt when none provided — ensures JSON output
+            messages.append({
+                "role": "system",
+                "content": "Respond with valid JSON only. No explanation.",
+            })
+        messages.append({"role": "user", "content": prompt})
+
+        kwargs: dict[str, Any] = {
+            "model":       settings.llm_model,
+            "messages":    messages,
+            "temperature": 0.0,
+            "max_tokens":  settings.llm_max_tokens,
+        }
+
+        # Only add response_format for providers that support it
+        if _supports_response_format(self._provider):
+            kwargs["response_format"] = {"type": "json_object"}
+
+        # Disable thinking where supported
+        kwargs.update(_thinking_extra_body(self._provider))
+
+        try:
+            response = await self.client.chat.completions.create(**kwargs)
+        except Exception as e:
+            logger.error("llm.generate_json_error", error=str(e), exc_info=True)
+            raise
+
+        content = _strip_thinking(response.choices[0].message.content)
+
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error("llm.json_decode_error", raw=content[:200], error=str(e))
+            raise ValueError(f"LLM returned invalid JSON: {e}") from e
 
 
-async def init_llm():
-    """
-    Initialize LLM client.
+# ─────────────────────────────────────────────────────────────────────────────
+# Backwards-compatible module-level helpers
+# (for code that still calls generate_text() directly — migrate gradually)
+# ─────────────────────────────────────────────────────────────────────────────
 
-    Phase 1: Just create client
-    Phase 2+: Verify API key, test connection
-    """
-    try:
-        await get_llm_client()
-        logger.info(
-            "llm.ready",
-            provider=settings.llm_provider,
-            model=settings.llm_model,
-            temperature=settings.llm_temperature
-        )
-    except Exception as e:
-        logger.error("llm.initialization_error", error=str(e))
-        raise
+_legacy_clients: LLMClients | None = None
+_legacy_lock:    asyncio.Lock | None = None
 
 
-async def close_llm():
-    """Close LLM client."""
-    global llm_client
-    if llm_client:
-        await llm_client.close()
-        llm_client = None
-        logger.info("llm.closed")
+def _get_legacy_lock() -> asyncio.Lock:
+    """Create lock lazily inside the running event loop."""
+    global _legacy_lock
+    if _legacy_lock is None:
+        _legacy_lock = asyncio.Lock()
+    return _legacy_lock
+
+
+async def _get_legacy_clients() -> LLMClients:
+    """Lazy singleton for legacy callers. Prefer LLMClients.create() in lifespan."""
+    global _legacy_clients
+    if _legacy_clients is None:
+        async with _get_legacy_lock():
+            if _legacy_clients is None:
+                _legacy_clients = await LLMClients.create()
+    return _legacy_clients
+
+
+async def init_llm() -> None:
+    """Initialise the legacy LLM singleton (called from lifespan if not using LLMClients)."""
+    clients = await _get_legacy_clients()
+    logger.info(
+        "llm.ready",
+        provider=clients.provider,
+        model=settings.llm_model,
+        temperature=settings.llm_temperature,
+    )
+
+
+async def close_llm() -> None:
+    """Close the legacy LLM singleton."""
+    global _legacy_clients
+    if _legacy_clients:
+        await _legacy_clients.close()
+        _legacy_clients = None
 
 
 async def generate_text(
@@ -168,78 +326,23 @@ async def generate_text(
     temperature: float | None = None,
     max_tokens: int | None = None,
 ) -> str:
-    """
-    Generate text using LLM.
-
-    Args:
-        prompt: User prompt
-        system_prompt: Optional system prompt
-        temperature: Override temperature (default: from settings)
-        max_tokens: Override max tokens (default: from settings)
-
-    Returns:
-        Generated text response
-    """
-    try:
-        client = await get_llm_client()
-
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
-        response = await client.chat.completions.create(
-            model=settings.llm_model,
-            messages=messages,
-            temperature=temperature or settings.llm_temperature,
-            max_tokens=max_tokens or settings.llm_max_tokens,
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-        logger.error("llm.generate_error", error=str(e))
-        raise
+    """Legacy module-level generate_text. Prefer LLMClients.generate_text()."""
+    clients = await _get_legacy_clients()
+    return await clients.generate_text(
+        prompt, system_prompt, temperature, max_tokens
+    )
 
 
 async def generate_json(
     prompt: str,
     system_prompt: str | None = None,
 ) -> dict:
-    """
-    Generate JSON response using LLM.
+    """Legacy module-level generate_json. Prefer LLMClients.generate_json()."""
+    clients = await _get_legacy_clients()
+    return await clients.generate_json(prompt, system_prompt)
 
-    Phase 6 Refactoring: Moved json import to module level.
 
-    Args:
-        prompt: User prompt
-        system_prompt: Optional system prompt
-
-    Returns:
-        Parsed JSON response
-    """
-    try:
-        client = await get_llm_client()
-
-        messages = []
-        if system_prompt:
-            messages.append({"role": "system", "content": system_prompt})
-        messages.append({"role": "user", "content": prompt})
-
-        response = await client.chat.completions.create(
-            model=settings.llm_model,
-            messages=messages,
-            temperature=0.0,  # Deterministic
-            max_tokens=settings.llm_max_tokens,
-            response_format={"type": "json_object"}
-        )
-
-        content = response.choices[0].message.content
-        return json.loads(content)
-
-    except json.JSONDecodeError as e:
-        logger.error("llm.json_decode_error", error=str(e))
-        raise ValueError(f"LLM returned invalid JSON: {e}") from e
-    except Exception as e:
-        logger.error("llm.generate_error", error=str(e))
-        raise
+# Keep get_llm_client() for code that calls it directly
+async def get_llm_client() -> Any:
+    """Legacy: return the active raw client. Prefer injecting LLMClients."""
+    return (await _get_legacy_clients()).client

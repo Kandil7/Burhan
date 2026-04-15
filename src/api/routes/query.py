@@ -166,17 +166,6 @@ async def handle_query(
     death_year_max: int | None = Query(None, description="Maximum author death year (Hijri)"),
     hierarchical: bool = Query(False, description="Use hierarchical retrieval for coherent results"),
 ):
-    """
-    Handle user query with intent-based routing and optional faceted search.
-
-    Flow:
-    1. Resolve singletons from app.state (set during lifespan startup)
-    2. Classify intent
-    3. Build filters
-    4. Resolve target agent via AgentRegistry
-    5. Execute target (with timeout)
-    6. Return structured response
-    """
     start_time = time.time()
     query_id = str(uuid.uuid4())
     agent_name: str = "unknown"  # FIX 9: safe default — never UnboundLocalError
@@ -219,6 +208,10 @@ async def handle_query(
             method=router_decision.result.method,
             language=language,
         )
+
+        # DEBUG: Print what's happening before registry lookup
+        with open("debug.log", "a", encoding="utf-8") as f:
+            f.write(f"DEBUG: Looking up intent={intent.value} in registry\n")
 
         filters = build_filters(
             author=author,
@@ -338,13 +331,18 @@ async def handle_query(
         raise HTTPException(status_code=400, detail=str(e)) from e
 
     except Exception as e:
-        # Print to stdout for debugging
-        import sys
+        # Write error to file for debugging
+        import os
 
-        print(f"ERROR in query: {type(e).__name__}: {e}", file=sys.stderr)
-        import traceback
+        try:
+            log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "error.log")
+            with open(log_path, "a", encoding="utf-8") as f:
+                import traceback
 
-        traceback.print_exc(file=sys.stderr)
+                f.write(f"ERROR: {type(e).__name__}: {e}\n")
+                f.write(traceback.format_exc())
+        except:
+            pass
 
         logger.error(  # FIX 6: exc_info=True alone — no duplicate traceback field
             "query.error",

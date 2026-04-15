@@ -28,6 +28,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
 
     # ========================================
+    # LLM Clients (always needed)
+    # ========================================
+    from src.infrastructure.llm_clients import LLMClients
+
+    app.state.llm_clients = await LLMClients.create()
+    yield
+    await app.state.llm_clients.close()
+
+    # ========================================
     # Chatbot Agent (always needed)
     # ========================================
     from src.agents.chatbot_agent import ChatbotAgent

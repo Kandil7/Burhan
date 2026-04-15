@@ -113,6 +113,11 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
 
     # ==========================================
+    # Agent Configuration
+    # ==========================================
+    agent_timeout_seconds: int = 30
+
+    # ==========================================
     # Security
     # ==========================================
     api_key_enabled: bool = False  # Enable in production

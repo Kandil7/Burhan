@@ -278,7 +278,10 @@ class BaseRAGAgent(BaseAgent):
 
         except Exception as e:
             logger.warning(f"{self.name}.generation_failed", error=str(e))
-            return passages[:300]
+            # Return fallback message if passages couldn't be retrieved
+            if formatted_passages:
+                return formatted_passages[:500]
+            return f"عذراً، لا يمكنني الإجابة على هذا السؤال حالياً. يرجى المحاولة مرة أخرى لاحقاً."
 
     def _calculate_confidence(self, passages: list) -> float:
         """Calculate confidence score based on passage scores."""
