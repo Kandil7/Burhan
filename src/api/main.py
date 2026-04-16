@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.middleware.error_handler import error_handler_middleware
 from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
+from src.api.middleware.request_logging import RequestLoggingMiddleware, RequestIDMiddleware
 from src.api.routes.health import router as health_router
 from src.api.routes.query import query_router
 from src.api.routes.classification import router as classification_router
@@ -24,7 +25,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         description=_API_DESCRIPTION,
-        version=settings.app_version,  
+        version=settings.app_version,
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
@@ -33,20 +34,26 @@ def create_app() -> FastAPI:
     )
 
     # ── Middleware (LIFO: آخر مُضاف = أول يُنفَّذ) ───────────────────────
+    # Request ID middleware (first to track requests)
+    app.add_middleware(RequestIDMiddleware)
+
+    # Request/response logging middleware
+    app.add_middleware(RequestLoggingMiddleware)
+
     app.add_middleware(SecurityHeadersMiddleware)
 
-    if settings.rate_limit_enabled:  
+    if settings.rate_limit_enabled:
         app.add_middleware(
             RateLimitMiddleware,
-            requests_per_minute=settings.rate_limit_rpm,  
+            requests_per_minute=settings.rate_limit_rpm,
         )
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=settings.cors_methods,  
-        allow_headers=settings.cors_headers,  
+        allow_methods=settings.cors_methods,
+        allow_headers=settings.cors_headers,
     )
 
     app.middleware("http")(error_handler_middleware)

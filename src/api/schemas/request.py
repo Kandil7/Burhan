@@ -13,39 +13,30 @@ class QueryRequest(BaseModel):
 
     Main entry point for all user queries to the Athar system.
     """
+
     query: str = Field(
         ...,
         min_length=1,
         max_length=2000,
         description="User's question in Arabic or English",
-        examples=["ما حكم زكاة المال؟", "How do I calculate inheritance?"]
+        examples=["ما حكم زكاة المال؟", "How do I calculate inheritance?"],
     )
     language: str | None = Field(
-        None,
-        pattern="^(ar|en)$",
-        description="Response language (auto-detect if null)",
-        examples=["ar", "en"]
+        None, pattern="^(ar|en)$", description="Response language (auto-detect if null)", examples=["ar", "en"]
     )
     location: dict | None = Field(
         None,
         description="Location for prayer times: {lat, lng, city?, country?}",
-        examples=[{"lat": 25.2854, "lng": 51.5310, "city": "Doha", "country": "Qatar"}]
+        examples=[{"lat": 25.2854, "lng": 51.5310, "city": "Doha", "country": "Qatar"}],
     )
     madhhab: str | None = Field(
         None,
         pattern="^(hanafi|maliki|shafii|hanbali|auto)$",
         description="Islamic school of jurisprudence",
-        examples=["hanafi", "shafii", "auto"]
+        examples=["hanafi", "shafii", "auto"],
     )
-    session_id: str | None = Field(
-        None,
-        max_length=100,
-        description="Session ID for conversation context"
-    )
-    stream: bool = Field(
-        False,
-        description="Enable streaming response (Server-Sent Events)"
-    )
+    session_id: str | None = Field(None, max_length=100, description="Session ID for conversation context")
+    stream: bool = Field(False, description="Enable streaming response (Server-Sent Events)")
 
     @field_validator("query")
     @classmethod
@@ -53,7 +44,22 @@ class QueryRequest(BaseModel):
         """Validate query is not empty or whitespace."""
         if not v.strip():
             raise ValueError("Query cannot be empty or whitespace only")
+        # Sanitize: remove potential HTML/script tags
+        import re
+
+        v = re.sub(r"<[^>]+>", "", v)
         return v.strip()
+
+    @field_validator("session_id")
+    @classmethod
+    def validate_session_id(cls, v):
+        """Sanitize session ID."""
+        if v is not None:
+            # Only allow alphanumeric, dash, underscore
+            import re
+
+            v = re.sub(r"[^a-zA-Z0-9_-]", "", v)[:100]
+        return v
 
     @field_validator("location")
     @classmethod
@@ -71,4 +77,5 @@ class QueryRequest(BaseModel):
 
 class HealthRequest(BaseModel):
     """Request model for health checks (empty)."""
+
     pass
