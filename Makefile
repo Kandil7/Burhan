@@ -2,6 +2,7 @@
 
 # ============================================
 # ATHAR - Poetry-based commands
+# Phase 9: Enhanced with new commands
 # ============================================
 
 help:
@@ -11,13 +12,18 @@ help:
 	@echo "  make install-dev    Install dependencies with dev tools"
 	@echo "  make dev            Run development server"
 	@echo "  make test           Run tests with coverage"
+	@echo "  make test-quick     Run quick tests without coverage"
 	@echo "  make lint           Run linters (ruff + mypy)"
-	@echo "  make format          Auto-format code"
-	@echo "  make clean          Clean cache files"
-	@echo "  make docker-up      Start Docker services"
-	@echo "  make docker-down    Stop Docker services"
-	@echo "  make db-migrate     Run database migrations"
-	@echo "  make run            Run production server"
+	@echo "  make format         Auto-format code"
+	@echo "  make clean         Clean cache files"
+	@echo "  make docker-up     Start Docker services"
+	@echo "  make docker-down   Stop Docker services"
+	@echo "  make docker-prod   Start production Docker"
+	@echo "  make db-migrate   Run database migrations"
+	@echo "  make db-reset     Reset database"
+	@echo "  make run          Run production server"
+	@echo "  make health      Check service health"
+	@echo "  make validate    Validate environment setup"
 
 # ============================================
 # Installation
@@ -46,8 +52,14 @@ run:
 test:
 	poetry run pytest tests/ -v --cov=src --cov-report=term-missing
 
-test-watch:
-	poetry run pytest tests/ -v --watch
+test-quick:
+	poetry run pytest tests/ -v --cov=false
+
+test-comprehensive:
+	poetry run pytest tests/test_comprehensive.py -v
+
+test-language:
+	poetry run pytest tests/test_comprehensive.py::TestLanguageDetection -v -k "language"
 
 # ============================================
 # Code Quality
@@ -57,9 +69,15 @@ lint:
 	poetry run ruff check src/ tests/
 	poetry run mypy src/
 
+lint-fix:
+	poetry run ruff check --fix src/ tests/
+
 format:
 	poetry run ruff check --fix src/ tests/
 	poetry run ruff format src/ tests/
+
+type-check:
+	poetry run mypy src/
 
 # ============================================
 # Docker
@@ -71,8 +89,17 @@ docker-up:
 docker-down:
 	docker compose -f docker/docker-compose.dev.yml down
 
+docker-prod:
+	docker compose -f docker/docker-compose.prod.yml up -d
+
+docker-prod-down:
+	docker compose -f docker/docker-compose.prod.yml down
+
 docker-logs:
 	docker compose -f docker/docker-compose.dev.yml logs -f
+
+docker-build:
+	docker build -f docker/Dockerfile.api -t athar-api:latest .
 
 # ============================================
 # Database
@@ -91,6 +118,27 @@ db-migrate-create:
 db-reset:
 	poetry run alembic downgrade base
 	poetry run alembic upgrade head
+
+db-seed:
+	poetry run python scripts/seed_quran_sample.py
+
+# ============================================
+# Health & Monitoring
+# ============================================
+
+health:
+	@curl -s http://localhost:8000/health | python -m json.tool || echo "Service not running"
+
+metrics:
+	@curl -s http://localhost:8000/metrics | python -m json.tool || echo "Service not running"
+
+# ============================================
+# Environment Validation
+# ============================================
+
+validate:
+	@echo "Validating environment..."; \
+	python -c "from src.config.settings import settings; print('✓ Settings loaded'); from src.config.constants import RetrievalConfig; print('✓ Constants loaded')" || echo "✗ Validation failed"
 
 # ============================================
 # Cleanup

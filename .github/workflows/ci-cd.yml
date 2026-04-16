@@ -1,0 +1,253 @@
+# =============================================================================
+# Athar Islamic QA System - CI/CD Workflow
+# =============================================================================
+# GitHub Actions for automated testing and deployment
+# =============================================================================
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop, "phase-*"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint & Type Check
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          
+      - name: Install Poetry
+        run: |
+          pip install poetry==1.8.3
+          
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          
+      - name: Run Ruff
+        run: |
+          poetry run ruff check src/ tests/
+          
+      - name: Run MyPy
+        run: |
+          poetry run mypy src/
+          
+      - name: Run format check
+        run: |
+          poetry run ruff format --check src/ tests/
+
+  # ---------------------------------------------------------------------------
+  # Test Suite
+  # ---------------------------------------------------------------------------
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: athar
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: athar_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          
+      - name: Install Poetry
+        run: |
+          pip install poetry==1.8.3
+          
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          
+      - name: Set environment variables
+        run: |
+          echo "DATABASE_URL=postgresql+asyncpg://athar:test_password@localhost:5432/athar_db" >> $GITHUB_ENV
+          echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
+          echo "APP_ENV=test" >> $GITHUB_ENV
+          echo "LOG_LEVEL=ERROR" >> $GITHUB_ENV
+          
+      - name: Run tests
+        run: |
+          poetry run pytest tests/ -v --cov=src --cov-report=term-missing
+        env:
+          DATABASE_URL: postgresql+asyncpg://athar:test_password@localhost:5432/athar_db
+          REDIS_URL: redis://localhost:6379/0
+          
+      - name: Upload coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  # ---------------------------------------------------------------------------
+  # Security Audit
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          
+      - name: Install Poetry
+        run: |
+          pip install poetry==1.8.3
+          
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          
+      - name: Run safety check
+        run: |
+          pip install safety
+          poetry run safety check
+          
+      - name: Run bandit
+        run: |
+          pip install bandit
+          poetry run bandit -r src/ -f json -o bandit-report.json
+        continue-on-error: true
+          
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: bandit-report.json
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Build Docker Image
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          tags: athar-api:latest
+          load: true
+          caches-from: type=gha
+          
+      - name: Test Docker image
+        run: |
+          docker run --rm athar-api:latest python -c "from src.config.settings import settings; print('✓ Docker build OK')"
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Staging (Manual)
+  # ---------------------------------------------------------------------------
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [lint, test, docker-build]
+    if: github.event_name == 'workflow_dispatch'
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/athar-api api=athar-api:${{ github.sha }} -n athar-staging
+          kubectl rollout status deployment/athar-api -n athar-staging --timeout=300s
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Deploy to Production (On Tag)
+  # ---------------------------------------------------------------------------
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [lint, test, docker-build]
+    if: |
+      github.event_name == 'push' && 
+      startsWith(github.ref, 'refs/tags/v') &&
+      github.repository == 'owner/athar'
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/athar-api api=athar-api:${{ github.sha }} -n athar-production
+          kubectl rollout status deployment/athar-api -n athar-production --timeout=300s
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Notify (Optional)
+  # ---------------------------------------------------------------------------
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always() && needs.deploy-production.result == 'failure'
+    
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "Deployment failed - notifications would go here"
+          # Add Slack/Discord webhook notification here

@@ -3,6 +3,8 @@ Centralized constants for Athar Islamic QA System.
 
 All magic numbers, thresholds, and configuration values should be defined here.
 This ensures consistency across the entire application.
+
+Phase 9: Added comprehensive constants for all magic numbers across the codebase.
 """
 
 from typing import Final
@@ -26,10 +28,28 @@ class RetrievalConfig:
 
     # Score thresholds (adjusted for BGE-M3 + hybrid search compatibility)
     SEMANTIC_SCORE_THRESHOLD: Final[float] = 0.15  # Lowered from 0.4 → 0.35 → 0.15 for better recall
-    HYBRID_SCORE_THRESHOLD: Final[float] = 0.50   # Lowered from 0.65 for hybrid search
+    HYBRID_SCORE_THRESHOLD: Final[float] = 0.50  # Lowered from 0.65 for hybrid search
 
     # Reciprocal rank fusion parameter
     RRF_K: Final[int] = 60
+
+    # Hierarchical retrieval
+    TOP_K_BOOKS_DEFAULT: Final[int] = 3
+    TOP_K_PAGES_PER_BOOK: Final[int] = 5
+
+    # Search parameters
+    DEFAULT_TOP_K: Final[int] = 10
+    MIN_TOP_K: Final[int] = 1
+    MAX_TOP_K: Final[int] = 100
+
+    # Score thresholds by type
+    SCORE_THRESHOLD_HIGH: Final[float] = 0.70
+    SCORE_THRESHOLD_MEDIUM: Final[float] = 0.50
+    SCORE_THRESHOLD_LOW: Final[float] = 0.35
+
+    # BM25 parameters
+    BM25_K1: Final[float] = 1.5
+    BM25_B: Final[float] = 0.75
 
 
 # ==========================================
@@ -318,3 +338,305 @@ class Disclaimers:
     CALCULATOR_DISCLAIMER: Final[str] = (
         "⚠️ **تنبيه**: هذا الحساب رياضي بناءً على القواعد الفقهية. للحالات المعقدة، يرجى استشارة عالم متخصص."
     )
+
+
+# ==========================================
+# Hadith & Seerah Configuration
+# ==========================================
+
+
+class HadithScoringConfig:
+    """Configuration for hadith authenticity scoring."""
+
+    # Authenticity thresholds
+    SCORE_AUTHENTIC: Final[float] = 0.80  # Authentic threshold
+    SCORE_GOOD: Final[float] = 0.60  # Good (Hasan) threshold
+    SCORE_WEAK: Final[float] = 0.40  # Weak threshold
+
+    # Length scoring
+    LENGTH_OPTIMAL_CHARS: Final[int] = 150
+    LENGTH_ACCEPTABLE_CHARS: Final[int] = 300
+
+    # Weight multipliers
+    WEIGHT_MUTAWATIR: Final[float] = 1.0
+    WEIGHT_AHAD: Final[float] = 0.85
+    WEIGHT_SAHIH: Final[float] = 1.0
+    WEIGHT_HASAN: Final[float] = 0.85
+    WEIGHT_DAIF: Final[float] = 0.50
+
+
+# ==========================================
+# Book Weighting Configuration
+# ==========================================
+
+
+class BookWeightConfig:
+    """Configuration for book importance weighting."""
+
+    # Weight by book importance
+    WEIGHT_SAHIH_AL_BUKHARI: Final[float] = 1.0
+    WEIGHT_SAHIH_MUSLIM: Final[float] = 1.0
+    WEIGHT_SUNAN_ABU_DAWUD: Final[float] = 0.90
+    WEIGHT_JAMI_SUNAN_TIRMIDHI: Final[float] = 0.90
+    WEIGHT_SUNAN_IBN_MAJAH: Final[float] = 0.85
+    WEIGHT_SUNAN_NASAI: Final[float] = 0.85
+    WEIGHT_MUSNAD_IMAM_AHMAD: Final[float] = 0.85
+
+    # Minimum score to include
+    MIN_BOOK_WEIGHT: Final[float] = 0.30
+
+
+# ==========================================
+# Chatbot Configuration
+# ==========================================
+
+
+class ChatbotConfig:
+    """Configuration for chatbot agent."""
+
+    # Response length limits
+    MAX_RESPONSE_LENGTH: Final[int] = 500
+    MAX_TRANSLATION_LENGTH: Final[int] = 200
+
+    # Confidence
+    CONFIDENCE_DEFAULT: Final[float] = 0.95
+
+    # Language detection threshold
+    ARABIC_CHAR_RATIO_THRESHOLD: Final[float] = 0.30
+
+
+# ==========================================
+# Language Detection Configuration
+# ==========================================
+
+
+class LanguageDetectionConfig:
+    """Configuration for language detection."""
+
+    # Thresholds
+    ARABIC_RATIO_DEFAULT: Final[float] = 0.30
+    ARABIC_RATIO_STRICT: Final[float] = 0.50
+    ENGLISH_RATIO_STRICT: Final[float] = 0.50
+
+    # Minimum character count
+    MIN_CHARS_FOR_DETECTION: Final[int] = 3
+
+
+# ==========================================
+# Query Validation Configuration
+# ==========================================
+
+
+class QueryValidationConfig:
+    """Configuration for query validation."""
+
+    # Minimum and maximum query length
+    MIN_QUERY_LENGTH: Final[int] = 2
+    MAX_QUERY_LENGTH: Final[int] = 1000
+
+    # Query timeout
+    DEFAULT_TIMEOUT_SECONDS: Final[float] = 30.0
+    MAX_TIMEOUT_SECONDS: Final[float] = 120.0
+
+    # Processing time warning threshold
+    SLOW_QUERY_THRESHOLD_MS: Final[int] = 5000
+
+
+# ==========================================
+# Citation Configuration
+# ==========================================
+
+
+class CitationConfig:
+    """Configuration for citation generation."""
+
+    # Format
+    MAX_CITATION_ID: Final[int] = 20
+    MAX_EXCERPT_LENGTH: Final[int] = 300
+
+    # Reference format patterns
+    REFERENCE_AUTHOR_PREFIX: Final[str] = "ت"
+    REFERENCE_DEATH_YEAR_SUFFIX: Final[str] = "هـ"
+    REFERENCE_PAGE_PREFIX: Final[str] = "ص"
+    REFERENCE_SEPARATOR: Final[str] = " — "
+
+
+# ==========================================
+# Quran Configuration
+# ==========================================
+
+
+class QuranConfig:
+    """Configuration for Quran operations."""
+
+    # Verse lookup
+    MIN_SURAH: Final[int] = 1
+    MAX_SURAH: Final[int] = 114
+    MAX_VERSES_PER_SURAH: Final[int] = 286
+
+    # Search
+    FUZZY_MATCH_THRESHOLD: Final[float] = 0.85
+
+    # Analytics
+    MAX_VERSES_TO_RETURN: Final[int] = 10
+
+
+# ==========================================
+# Dua Retrieval Configuration
+# ==========================================
+
+
+class DuaRetrievalConfig:
+    """Configuration for Dua retrieval."""
+
+    # Score weights
+    SCORE_ARABIC_MATCH: Final[int] = 3
+    SCORE_TRANSLATION_MATCH: Final[int] = 2
+    SCORE_TRANSLITERATION_MATCH: Final[int] = 1
+    SCORE_SIMILARITY_BONUS: Final[int] = 2
+
+    # Top-K
+    TOP_K_DEFAULT: Final[int] = 5
+    TOP_K_MAX: Final[int] = 20
+
+
+# ==========================================
+# Time & Calendar Configuration
+# ==========================================
+
+
+class CalendarConfig:
+    """Configuration for Hijri calendar."""
+
+    # Hijri month names (Arabic)
+    MONTHS_AR: Final[list[str]] = [
+        "محرم",
+        "صفر",
+        "ربيع الأول",
+        "ربيع الثاني",
+        "جمادى الأولى",
+        "جمادى الثانية",
+        "رجب",
+        "شعبان",
+        "رمضان",
+        "شوال",
+        "ذو القعدة",
+        "ذو الحجة",
+    ]
+
+    # Timezone
+    DEFAULT_TIMEZONE: Final[str] = "Asia/Riyadh"
+
+
+# ==========================================
+# Prayer Times Configuration
+# ==========================================
+
+
+class PrayerTimesConfig:
+    """Configuration for prayer times."""
+
+    # Prayer names (Arabic)
+    PRAYERS_AR: Final[dict[str, str]] = {
+        "fajr": "الفجر",
+        "sunrise": "الشروق",
+        "dhuhr": "الظهر",
+        "asr": "العصر",
+        "maghrib": "المغرب",
+        "isha": "العشاء",
+    }
+
+    # Default calculation method
+    DEFAULT_METHOD: Final[str] = "MWL"
+
+    # Juristic methods
+    JURISTIC_HANAFI: Final[str] = "Hanafi"
+    JURISTIC_STANDARD: Final[str] = "Standard"
+
+
+# ==========================================
+# Error Codes
+# ==========================================
+
+
+class ErrorCodes:
+    """Standardized error codes."""
+
+    RETRIEVAL_FAILED: Final[str] = "retrieval_failed"
+    CLASSIFICATION_FAILED: Final[str] = "classification_failed"
+    AGENT_TIMEOUT: Final[str] = "agent_timeout"
+    VECTOR_STORE_ERROR: Final[str] = "vector_store_error"
+    LLM_ERROR: Final[str] = "llm_error"
+    INVALID_QUERY: Final[str] = "invalid_query"
+    NOT_FOUND: Final[str] = "not_found"
+    RATE_LIMIT_EXCEEDED: Final[str] = "rate_limit_exceeded"
+
+
+# ==========================================
+# Feature Flags
+# ==========================================
+
+
+class FeatureFlags:
+    """Feature flags for experimental features."""
+
+    # Enable/disable features
+    ENABLE_HIERARCHICAL_RETRIEVAL: Final[bool] = True
+    ENABLE_RERANKING: Final[bool] = False
+    ENABLE_QUERY_EXPANSION: Final[bool] = True
+    ENABLE_EMBEDDING_CACHE: Final[bool] = True
+    ENABLE_QUERY_CACHE: Final[bool] = True
+
+    # Beta features
+    ENABLE_BM25_FALLBACK: Final[bool] = True
+
+
+# ==========================================
+# Collection Names
+# ==========================================
+
+
+class CollectionNames:
+    """Collection names for vector store."""
+
+    FIQH: Final[str] = "fiqh_passages"
+    HADITH: Final[str] = "hadith_passages"
+    DUA: Final[str] = "dua_passages"
+    GENERAL: Final[str] = "general_islamic"
+    QURAN_TAFSIR: Final[str] = "quran_tafsir"
+    AQEEDAH: Final[str] = "aqeedah_passages"
+    SEERAH: Final[str] = "seerah_passages"
+    ISLAMIC_HISTORY: Final[str] = "islamic_history_passages"
+    ARABIC_LANGUAGE: Final[str] = "arabic_language_passages"
+    SPIRITUALITY: Final[str] = "spirituality_passages"
+    USUL_FIQH: Final[str] = "usul_fiqh"
+
+
+# Export all as module-level constants for backward compatibility
+__all__ = [
+    "RetrievalConfig",
+    "ClassificationConfig",
+    "LLMConfig",
+    "EmbeddingConfig",
+    "VectorStoreConfig",
+    "ZakatConfig",
+    "InheritanceConfig",
+    "APIConfig",
+    "SecurityConfig",
+    "LoggingConfig",
+    "ResponseMessages",
+    "Disclaimers",
+    "HadithScoringConfig",
+    "BookWeightConfig",
+    "ChatbotConfig",
+    "LanguageDetectionConfig",
+    "QueryValidationConfig",
+    "CitationConfig",
+    "QuranConfig",
+    "DuaRetrievalConfig",
+    "CalendarConfig",
+    "PrayerTimesConfig",
+    "ErrorCodes",
+    "FeatureFlags",
+    "CollectionNames",
+]
