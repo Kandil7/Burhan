@@ -10,10 +10,10 @@ from src.agents.base_rag_agent import BaseRAGAgent
 class SeerahAgent(BaseRAGAgent):
     """Seerah Retrieval Agent — Prophet biography questions."""
 
-    name       = "seerah_agent"
+    name       = "seerah"               
     COLLECTION = "seerah_passages"
+    SCORE_THRESHOLD: float = 0.50 
 
-    # Only override what differs from BaseRAGAgent defaults
     TEMPERATURE = 0.2   # slightly higher for narrative tone vs fiqh precision
 
     SYSTEM_PROMPT = """\
@@ -35,7 +35,7 @@ class SeerahAgent(BaseRAGAgent):
 
 اللغة المطلوبة: {language}
 
-نصوص السيرة النبوية المسترجعة:
-{context}
+نصوص السيرة النبوية المسترجعة ({num_passages} مقطع):
+{passages}
 
 أجب وفق القواعد أعلاه، ولا تتجاوز ما في النصوص."""

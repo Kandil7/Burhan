@@ -80,37 +80,59 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.embedding_model = embedding_model
     app.state.vector_store = vector_store
 
-    # ── 5. RAG Agents (shared infrastructure injected) ────────────────────────
+    # ── 5. RAG Agents ─────────────────────────────────────────────────────────────
     _rag_kwargs = dict(
         embedding_model=embedding_model,
         vector_store=vector_store,
         llm_client=llm_clients.client,
     )
 
+    from src.agents.fiqh_agent          import FiqhAgent
+    from src.agents.general_islamic_agent import GeneralIslamicAgent
+    from src.agents.hadith_agent         import HadithAgent
+    from src.agents.seerah_agent         import SeerahAgent
+
     try:
-        from src.agents.fiqh_agent import FiqhAgent
-        from src.agents.general_islamic_agent import GeneralIslamicAgent
-        from src.agents.seerah_agent import SeerahAgent
-
-        app.state.fiqh_agent = FiqhAgent(**_rag_kwargs)
+        app.state.fiqh_agent    = FiqhAgent(**_rag_kwargs)
         app.state.general_agent = GeneralIslamicAgent(**_rag_kwargs)
-        app.state.seerah_agent = SeerahAgent(**_rag_kwargs)
+        app.state.hadith_agent  = HadithAgent(**_rag_kwargs)
+        app.state.seerah_agent  = SeerahAgent(**_rag_kwargs)
         logger.info("lifespan.rag_agents.initialised")
-
     except Exception as e:
         logger.warning("lifespan.rag_agents.failed", error=str(e))
-        app.state.fiqh_agent = None
-        app.state.general_agent = None
-        app.state.seerah_agent = None
+        app.state.fiqh_agent = app.state.general_agent = \
+        app.state.hadith_agent = app.state.seerah_agent = None
 
-    # ── 6. Agent Registry ─────────────────────────────────────────────────────
-    from src.core.registry import get_registry  # ← دالة builder
 
-    app.state.registry = get_registry()
-    logger.info(
-        "lifespan.startup.complete",
-        registry_status=app.state.registry.get_status(),
-    )
+    # ── 6. Tools + Registry ───────────────────────────────────────────────────────
+    from src.core.registry import AgentRegistry
+    from src.tools.zakat_calculator      import ZakatCalculator
+    from src.tools.inheritance_calculator import InheritanceCalculator
+    from src.tools.prayer_times_tool     import PrayerTimesTool
+    from src.tools.hijri_calendar_tool   import HijriCalendarTool
+    from src.tools.dua_retrieval_tool    import DuaRetrievalTool
+
+    registry = AgentRegistry()
+
+    # Tools — لا تحتاج embedding
+    registry.register_tool("zakat_tool",       ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
+    registry.register_tool("inheritance_tool", InheritanceCalculator())
+    registry.register_tool("prayer_tool",      PrayerTimesTool())
+    registry.register_tool("hijri_tool",       HijriCalendarTool())
+    registry.register_tool("dua_tool",         DuaRetrievalTool())
+
+    # RAG Agents — محقونة بالـ embedding_model
+    if app.state.fiqh_agent:
+        registry.register_agent("fiqh_agent",    app.state.fiqh_agent)
+    if app.state.general_agent:
+        registry.register_agent("general_islamic_agent", app.state.general_agent)
+    if app.state.hadith_agent:
+        registry.register_agent("hadith_agent",  app.state.hadith_agent)
+    if app.state.seerah_agent:
+        registry.register_agent("seerah_agent",  app.state.seerah_agent)
+
+    app.state.registry = registry
+    logger.info("lifespan.startup.complete", registry_status=registry.get_status())
 
     yield  # ── app is running ─────────────────────────────────────────────────
 

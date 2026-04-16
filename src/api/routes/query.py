@@ -6,13 +6,12 @@ from __future__ import annotations
 import asyncio
 import re
 import time
-import traceback
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from src.agents.base import AgentInput
+from src.agents.base import AgentInput, AgentOutput
 from src.api.schemas.request import QueryRequest
 from src.api.schemas.response import CitationResponse, QueryResponse
 from src.config.intents import Intent
@@ -23,10 +22,8 @@ logger = get_logger()
 query_router = APIRouter(prefix="/query", tags=["Query"])
 
 SUPPORTED_LANGUAGES: frozenset[str] = frozenset({"ar", "en"})
-_CHATBOT_INTENTS:    frozenset[Intent] = frozenset()
 
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
-
 
 def _strip_thinking(text: str) -> str:
     return _THINK_RE.sub("", text).strip()
@@ -44,10 +41,10 @@ def build_filters(
     death_year_max: int | None,
 ) -> dict[str, Any] | None:
     filters: dict[str, Any] = {}
-    if author:                    filters["author"]           = author
-    if era:                       filters["era"]              = era
-    if book_id is not None:       filters["book_id"]          = book_id
-    if category:                  filters["category"]         = category
+    if author:                     filters["author"]           = author
+    if era:                        filters["era"]              = era
+    if book_id is not None:        filters["book_id"]          = book_id
+    if category:                   filters["category"]         = category
     if death_year_min is not None: filters["author_death_min"] = death_year_min
     if death_year_max is not None: filters["author_death_max"] = death_year_max
     return filters or None
@@ -71,16 +68,21 @@ def build_agent_input(
     )
 
 
-async def execute_fallback(chatbot: Any, language: str) -> Any:
-    return await chatbot.execute(
-        AgentInput(
-            query=(
-                "أعتذر، لا يمكنني الإجابة على هذا السؤال حالياً. "
-                "يرجى إعادة صياغة السؤال أو السؤال عن موضوع إسلامي آخر."
-            ),
-            language=language,
-            metadata={},
-        )
+def build_fallback_output(language: str) -> AgentOutput:
+    """Return a static fallback — never calls ChatbotAgent."""
+    msg = (
+        "أعتذر، لا يمكنني الإجابة على هذا السؤال حالياً. "
+        "يرجى السؤال عن أحكام فقهية أو آيات قرآنية أو أحاديث نبوية."
+        if language == "ar" else
+        "I'm unable to answer this question. "
+        "Please ask about Islamic rulings, Quran, or Hadith."
+    )
+    return AgentOutput(
+        answer=msg,
+        citations=[],
+        confidence=0.0,
+        metadata={"agent": "fallback"},
+        requires_human_review=False,
     )
 
 
@@ -93,17 +95,16 @@ def build_response_metadata(
     hierarchical: bool,
     agent_metadata: dict[str, Any],
 ) -> dict[str, Any]:
-    agent_meta_clean = {
-        k: v for k, v in agent_metadata.items()
-        if k != "follow_up_suggestions"
-    }
     return {
         "agent":                 agent_name,
         "processing_time_ms":    processing_time_ms,
         "classification_method": classification_method,
         "language":              language,
         "hierarchical":          hierarchical,
-        "agent_metadata":        agent_meta_clean,
+        "agent_metadata":        {
+            k: v for k, v in agent_metadata.items()
+            if k != "follow_up_suggestions"
+        },
     }
 
 
@@ -111,31 +112,26 @@ async def _run_with_timeout(coro, *, timeout: float, label: str, query_id: str) 
     try:
         return await asyncio.wait_for(coro, timeout=timeout)
     except asyncio.TimeoutError:
-        logger.error(
-            "query.agent_timeout",
-            query_id=query_id,
-            agent=label,
-            timeout_seconds=timeout,
-        )
-        raise HTTPException(
-            status_code=504,
-            detail="The query took too long to process. Please try again.",
-        )
+        logger.error("query.agent_timeout", query_id=query_id,
+                     agent=label, timeout_seconds=timeout)
+        raise HTTPException(status_code=504,
+                            detail="The query took too long. Please try again.")
 
 
 # ── Route ─────────────────────────────────────────────────────────────────────
 
-@query_router.post("", response_model=QueryResponse, summary="Submit query to Athar Islamic QA system")
+@query_router.post("", response_model=QueryResponse,
+                   summary="Submit query to Athar Islamic QA system")
 async def handle_query(
-    raw_request: Request,
-    request:     QueryRequest,
-    author:          str | None  = Query(None),
-    era:             str | None  = Query(None),
-    book_id:         int | None  = Query(None),
-    category:        str | None  = Query(None),
-    death_year_min:  int | None  = Query(None),
-    death_year_max:  int | None  = Query(None),
-    hierarchical:    bool        = Query(False),
+    raw_request:    Request,
+    request:        QueryRequest,
+    author:         str | None = Query(None),
+    era:            str | None = Query(None),
+    book_id:        int | None = Query(None),
+    category:       str | None = Query(None),
+    death_year_min: int | None = Query(None),
+    death_year_max: int | None = Query(None),
+    hierarchical:   bool       = Query(False),
 ):
     start_time = time.time()
     query_id   = str(uuid.uuid4())
@@ -145,7 +141,6 @@ async def handle_query(
         logger.info("query.received", query_id=query_id, query=request.query[:100])
 
         app_state = raw_request.app.state
-        chatbot   = app_state.chatbot
         router    = app_state.router
         registry  = app_state.registry
 
@@ -162,42 +157,31 @@ async def handle_query(
                     confidence=router_decision.result.confidence,
                     method=router_decision.result.method, language=language)
 
-        filters = build_filters(
+        filters     = build_filters(
             author=author, era=era, book_id=book_id, category=category,
             death_year_min=death_year_min, death_year_max=death_year_max,
         )
+        agent_input = build_agent_input(
+            request, language=language, filters=filters, hierarchical=hierarchical,
+        )
+        timeout = settings.agent_timeout_seconds
 
         agent, is_agent = registry.get_for_intent(intent)
         logger.info("query.registry_lookup", query_id=query_id, intent=intent.value,
                     resolved=bool(agent), is_agent=is_agent)
 
-        agent_input = build_agent_input(
-            request, language=language, filters=filters, hierarchical=hierarchical
-        )
-        timeout = settings.agent_timeout_seconds
-
         if agent is not None:
+            agent_name   = getattr(agent, "name", agent.__class__.__name__)   # before execute
             agent_result = await _run_with_timeout(
                 agent.execute(agent_input), timeout=timeout,
-                label=getattr(agent, "name", agent.__class__.__name__),
-                query_id=query_id,
+                label=agent_name, query_id=query_id,
             )
-            agent_name = getattr(agent, "name", agent.__class__.__name__)
-
-        elif intent in _CHATBOT_INTENTS:
-            agent_result = await _run_with_timeout(
-                chatbot.execute(agent_input), timeout=timeout,
-                label="chatbot_agent", query_id=query_id,
-            )
-            agent_name = "chatbot_agent"
 
         else:
-            agent_result = await _run_with_timeout(
-                execute_fallback(chatbot, language), timeout=timeout,
-                label="chatbot_fallback", query_id=query_id,
-            )
-            agent_name = "chatbot_fallback"
-            logger.warning("query.no_agent_for_intent", query_id=query_id, intent=intent.value)
+            agent_name   = "chatbot_fallback"
+            agent_result = build_fallback_output(language)
+            logger.warning("query.no_agent_for_intent",
+                           query_id=query_id, intent=intent.value)
 
         processing_time = int((time.time() - start_time) * 1000)
         logger.info("query.completed", query_id=query_id, intent=intent.value,
@@ -207,7 +191,7 @@ async def handle_query(
             query_id=query_id,
             intent=intent.value,
             intent_confidence=router_decision.result.confidence,
-            answer=_strip_thinking(agent_result.answer),      # ← هنا
+            answer=_strip_thinking(agent_result.answer),
             citations=[
                 CitationResponse(
                     id=c.id, type=c.type, source=c.source,
@@ -248,5 +232,7 @@ async def handle_query(
 @query_router.get("/test")
 async def test_query(raw_request: Request):
     chatbot = raw_request.app.state.chatbot
-    result  = await chatbot.execute(AgentInput(query="السلام عليكم", language="ar", metadata={}))
+    result  = await chatbot.execute(
+        AgentInput(query="السلام عليكم", language="ar", metadata={})
+    )
     return {"status": "ok", "chatbot": chatbot.name, "answer": result.answer}

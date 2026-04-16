@@ -1,7 +1,5 @@
 """
 Fiqh RAG Agent for Athar Islamic QA system.
-
-
 """
 from src.agents.base_rag_agent import BaseRAGAgent
 from src.config.constants import LLMConfig, RetrievalConfig
@@ -10,7 +8,6 @@ from src.config.constants import LLMConfig, RetrievalConfig
 class FiqhAgent(BaseRAGAgent):
     """
     وكيل الفقه الإسلامي - إجابات مبنية على النصوص المسترجاعة فقط.
-
     Uses usul_fiqh collection (50,240 vectors in Qdrant).
     """
 
@@ -32,11 +29,8 @@ class FiqhAgent(BaseRAGAgent):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if getattr(self, "embedding_model", None) is None:
-            raise ValueError(
-                "FiqhAgent requires 'embedding_model' — "
-                "pass it to the constructor or register it in the DI container."
-            )
+        # ✅ السطر المحذوف — BaseRAGAgent.execute() يتعامل مع None بأمان
+        # ❌ if getattr(self, "embedding_model", None) is None: raise ValueError(...)
 
     # ── نصوص التوليد ──────────────────────────────────────────────────────
     SYSTEM_PROMPT: str = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.

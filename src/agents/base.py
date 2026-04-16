@@ -23,16 +23,20 @@ class Citation(BaseModel):
 
     @classmethod
     def from_passage(cls, passage: dict, index: int) -> "Citation":
-        """
-        Build a Citation directly from a retrieved passage dict.
-
-        Centralises the mapping so BaseRAGAgent and any future agent
-        don't duplicate the field logic.
-        """
         meta = passage.get("metadata", {})
-        author      = meta.get("author", "")
-        death_year  = meta.get("author_death", "")
-        page        = meta.get("page_number", "")
+
+        # Infer type from collection or explicit metadata field
+        collection  = meta.get("collection", "")
+        source_type = meta.get("source_type") or (
+            "hadith"    if "hadith"  in collection else
+            "quran"     if "quran"   in collection else
+            "seerah"    if "seerah"  in collection else
+            "fiqh_book"
+        )
+
+        author     = meta.get("author", "")
+        death_year = meta.get("author_death", "")
+        page       = meta.get("page_number", "")
 
         ref_parts = filter(None, [
             author,
@@ -42,12 +46,13 @@ class Citation(BaseModel):
 
         return cls(
             id=f"C{index}",
-            type="fiqh_book",
+            type=source_type,                                          # ✅
             source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
             reference=" — ".join(ref_parts),
             url=None,
             text_excerpt=passage.get("content", "")[:300] or None,
         )
+
 
 
 class AgentInput(BaseModel):

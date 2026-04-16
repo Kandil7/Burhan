@@ -13,15 +13,13 @@ class HadithAgent(BaseRAGAgent):
 
     name = "hadith"   
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)   
 
     # ── التكوين ────────────────────────────────────────────────────────────
     COLLECTION:      str   = "hadith_passages"
     TOP_K_RETRIEVAL: int   = RetrievalConfig.TOP_K_HADITH         
     TOP_K_RERANK:    int   = 5
-    SCORE_THRESHOLD: float = RetrievalConfig.HADITH_SCORE_THRESHOLD  
-    TEMPERATURE:     float = LLMConfig.HADITH_TEMPERATURE           
+    SCORE_THRESHOLD: float = RetrievalConfig.HYBRID_SCORE_THRESHOLD   # 0.50
+    TEMPERATURE:     float = LLMConfig.DEFAULT_TEMPERATURE      
     MAX_TOKENS:      int   = LLMConfig.DEFAULT_MAX_TOKENS           
 
     NO_PASSAGES_MESSAGE: str = (

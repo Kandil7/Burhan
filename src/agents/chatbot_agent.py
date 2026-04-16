@@ -4,6 +4,7 @@ Chatbot Agent (Greeting Agent) for Athar Islamic QA system.
 
 """
 import random
+import re
 
 from src.agents.base import AgentInput, AgentOutput, BaseAgent
 from src.config.logging_config import get_logger
@@ -141,14 +142,19 @@ class ChatbotAgent(BaseAgent):
 
     # ── Helpers ─────────────────────────────────────────────────────────────
 
+
     def _is_greeting(self, query: str) -> bool:
+        """Whole-word match — prevents 'رسالة' matching 'سلام'."""
         keywords = [
             "سلام", "السلام", "مرحبا", "اهلا", "هلا",
             "hello", "hi", "hey", "greetings", "assalam",
             "ramadan", "eid", "رمضان", "عيد",
         ]
-        return any(kw in query.lower() for kw in keywords)
-
+        q = query.lower()
+        return any(
+            re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", q)
+            for kw in keywords
+        )
     def _is_small_talk(self, query: str) -> bool:
         keywords = [
             "كيف حالك", "كيفك", "شلونك", "عامل",

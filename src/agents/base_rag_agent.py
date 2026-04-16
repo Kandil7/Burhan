@@ -1,17 +1,16 @@
 """
-Base RAG Agent for Athar Islamic QA system.
+
 
 Base RAG Agent for Athar Islamic QA system.
 
-Answers general Islamic questions using retrieval-augmented generation:
-- History questions
-- Biography (seerah, companions)
-- Theology/aqeedah
-- Concepts and definitions
+Abstract base class providing the full RAG pipeline:
+retrieve → score → enrich → generate → cite.
 
-Higher temperature (0.3) for educational tone.
-
+Subclasses define COLLECTION, SYSTEM_PROMPT, USER_PROMPT,
+and optional config overrides (SCORE_THRESHOLD, TEMPERATURE, etc.).
 """
+
+
 from __future__ import annotations
 
 import re

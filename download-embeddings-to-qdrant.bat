@@ -1,110 +1,149 @@
 @echo off
 setlocal enabledelayedexpansion
+
 REM ═══════════════════════════════════════════════════════════════════════
 REM 🕌  ATHAR - Download Embeddings from HuggingFace & Upload to Qdrant
 REM ═══════════════════════════════════════════════════════════════════════
-REM
-REM This script downloads embeddings from HuggingFace and uploads to Qdrant.
-REM Smart features:
-REM   - Checks existing Qdrant data first
-REM   - Only downloads what's missing (incremental sync)
-REM   - Shows sync plan before execution
-REM   - Supports --verify-only, --dry-run, --force options
-REM
-REM Prerequisites:
-REM   - Qdrant running on localhost:6333
-REM   - HF_TOKEN configured in .env
-REM   - Poetry environment set up
-REM
 REM Usage:
-REM   download-embeddings-to-qdrant.bat           (smart sync - only what's missing)
-REM   download-embeddings-to-qdrant.bat --verify-only   (just check Qdrant)
-REM   download-embeddings-to-qdrant.bat --force         (reupload everything)
+REM   download-embeddings-to-qdrant.bat               (smart sync)
+REM   download-embeddings-to-qdrant.bat --dry-run     (show plan, no upload)
+REM   download-embeddings-to-qdrant.bat --verify-only (check Qdrant state)
+REM   download-embeddings-to-qdrant.bat --force       (reupload everything)
+REM   download-embeddings-to-qdrant.bat --help        (show this message)
 REM ═══════════════════════════════════════════════════════════════════════
 
-echo.
-echo ═══════════════════════════════════════════════════════════════════════
-echo 🕌  ATHAR - Smart Embeddings Sync
-echo ═══════════════════════════════════════════════════════════════════════
-echo.
+set "SCRIPT=scripts\download_embeddings_and_upload_qdrant.py"
+set "QDRANT_URL=http://localhost:6333"
+set "PYTHON_ARGS="
+set "MODE=Smart Sync"
 
-REM Check Qdrant is running
-echo [1/4] Checking Qdrant connection...
-powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:6333/collections' -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop | Out-Null; exit 0 } catch { exit 1 }"
-if !ERRORLEVEL! neq 0 (
-    echo ❌ Qdrant is NOT running on localhost:6333
-    echo.
-    echo Start Qdrant first:
-    echo   docker compose -f docker/docker-compose.dev.yml up -d qdrant
-    echo.
-    pause
-    exit /b 1
+REM ─── Handle --help ──────────────────────────────────────────────────────
+for %%A in (%*) do (
+    if /I "%%A"=="--help" (
+        type "%~f0" | findstr /R "^REM"
+        exit /b 0
+    )
 )
-echo ✅ Qdrant is running
+
+REM ─── Collect arguments & set mode label ─────────────────────────────────
+set "HAS_FORCE=0"
+set "HAS_VERIFY=0"
+set "HAS_DRY=0"
+
+for %%A in (%*) do (
+    if /I "%%A"=="--force"       set "HAS_FORCE=1"
+    if /I "%%A"=="--verify-only" set "HAS_VERIFY=1"
+    if /I "%%A"=="--dry-run"     set "HAS_DRY=1"
+    set "PYTHON_ARGS=!PYTHON_ARGS! %%A"
+)
+
+REM Default: smart sync (no extra flags)
+if "%PYTHON_ARGS%"=="" set "MODE=Smart Sync (incremental)"
+if "!HAS_DRY!"==1      set "MODE=Dry Run (plan only)"
+if "!HAS_VERIFY!"==1   set "MODE=Verify Only"
+if "!HAS_FORCE!"==1    set "MODE=Force Re-upload"
+
+REM ─── Header ─────────────────────────────────────────────────────────────
+echo.
+echo ═══════════════════════════════════════════════════════════════════════
+echo 🕌  ATHAR - Smart Embeddings Sync  ^|  %DATE% %TIME%
+echo    Mode: %MODE%
+echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
-REM Check HF_TOKEN exists in .env
-echo [2/4] Checking HuggingFace token...
+REM ─── [1/4] Qdrant connectivity ──────────────────────────────────────────
+echo [1/4] Checking Qdrant on %QDRANT_URL% ...
+powershell -NoProfile -Command ^
+  "try { $r=Invoke-WebRequest '%QDRANT_URL%/healthz' -UseBasicParsing -TimeoutSec 5 -EA Stop; exit 0 } catch { exit 1 }"
+if !ERRORLEVEL! neq 0 (
+    echo.
+    echo  ❌  Qdrant is NOT reachable at %QDRANT_URL%
+    echo.
+    echo  Start it with:
+    echo      docker compose -f docker/docker-compose.dev.yml up -d qdrant
+    echo.
+    pause & exit /b 1
+)
+echo  ✅  Qdrant is running
+echo.
+
+REM ─── [2/4] HF_TOKEN in .env ─────────────────────────────────────────────
+echo [2/4] Checking HuggingFace token ...
+
 if not exist ".env" (
-    echo ❌ .env file not found!
-    echo    Copy .env.example to .env and configure HF_TOKEN
     echo.
-    pause
-    exit /b 1
+    echo  ❌  .env not found. Copy .env.example and set HF_TOKEN.
+    echo.
+    pause & exit /b 1
 )
 
-findstr "HF_TOKEN=" .env | findstr /V "HF_TOKEN=$" | findstr /V "HF_TOKEN=your" >nul
+REM Extract the value of HF_TOKEN (strips quotes, ignores comments/blanks)
+set "HF_TOKEN_VAL="
+for /f "usebackq tokens=1,* delims==" %%K in (`findstr /B /I "HF_TOKEN=" .env`) do (
+    set "_key=%%K"
+    set "_val=%%L"
+    REM Skip comment lines
+    if "!_key:~0,1!" neq "#" (
+        REM Strip surrounding quotes
+        set "_val=!_val:"=!"
+        if not "!_val!"=="" if not "!_val!"=="your_token_here" if not "!_val:~0,5!"=="hf_TO" (
+            set "HF_TOKEN_VAL=!_val!"
+        ) else if "!_val:~0,3!"=="hf_" (
+            set "HF_TOKEN_VAL=!_val!"
+        )
+    )
+)
+
+if "!HF_TOKEN_VAL!"=="" (
+    echo.
+    echo  ❌  HF_TOKEN is missing or unconfigured in .env
+    echo      Get a token at: https://huggingface.co/settings/tokens
+    echo      Then set in .env: HF_TOKEN=hf_xxxxxxxxxxxx
+    echo.
+    pause & exit /b 1
+)
+echo  ✅  HF_TOKEN found ^(hf_****%HF_TOKEN_VAL:~-4%^)
+echo.
+
+REM ─── [3/4] Check Poetry and script ─────────────────────────────────────
+echo [3/4] Checking environment ...
+
+where poetry >nul 2>&1
 if !ERRORLEVEL! neq 0 (
-    echo ❌ HF_TOKEN not configured in .env
     echo.
-    echo Get token from: https://huggingface.co/settings/tokens
-    echo Then add to .env: HF_TOKEN=hf_your_token_here
+    echo  ❌  Poetry not found in PATH.
+    echo      Install from: https://python-poetry.org/docs/
     echo.
-    pause
-    exit /b 1
+    pause & exit /b 1
 )
-echo ✅ HF_TOKEN configured
+echo  ✅  Poetry found
+
+if not exist "%SCRIPT%" (
+    echo.
+    echo  ❌  Script not found: %SCRIPT%
+    echo.
+    pause & exit /b 1
+)
+echo  ✅  Script found: %SCRIPT%
 echo.
 
-REM Parse command line arguments
-set "ARGS=%*"
-if "%ARGS%"=="" (
-    set "PYTHON_ARGS=--dry-run"
-    set "MODE=Smart Sync (Dry Run)"
-) else (
-    set "PYTHON_ARGS=%ARGS%"
-    set "MODE=Custom Mode"
-)
-
-REM Check the upload script exists
-echo [3/4] Checking upload script...
-if not exist "scripts\download_embeddings_and_upload_qdrant.py" (
-    echo ❌ Upload script not found: scripts\download_embeddings_and_upload_qdrant.py
-    echo.
-    pause
-    exit /b 1
-)
-echo ✅ Script found
-echo.
-
-REM Run the script
-echo [4/4] Running sync...
-echo ═══════════════════════════════════════════════════════════════════════
-echo Mode: %MODE%
-echo Arguments: %PYTHON_ARGS%
+REM ─── [4/4] Execute ──────────────────────────────────────────────────────
+echo [4/4] Running sync ...
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
-poetry run python scripts/download_embeddings_and_upload_qdrant.py %PYTHON_ARGS%
-set RESULT=!ERRORLEVEL!
+poetry run python "%SCRIPT%" %PYTHON_ARGS%
+set "RESULT=!ERRORLEVEL!"
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
 if !RESULT! equ 0 (
-    echo ✅ Complete!
+    echo  ✅  Sync complete  ^|  %TIME%
 ) else (
-    echo ❌ Failed with error code !RESULT!
+    echo  ❌  Failed with exit code !RESULT!
+    echo      Check the output above for details.
 )
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 pause
+exit /b !RESULT!
