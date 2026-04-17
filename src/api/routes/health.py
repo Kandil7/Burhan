@@ -7,7 +7,7 @@ Phase 9: Added metrics endpoint.
 
 from fastapi import APIRouter, Response
 
-from src.api.schemas.response import HealthResponse
+from src.api.schemas.common import HealthResponse
 from src.config.settings import settings
 from src.config.logging_config import metrics
 

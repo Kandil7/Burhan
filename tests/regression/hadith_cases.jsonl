@@ -1,0 +1,15 @@
+{"query": "ما صحة حديث إنما الأعمال بالنيات؟", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "حديث سند البخاري", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما هو نص صحيح البخاري؟", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "Hadith about intention", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "صحيح مسلم كتاب البيوع", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_muslim"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "ما درجة هذا الحديث صحيح أم weak؟", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "الاسناد في حديث كعب بن مالك", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "Tell me about hadith grade daif", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "رواة صحيح البخاري", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "متن حديث فضل سورة الكهف", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "What is the sanad of the hadith about charity?", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "Is this hadith authentic: Actions are by intentions?", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ضعيف البخاري", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "موضوع الاحاديث", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "abstain", "difficulty": "hard"}
+{"query": "حديث حول الصبر والصالح", "expected_intent": "hadith", "expected_agent": "hadith_agent", "expected_collections": ["sahih_bukhari", "sahih_muslim"], "expected_mode": "answer", "difficulty": "medium"}

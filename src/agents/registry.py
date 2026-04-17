@@ -2,9 +2,10 @@
 Agent Registry for Athar Islamic QA System.
 
 Centralized agent management with lazy initialization.
-Supports dynamic agent loading and intent-based routing.
+Supports dynamic agent loading, intent-based routing, and collection-aware retrieval.
 
 Phase 9: Added centralized agent registry with lazy initialization.
+Epic 6: Added collection-aware agent registration with explicit mappings.
 """
 
 from __future__ import annotations
@@ -23,6 +24,169 @@ if TYPE_CHECKING:
 logger = get_logger()
 
 
+# ==========================================
+# Collection Policy Mappings
+# ==========================================
+
+# Maps agent names to the collections they handle
+AGENT_COLLECTION_MAPPING: dict[str, list[str]] = {
+    "fiqh": ["fiqh_passages", "usul_fiqh"],
+    "hadith": ["hadith_passages"],
+    "seerah": ["seerah_passages"],
+    "tafsir": ["tafsir_passages", "quran_tafsir"],
+    "aqeedah": ["aqeedah_passages"],
+    "history": ["history_passages", "islamic_history_passages"],
+    "language": ["language_passages", "arabic_language_passages"],
+    "tazkiyah": ["tazkiyah_passages", "spirituality_passages"],
+    "usul_fiqh": ["usul_fiqh_passages", "usul_fiqh"],
+    "general_islamic": ["general_islamic"],
+    "chatbot": [],  # No collection - fallback only
+}
+
+# Intent to agent mapping (updated for Epic 6)
+INTENT_TO_AGENT: dict[Intent, str] = {
+    Intent.FIQH: "fiqh",
+    Intent.QURAN: "tafsir",  # Tafsir handles Quran interpretation
+    Intent.ISLAMIC_KNOWLEDGE: "general_islamic",
+    Intent.HADITH: "hadith",
+    Intent.SEERAH: "seerah",
+    Intent.TAFSIR: "tafsir",  # Dedicated tafsir agent
+    Intent.AQEEDAH: "aqeedah",  # Dedicated aqeedah agent
+    Intent.USUL_FIQH: "usul_fiqh",  # Dedicated usul_fiqh agent
+    Intent.ISLAMIC_HISTORY: "history",  # Dedicated history agent
+    Intent.ARABIC_LANGUAGE: "language",  # Dedicated language agent
+    Intent.GREETING: "chatbot",
+}
+
+# Collection-specific retrieval policies
+COLLECTION_POLICIES: dict[str, dict[str, Any]] = {
+    "fiqh_passages": {
+        "score_threshold": 0.65,
+        "top_k": 15,
+        "verification_enabled": True,
+        "verification_policy": "fiqh",
+        "requires_school_context": True,
+    },
+    "hadith_passages": {
+        "score_threshold": 0.50,
+        "top_k": 10,
+        "verification_enabled": True,
+        "verification_policy": "hadith",
+        "requires_grade": True,
+    },
+    "tafsir_passages": {
+        "score_threshold": 0.15,
+        "top_k": 12,
+        "verification_enabled": True,
+        "verification_policy": "tafsir",
+        "requires_verse_reference": True,
+    },
+    "quran_tafsir": {
+        "score_threshold": 0.15,
+        "top_k": 12,
+        "verification_enabled": True,
+        "verification_policy": "tafsir",
+        "requires_verse_reference": True,
+    },
+    "aqeedah_passages": {
+        "score_threshold": 0.15,
+        "top_k": 10,
+        "verification_enabled": True,
+        "verification_policy": "aqeedah",
+        "requires_dalil": True,
+    },
+    "seerah_passages": {
+        "score_threshold": 0.50,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+    "history_passages": {
+        "score_threshold": 0.50,
+        "top_k": 12,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+    "islamic_history_passages": {
+        "score_threshold": 0.50,
+        "top_k": 12,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+    "language_passages": {
+        "score_threshold": 0.45,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+    "arabic_language_passages": {
+        "score_threshold": 0.45,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+    "tazkiyah_passages": {
+        "score_threshold": 0.45,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "tazkiyah",
+    },
+    "spirituality_passages": {
+        "score_threshold": 0.45,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "tazkiyah",
+    },
+    "usul_fiqh_passages": {
+        "score_threshold": 0.55,
+        "top_k": 10,
+        "verification_enabled": True,
+        "verification_policy": "usul_fiqh",
+        "requires_dalil": True,
+    },
+    "usul_fiqh": {
+        "score_threshold": 0.65,
+        "top_k": 15,
+        "verification_enabled": True,
+        "verification_policy": "usul_fiqh",
+        "requires_dalil": True,
+    },
+    "general_islamic": {
+        "score_threshold": 0.35,
+        "top_k": 10,
+        "verification_enabled": False,
+        "verification_policy": "general",
+    },
+}
+
+
+def get_collection_policy(collection: str) -> dict[str, Any]:
+    """Get retrieval policy for a specific collection."""
+    return COLLECTION_POLICIES.get(
+        collection,
+        {
+            "score_threshold": 0.50,
+            "top_k": 10,
+            "verification_enabled": False,
+            "verification_policy": "general",
+        },
+    )
+
+
+def get_agent_collections(agent_name: str) -> list[str]:
+    """Get list of collections handled by an agent."""
+    return AGENT_COLLECTION_MAPPING.get(agent_name, [])
+
+
+def resolve_collection_for_intent(intent: Intent) -> str | None:
+    """Resolve the primary collection for a given intent."""
+    agent_name = INTENT_TO_AGENT.get(intent)
+    if agent_name:
+        collections = get_agent_collections(agent_name)
+        return collections[0] if collections else None
+    return None
+
+
 class AgentRegistry:
     """
     Central agent registry with lazy initialization.
@@ -38,6 +202,9 @@ class AgentRegistry:
 
         # Get by intent
         agent = registry.get_for_intent(Intent.FIQH)
+
+        # Get policy for collection
+        policy = registry.get_collection_policy("fiqh_passages")
     """
 
     def __init__(
@@ -65,7 +232,12 @@ class AgentRegistry:
         from src.agents.hadith_agent import HadithAgent
         from src.agents.seerah_agent import SeerahAgent
         from src.agents.general_islamic_agent import GeneralIslamicAgent
-        from src.agents.fiqh_agent import FiqhAgent
+        from src.agents.tafsir_agent import TafsirAgent
+        from src.agents.aqeedah_agent import AqeedahAgent
+        from src.agents.history_agent import HistoryAgent
+        from src.agents.language_agent import LanguageAgent
+        from src.agents.tazkiyah_agent import TazkiyahAgent
+        from src.agents.usul_fiqh_agent import UsulFiqhAgent
 
         # Initialize chatbot (no dependencies)
         self._agents["chatbot"] = ChatbotAgent()
@@ -83,6 +255,36 @@ class AgentRegistry:
                 llm_client=self._llm_client,
             )
             self._agents["seerah"] = SeerahAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["tafsir"] = TafsirAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["aqeedah"] = AqeedahAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["history"] = HistoryAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["language"] = LanguageAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["tazkiyah"] = TazkiyahAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["usul_fiqh"] = UsulFiqhAgent(
                 embedding_model=self._embedding_model,
                 vector_store=self._vector_store,
                 llm_client=self._llm_client,
@@ -112,22 +314,20 @@ class AgentRegistry:
         return self._agents.get(name)
 
     def get_for_intent(self, intent: Intent) -> "BaseAgent | None":
-        """Get agent for intent."""
-        intent_to_agent = {
-            Intent.FIQH: "fiqh",
-            Intent.HADITH: "hadith",
-            Intent.QURAN: "quran",
-            Intent.SEERAH: "seerah",
-            Intent.ISLAMIC_KNOWLEDGE: "general_islamic",
-            Intent.GREETING: "chatbot",
-            Intent.TAFSIR: "quran",
-            Intent.AQEEDAH: "fiqh",
-            Intent.USUL_FIQH: "fiqh",
-            Intent.ISLAMIC_HISTORY: "seerah",
-            Intent.ARABIC_LANGUAGE: "general_islamic",
-        }
-        agent_name = intent_to_agent.get(intent)
+        """Get agent for intent using updated mapping."""
+        agent_name = INTENT_TO_AGENT.get(intent)
         return self._agents.get(agent_name) if agent_name else None
+
+    def get_for_collection(self, collection: str) -> "BaseAgent | None":
+        """Get agent for a specific collection."""
+        for agent_name, collections in AGENT_COLLECTION_MAPPING.items():
+            if collection in collections:
+                return self._agents.get(agent_name)
+        return None
+
+    def get_collection_policy(self, collection: str) -> dict[str, Any]:
+        """Get retrieval policy for a specific collection."""
+        return get_collection_policy(collection)
 
     def list_agents(self) -> list[str]:
         """List all registered agent names."""
@@ -199,6 +399,66 @@ class AgentFactory:
         from src.agents.seerah_agent import SeerahAgent
 
         return SeerahAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_tafsir_agent(self) -> "TafsirAgent":
+        """Create Tafsir agent."""
+        from src.agents.tafsir_agent import TafsirAgent
+
+        return TafsirAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_aqeedah_agent(self) -> "AqeedahAgent":
+        """Create Aqeedah agent."""
+        from src.agents.aqeedah_agent import AqeedahAgent
+
+        return AqeedahAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_history_agent(self) -> "HistoryAgent":
+        """Create History agent."""
+        from src.agents.history_agent import HistoryAgent
+
+        return HistoryAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_language_agent(self) -> "LanguageAgent":
+        """Create Language agent."""
+        from src.agents.language_agent import LanguageAgent
+
+        return LanguageAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_tazkiyah_agent(self) -> "TazkiyahAgent":
+        """Create Tazkiyah agent."""
+        from src.agents.tazkiyah_agent import TazkiyahAgent
+
+        return TazkiyahAgent(
+            embedding_model=self._embedding_model,
+            vector_store=self._vector_store,
+            llm_client=self._llm_client,
+        )
+
+    def create_usul_fiqh_agent(self) -> "UsulFiqhAgent":
+        """Create UsulFiqh agent."""
+        from src.agents.usul_fiqh_agent import UsulFiqhAgent
+
+        return UsulFiqhAgent(
             embedding_model=self._embedding_model,
             vector_store=self._vector_store,
             llm_client=self._llm_client,

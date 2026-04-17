@@ -1,19 +1,40 @@
 """
 Hybrid Intent Classifier for Athar Islamic QA system.
 
+DEPRECATED: This module has been moved to src/application/router/hybrid_classifier.py
+Please update your imports to use the new module path.
+
+This module will be removed in a future version.
+
 Implements a two-tier classification approach:
 1. Keyword fast-path — scans KEYWORD_PATTERNS, picks highest-priority match
 2. Jaccard fallback — lexical token overlap (morphology-unaware; Phase 5 upgrade)
 
 This replaces the previous LLM-only classifier with a fast, accurate hybrid approach.
 Phase 5 upgrade: Replace _jaccard_fallback() with EmbeddingClassifier.
+
+---
+Migration guide:
+    Old: from src.application.hybrid_classifier import HybridIntentClassifier
+    New: from src.application.router.hybrid_classifier import HybridIntentClassifier
 """
 
 from __future__ import annotations
 
+import warnings
 import re
 from typing import Dict, List, Optional, Tuple
 
+# Issue deprecation warning
+warnings.warn(
+    "src.application.hybrid_classifier is deprecated. "
+    "Please import from src.application.router.hybrid_classifier instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+# Import domain types
 from src.domain.intents import (
     INTENT_PRIORITY,
     INTENT_ROUTING,
@@ -23,6 +44,9 @@ from src.domain.intents import (
 )
 from src.domain.models import ClassificationResult
 from src.application.interfaces import IntentClassifier
+
+# HybridIntentClassifier is defined in this file below
+__all__ = ["HybridIntentClassifier", "IntentClassifier", "ClassificationResult", "Intent", "QuranSubIntent"]
 
 
 # ============================================================================

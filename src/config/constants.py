@@ -22,6 +22,9 @@ class RetrievalConfig:
     TOP_K_GENERAL: Final[int] = 10
     TOP_K_DUA: Final[int] = 5
     TOP_K_HADITH: Final[int] = 10
+    TOP_K_TAFSIR: Final[int] = 12
+    TOP_K_AQEEDAH: Final[int] = 10
+    TOP_K_USUL_FIQH: Final[int] = 10
 
     # Multiplier for initial retrieval (before reranking/fusion)
     TOP_K_MULTIPLIER: Final[int] = 2
@@ -90,6 +93,8 @@ class LLMConfig:
     # Generation parameters
     DEFAULT_TEMPERATURE: Final[float] = 0.1
     FIQH_TEMPERATURE: Final[float] = 0.1  # Deterministic for fiqh
+    TAFSIR_TEMPERATURE: Final[float] = 0.1  # Precise interpretation
+    AQEEDAH_TEMPERATURE: Final[float] = 0.1  # Precise theological answers
     GENERAL_TEMPERATURE: Final[float] = 0.3  # More conversational
     CHATBOT_TEMPERATURE: Final[float] = 0.5  # Friendly
 

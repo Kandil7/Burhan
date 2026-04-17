@@ -1,0 +1,15 @@
+{"query": "ما حكم ترك صلاة الجمعة عمداً؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "هل يجوز أكل لحوم الحيوانات غير المذبوحة؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما حكم صلاة التراويح؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما حكم الزكاة في الذهب؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "هل针灸 حرام؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "حكم الوضوء من النوم", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما صحة صيام المرأة الحائض؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "Is cryptocurrency trading halal in Islam?", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "حكم إجهاض الجنين قبل الأربعين", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "ما حكم الأذان في المكبرات؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "هل يجوز الجمع بين الصلاتين؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "ما حكم قصر الصلاة في السفر؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "حكم الافطار في رمضان بدون عذر", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما موقف الشريعة من التبرع بالأعضاء؟", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami", "ibn_qayyim"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "Is it halal to eat with non-muslims?", "expected_intent": "fiqh", "expected_agent": "fiqh_agent", "expected_collections": ["fiqh_islami"], "expected_mode": "answer", "difficulty": "medium"}

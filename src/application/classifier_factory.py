@@ -1,42 +1,52 @@
 """
 Classifier Factory for Athar Islamic QA system.
 
+DEPRECATED: This module has been moved to src/application/router/classifier_factory.py
+Please update your imports to use the new module path.
+
+This module will be removed in a future version.
+
 Returns the correct IntentClassifier based on CLASSIFIER_BACKEND setting.
 
-┌──────────────────────┬───────────────────────────────────────────────────┐
-│ CLASSIFIER_BACKEND   │ What you get                                      │
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ hybrid  (default)    │ HybridIntentClassifier                            │
-│                      │ • Zero external dependencies                      │
-│                      │ • Keyword fast-path + Jaccard fallback    │
-│                      │ • Ideal for dev / offline environments    │
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ llm                  │ LLMIntentClassifier                           │
-│                      │ • Requires OPENAI_API_KEY                 │
-│                      │ • Works with any OpenAI-compatible API  │
-│                      │ • Silent fallback to ISLAMIC_KNOWLEDGE│
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ chain                │ FallbackChainClassifier                     │
-│                      │ • LLM primary (raises on error)          │
-│                      │ • HybridIntentClassifier fallback      │
-│                      │ • Best for production: accuracy +     │
-│                      │   reliability                      │
-└──────────────────────┴───────────────────────────────────────────────────┘
+---
+Migration guide:
+    Old: from src.application.classifier_factory import build_classifier
+    New: from src.application.router.classifier_factory import build_classifier
 """
 
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import TYPE_CHECKING
 
-from src.application.hybrid_classifier import HybridIntentClassifier
+# Issue deprecation warning
+warnings.warn(
+    "src.application.classifier_factory is deprecated. "
+    "Please import from src.application.router.classifier_factory instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+# Re-export from new location for backward compatibility
+from src.application.router.classifier_factory import (
+    build_classifier,
+    FallbackChainClassifier,
+    ClassifierFactory,
+)
+
+# Also re-export the main components from router
+from src.application.router.hybrid_classifier import HybridIntentClassifier
 from src.application.interfaces import IntentClassifier
-from src.domain.models import ClassificationResult
 
-if TYPE_CHECKING:
-    pass
-
-logger = logging.getLogger(__name__)
+__all__ = [
+    "build_classifier",
+    "FallbackChainClassifier",
+    "ClassifierFactory",
+    "HybridIntentClassifier",
+    "IntentClassifier",
+]
 
 
 # ============================================================================

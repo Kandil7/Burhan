@@ -42,13 +42,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ── 3. Classifier + Router ────────────────────────────────────────────────
     try:
         from src.application.classifier_factory import build_classifier
-        from src.application.router import RouterAgent
+        from src.application.router.router_agent import RouterAgent
 
         classifier = build_classifier()
     except Exception as e:
         logger.warning("lifespan.classifier.failed", error=str(e), falling_back="hybrid")
         from src.application.hybrid_classifier import HybridIntentClassifier
-        from src.application.router import RouterAgent
+        from src.application.router.router_agent import RouterAgent
 
         classifier = HybridIntentClassifier(low_conf_threshold=0.55)
 
@@ -87,49 +87,47 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         llm_client=llm_clients.client,
     )
 
-    from src.agents.fiqh_agent          import FiqhAgent
+    from src.agents.fiqh_agent import FiqhAgent
     from src.agents.general_islamic_agent import GeneralIslamicAgent
-    from src.agents.hadith_agent         import HadithAgent
-    from src.agents.seerah_agent         import SeerahAgent
+    from src.agents.hadith_agent import HadithAgent
+    from src.agents.seerah_agent import SeerahAgent
 
     try:
-        app.state.fiqh_agent    = FiqhAgent(**_rag_kwargs)
+        app.state.fiqh_agent = FiqhAgent(**_rag_kwargs)
         app.state.general_agent = GeneralIslamicAgent(**_rag_kwargs)
-        app.state.hadith_agent  = HadithAgent(**_rag_kwargs)
-        app.state.seerah_agent  = SeerahAgent(**_rag_kwargs)
+        app.state.hadith_agent = HadithAgent(**_rag_kwargs)
+        app.state.seerah_agent = SeerahAgent(**_rag_kwargs)
         logger.info("lifespan.rag_agents.initialised")
     except Exception as e:
         logger.warning("lifespan.rag_agents.failed", error=str(e))
-        app.state.fiqh_agent = app.state.general_agent = \
-        app.state.hadith_agent = app.state.seerah_agent = None
-
+        app.state.fiqh_agent = app.state.general_agent = app.state.hadith_agent = app.state.seerah_agent = None
 
     # ── 6. Tools + Registry ───────────────────────────────────────────────────────
     from src.core.registry import AgentRegistry
-    from src.tools.zakat_calculator      import ZakatCalculator
+    from src.tools.zakat_calculator import ZakatCalculator
     from src.tools.inheritance_calculator import InheritanceCalculator
-    from src.tools.prayer_times_tool     import PrayerTimesTool
-    from src.tools.hijri_calendar_tool   import HijriCalendarTool
-    from src.tools.dua_retrieval_tool    import DuaRetrievalTool
+    from src.tools.prayer_times_tool import PrayerTimesTool
+    from src.tools.hijri_calendar_tool import HijriCalendarTool
+    from src.tools.dua_retrieval_tool import DuaRetrievalTool
 
     registry = AgentRegistry()
 
     # Tools — لا تحتاج embedding
-    registry.register_tool("zakat_tool",       ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
+    registry.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
     registry.register_tool("inheritance_tool", InheritanceCalculator())
-    registry.register_tool("prayer_tool",      PrayerTimesTool())
-    registry.register_tool("hijri_tool",       HijriCalendarTool())
-    registry.register_tool("dua_tool",         DuaRetrievalTool())
+    registry.register_tool("prayer_tool", PrayerTimesTool())
+    registry.register_tool("hijri_tool", HijriCalendarTool())
+    registry.register_tool("dua_tool", DuaRetrievalTool())
 
     # RAG Agents — محقونة بالـ embedding_model
     if app.state.fiqh_agent:
-        registry.register_agent("fiqh_agent",    app.state.fiqh_agent)
+        registry.register_agent("fiqh_agent", app.state.fiqh_agent)
     if app.state.general_agent:
         registry.register_agent("general_islamic_agent", app.state.general_agent)
     if app.state.hadith_agent:
-        registry.register_agent("hadith_agent",  app.state.hadith_agent)
+        registry.register_agent("hadith_agent", app.state.hadith_agent)
     if app.state.seerah_agent:
-        registry.register_agent("seerah_agent",  app.state.seerah_agent)
+        registry.register_agent("seerah_agent", app.state.seerah_agent)
 
     app.state.registry = registry
     logger.info("lifespan.startup.complete", registry_status=registry.get_status())
