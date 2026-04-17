@@ -60,6 +60,7 @@ class SimpleRoutingDecision:
     response_mode: str  # answer, clarify, abstain
     confidence: float
     reasoning: Optional[str] = None
+    agents: Optional[list[str]] = None  # Multiple agents for multi-agent routing
 
 
 def create_router_agent(classifier: Any) -> RouterAgent:

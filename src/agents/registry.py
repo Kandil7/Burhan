@@ -41,6 +41,15 @@ AGENT_COLLECTION_MAPPING: dict[str, list[str]] = {
     "usul_fiqh": ["usul_fiqh_passages", "usul_fiqh"],
     "general_islamic": ["general_islamic"],
     "chatbot": [],  # No collection - fallback only
+    # Collection-aware RAG agents (Phase 6)
+    "fiqh_collection": ["fiqh_passages"],
+    "hadith_collection": ["hadith_passages"],
+    "tafsir_collection": ["tafsir_passages", "quran_tafsir"],
+    "aqeedah_collection": ["aqeedah_passages"],
+    "seerah_collection": ["seerah_passages"],
+    "usul_fiqh_collection": ["usul_fiqh_passages", "usul_fiqh"],
+    "history_collection": ["history_passages", "islamic_history_passages"],
+    "language_collection": ["language_passages", "arabic_language_passages"],
 }
 
 # Intent to agent mapping (updated for Epic 6)
@@ -239,6 +248,16 @@ class AgentRegistry:
         from src.agents.tazkiyah_agent import TazkiyahAgent
         from src.agents.usul_fiqh_agent import UsulFiqhAgent
 
+        # Import collection-aware RAG agents (Phase 6)
+        from src.agents.fiqh_collection_agent import FiqhCollectionAgent
+        from src.agents.hadith_collection_agent import HadithCollectionAgent
+        from src.agents.tafsir_collection_agent import TafsirCollectionAgent
+        from src.agents.aqeedah_collection_agent import AqeedahCollectionAgent
+        from src.agents.seerah_collection_agent import SeerahCollectionAgent
+        from src.agents.usul_fiqh_collection_agent import UsulFiqhCollectionAgent
+        from src.agents.history_collection_agent import HistoryCollectionAgent
+        from src.agents.language_collection_agent import LanguageCollectionAgent
+
         # Initialize chatbot (no dependencies)
         self._agents["chatbot"] = ChatbotAgent()
 
@@ -290,6 +309,48 @@ class AgentRegistry:
                 llm_client=self._llm_client,
             )
             self._agents["general_islamic"] = GeneralIslamicAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+
+            # Initialize collection-aware RAG agents (Phase 6)
+            self._agents["fiqh_collection"] = FiqhCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["hadith_collection"] = HadithCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["tafsir_collection"] = TafsirCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["aqeedah_collection"] = AqeedahCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["seerah_collection"] = SeerahCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["usul_fiqh_collection"] = UsulFiqhCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["history_collection"] = HistoryCollectionAgent(
+                embedding_model=self._embedding_model,
+                vector_store=self._vector_store,
+                llm_client=self._llm_client,
+            )
+            self._agents["language_collection"] = LanguageCollectionAgent(
                 embedding_model=self._embedding_model,
                 vector_store=self._vector_store,
                 llm_client=self._llm_client,

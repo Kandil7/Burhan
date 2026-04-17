@@ -1,0 +1,45 @@
+# Hadith Agent Configuration
+# Retrieval, verification, and fallback policies for HadithCollectionAgent
+
+name: HadithAgent
+domain: hadith
+collection_name: hadith_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.3
+  topk_initial: 120
+  topk_reranked: 20
+  min_relevance: 0.5
+  metadata_filters_priority:
+    - book_id
+    - compiler
+    - grade
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: grade_checker
+      enabled: true
+      fail_policy: warn
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_sahih_for_aqeedah_and_ahkam: true
+  allow_daif_for_fadail_with_warning: true
+  minimum_sources: 2

@@ -3,6 +3,7 @@ Tests for API endpoints.
 
 Tests the main query and health endpoints.
 """
+
 import pytest
 from fastapi.testclient import TestClient
 from src.api.main import app
@@ -16,7 +17,7 @@ def client():
 
 class TestHealthEndpoint:
     """Test health check endpoints."""
-    
+
     def test_health_check(self, client):
         """Test /health endpoint returns 200."""
         response = client.get("/health")
@@ -24,7 +25,7 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] == "ok"
         assert "version" in data
-    
+
     def test_readiness_check(self, client):
         """Test /ready endpoint returns 200."""
         response = client.get("/ready")
@@ -32,7 +33,7 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] == "ok"
         assert "services" in data
-    
+
     def test_root_endpoint(self, client):
         """Test / endpoint returns API information."""
         response = client.get("/")
@@ -45,86 +46,56 @@ class TestHealthEndpoint:
 
 class TestQueryEndpoint:
     """Test query endpoint."""
-    
+
     def test_query_endpoint_structure(self, client):
-        """Test /api/v1/query endpoint exists."""
+        """Test /api/v1/ask endpoint exists (renamed from query in Epic 7)."""
         # Phase 1: Will return 500 because orchestrator has no agents
         # But endpoint should exist and accept requests
-        response = client.post(
-            "/api/v1/query",
-            json={"query": "ما حكم الصلاة؟"}
-        )
+        response = client.post("/api/v1/ask", json={"query": "ما حكم الصلاة؟"})
         # Should be either 200 (with fallback) or 500 (if error)
         assert response.status_code in [200, 500]
-    
+
     def test_query_validation_empty(self, client):
         """Test query validation rejects empty query."""
-        response = client.post(
-            "/api/v1/query",
-            json={"query": ""}
-        )
+        response = client.post("/api/v1/ask", json={"query": ""})
         assert response.status_code == 422  # Validation error
-    
+
     def test_query_validation_whitespace(self, client):
         """Test query validation rejects whitespace query."""
-        response = client.post(
-            "/api/v1/query",
-            json={"query": "   "}
-        )
+        response = client.post("/api/v1/ask", json={"query": "   "})
         assert response.status_code == 422
-    
+
     def test_query_validation_invalid_language(self, client):
         """Test query validation rejects invalid language."""
         response = client.post(
-            "/api/v1/query",
+            "/api/v1/ask",
             json={
                 "query": "Test query",
-                "language": "fr"  # Invalid
-            }
+                "language": "fr",  # Invalid
+            },
         )
         assert response.status_code == 422
-    
+
     def test_query_validation_valid_language(self, client):
         """Test query validation accepts valid language."""
-        response = client.post(
-            "/api/v1/query",
-            json={
-                "query": "Test query",
-                "language": "ar"
-            }
-        )
+        response = client.post("/api/v1/ask", json={"query": "Test query", "language": "ar"})
         # Should not be 422 (validation passed)
         assert response.status_code != 422
-    
+
     def test_query_validation_invalid_madhhab(self, client):
         """Test query validation rejects invalid madhhab."""
-        response = client.post(
-            "/api/v1/query",
-            json={
-                "query": "Test query",
-                "madhhab": "invalid"
-            }
-        )
+        response = client.post("/api/v1/ask", json={"query": "Test query", "madhhab": "invalid"})
         assert response.status_code == 422
-    
+
     def test_query_validation_valid_madhhab(self, client):
         """Test query validation accepts valid madhhab."""
-        response = client.post(
-            "/api/v1/query",
-            json={
-                "query": "Test query",
-                "madhhab": "hanafi"
-            }
-        )
+        response = client.post("/api/v1/ask", json={"query": "Test query", "madhhab": "hanafi"})
         assert response.status_code != 422
-    
+
     def test_query_response_structure(self, client):
         """Test query response has required fields."""
-        response = client.post(
-            "/api/v1/query",
-            json={"query": "ما حكم زكاة المال؟"}
-        )
-        
+        response = client.post("/api/v1/ask", json={"query": "ما حكم زكاة المال؟"})
+
         # Phase 1: May return 500 or 200 with fallback
         if response.status_code == 200:
             data = response.json()
@@ -138,17 +109,17 @@ class TestQueryEndpoint:
 
 class TestOpenAPIDocs:
     """Test OpenAPI documentation."""
-    
+
     def test_docs_endpoint(self, client):
         """Test /docs endpoint exists."""
         response = client.get("/docs")
         assert response.status_code == 200
-    
+
     def test_redoc_endpoint(self, client):
         """Test /redoc endpoint exists."""
         response = client.get("/redoc")
         assert response.status_code == 200
-    
+
     def test_openapi_json(self, client):
         """Test /openapi.json endpoint."""
         response = client.get("/openapi.json")

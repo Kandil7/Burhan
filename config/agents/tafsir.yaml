@@ -1,0 +1,46 @@
+# Tafsir Agent Configuration
+# Retrieval, verification, and fallback policies for TafsirCollectionAgent
+
+name: TafsirAgent
+domain: tafsir
+collection_name: tafsir_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.7
+  topk_initial: 50
+  topk_reranked: 10
+  min_relevance: 0.55
+  metadata_filters_priority:
+    - surah
+    - verse_start
+    - interpreter
+    - methodology
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: tafsir_maqasid_checker
+      enabled: true
+      fail_policy: proceed
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_authentic_tafsir: true
+  require_asbab_al_nuzul: false
+  minimum_sources: 2

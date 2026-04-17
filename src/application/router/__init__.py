@@ -1,6 +1,11 @@
 # Application Router Module
 """
 Router module for query routing and classification.
+
+This module includes:
+- RouterAgent: Main routing agent
+- Multi-agent orchestration: For complex queries requiring multiple agents
+- Various classifiers: Hybrid, Keyword-based, LLM-based
 """
 
 from __future__ import annotations
@@ -19,6 +24,25 @@ from src.application.router.router_agent import (
     get_router_agent,
     init_router_agent,
     SimpleRoutingDecision,
+)
+
+# Re-export from orchestration module
+from src.application.router.orchestration import (
+    OrchestrationPattern,
+    AgentTask,
+    OrchestrationPlan,
+    create_orchestration_plan,
+    MultiAgentOrchestrator,
+    route_via_decision_tree,
+    PRIMARY_THRESHOLD,
+    SECONDARY_THRESHOLD,
+    LOW_CONFIDENCE_THRESHOLD,
+)
+
+# Re-export from multi_agent module
+from src.application.router.multi_agent import (
+    MultiAgentRouter,
+    create_multi_agent_router,
 )
 
 
@@ -82,6 +106,19 @@ __all__ = [
     "get_router_agent",
     "init_router_agent",
     "SimpleRoutingDecision",
+    # Orchestration
+    "OrchestrationPattern",
+    "AgentTask",
+    "OrchestrationPlan",
+    "create_orchestration_plan",
+    "MultiAgentOrchestrator",
+    "route_via_decision_tree",
+    "PRIMARY_THRESHOLD",
+    "SECONDARY_THRESHOLD",
+    "LOW_CONFIDENCE_THRESHOLD",
+    # Multi-agent router
+    "MultiAgentRouter",
+    "create_multi_agent_router",
     # Lazy-loaded exports
     "HybridIntentClassifier",
     "ClassifierFactory",

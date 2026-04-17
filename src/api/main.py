@@ -18,6 +18,7 @@ from src.api.routes.classify import classify_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
 from src.api.routes.quran import router as quran_router
+from src.api.routes.fiqh import fiqh_router
 from src.api.lifespan import lifespan
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
@@ -68,6 +69,7 @@ def create_app() -> FastAPI:
     # Health + classification: intentionally without api_v1_prefix (public endpoints)
     app.include_router(health_router)
     app.include_router(classify_router)  # /classify
+    app.include_router(fiqh_router)  # /fiqh
 
     # V1 API routes
     v1 = settings.api_v1_prefix

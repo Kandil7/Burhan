@@ -87,8 +87,10 @@ class TestEraClassifier:
         """Test classic period classification."""
         from src.utils.era_classifier import EraClassifier
 
-        era = EraClassifier.classify(200)
-        assert era in ["early_islamic", "classic"]
+        # Year 200 is the boundary between Tabi'un (100-200) and Classical (200-500)
+        # So 200 returns "tabiun" at the boundary, 300 returns "classical"
+        era = EraClassifier.classify(300)
+        assert era == "classical"
 
     def test_modern_period(self):
         """Test modern period classification."""

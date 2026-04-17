@@ -42,12 +42,19 @@ CATEGORY_KEYWORDS: Dict[str, Set[str]] = {
 
 def map_category(text: str) -> List[str]:
     """Map text to categories based on keywords."""
+    if not text:
+        return []
+
     found_categories = []
 
-    text_lower = text.lower()
+    # Normalize text: remove diacritics and normalize whitespace
+    # Note: For Arabic text, we check for keyword presence directly
+    text_normalized = text.strip()
     for category, keywords in CATEGORY_KEYWORDS.items():
         for keyword in keywords:
-            if keyword in text_lower:
+            # Strip keyword for matching (keywords may have leading/trailing spaces)
+            keyword_stripped = keyword.strip()
+            if keyword_stripped and keyword_stripped in text_normalized:
                 if category not in found_categories:
                     found_categories.append(category)
                 break
