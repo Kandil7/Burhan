@@ -1,35 +1,41 @@
 """
 Seerah (Prophet Biography) Agent for Athar Islamic QA system.
 
-Provides information about Prophet Muhammad's life and events.
-Phase 4: Seerah retrieval pipeline.
-Refactored to use BaseRAGAgent (eliminates ~80 lines of duplication).
+Retrieves from seerah_passages collection.
+Inherits full RAG pipeline from BaseRAGAgent.
 """
 from src.agents.base_rag_agent import BaseRAGAgent
-from src.config.logging_config import get_logger
-
-logger = get_logger()
 
 
 class SeerahAgent(BaseRAGAgent):
-    """Seerah Retrieval Agent for Prophet biography questions."""
+    """Seerah Retrieval Agent — Prophet biography questions."""
 
-    name = "seerah_agent"
+    name       = "seerah"               
     COLLECTION = "seerah_passages"
+    SCORE_THRESHOLD: float = 0.50 
 
-    TOP_K_RETRIEVAL = 12
-    TOP_K_RERANK = 5
-    SCORE_THRESHOLD = 0.65
-    TEMPERATURE = 0.2
-    MAX_TOKENS = 2048
+    TEMPERATURE = 0.2   # slightly higher for narrative tone vs fiqh precision
 
-    SYSTEM_PROMPT = (
-        "أنت متخصص في السيرة النبوية.\n"
-        "المهم: اعرض المعلومات من النصوص فقط مع المراجع [C1]، [C2]."
-    )
-    USER_PROMPT = (
-        "السؤال: {query}\n"
-        "اللغة: {language}\n"
-        "النصوص:\n{passages}\n"
-        "أجب بناءً على النصوص."
-    )
+    SYSTEM_PROMPT = """\
+أنت مساعد إسلامي متخصص في السيرة النبوية.
+
+قواعد الإجابة:
+- استند فقط إلى النصوص المسترجعة، ولا تضف معلومات من خارجها.
+- استشهد بكل مصدر بالرمز [C1]، [C2]، وهكذا.
+- اعرض الأحداث بترتيب زمني عند الإمكان.
+- إن كانت النصوص غير كافية، صرّح بذلك صراحةً.
+
+هيكل الإجابة:
+١. الإجابة المباشرة
+٢. التفاصيل من النصوص مع الاستشهادات
+٣. السياق التاريخي إن وُجد في النصوص"""
+
+    USER_PROMPT = """\
+السؤال: {query}
+
+اللغة المطلوبة: {language}
+
+نصوص السيرة النبوية المسترجعة ({num_passages} مقطع):
+{passages}
+
+أجب وفق القواعد أعلاه، ولا تتجاوز ما في النصوص."""

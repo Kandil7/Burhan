@@ -1,61 +1,54 @@
 """
 Chatbot Agent (Greeting Agent) for Athar Islamic QA system.
 
-Handles greetings, small talk, and conversational responses.
-Uses template-based responses for common greetings with language detection.
 
-Based on Fanar-Sadiq architecture: Template-based, no LLM generation for greetings.
 """
 import random
+import re
 
 from src.agents.base import AgentInput, AgentOutput, BaseAgent
 from src.config.logging_config import get_logger
 
 logger = get_logger()
 
-# ==========================================
-# Greeting templates
-# ==========================================
+# ── Greeting templates ────────────────────────────────────────────────────────
+
 GREETINGS_AR = [
-    {"text": "وعليكم السلام ورحمة الله وبركاته", "translation": "And upon you be peace, mercy, and blessings of Allah"},
-    {"text": "أهلاً وسهلاً", "translation": "Welcome"},
-    {"text": "حياك الله", "translation": "May Allah greet you"},
+    {"text": "وعليكم السلام ورحمة الله وبركاته",    "translation": "And upon you be peace, mercy, and blessings of Allah"},
+    {"text": "أهلاً وسهلاً",                         "translation": "Welcome"},
+    {"text": "حياك الله",                            "translation": "May Allah greet you"},
 ]
 
 GREETINGS_EN = [
-    {
-        "text": "Wa alaikum assalam wa rahmatullahi wa barakatuh",
-        "translation": "And upon you be peace, mercy, and blessings of Allah",
-    },
-    {"text": "Welcome! How can I help you today?", "translation": None},
-    {"text": "Assalamu alaikum! May Allah bless you", "translation": "Peace be upon you"},
+    {"text": "Wa alaikum assalam wa rahmatullahi wa barakatuh", "translation": "And upon you be peace, mercy, and blessings of Allah"},
+    {"text": "Welcome! How can I help you today?",              "translation": None},
+    {"text": "Assalamu alaikum! May Allah bless you",           "translation": "Peace be upon you"},
 ]
 
 RAMADAN_GREETINGS = [
-    {"text": "رمضان مبارك! تقبل الله منا ومنكم", "translation": "Ramadan Mubarak! May Allah accept from us and you"},
+    {"text": "رمضان مبارك! تقبل الله منا ومنكم",                              "translation": "Ramadan Mubarak! May Allah accept from us and you"},
     {"text": "Ramadan Kareem! May this blessed month bring you closer to Allah", "translation": None},
 ]
 
 EID_GREETINGS = [
-    {
-        "text": "عيد مبارك! تقبل الله منا ومنكم صالح الأعمال",
-        "translation": "Eid Mubarak! May Allah accept our good deeds",
-    },
+    {"text": "عيد مبارك! تقبل الله منا ومنكم صالح الأعمال", "translation": "Eid Mubarak! May Allah accept our good deeds"},
     {"text": "Eid Mubarak! May Allah bless you and your family", "translation": None},
 ]
 
-# ==========================================
-# Response templates for small talk
-# ==========================================
+# ── Small talk templates ──────────────────────────────────────────────────────
+
 SMALL_TALK_AR = {
     "how_are_you": [
-        {
-            "text": "الحمد لله، بخير والحمد لله. كيف يمكنني مساعدتك؟",
-            "translation": "Praise be to Allah, I'm well. How can I help you?",
-        },
+        {"text": "الحمد لله، بخير والحمد لله. كيف يمكنني مساعدتك؟",
+         "translation": "Praise be to Allah, I'm well. How can I help you?"},
     ],
     "thank_you": [
-        {"text": "العفو، جزاك الله خيراً", "translation": "You're welcome, may Allah reward you with good"},
+        {"text": "العفو، جزاك الله خيراً",
+         "translation": "You're welcome, may Allah reward you with good"},
+    ],
+    "unknown": [
+        {"text": "كيف يمكنني مساعدتك في أمور الدين؟",
+         "translation": "How can I assist you with religious matters?"},
     ],
 }
 
@@ -66,45 +59,37 @@ SMALL_TALK_EN = {
     "thank_you": [
         {"text": "You're welcome! JazakAllahu khayran (may Allah reward you with good)", "translation": None},
     ],
+    "unknown": [
+        {"text": "How can I help you with Islamic knowledge today?", "translation": None},
+    ],
 }
 
 
 class ChatbotAgent(BaseAgent):
     """
     Agent for handling greetings and small conversation.
-
-    Responds with appropriate Islamic greetings based on:
-    - Language (Arabic/English)
-    - Time of day
-    - Islamic calendar events (Ramadan, Eid)
-    - User sentiment
-
-    Usage:
-        agent = ChatbotAgent()
-        result = await agent.execute(AgentInput(query="السلام عليكم"))
+    Template-based — no LLM generation required.
     """
 
-    name = "chatbot_agent"
+    name = "chatbot"
+
+    def __init__(self) -> None:
+        super().__init__()
 
     async def execute(self, input: AgentInput) -> AgentOutput:
-        """
-        Generate appropriate greeting or small talk response.
+        
+        meta       = input.metadata or {}
+        is_ramadan = meta.get("is_ramadan", False)
+        is_eid     = meta.get("is_eid",     False)
 
-        Args:
-            input: AgentInput with query and language
-
-        Returns:
-            AgentOutput with greeting and optional translation
-        """
-        query = input.query.lower()
+        query    = input.query.lower()
         language = input.language or self._detect_language(input.query)
 
-        # Check for special occasions (would need Hijri date in metadata)
-        is_ramadan = input.metadata.get("is_ramadan", False)
-        is_eid = input.metadata.get("is_eid", False)
+        is_greeting   = self._is_greeting(query)
+        is_small_talk = self._is_small_talk(query)
 
-        # Determine response type
-        if self._is_greeting(query):
+        if is_greeting:
+            response_type = "greeting"
             if is_ramadan:
                 response = random.choice(RAMADAN_GREETINGS)
             elif is_eid:
@@ -114,82 +99,85 @@ class ChatbotAgent(BaseAgent):
             else:
                 response = random.choice(GREETINGS_EN)
 
-            answer = response["text"]
-            if response.get("translation"):
-                answer += f"\n\n({response['translation']})"
-
-        elif self._is_small_talk(query):
-            intent = self._classify_small_talk(query)
+        elif is_small_talk:
+            response_type = "small_talk"
+            intent    = self._classify_small_talk(query)   
             templates = SMALL_TALK_AR if language == "ar" else SMALL_TALK_EN
-            response = random.choice(templates.get(intent, [{"text": "..."}]))
-            answer = response["text"]
-            if response.get("translation"):
-                answer += f"\n\n({response['translation']})"
+            response  = random.choice(templates.get(intent, templates["unknown"]))
 
         else:
-            # Fallback for unrecognized input
-            answer = (
-                "أعتذر، لم أفهم سؤالك بشكل كامل. يرجى السؤال عن:\n"
-                "- أحكام فقهية\n"
-                "- آيات قرآنية\n"
-                "- زكاة أو ميراث\n"
-                "- أذكار وأدعية\n\n"
-                "I apologize, I didn't fully understand. Please ask about:\n"
-                "- Islamic rulings\n"
-                "- Quran verses\n"
-                "- Zakat or inheritance\n"
-                "- Duas and adhkar"
-            )
+            response_type = "unrecognized"
+            response = {
+                "text": (
+                    "أعتذر، لم أفهم سؤالك بشكل كامل. يرجى السؤال عن:\n"
+                    "- أحكام فقهية\n- آيات قرآنية\n- زكاة أو ميراث\n- أذكار وأدعية\n\n"
+                    "I apologize, I didn't fully understand. Please ask about:\n"
+                    "- Islamic rulings\n- Quran verses\n- Zakat or inheritance\n- Duas and adhkar"
+                ),
+                "translation": None,
+            }
+
+        # Build answer
+        answer = response["text"]
+        if response.get("translation"):
+            answer += f"\n\n({response['translation']})"
 
         logger.info(
             "chatbot.response",
             query=input.query[:50],
             language=language,
-            is_greeting=self._is_greeting(query)
+            response_type=response_type,   
         )
 
         return AgentOutput(
             answer=answer,
             citations=[],
             metadata={
-                "agent": self.name,
-                "language": language,
-                "response_type": "greeting" if self._is_greeting(query) else "small_talk",
+                "agent":         self.name,
+                "language":      language,
+                "response_type": response_type,   
             },
-            confidence=0.95
+            confidence=0.95,
         )
 
+    # ── Helpers ─────────────────────────────────────────────────────────────
+
+
     def _is_greeting(self, query: str) -> bool:
-        """Check if query is a greeting."""
-        greeting_keywords = [
+        """Whole-word match — prevents 'رسالة' matching 'سلام'."""
+        keywords = [
             "سلام", "السلام", "مرحبا", "اهلا", "هلا",
             "hello", "hi", "hey", "greetings", "assalam",
-            "ramadan", "eid", "رمضان", "عيد"
+            "ramadan", "eid", "رمضان", "عيد",
         ]
-        return any(keyword in query.lower() for keyword in greeting_keywords)
-
+        q = query.lower()
+        return any(
+            re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", q)
+            for kw in keywords
+        )
     def _is_small_talk(self, query: str) -> bool:
-        """Check if query is small talk."""
-        small_talk_keywords = [
+        keywords = [
             "كيف حالك", "كيفك", "شلونك", "عامل",
             "how are you", "how do you do",
             "شكراً", "شكرا", "ممنون", "جزاك",
-            "thank", "thanks", "jazak"
+            "thank", "thanks", "jazak",
         ]
-        return any(keyword in query.lower() for keyword in small_talk_keywords)
+        return any(kw in query.lower() for kw in keywords)
 
-    def _classify_small_talk(self, query: str) -> str | None:
-        """Classify small talk intent."""
-        if any(k in query for k in ["كيف حالك", "كيفك", "how are you"]):
+    def _classify_small_talk(self, query: str) -> str:
+        """
+        Fix #2 + #6 — applies .lower() internally; returns 'unknown' not None.
+        """
+        q = query.lower()
+        if any(k in q for k in ["كيف حالك", "كيفك", "how are you"]):
             return "how_are_you"
-        elif any(k in query for k in ["شكر", "thank", "جزاك"]):
+        if any(k in q for k in ["شكر", "thank", "جزاك"]):
             return "thank_you"
-        return None
+        return "unknown"   
 
     def _detect_language(self, query: str) -> str:
-        """Detect if query is Arabic or English."""
-        arabic_chars = sum(1 for c in query if '\u0600' <= c <= '\u06FF')
-        total_chars = len(query.replace(" ", ""))
+        arabic_chars = sum(1 for c in query if "\u0600" <= c <= "\u06FF")
+        total_chars  = len(query.replace(" ", ""))
         if total_chars == 0:
             return "ar"
         return "ar" if (arabic_chars / total_chars) > 0.3 else "en"

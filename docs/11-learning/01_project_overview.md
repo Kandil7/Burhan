@@ -16,10 +16,13 @@
 | الميزة | الوصف |
 |--------|-------|
 | **13 وكيل متخصص** (Agents) | فقه، حديث، قرآن، تفسير، عقيدة، سيرة، تاريخ، لغة عربية، أصول فقه، روحانيات، عام، ترحيب،_chatbot |
-| **16 نوع نية** (Intents) | تصنيف ذكي لفهم نوع السؤال |
+| **16 نوع نية** (Intents) + 4 فرعية للقرآن | تصنيف ذكي مع 10 مستويات أولوية |
 | **5 أدوات حتمية** (Tools) | حاسبة الزكاة، حاسبة المواريث، أوقات الصلاة، التاريخ الهجري، الأدعية |
 | **10 مجموعات متجهية** (Vector Collections) | 5.7 مليون وثيقة جاهزة للـ RAG |
-| **مكتبة الشمela** (ElShamela) | 8,425 كتاب من 3,146 عالم |
+| **11.3 مليون** وثيقة لوكين | مرحلة استخراج لوكين مكتملة |
+| **42.6 GB** على HuggingFace | البيانات جاهزة للتضمين |
+| **20 endpoint** | (جديد: `/classify` في المرحلة 8) |
+| **مكتبة الشاملة** (ElShamela) | 8,425 كتاب من 3,146 عالم |
 
 ---
 
@@ -29,7 +32,14 @@
 Athar/
 │
 ├── src/                          # الكود الأساسي (Python/FastAPI)
-│   ├── api/                      # طبقة واجهة البرمجة (18 endpoint)
+│   ├── api/                      # طبقة واجهة البرمجة (20 endpoint) ← جديد: /classify
+│   ├── application/              # طبقة التطبيق (المرحلة 8) ← جديد!
+│   │   ├── hybrid_classifier.py  ← مصنف النية الهجين
+│   │   ├── router.py             ← توجيه الوكيل
+│   │   └── interfaces.py         ← بروتوكولات
+│   ├── domain/                   # تعريفات النطاق (المرحلة 8) ← جديد!
+│   │   ├── intents.py            ← 16 نوع نية + أولويات
+│   │   └── models.py             ← ClassificationResult
 │   ├── config/                   # الإعدادات والثوابت
 │   ├── core/                     # المنطق الأساسي (تصنيف، توجيه، اقتباسات)
 │   ├── agents/                   # الوكلاء المتخصصون (13 وكيل)
@@ -61,20 +71,25 @@ Athar/
 
 ---
 
-## 3️⃣ أهم 10 ملفات/مجلدات يجب فهمها أولاً
+## 3️⃣ أهم 15 ملف/مجلد يجب فهمها أولاً (محدث!)
 
 | الأولوية | الملف/المجلد | السبب |
 |----------|-------------|-------|
 | **1** | `src/api/main.py` | نقطة الدخول الرئيسية للتطبيق |
 | **2** | `src/config/settings.py` | كل الإعدادات في مكان واحد |
-| **3** | `src/core/router.py` | منطق تصنيف النية (3-tier) |
-| **4** | `src/core/orchestrator.py` | تنسيق الاستجابة بين الوكلاء |
-| **5** | `src/agents/base.py` | الفئات الأساسية للوكلاء |
-| **6** | `src/knowledge/embedding_model.py` | نموذج التضمين (BAAI/bge-m3) |
-| **7** | `src/knowledge/vector_store.py` | Qdrant وإدارة المتجهات |
-| **8** | `src/knowledge/hybrid_search.py` | البحث المختلط (دلالي + BM25) |
-| **9** | `src/quran/nl2sql.py` | تحويل اللغة الطبيعية إلى SQL |
-| **10** | `src/tools/zakat_calculator.py` | حاسبة الزكاة (منطق إسلامي دقيق) |
+| **3** | `src/application/hybrid_classifier.py` | **جديد!** مصنف النية الهجين (المرحلة 8) |
+| **4** | `src/domain/intents.py` | **جديد!** 16 نوع نية مع 10 مستويات أولوية |
+| **5** | `src/core/router.py` | منطق تصنيف النية (3-tier) |
+| **6** | `src/core/orchestrator.py` | تنسيق الاستجابة بين الوكلاء |
+| **7** | `src/agents/base.py` | الفئات الأساسية للوكلاء |
+| **8** | `src/knowledge/embedding_model.py` | نموذج التضمين (BAAI/bge-m3) |
+| **9** | `src/knowledge/vector_store.py` | Qdrant وإدارة المتجهات |
+| **10** | `src/knowledge/hybrid_search.py` | البحث المختلط (دلالي + BM25) |
+| **11** | `src/quran/nl2sql.py` | تحويل اللغة الطبيعية إلى SQL |
+| **12** | `src/tools/zakat_calculator.py` | حاسبة الزكاة (منطق إسلامي دقيق) |
+| **13** | `src/api/routes/classification.py` | **جديد!** نقطة نهاية /classify |
+| **14** | `src/application/router.py` | **جديد!** توجيه الوكيل |
+| **15** | `src/config/intents.py` | **محدث!** الأنماط القديمة (التوافق) |
 
 ---
 
@@ -130,17 +145,28 @@ Athar/
 24. src/infrastructure/llm_client.py → Groq/OpenAI client
 ```
 
+#### المرحلة 7: المرحلة 8 - مصنف النية الهجين (اليوم 15-16) ← جديد!
+```
+25. src/application/hybrid_classifier.py → مصنف النية الهجين
+26. src/domain/intents.py               → 16 نوع نية + أولويات
+27. src/application/router.py           → توجيه الوكيل
+28. src/api/routes/classification.py    → نقطة /classify
+```
+
 ---
 
 ## 5️⃣ الأجزاء المسؤولة عن AI/RAG/Backend/Config/Data Flow
 
-### 🧠 الذكاء الاصطناعي (AI Components)
+### 🧠 الذكاء الاصطناعي (AI Components) - محدث!
 
 ```
-src/core/router.py          → تصنيف النية (Hybrid: keyword → LLM → embedding)
-src/infrastructure/llm_client.py → التواصل مع Groq/OpenAI
-src/agents/*_agent.py       → 13 وكيل متخصص
-src/quran/nl2sql.py         → تحويل اللغة الطبيعية إلى SQL
+src/application/hybrid_classifier.py   ← جديد! مصنف النية الهجين (Phase 8)
+src/domain/intents.py                 ← جديد! 16 نوع نية + 10 أولويات + 4 فرعية قرآن
+src/application/router.py             ← جديد! توجيه الوكيل
+src/core/router.py                    ← تصنيف النية (Hybrid: keyword → LLM → embedding)
+src/infrastructure/llm_client.py      ← التواصل مع Groq/OpenAI
+src/agents/*_agent.py                 ← 13 وكيل متخصص
+src/quran/nl2sql.py                   ← تحويل اللغة الطبيعية إلى SQL
 ```
 
 ### 🔍 نظام RAG (Retrieval-Augmented Generation)
@@ -156,19 +182,20 @@ src/knowledge/
 └── book_weighter.py        → وزن الكتب حسب الأهمية
 ```
 
-### 🌐 الـ Backend
+### 🌐 الـ Backend - محدث!
 
 ```
 src/api/
 ├── main.py                 → FastAPI factory
 ├── routes/
-│   ├── query.py            → POST /api/v1/query (main)
-│   ├── tools.py            → 5 tool endpoints
-│   ├── quran.py            → 6 Quran endpoints
-│   ├── rag.py              → 3 RAG endpoints
-│   └── health.py           → Health checks
-├── middleware/             → Security, CORS, rate limiting
-└── schemas/                → Pydantic request/response models
+│   ├── classification.py   ← جديد! /classify endpoint
+│   ├── query.py           → POST /api/v1/query (main)
+│   ├── tools.py           → 5 tool endpoints
+│   ├── quran.py           → 6 Quran endpoints
+│   ├── rag.py             → 3 RAG endpoints
+│   └── health.py          → Health checks
+├── middleware/            → Security, CORS, rate limiting
+└── schemas/               → Pydantic request/response models
 ```
 
 ### ⚙️ الإعدادات (Configuration)
@@ -181,37 +208,49 @@ src/config/
 └── logging_config.py       → Structured logging (structlog)
 ```
 
-### 📊 تدفق البيانات (Data Flow)
+### 📊 تدفق البيانات (Data Flow) - محدث!
 
 ```
 البيانات الخام (ElShamela 8,425 كتاب)
     ↓
-scripts/ingestion/          → تحميل البيانات
+scripts/ingestion/                  → تحميل البيانات
     ↓
 src/knowledge/hierarchical_chunker.py → تقسيم المستندات
     ↓
-src/knowledge/embedding_model.py → توليد المتجهات (BAAI/bge-m3)
+11.3 مليون وثيقة لوكين (Phase 7 complete)
     ↓
-src/knowledge/vector_store.py → استيراد إلى Qdrant
+5.7 مليون وثيقة محسنة (RAG ready)
     ↓
-5.7 مليون متجه في 10 مجموعات
+HuggingFace Upload (42.6 GB) ← مكتمل!
+    ↓
+Colab GPU Embedding (BAAI/bge-m3) ←_pending
+    ↓
+Qdrant Import (10 collections, 5.7M vectors)
 ```
 
 ---
 
-## 6️⃣ المعمارية العامة (Architecture Overview)
+## 6️⃣ المعمارية العامة (Architecture Overview) - محدثة!
 
-### نموذج الطبقات الأربع
+### نموذج الطبقات الخمس (المرحلة 8)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │              طبقة الـ API (FastAPI)                       │
-│  POST /api/v1/query  •  GET /health  •  18 endpoint      │
+│  POST /classify  •  POST /api/v1/query  •  20 endpoint  │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────┐
-│              طبقة التنسيق (Orchestration)                 │
-│  Hybrid Intent Classifier  •  Response Orchestrator     │
+│            طبقة التطبيق (Application Layer) - جديد!      │
+│  HybridIntentClassifier  •  RouterAgent                 │
+│  ├── Keyword fast-path (100+ patterns)                │
+│  ├── Jaccard similarity fallback                      │
+│  └── Quran sub-intent detection (4 types)              │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│              طبقة التنسيق (Orchestration)               │
+│  Hybrid Intent Classifier (LLM)  •  Response Orchestrator│
 │  Citation Normalizer  •  Agent Registry                 │
 └────────────────────────┬────────────────────────────────┘
                          │
@@ -224,10 +263,10 @@ src/knowledge/vector_store.py → استيراد إلى Qdrant
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────┐
-│              طببة المعرفة (Knowledge)                     │
-│  PostgreSQL (Quran)  •  Qdrant (10 collections)          │
-│  Redis (Cache)  •  LLM (Groq Qwen3-32B)                  │
-│  BAAI/bge-m3 (1024-dim)                                  │
+│              طببة المعرفة (Knowledge)                   │
+│  PostgreSQL (Quran)  •  Qdrant (10 collections)         │
+│  Redis (Cache)  •  LLM (Groq Qwen3-32B)                 │
+│  BAAI/bge-m3 (1024-dim, 8192 tokens)                    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -261,26 +300,42 @@ QueryResponse {
 
 ---
 
-## 7️⃣ الخلاصة العملية
+## 7️⃣ الخلاصة العملية (محدثة!)
 
 ### ما الذي يجب أن تفهمه فعلاً من هذا الجزء؟
 
 1. **Athar هو نظام إجابة إسلامي** يستخدم معمارية متعددة الوكلاء
-2. **3 مكونات أساسية**: تصنيف النية → توجيه للوكيل → توليد إجابة مقتبسة
-3. **18 endpoint** تغطي كل الوظائف
-4. **5.7 مليون وثيقة** في Qdrant جاهزة للـ RAG
-5. **16 نوع نية** يتم تصنيفها بـ 3 طرق (keyword → LLM → embedding)
+2. **5 مكونات أساسية**: تطبيق (هجين) → تصنيف → توجيه → وكيل → إجابة مقتبسة
+3. **20 endpoint** تغطي كل الوظائف (جديد: `/classify` في المرحلة 8)
+4. **5.7 مليون وثيقة** + 11.3M لوكين على HuggingFace
+5. **16 نوع نية + 4 فرعية للقرآن** مع **10 مستويات أولوية** (المرحلة 8)
+6. **<50ms** لتصنيف النية باستخدام مصنف النية الهجين
+
+### 🎉 المرحلة 8: مصنف النية الهجين (15 أبريل 2026)
+
+```
+# جرب الآن!
+POST /classify
+{"query": "ما حكم صلاة الجمعة؟"}
+
+# النتيجة (<50ms)
+{
+  "intent": "fiqh",
+  "confidence": 0.90,
+  "method": "keyword"
+}
+```
 
 ### 📝 تمرين صغير
 
-افتح ملف `src/config/intents.py` وأجب:
+افتح ملف `src/domain/intents.py` وأجب:
 1. ما هي الـ 16 intent؟
-2. ما هو الـ agent المسؤول عن كل intent؟
-3. ما هي الكلمات المفتاحية لـ fiqh intent؟
+2. ما هي مستويات الأولوية (1-10)؟
+3. ما هي النيات الفرعية للقرآن؟
 
 ### 🔜 الخطوة التالية المنطقية
 
-اقرأ الملف التالي: `src/api/main.py` (نقطة الدخول الرئيسية)
+اقرأ الملف: `src/application/hybrid_classifier.py` (جديد في المرحلة 8)
 
 ---
 

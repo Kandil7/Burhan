@@ -6,6 +6,20 @@
 
 ---
 
+## 🎉 أحدث إنجاز: المرحلة الثامنة مكتملة (15 أبريل 2026)
+
+### مصنف النية الهجين (Hybrid Intent Classifier)
+
+اعتباراً من **15 أبريل 2026**، النظام يتضمن الآن:
+
+- ✅ **تصنيف سريع مبني على الكلمات المفتاحية** (100+ نمط، لا يتطلب LLM)
+- ✅ **نقطة نهاية `/classify` جديدة** لكشف النية الفوري (<50 مللي ثانية)
+- ✅ **10 مستويات أولوية** لحلConflicts بين النيات المتعددة
+- ✅ **كشف النيات الفرعية للقرآن** (4 أنواع: VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
+- ✅ **بوابة الثقة مع احتياطي** إلى ISLAMIC_KNOWLEDGE عندما تكون الثقة < 0.5
+
+---
+
 ## 🎯 ما ستجده في هذا الدليل
 
 ### 📖 الدليل الرئيسي
@@ -20,7 +34,7 @@
 
 | الملف | الوصف |
 |-------|-------|
-| [`learning_path.md`](learning_path.md) | خطة تعلم متدرجة (5 مستويات) |
+| [`learning_path.md`](learning_path.md) | خطة تعلم متدرجة (7 مراحل) |
 | [`quick_reference.md`](quick_reference.md) | ملخص سريع للمعلومات الأساسية |
 | [`README.md`](README.md) | فهرس الدليل |
 
@@ -35,7 +49,8 @@
 2. اقرأ: 01_project_overview.md     ← فهم الصورة الكبيرة
 3. اقرأ: 02_folder_structure.md     ← فهم البنية
 4. شغل: التطبيق لأول مرة
-5. اقرأ: 03_api_main_entrypoint.md  ← فهم نقطة الدخول
+5. اققرأ: 03_api_main_entrypoint.md  ← فهم نقطة الدخول
+6. جرب: /classify endpoint           ← الجديد في المرحلة 8
 ```
 
 ### للمتوسطين
@@ -46,16 +61,17 @@
 3. اقرأ: src/config/settings.py
 4. اقرأ: src/config/intents.py
 5. اقرأ: src/core/router.py
+6. جرب: مصنف النية الهجين الجديد
 ```
 
 ### للمتقدمين
 
 ```
-1. اقرأ: src/agents/base.py
-2. اقرأ: src/agents/fiqh_agent.py
-3. اقرأ: src/knowledge/embedding_model.py
-4. اقرأ: src/knowledge/vector_store.py
-5. اقرأ: src/knowledge/hybrid_search.py
+1. اقرأ: src/application/hybrid_classifier.py   ← المرحلة 8
+2. اقرأ: src/domain/intents.py                  ← 16 نوع نية
+3. اققرأ: src/agents/base.py
+4. اقرأ: src/knowledge/embedding_model.py
+5. اقرأ: src/knowledge/vector_store.py
 ```
 
 ---
@@ -72,8 +88,10 @@
 المستوى 3: فهم متقدم ← 03_api_main_entrypoint.md + core files
     ↓ (اليوم 21-30)
 المستوى 4: فهم عميق ← knowledge/ + quran/ files
-    ↓ (اليوم 31+)
+    ↓ (اليوم 31-40)
 المستوى 5: إتقان ← إضافة ميزات جديدة
+    ↓ (اليوم 41-50)
+المستوى 6: المرحلة 8 ← Hybrid Intent Classifier (جديد!)
 ```
 
 ---
@@ -88,9 +106,27 @@
 
 ### خرائط الطريق (3 ملفات)
 
-- ✅ [`learning_path.md`](learning_path.md) - خطة تعلم متدرجة
+- ✅ [`learning_path.md`](learning_path.md) - خطة تعلم متدرجة (7 مراحل)
 - ✅ [`quick_reference.md`](quick_reference.md) - ملخص سريع
-- ✅ [`README.md`](README.md) - فهرس الدليل
+- ✅ [`README.md`](README.md) - فهرس الدليل (هذا الملف)
+
+### ملفات التعلم المتقدمة (17 ملف)
+
+- ✅ [`04_top_10_files_deep_explanation.md`](04_top_10_files_deep_explanation.md) - شرح عميق لأهم 10 ملفات
+- ✅ [`05_router_deep_dive.md`](05_router_deep_dive.md) - شرحRouter
+- ✅ [`06_top_10_files_index.md`](06_top_10_files_index.md) - فهرس أهم الملفات
+- ✅ [`07_top_10_files_summary.md`](07_top_10_files_summary.md) - ملخص أهم الملفات
+- ✅ [`08_registry_deep_dive.md`](08_registry_deep_dive.md) - شرحRegistry
+- ✅ [`09_citation_deep_dive.md`](09_citation_deep_dive.md) - شرحالاقتباسات
+- ✅ [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) - الوكلاء والأدوات
+- ✅ [`11_complete_index.md`](11_complete_index.md) - فهرس كامل
+- ✅ [`12_learning_path_detailed_explanation.md`](12_learning_path_detailed_explanation.md) - شرح مفصل للخطة
+- ✅ [`13_end_to_end_execution_flow.md`](13_end_to_end_execution_flow.md) - تدفق التنفيذ من البداية للنهاية
+- ✅ [`14_main_py_line_by_line.md`](14_main_py_line_by_line.md) - main.py سطر بسطر
+- ✅ [`15_architecture_review_and_refactoring.md`](15_architecture_review_and_refactoring.md) - مراجعة المعمارية
+- ✅ [`16_refactoring_implementation_summary.md`](16_refactoring_implementation_summary.md) - ملخص إعادة الهيكلة
+- ✅ [`17_final_refactoring_report.md`](17_final_refactoring_report.md) - التقرير النهائي
+- ✅ [`TOP_10_FILES_README.md`](TOP_10_FILES_README.md) - README لأهم الملفات
 
 ---
 
@@ -143,6 +179,17 @@
 | 5 | inheritance calculator | src/tools/inheritance_calculator.py |
 | 6 | الأدوات الأخرى | src/tools/*.py |
 | 7 | مراجعة | كل ما سبق |
+
+### الأسبوع 5-6: المرحلة 8 - مصنف النية الهجين (جديد!)
+
+| اليوم | المهمة | الملف |
+|-------|--------|-------|
+| 1 | hybrid classifier | src/application/hybrid_classifier.py |
+| 2 | domain intents | src/domain/intents.py |
+| 3 | application router | src/application/router.py |
+| 4 | classification endpoint | src/api/routes/classification.py |
+| 5 | تجربة /classify | Swagger UI |
+| 6-7 | مراجعة شاملة | كل ما سبق |
 
 ---
 
@@ -197,7 +244,7 @@
 
 ---
 
-## 📖 المصطلحات الأساسية
+## 📖 المصطلحات الأساسية المُحدثة
 
 ### Retrieval-Augmented Generation (RAG)
 **تعريف**: تقنية تجمع بين البحث (Retrieval) والتوليد (Generation).
@@ -224,7 +271,7 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 - نصوص متشابهة = متجهات متشابهة
 - يمكننا حساب التشابه بين النصوص
 
-**في Athار**: BAAI/bge-m3 (1024 dimensions)
+**في Athar**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
 
 ---
 
@@ -239,14 +286,18 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 
 ---
 
-### Intent Classification (تصنيف النية)
+### Intent Classification (تصنيف النية) - مُحدث!
 **تعريف**: فهم ما يريده المستخدم من السؤال.
 
 **لماذا مهم**:
 - يوجه السؤال للوكيل الصحيح
 - يحسن دقة الإجابة
 
-**في Athar**: 3-tier (keyword → LLM → embedding)
+**في Athar (المرحلة 8)**:
+- **Hybrid Intent Classifier** (keyword + Jaccard + confidence gating)
+- **16 نوع نية** مع **10 مستويات أولوية**
+- **4 أنواع فرعية للقرآن** (VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
+- **نقطة نهاية `/classify` جديدة** (<50ms)
 
 ---
 
@@ -262,19 +313,23 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 
 ---
 
-## 📊 إحصائيات المشروع
+## 📊 إحصائيات المشروع المُحدثة
 
 | المقياس | القيمة |
 |---------|--------|
-| **الأسطر البرمجية** | ~14,200 سطر |
-| **الملفات** | ~120 ملف |
+| **الأسطر البرمجية** | ~15,500 سطر |
+| **الملفات** | ~130 ملف |
 | **الاختبارات** | 9 ملفات (~91% تغطية) |
-| **الـ Endpoints** | 18 endpoint |
-| **الوكلاء** | 13 وكيل (6 منفذين) |
+| **الـ Endpoints** | 20 endpoint (جديد: /classify) |
+| **الوكلاء** | 13 وكيل |
 | **الأدوات** | 5 أدوات حتمية |
-| **المتجهات** | 5.7 مليون متجه |
+| **أنواع النية** | 16 نوع + 4 فرعية للقرآن |
+| **مستويات الأولوية** | 10 مستويات |
+| **لوكين Documents** | 11,316,717 وثيقة |
+| **RAG Documents** | 5,717,177 وثيقة |
 | **المستندات** | 8,425 كتاب |
 | **العلماء** | 3,146 عالم |
+| **بيانات HuggingFace** | 42.6 GB |
 
 ---
 
@@ -316,7 +371,14 @@ make dev
 # افتح Swagger UI
 http://localhost:8000/docs
 
-# جرب endpoint /api/v1/query
+# جرب endpoint /classify الجديد (المرحلة 8)
+POST /classify
+{
+  "query": "ما حكم صلاة الجمعة؟"
+}
+
+# أو جرب endpoint /api/v1/query
+POST /api/v1/query
 {
   "query": "ما حكم صلاة العيد؟"
 }
@@ -330,10 +392,11 @@ http://localhost:8000/docs
 ```
 docs/getting-started/          ← دليل البداية
 docs/architecture/             ← المعمارية
-docs/api/                      ← توثيق الـ API
+docs/api/                      ← توثيق الـ API (20 endpoint)
 docs/core-features/            ← الميزات
 docs/data/                     ← البيانات
 docs/deployment/               ← النشر
+docs/10-operations/            ← المرحلة 8 وثائق
 ```
 
 ### أبحاث وأوراق علمية
@@ -345,7 +408,7 @@ docs/Fanar-Sadiq A Multi-Agent Architecture for Grounded Islamic QA.pdf
 ```
 https://qdrant.tech/documentation/     ← Qdrant docs
 https://fastapi.tiangolo.com/          ← FastAPI docs
-https://www.sbert.net/                 ← Sentence Transformers
+https://huggingface.co/BAAI/bge-m3    ← BGE-m3 model
 ```
 
 ---
@@ -362,6 +425,7 @@ https://www.sbert.net/                 ← Sentence Transformers
 3. إضافة ميزات جديدة
 4. مراجعة كود الآخرين
 5. شرح المشروع لغيرك
+6. **استخدام مصنف النية الهجين الجديد** (المرحلة 8)
 
 ---
 
@@ -370,14 +434,25 @@ https://www.sbert.net/                 ← Sentence Transformers
 ### عن هذا الدليل
 - **المُعد**: AI Mentor System
 - **التاريخ**: أبريل 2026
-- **الإصدار**: 1.0
-- **المشروع**: Athar Islamic QA System v0.5.0
+- **الإصدار**: 2.0
+- **المشروع**: Athar Islamic QA System v0.8.0 (Phase 8 Complete)
 
 ### كيف تساهم
 إذا وجدت خطأ أو تحسين، شاركنا ملاحظاتك.
 
 ### الدعم
 للأسئلة والاستفسارات، اطلب المساعدة في أي وقت.
+
+---
+
+## 🎉 المراحل
+
+| المرحلة | الحالة | الإنجاز |
+|---------|--------|---------|
+| المرحلة 1-6 | ✅ مكتملة | الأساسيات، الأدوات، RAG، 13 وكيل |
+| المرحلة 7 | ✅ مكتملة | 11.3 مليون وثيقة لوكين |
+| **المرحلة 8** | ✅ **مكتملة** | **مصنف النية الهجين** (15 أبريل 2026) |
+| المرحلة 9 | ⏳ 待命 | GPU Embedding و Qdrant Import |
 
 ---
 
@@ -393,8 +468,8 @@ https://www.sbert.net/                 ← Sentence Transformers
 
 **بُني بـ ❤️ للمجتمع المسلم**
 
-[🕌](#) Athar Islamic QA System •基于 Fanar-Sadiq Architecture
+[🕌](#) Athar Islamic QA System • مبني على معمارية Fanar-Sadiq
 
-**دليل توجيه شامل • فهم عميق • تعلم متدرج**
+**دليل توجيه شامل • فهم عميق • تعلم متدرج • المرحلة 8 مكتملة**
 
 </div>

@@ -8,6 +8,7 @@ Implements a three-tier classification approach:
 
 Based on Fanar-Sadiq architecture achieving ~90% accuracy.
 """
+
 import json
 
 from pydantic import BaseModel, Field
@@ -25,36 +26,30 @@ logger = get_logger()
 
 class RouterResult(BaseModel):
     """Result from intent classification."""
+
     intent: Intent
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     method: str = Field(description="Classification method: keyword, llm, or embedding")
     language: str = Field(default="ar", description="Detected language: ar or en")
-    requires_retrieval: bool = Field(
-        default=True,
-        description="Whether this query needs document retrieval (RAG)"
-    )
+    requires_retrieval: bool = Field(default=True, description="Whether this query needs document retrieval (RAG)")
     sub_intent: str | None = Field(
-        default=None,
-        description="Sub-intent for Quran queries (verse_lookup, interpretation, etc.)"
+        default=None, description="Sub-intent for Quran queries (verse_lookup, interpretation, etc.)"
     )
     reason: str = Field(default="", description="Reasoning for classification")
 
 
 class HybridQueryClassifier:
     """
-    Three-tier hybrid intent classifier.
+    LLM-based intent classifier for Athar Islamic QA system.
 
-    Tier 1: Keyword matching (fast path, confidence >= 0.90)
-    Tier 2: LLM classification (primary path, confidence >= threshold)
-    Tier 3: Embedding similarity (fallback when LLM confidence is low)
+    This classifier ONLY uses LLM for classification.
+    No keyword matching, no embedding fallback - just pure LLM classification.
 
     Usage:
         classifier = HybridQueryClassifier(llm_client=openai_client)
         result = await classifier.classify("ما حكم زكاة المال؟")
-        # RouterResult(intent=Intent.ZAKAT, confidence=0.92, method="keyword")
+        # RouterResult(intent=Intent.ZAKAT, confidence=0.92, method="llm")
     """
-
-    CONFIDENCE_THRESHOLD = 0.75
 
     LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Athar.
 
@@ -99,98 +94,54 @@ Now classify this query. Return ONLY valid JSON, no explanations.
 
 Query: {query}"""
 
-    def __init__(self, llm_client=None, embed_client=None):
+    def __init__(self, llm_client=None):
         """
-        Initialize the classifier.
+        Initialize the classifier with LLM client only.
 
         Args:
-            llm_client: OpenAI-compatible client for classification
-            embed_client: Embedding client for fallback (Phase 5)
+            llm_client: OpenAI-compatible client for classification (required)
         """
         self.llm_client = llm_client
-        self.embed_client = embed_client
 
     async def classify(self, query: str) -> RouterResult:
         """
-        Classify user query using three-tier approach.
+        Classify user query using LLM only (no fallbacks).
+
+        This classifier ONLY uses LLM for classification.
+        If LLM fails, an exception is raised (no silent fallbacks).
 
         Args:
             query: User's question
 
         Returns:
             RouterResult with intent, confidence, and metadata
+
+        Raises:
+            ValueError: If LLM classification fails
         """
         if not query or not query.strip():
             return RouterResult(
-                intent=Intent.GREETING,
-                confidence=0.5,
-                method="fallback",
-                reason="Empty query, defaulting to greeting"
+                intent=Intent.GREETING, confidence=0.5, method="fallback", reason="Empty query, defaulting to greeting"
             )
 
         # ==========================================
-        # Tier 1: Keyword matching (fast path)
+        # LLM classification ONLY (no fallbacks)
         # ==========================================
-        keyword_result = self._keyword_match(query)
-        if keyword_result and keyword_result.confidence >= 0.90:
+        if not self.llm_client:
+            raise ValueError("LLM client not configured - classifier requires LLM")
+
+        try:
+            llm_result = await self._llm_classify(query)
+
             logger.info(
-                "router.keyword_match",
-                intent=keyword_result.intent.value,
-                confidence=keyword_result.confidence,
-                method="keyword"
+                "router.llm_classify", intent=llm_result.intent.value, confidence=llm_result.confidence, method="llm"
             )
-            return keyword_result
+            return llm_result
 
-        # ==========================================
-        # Tier 2: LLM classification (primary)
-        # ==========================================
-        if self.llm_client:
-            try:
-                llm_result = await self._llm_classify(query)
-                if llm_result.confidence >= self.CONFIDENCE_THRESHOLD:
-                    logger.info(
-                        "router.llm_classify",
-                        intent=llm_result.intent.value,
-                        confidence=llm_result.confidence,
-                        method="llm"
-                    )
-                    return llm_result
-            except Exception as e:
-                logger.error("router.llm_error", error=str(e))
-                # Continue to fallback
-
-        # ==========================================
-        # Tier 3: Embedding fallback (backup)
-        # ==========================================
-        if self.embed_client and settings.router_fallback_enabled:
-            try:
-                embed_result = await self._embedding_classify(query)
-                logger.info(
-                    "router.embedding_classify",
-                    intent=embed_result.intent.value,
-                    confidence=embed_result.confidence,
-                    method="embedding"
-                )
-                return embed_result
-            except Exception as e:
-                logger.error("router.embedding_error", error=str(e))
-
-        # ==========================================
-        # Default fallback
-        # ==========================================
-        logger.warning(
-            "router.default_fallback",
-            query=query[:100],
-            default_intent=Intent.ISLAMIC_KNOWLEDGE.value
-        )
-
-        return RouterResult(
-            intent=Intent.ISLAMIC_KNOWLEDGE,
-            confidence=0.5,
-            method="fallback",
-            language=self._detect_language(query),
-            reason="No classifier matched with sufficient confidence, defaulting to general knowledge"
-        )
+        except Exception as e:
+            logger.error("router.llm_error", error=str(e))
+            # LLM only - raise error instead of silent fallback
+            raise ValueError(f"LLM classification failed: {e}") from e
 
     def _keyword_match(self, query: str) -> RouterResult | None:
         """
@@ -210,12 +161,13 @@ Query: {query}"""
                         confidence=0.92,
                         method="keyword",
                         language=language,
-                        requires_retrieval=intent in [
+                        requires_retrieval=intent
+                        in [
                             Intent.FIQH,
                             Intent.ISLAMIC_KNOWLEDGE,
                             Intent.QURAN,
                         ],
-                        reason=f"Keyword match: '{pattern}'"
+                        reason=f"Keyword match: '{pattern}'",
                     )
 
         return None
@@ -228,28 +180,20 @@ Query: {query}"""
         """
         try:
             # Build prompt with intent descriptions
-            intent_descriptions = "\n".join(
-                f"- {k.value}: {v}" for k, v in INTENT_DESCRIPTIONS.items()
-            )
+            intent_descriptions = "\n".join(f"- {k.value}: {v}" for k, v in INTENT_DESCRIPTIONS.items())
 
-            prompt = self.LLM_CLASSIFIER_PROMPT.format(
-                intent_descriptions=intent_descriptions,
-                query=query
-            )
+            prompt = self.LLM_CLASSIFIER_PROMPT.format(intent_descriptions=intent_descriptions, query=query)
 
             # Call LLM
             response = await self.llm_client.chat.completions.create(
                 model=settings.llm_model,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert intent classifier. Return ONLY valid JSON."
-                    },
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are an expert intent classifier. Return ONLY valid JSON."},
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.0,  # Deterministic
                 max_tokens=300,
-                response_format={"type": "json_object"}
+                response_format={"type": "json_object"},
             )
 
             content = response.choices[0].message.content.strip()
@@ -272,7 +216,7 @@ Query: {query}"""
                 language=language,
                 requires_retrieval=requires_retrieval,
                 sub_intent=sub_intent,
-                reason=reason
+                reason=reason,
             )
 
         except json.JSONDecodeError as e:
@@ -298,7 +242,7 @@ Query: {query}"""
             intent=Intent.ISLAMIC_KNOWLEDGE,
             confidence=0.6,
             method="embedding",
-            reason="Embedding classifier not yet implemented (Phase 5)"
+            reason="Embedding classifier not yet implemented (Phase 5)",
         )
 
     def _detect_language(self, query: str) -> str:
@@ -307,10 +251,7 @@ Query: {query}"""
 
         Uses Unicode range detection for Arabic script.
         """
-        arabic_chars = sum(
-            1 for char in query
-            if '\u0600' <= char <= '\u06FF' or '\u0750' <= char <= '\u077F'
-        )
+        arabic_chars = sum(1 for char in query if "\u0600" <= char <= "\u06ff" or "\u0750" <= char <= "\u077f")
 
         total_chars = len(query.replace(" ", ""))
         if total_chars == 0:

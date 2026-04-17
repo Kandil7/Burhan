@@ -1,15 +1,26 @@
 # 🚀 START HERE - Athar Islamic QA System
 
-## ✅ Project Status: ACTIVE DEVELOPMENT
+## ✅ Project Status: Phase 8 Complete (April 15, 2026)
+
+### 🎉 Latest: Hybrid Intent Classifier Active
+
+As of **April 15, 2026**, the system now includes:
+
+- ✅ **Fast keyword-based classification** (100+ patterns, no LLM needed)
+- ✅ **New `/classify` endpoint** for instant intent detection (<50ms)
+- ✅ **10 priority levels** for conflict resolution
+- ✅ **Quran sub-intent detection** (4 types)
 
 ### 📊 What You Have
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **Code** | ✅ Active | 7 active agents, 5 deterministic tools, 18 API endpoints |
-| **Data** | ✅ Processed | 10 Qdrant collections, 11,147+ vectors |
+| **Code** | ✅ Active | 13 agents, 5 deterministic tools, 20 API endpoints |
+| **Data** | ✅ Uploaded | 10 collections to HuggingFace (42.6 GB), 5.7M documents |
+| **Embedding** | ⏳ Pending | BGE-m3 on Colab GPU (~13 hours) |
 | **Infrastructure** | ✅ Ready | PostgreSQL, Redis, Qdrant (via Docker) |
 | **Documentation** | ✅ Complete | 60+ docs across 14 directories |
+| **Test Coverage** | ✅ ~91% | 9 test files |
 
 ---
 
@@ -70,10 +81,62 @@ make test
 # Check health endpoint
 curl http://localhost:8000/health
 
+# NEW: Test intent classification
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم صلاة الجمعة؟"}'
+
 # View API documentation
 # Swagger UI: http://localhost:8000/docs
 # ReDoc: http://localhost:8000/redoc
 ```
+
+---
+
+## 🌐 New: Intent Classification Endpoint
+
+### `/classify` - Fast Intent Detection (<50ms)
+
+```bash
+# Arabic query
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ما حكم ترك صلاة الجمعة عمداً؟"}'
+
+# Response
+{
+  "result": {
+    "intent": "fiqh",
+    "confidence": 0.90,
+    "language": "ar",
+    "reasoning": "Keyword fast-path matched: 'ما حكم'",
+    "requires_retrieval": true,
+    "method": "keyword"
+  },
+  "route": "fiqh_agent",
+  "agent_metadata": {
+    "priority": 5,
+    "collection": "fiqh_passages"
+  }
+}
+```
+
+### 16 Intent Types
+
+| Intent | Priority | Agent | Query Type |
+|--------|----------|-------|------------|
+| TAFSIR | 10 | general_islamic_agent | تفسير آية كذا |
+| QURAN | 9 | quran:* (+ sub-intent) | آية عن كذا |
+| HADITH | 9 | hadith_agent | حديث عن كذا |
+| SEERAH | 8 | seerah_agent | السيرة النبوية |
+| FIQH | 5 | fiqh_agent | حكم كذا |
+| ZAKAT | 2 | Calculator | حساب الزكاة |
+| INHERITANCE | 2 | Calculator | الميراث |
+| PRAYER_TIMES | 2 | Calculator | أوقات الصلاة |
+| HIJRI_CALENDAR | 2 | Calculator | التاريخ الهجري |
+| DUA | 2 | Calculator | دعاء كذا |
+| GREETING | 2 | chatbot_agent | أهلاً |
+| ISLAMIC_KNOWLEDGE | 1 | general_islamic_agent | (fallback) |
 
 ---
 
@@ -91,11 +154,11 @@ curl http://localhost:8000/health
 - **[RAG Pipeline](../3-core-features/rag.md)** - Retrieval-augmented generation
 
 ### API Reference
-- **[Complete API Docs](../5-api/COMPLETE_DOCUMENTATION.md)** - All 18 endpoints
+- **[Complete API Docs](../5-api/COMPLETE_DOCUMENTATION.md)** - All 20 endpoints
 
-### Data & Embeddings
-- [Datasets Guide](../6-data/QUICK_START_DATASETS.md)** - Dataset management
-- **[Embeddings Guide](../8-development/embeddings.md)** - Embedding pipeline
+### Phase 8 Details
+- **[Lucene Merge Complete](../10-operations/LUCENE_MERGE_COMPLETE.md)** - Phase 7 details
+- **[Backup & Restore Guide](../10-operations/BACKUP_AND_RESTORE_GUIDE.md)** - HuggingFace backup
 
 **Full index:** [docs/README.md](../README.md)
 
@@ -111,6 +174,7 @@ Once started:
 | **Alternative Docs** | http://localhost:8000/redoc |
 | **Health Check** | http://localhost:8000/health |
 | **Readiness Probe** | http://localhost:8000/ready |
+| **Intent Classifier** | http://localhost:8000/classify |
 
 ---
 
@@ -119,25 +183,32 @@ Once started:
 ```
 Athar/
 ├── src/                          # Python backend (FastAPI)
-│   ├── api/                      # API routes (18 endpoints)
-│   ├── agents/                   # 7 active agents
+│   ├── api/                      # API routes (20 endpoints)
+│   │   ├── routes/
+│   │   │   ├── classification.py  # NEW: /classify endpoint
+│   │   │   ├── query.py
+│   │   │   ├── tools.py
+│   │   │   └── quran.py
+│   │   └── schemas/
+│   ├── application/              # NEW: Application layer (Phase 8)
+│   │   ├── hybrid_classifier.py # HybridIntentClassifier
+│   │   ├── router.py            # RouterAgent
+│   │   └── interfaces.py        # Protocols
+│   ├── domain/                   # NEW: Domain definitions
+│   │   ├── intents.py           # 16 intent types
+│   │   └── models.py            # ClassificationResult
+│   ├── agents/                   # 13 specialized agents
 │   ├── tools/                    # 5 deterministic tools
 │   ├── quran/                    # Quran pipeline (6 modules)
 │   ├── knowledge/                # RAG infrastructure
-│   ├── core/                     # Router, orchestrator, citation
-│   └── config/                   # Settings, intents, constants
+│   └── core/                     # Router, orchestrator, citation
 │
 ├── scripts/                      # Utility scripts (40+)
-│   ├── data/                     # Data processing & seeding
-│   ├── ingestion/                # Data ingestion pipelines
-│   └── tests/                    # Test scripts
-│
+├── notebooks/                    # Colab notebooks
 ├── data/                         # Datasets
-│   ├── mini_dataset/             # GitHub-friendly mini-dataset (1.7 MB)
-│   └── seed/                     # Seed data (duas, quran samples)
-│
+│   └── mini_dataset/             # GitHub-friendly (1.7 MB)
 ├── docs/                         # Documentation (60+ files)
-├── tests/                        # Pytest test suite
+├── tests/                        # Pytest test suite (~91%)
 ├── docker/                       # Docker configuration
 └── migrations/                   # Database migrations
 ```
@@ -163,14 +234,6 @@ make db-migrate           # Run database migrations
 
 # Custom port (Windows)
 python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
-```
-
-### Windows Batch Files
-```batch
-build.bat                 # Main build system
-start-athar.bat           # Quick start
-stop-athar.bat            # Quick stop
-download-embeddings-to-qdrant.bat  # Download embeddings
 ```
 
 ---
@@ -221,12 +284,24 @@ poetry install --with rag
 
 ---
 
+## 📈 Phase Progress
+
+| Phase | Status | Key Achievement |
+|-------|--------|-----------------|
+| Phase 1-6 | ✅ Complete | Foundation, Tools, RAG, 13 Agents |
+| Phase 7 | ✅ Complete | 11.3M Lucene documents merged |
+| **Phase 8** | ✅ **Complete** | **Hybrid Intent Classifier** (April 15, 2026) |
+| Phase 9 | ⏳ Pending | GPU Embedding & Qdrant Import |
+
+---
+
 ## 🎉 You're Ready!
 
 **Next Steps:**
 1. Run `make dev` to start the server
 2. Visit http://localhost:8000/docs to explore the API
-3. Try a query: `POST /api/v1/query` with `{"query": "What is zakat?"}`
+3. Try the new classify endpoint: `POST /classify` with `{"query": "ما حكم الزكاة؟"}`
+4. Try a full query: `POST /api/v1/query` with `{"query": "ما هو حكم الله في صلاة الجمعة؟"}`
 
 **Full Documentation:** [docs/README.md](../README.md)  
 **API Reference:** [Complete API Docs](../5-api/COMPLETE_DOCUMENTATION.md)  

@@ -1,11 +1,6 @@
 """
 Fiqh RAG Agent for Athar Islamic QA system.
-
-إعادة الهيكلة: يرث الآن من BaseRAGAgent لإزالة ~240 سطر من الكود المكرر
-يوفر فقط: COLLECTION, SYSTEM_PROMPT, USER_PROMPT, وخصائص التكوين
-يقوم BaseRAGAgent بكل عمل الاسترجاع والتوليد تلقائياً
 """
-
 from src.agents.base_rag_agent import BaseRAGAgent
 from src.config.constants import LLMConfig, RetrievalConfig
 
@@ -13,36 +8,46 @@ from src.config.constants import LLMConfig, RetrievalConfig
 class FiqhAgent(BaseRAGAgent):
     """
     وكيل الفقه الإسلامي - إجابات مبنية على النصوص المسترجاعة فقط.
-
-   _temperature: 0.1 (حتمي جداً)
+    Uses usul_fiqh collection (50,240 vectors in Qdrant).
     """
 
-    name = "fiqh_agent"
+    name = "fiqh"
 
-    # === التكوين الأساسي (مطلوب من BaseRAGAgent) ===
-    COLLECTION: str = "fiqh_passages"
-    TOP_K_RETRIEVAL: int = RetrievalConfig.TOP_K_FIQH
-    TOP_K_RERANK: int = 5
+    # ── التكوين ────────────────────────────────────────────────────────────
+    COLLECTION:      str   = "usul_fiqh"
+    TOP_K_RETRIEVAL: int   = RetrievalConfig.TOP_K_FIQH
+    TOP_K_RERANK:    int   = 5
     SCORE_THRESHOLD: float = RetrievalConfig.SEMANTIC_SCORE_THRESHOLD
-    TEMPERATURE: float = LLMConfig.FIQH_TEMPERATURE
-    MAX_TOKENS: int = LLMConfig.DEFAULT_MAX_TOKENS
+    TEMPERATURE:     float = LLMConfig.FIQH_TEMPERATURE
+    MAX_TOKENS:      int   = LLMConfig.DEFAULT_MAX_TOKENS
 
-    # === نصوص التوليد (مطلوب من BaseRAGAgent) ===
+    NO_PASSAGES_MESSAGE: str = (
+        "لم أجد نصوصاً فقهية كافية للإجابة على هذا السؤال تحديداً. "
+        "يُنصح بإعادة صياغة السؤال بمصطلحات فقهية أدق، "
+        "أو استشارة عالم متخصص للحالات الخاصة."
+    )
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # ✅ السطر المحذوف — BaseRAGAgent.execute() يتعامل مع None بأمان
+        # ❌ if getattr(self, "embedding_model", None) is None: raise ValueError(...)
+
+    # ── نصوص التوليد ──────────────────────────────────────────────────────
     SYSTEM_PROMPT: str = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.
 
-المهم:
-- أجب بناءً ONLY على النصوص المسترجاعة المقدمة
-- لا تختلق أي معلومات غير موجودة في النصوص
-- استخدم المراجع [C1]، [C2]، إلخ لكل مصدر تستشهد به
-- إذا لم تكن هناك نص sufficiently يجيب على السؤال، قل ذلك صراحة
-- أضف تنبيه باستشارة عالم متخصص للحالات الخاصة
-- اذكر المذهب الإسلامي إن وُجد في النصوص"""
+التعليمات:
+- استند **حصراً** إلى النصوص المسترجاعة المُقدَّمة، ولا تستحضر معلومات خارجها.
+- استخدم مراجع المصادر [C1]، [C2]، ... بعد كل جملة مستمدة منها.
+- اذكر المذهب الفقهي إن وُجد في النصوص (حنفي، مالكي، شافعي، حنبلي).
+- إذا تعارضت النصوص أو وُجد خلاف فقهي، اعرض الأقوال وأصحابها.
+- إذا كانت النصوص المقدمة غير كافية للإجابة بدقة، أقرّ بذلك صراحةً دون افتراض.
+- أضف في النهاية: "يُنصح باستشارة عالم متخصص للحالات الخاصة" عند الاقتضاء."""
 
-    USER_PROMPT: str = """السؤال: {query}
+    USER_PROMPT: str = """السؤال الفقهي: {query}
 
 اللغة المطلوبة: {language}
 
-النصوص المسترجاعة:
+النصوص المسترجاعة ({num_passages} مقطع):
 {passages}
 
 أجب بناءً على النصوص أعلاه مع الالتزام بالتعليمات."""

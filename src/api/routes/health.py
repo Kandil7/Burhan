@@ -2,11 +2,14 @@
 Health check routes for Athar Islamic QA system.
 
 Provides endpoints for monitoring service health and readiness.
+Phase 9: Added metrics endpoint.
 """
-from fastapi import APIRouter
+
+from fastapi import APIRouter, Response
 
 from src.api.schemas.response import HealthResponse
 from src.config.settings import settings
+from src.config.logging_config import metrics
 
 router = APIRouter(tags=["Health"])
 
@@ -15,6 +18,7 @@ async def check_postgres() -> str:
     """Check PostgreSQL connection."""
     try:
         import asyncpg
+
         db_url = settings.database_url.replace("+asyncpg", "")
         conn = await asyncpg.connect(db_url, timeout=5)
         await conn.execute("SELECT 1")
@@ -28,6 +32,7 @@ async def check_redis() -> str:
     """Check Redis connection."""
     try:
         import redis.asyncio as redis
+
         r = redis.from_url(settings.redis_url)
         await r.ping()
         await r.close()
@@ -40,6 +45,7 @@ async def check_qdrant() -> str:
     """Check Qdrant connection."""
     try:
         from qdrant_client import QdrantClient
+
         client = QdrantClient(url=settings.qdrant_url)
         collections = client.get_collections()
         return f"healthy ({len(collections.collections)} collections)"
@@ -55,10 +61,10 @@ async def health_check():
     """
     return HealthResponse(
         status="ok",
-        version="0.5.0",
+        version=settings.app_version,
         services={
             "api": "healthy",
-        }
+        },
     )
 
 
@@ -82,8 +88,36 @@ async def readiness_check():
     # Determine overall status
     all_healthy = all("healthy" in v for v in services.values())
 
-    return HealthResponse(
-        status="ok" if all_healthy else "degraded",
-        version="0.5.0",
-        services=services
-    )
+    return HealthResponse(status="ok" if all_healthy else "degraded", version=settings.app_version, services=services)
+
+
+@router.get("/metrics")
+async def get_metrics():
+    """
+    Metrics endpoint for monitoring.
+
+    Returns:
+        - counters: Request counts by endpoint
+        - gauges: Current state values
+        - timings: Recent operation timings
+    """
+    return metrics.get_metrics()
+
+
+@router.get("/metrics/counters")
+async def get_counters():
+    """Get counter metrics only."""
+    return metrics.get_metrics()["counters"]
+
+
+@router.get("/metrics/timings")
+async def get_timings():
+    """Get timing metrics only."""
+    return metrics.get_metrics()["timings"]
+
+
+@router.get("/metrics/reset", status_code=204)
+async def reset_metrics():
+    """Reset all metrics."""
+    metrics.reset()
+    return None

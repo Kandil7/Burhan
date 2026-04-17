@@ -4,11 +4,27 @@ Application settings with environment variable support.
 Uses Pydantic BaseSettings for automatic environment variable parsing.
 
 Phase 5: Added security, rate limiting, and caching settings.
+Phase 8: Added ClassifierBackend for intent classifier selection.
 """
 
+from enum import Enum
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class ClassifierBackend(str, Enum):
+    """
+    Selects the active intent classifier implementation.
+
+    hybrid → HybridIntentClassifier   (keyword + Jaccard, no external deps)
+    llm    → LLMIntentClassifier       (OpenAI-compatible API, requires API key)
+    chain  → FallbackChainClassifier   (LLM primary → Hybrid fallback on error)
+    """
+
+    HYBRID = "hybrid"
+    LLM = "llm"
+    CHAIN = "chain"
 
 
 class Settings(BaseSettings):
@@ -62,6 +78,12 @@ class Settings(BaseSettings):
     # HuggingFace
     hf_token: str | None = None
 
+    # ==========================================
+    # API Configuration
+    # ==========================================
+    api_timeout: int = 30
+    max_query_length: int = 1000
+
     @property
     def llm_model(self) -> str:
         """Return the correct model based on provider."""
@@ -74,16 +96,39 @@ class Settings(BaseSettings):
     embedding_dimension: int = 1024
 
     # ==========================================
+    # RAG Configuration
+    # ==========================================
+    rag_temperature: float = 0.1
+    rag_max_tokens: int = 2048
+    rag_top_k: int = 10
+
+    # ==========================================
     # Routing
     # ==========================================
     router_confidence_threshold: float = 0.75
     router_fallback_enabled: bool = True
 
     # ==========================================
+    # Intent Classifier (Phase 8)
+    # ==========================================
+    classifier_backend: ClassifierBackend = Field(
+        default=ClassifierBackend.HYBRID,
+    )
+    low_conf_threshold: float = 0.55
+    openai_base_url: str = "https://api.openai.com/v1"
+    llm_temperature: float = 0.0
+    llm_max_tokens: int = 350
+
+    # ==========================================
     # Rate Limiting
     # ==========================================
-    rate_limit_enabled: bool = True
-    rate_limit_per_minute: int = 60
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_rpm: int = Field(default=60, alias="RATE_LIMIT_RPM")
+
+    # ==========================================
+    # Agent Configuration
+    # ==========================================
+    agent_timeout_seconds: int = 30
 
     # ==========================================
     # Security
@@ -96,11 +141,17 @@ class Settings(BaseSettings):
     # ==========================================
     llm_cache_enabled: bool = True
     llm_cache_ttl: int = 3600  # 1 hour
+    embedding_cache_ttl: int = 86400  # 24 hours
 
     # ==========================================
     # CORS
     # ==========================================
     cors_origins: list[str] = ["http://localhost:3000"]
+    cors_methods: list[str] = Field(default=["GET", "POST"], alias="CORS_METHODS")
+    cors_headers: list[str] = Field(
+        default=["Content-Type", "X-API-Key", "Authorization"],
+        alias="CORS_HEADERS",
+    )
 
     # ==========================================
     # Logging
@@ -113,6 +164,11 @@ class Settings(BaseSettings):
     # ==========================================
     api_timeout: int = 30
     max_query_length: int = 1000
+
+    # ==========================================
+    # Application Version
+    # ==========================================
+    app_version: str = Field(default="0.5.0", alias="APP_VERSION")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

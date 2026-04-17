@@ -1,8 +1,8 @@
 # 🕌 Athar Islamic QA System - Complete Documentation
 
-**Version:** 2.0  
-**Last Updated:** April 7, 2026  
-**Status:** Production-Ready (Phase 6 Complete)
+**Version:** 3.0  
+**Last Updated:** April 15, 2026  
+**Status:** Phase 8 Complete - Hybrid Intent Classifier Active
 
 ---
 
@@ -29,23 +29,28 @@
 
 Athar is a production-ready, multi-agent Islamic QA system that answers religious questions with verified sources from Quran, Hadith, and Fiqh. Built on the Fanar-Sadiq architecture, it combines intent classification, RAG pipelines, and deterministic calculators.
 
-### Key Metrics
+### Key Metrics (Updated: Phase 8)
 
 | Metric | Value |
 |--------|-------|
-| **Lines of Code** | 14,200+ |
-| **Files** | 120+ |
+| **Lines of Code** | 15,500+ |
+| **Files** | 130+ |
 | **Agents** | 13 specialized agents |
 | **Tools** | 5 deterministic tools |
-| **Intents** | 16 types |
+| **Intents** | 16 types + 4 Quran sub-intents |
+| **Priority Levels** | 10 levels |
 | **Collections** | 10 vector collections |
-| **Books** | 8,425 Islamic texts |
-| **Hadith** | 650,986 narrations |
+| **Lucene Documents** | 11,316,717 |
+| **RAG Documents** | 5,717,177 |
+| **HuggingFace Data** | 42.6 GB |
 | **Test Coverage** | ~91% |
 
-### Core Features
+### Core Features (Updated: Phase 8)
 
-- ✅ **16 Intent Classification** - Detects question type automatically
+- ✅ **20 API Endpoints** - NEW: `/classify` for fast intent detection (<50ms)
+- ✅ **Hybrid Intent Classifier** - Keyword + Jaccard + Confidence Gating
+- ✅ **16 Intent Classification** - With 10 priority levels
+- ✅ **4 Quran Sub-intents** - VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION
 - ✅ **13 Specialized Agents** - Fiqh, Hadith, Quran, Tafsir, Aqeedah, etc.
 - ✅ **5 Deterministic Tools** - Zakat, Inheritance, Prayer Times, Hijri, Dua
 - ✅ **RAG Pipelines** - Retrieval-Augmented Generation with verified sources
@@ -57,18 +62,26 @@ Athar is a production-ready, multi-agent Islamic QA system that answers religiou
 
 ## Architecture Overview
 
-### 4-Layer Architecture
+### 5-Layer Architecture (Phase 8)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │              API Layer (FastAPI + Next.js)               │
-│  POST /api/v1/query  •  GET /health  •  Chat UI         │
-│  18 endpoints  •  OpenAPI docs  •  CORS                 │
+│  POST /classify  •  POST /api/v1/query  •  20 endpoints │
+│  <50ms intent classification • OpenAPI docs • CORS        │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│            Application Layer (NEW - Phase 8)            │
+│  HybridIntentClassifier  •  RouterAgent                 │
+│  ├── Keyword fast-path (100+ patterns)                 │
+│  ├── Jaccard similarity fallback                        │
+│  └── Quran sub-intent detection (4 types)              │
 └────────────────────────┬────────────────────────────────┘
                          │
 ┌────────────────────────▼────────────────────────────────┐
 │               Orchestration Layer                        │
-│  Hybrid Intent Classifier (3-tier)                      │
+│  Hybrid Intent Classifier (LLM-tier)                   │
 │  Response Orchestrator (agent routing)                  │
 │  Citation Normalizer ([C1], [C2], etc.)                 │
 │  Agent Registry (13 agents + 5 tools)                   │
@@ -91,7 +104,7 @@ Athar is a production-ready, multi-agent Islamic QA system that answers religiou
 │  │Agent     │Language  │Islamic   │Agent         │      │
 │  └──────────┴──────────┴──────────┴──────────────┘      │
 │                                                         │
-│  TOOLS (5):                                             │
+│  TOOLS (5):                                            │
 │  ┌──────────┬──────────┬──────────┬──────────────┐      │
 │  │Zakat     │Inherit.  │Prayer    │Hijri         │      │
 │  │Calc      │Calc      │Times     │Calendar      │      │

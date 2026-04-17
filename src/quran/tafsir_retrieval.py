@@ -1,13 +1,13 @@
 """
 Tafsir Retrieval Engine for Athar Islamic QA system.
 
-Retrieves scholarly commentaries on Quran verses from:
-- Ibn Kathir (most popular)
-- Al-Jalalayn (concise)
-- Al-Qurtubi (fiqh-focused)
-
-Phase 3: Foundation for Quran interpretation features.
+Fixes:
+  - get_tafsir: handles list[dict] return from verse_engine.lookup()
+  - search_tafsir: truncation only when text exceeds limit
+  - source validation: clear error before DB query
+  - available_sources: deterministic order via dict.fromkeys()
 """
+from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
@@ -17,155 +17,157 @@ from src.quran.verse_retrieval import VerseRetrievalEngine
 
 logger = get_logger()
 
+_TRUNCATE_AYAH   = 100
+_TRUNCATE_TAFSIR = 300
+
 
 class TafsirRetrievalError(Exception):
-    """Error in tafsir retrieval."""
-    pass
+    """Base error for tafsir retrieval."""
 
 
 class TafsirNotFoundError(TafsirRetrievalError):
-    """Tafsir not found for verse."""
-    pass
+    """Tafsir not found for the requested verse / source."""
 
 
 class TafsirRetrievalEngine:
     """
-    Engine for retrieving tafsir (commentaries) on Quran verses.
+    Retrieves scholarly Quran commentaries from the database.
 
-    Usage:
-        engine = TafsirRetrievalEngine(session)
-        tafsir = await engine.get_tafsir("2:255", source="ibn-kathir")
+    Supported sources: ibn-kathir, al-jalalayn, al-qurtubi.
     """
 
-    AVAILABLE_SOURCES = {
+    AVAILABLE_SOURCES: dict[str, dict] = {
         "ibn-kathir": {
             "name_ar": "تفسير ابن كثير",
             "name_en": "Ibn Kathir",
-            "author": "Ismail ibn Kathir",
-            "language": "ar"
+            "author":  "Ismail ibn Kathir",
+            "language": "ar",
         },
         "al-jalalayn": {
             "name_ar": "تفسير الجلالين",
             "name_en": "Al-Jalalayn",
-            "author": "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
-            "language": "ar"
+            "author":  "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
+            "language": "ar",
         },
         "al-qurtubi": {
             "name_ar": "تفسير القرطبي",
             "name_en": "Al-Qurtubi",
-            "author": "Abu 'Abdullah Al-Qurtubi",
-            "language": "ar"
-        }
+            "author":  "Abu 'Abdullah Al-Qurtubi",
+            "language": "ar",
+        },
     }
 
-    def __init__(self, session: Session):
-        """
-        Initialize engine with database session.
-
-        Args:
-            session: SQLAlchemy database session
-        """
-        self.session = session
+    def __init__(self, session: Session) -> None:
+        self.session      = session
         self.verse_engine = VerseRetrievalEngine(session)
+
+    # ── Public API ─────────────────────────────────────────────────────────────
 
     async def get_tafsir(
         self,
         ayah_reference: str,
-        source: str | None = None
+        source: str | None = None,
     ) -> dict:
         """
         Get tafsir for a specific verse.
 
         Args:
-            ayah_reference: Verse reference (e.g., "2:255")
-            source: Tafsir source (ibn-kathir, al-jalalayn, al-qurtubi)
-                   If None, returns all available sources
+            ayah_reference: "2:255", "البقرة 255", "Ayat al-Kursi", etc.
+            source: One of AVAILABLE_SOURCES keys, or None for all.
 
         Returns:
-            Tafsir response with ayah and commentaries
+            {"ayah": dict, "tafsirs": [...], "available_sources": [...]}
+
+        Raises:
+            TafsirNotFoundError: verse exists but no tafsir found.
+            TafsirRetrievalError: unexpected DB / parsing error.
         """
+        # Validate source before hitting the DB
+        if source is not None:
+            self._validate_source(source)
+
         try:
-            # Get ayah first
-            ayah = await self.verse_engine.lookup(ayah_reference, include_translation=True)
+            # verse_engine.lookup() may return dict OR list[dict]
+            lookup_result = await self.verse_engine.lookup(
+                ayah_reference, include_translation=True
+            )
 
-            # Get surah and ayah numbers
-            surah_num = ayah["surah_number"]
-            ayah_num = ayah["ayah_number"]
+            # Normalise to a single ayah dict
+            if isinstance(lookup_result, list):
+                if not lookup_result:
+                    raise TafsirNotFoundError(
+                        f"No verses returned for reference: {ayah_reference!r}"
+                    )
+                # For ranges (e.g. Al-Fatihah), use the first ayah as anchor
+                ayah_dict = lookup_result[0]
+            else:
+                ayah_dict = lookup_result
 
-            # Query tafsir
-            query = (
+            surah_num = ayah_dict["surah_number"]
+            ayah_num  = ayah_dict["ayah_number"]
+
+            # Build DB query
+            q = (
                 self.session.query(Tafsir)
                 .join(Ayah)
                 .join(Surah)
                 .filter(
                     Surah.number == surah_num,
-                    Ayah.number_in_surah == ayah_num
+                    Ayah.number_in_surah == ayah_num,
                 )
             )
 
-            # Filter by source if specified
             if source:
-                query = query.filter(Tafsir.source_name == source)
-                tafsirs = query.all()
+                q = q.filter(Tafsir.source_name == source)
 
-                if not tafsirs:
-                    raise TafsirNotFoundError(
-                        f"Tafsir from '{source}' not found for {ayah_reference}"
-                    )
-            else:
-                tafsirs = query.all()
+            tafsirs = q.all()
 
-            # Format response
+            if source and not tafsirs:
+                raise TafsirNotFoundError(
+                    f"No tafsir from '{source}' found for {ayah_reference!r}."
+                )
+
+            # Deterministic source order (dict.fromkeys preserves insertion order)
+            seen_sources = list(dict.fromkeys(t.source_name for t in tafsirs))
+
             result = {
-                "ayah": ayah,
-                "tafsirs": [
-                    {
-                        "source": t.source_name,
-                        "author": self.AVAILABLE_SOURCES.get(t.source_name, {}).get("author", t.author),
-                        "text": t.text,
-                        "language": t.language
-                    }
-                    for t in tafsirs
-                ],
-                "available_sources": list({t.source_name for t in tafsirs})
+                "ayah":              ayah_dict,
+                "tafsirs":           [self._format_tafsir(t) for t in tafsirs],
+                "available_sources": seen_sources,
             }
 
-            logger.info(
-                "tafsir.retrieved",
-                reference=ayah_reference,
-                sources=result["available_sources"]
-            )
-
+            logger.info("tafsir.retrieved",
+                        reference=ayah_reference, sources=seen_sources)
             return result
 
         except TafsirNotFoundError:
             raise
         except Exception as e:
-            logger.error("tafsir.retrieval_error", error=str(e))
-            raise TafsirRetrievalError(
-                f"Error retrieving tafsir: {str(e)}"
-            ) from e
+            logger.error("tafsir.retrieval_error", error=str(e), exc_info=True)
+            raise TafsirRetrievalError(f"Error retrieving tafsir: {e}") from e
 
     async def search_tafsir(
         self,
         query: str,
         source: str | None = None,
-        limit: int = 5
+        limit: int = 5,
     ) -> list[dict]:
         """
-        Search tafsir text by keyword.
+        Full-text search across tafsir entries.
 
         Args:
-            query: Search query
-            source: Filter by tafsir source
-            limit: Maximum results
+            query: Arabic or English search term.
+            source: Optional source filter.
+            limit: Maximum number of results (default 5).
 
         Returns:
-            List of tafsir passages matching query
+            List of matching tafsir passage dicts.
         """
+        if source is not None:
+            self._validate_source(source)
+
         try:
-            # Full-text search in tafsir text
-            tafsirs = (
+            q = (
                 self.session.query(Tafsir)
                 .join(Ayah)
                 .join(Surah)
@@ -173,48 +175,74 @@ class TafsirRetrievalEngine:
             )
 
             if source:
-                tafsirs = tafsirs.filter(Tafsir.source_name == source)
+                q = q.filter(Tafsir.source_name == source)
 
-            tafsirs = tafsirs.limit(limit).all()
+            tafsirs = q.limit(limit).all()
 
-            results = []
-            for tafsir in tafsirs:
-                results.append({
-                    "surah_number": tafsir.ayah.surah.number,
-                    "surah_name_en": tafsir.ayah.surah.name_en,
-                    "ayah_number": tafsir.ayah.number_in_surah,
-                    "ayah_text": tafsir.ayah.text_uthmani[:100] + "...",
-                    "source": tafsir.source_name,
-                    "author": self.AVAILABLE_SOURCES.get(tafsir.source_name, {}).get("author", tafsir.author),
-                    "tafsir_text": tafsir.text[:300] + "...",
-                    "quran_url": f"https://quran.com/{tafsir.ayah.surah.number}/{tafsir.ayah.number_in_surah}"
-                })
+            results = [self._format_search_result(t) for t in tafsirs]
 
-            logger.info(
-                "tafsir.searched",
-                query=query,
-                results=len(results)
-            )
-
+            logger.info("tafsir.searched", query=query, results=len(results))
             return results
 
         except Exception as e:
-            logger.error("tafsir.search_error", error=str(e))
-            raise TafsirRetrievalError(
-                f"Error searching tafsir: {str(e)}"
-            ) from e
+            logger.error("tafsir.search_error", error=str(e), exc_info=True)
+            raise TafsirRetrievalError(f"Error searching tafsir: {e}") from e
 
     def list_sources(self) -> list[dict]:
-        """
-        List all available tafsir sources.
+        """Return metadata for all available tafsir sources."""
+        return [{"id": sid, **meta} for sid, meta in self.AVAILABLE_SOURCES.items()]
 
-        Returns:
-            List of source metadata
+    # ── Validation ────────────────────────────────────────────────────────────
+
+    def _validate_source(self, source: str) -> None:
         """
-        return [
-            {
-                "id": source_id,
-                **metadata
-            }
-            for source_id, metadata in self.AVAILABLE_SOURCES.items()
-        ]
+        Raise TafsirRetrievalError early if source is unknown.
+        Prevents confusing TafsirNotFoundError ("tafsir not found")
+        when the real problem is a bad source name.
+        """
+        if source not in self.AVAILABLE_SOURCES:
+            valid = ", ".join(self.AVAILABLE_SOURCES)
+            raise TafsirRetrievalError(
+                f"Unknown source {source!r}. Available: {valid}"
+            )
+
+    # ── Formatters ────────────────────────────────────────────────────────────
+
+    def _format_tafsir(self, t: Tafsir) -> dict:
+        """Full tafsir entry (used in get_tafsir)."""
+        return {
+            "source":   t.source_name,
+            "author":   self.AVAILABLE_SOURCES.get(t.source_name, {}).get(
+                            "author", getattr(t, "author", "Unknown")),
+            "text":     t.text,
+            "language": getattr(t, "language", "ar"),
+        }
+
+    def _format_search_result(self, t: Tafsir) -> dict:
+        """Compact tafsir entry for search results with safe truncation."""
+        ayah_text   = t.ayah.text_uthmani or ""
+        tafsir_text = t.text or ""
+
+        return {
+            "surah_number":  t.ayah.surah.number,
+            "surah_name_en": t.ayah.surah.name_en,
+            "ayah_number":   t.ayah.number_in_surah,
+            # Only append "…" when the text is actually truncated
+            "ayah_text":    (
+                ayah_text[:_TRUNCATE_AYAH] + "…"
+                if len(ayah_text) > _TRUNCATE_AYAH
+                else ayah_text
+            ),
+            "source":       t.source_name,
+            "author":       self.AVAILABLE_SOURCES.get(t.source_name, {}).get(
+                                "author", getattr(t, "author", "Unknown")),
+            "tafsir_text":  (
+                tafsir_text[:_TRUNCATE_TAFSIR] + "…"
+                if len(tafsir_text) > _TRUNCATE_TAFSIR
+                else tafsir_text
+            ),
+            "quran_url":    (
+                f"https://quran.com/"
+                f"{t.ayah.surah.number}/{t.ayah.number_in_surah}"
+            ),
+        }
