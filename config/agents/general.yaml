@@ -1,0 +1,39 @@
+# General Islamic Agent Configuration
+# Retrieval, verification, and fallback policies for GeneralIslamicAgent
+
+name: GeneralIslamicAgent
+domain: general
+collection_name: general_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.5
+  topk_initial: 30
+  topk_reranked: 8
+  min_relevance: 0.4
+  metadata_filters_priority:
+    - topic
+    - category
+
+verification:
+  fail_fast: false
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: warn
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: proceed
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_sources: false
+  minimum_sources: 0
