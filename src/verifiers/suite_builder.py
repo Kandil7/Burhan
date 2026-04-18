@@ -75,8 +75,10 @@ AQEEDAH_VERIFICATION_SUITE = VerificationSuite(
 
 SEERAH_VERIFICATION_SUITE = VerificationSuite(
     checks=[
+        VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
         VerificationCheck(name="source_attributor", fail_policy="warn", enabled=True),
         VerificationCheck(name="temporal_consistency", fail_policy="warn", enabled=True),
+        VerificationCheck(name="evidence_sufficiency", fail_policy="warn", enabled=True),
     ],
     fail_fast=True,
 )
@@ -151,14 +153,12 @@ CHECK_IMPLEMENTATIONS: Dict[str, type] = {}
 
 
 def register_all_checks() -> None:
-    """Register all available verification checks.
-
-    This should be called at application startup (e.g., in lifespan).
-    """
-    # 1. Domain-specific checks (Fiqh)
+    """Register all available verification checks."""
+    # 1. High-Integrity Domain Checks (Quote Verification)
     try:
-        from src.verifiers.fiqh_checks import register_fiqh_checks
-        register_fiqh_checks()
+        from src.verifiers.fiqh_checks import QuoteValidator, EvidenceSufficiency
+        register_check("quote_validator", QuoteValidator)
+        register_check("evidence_sufficiency", EvidenceSufficiency)
     except ImportError:
         pass
 

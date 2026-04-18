@@ -61,7 +61,7 @@ def __getattr__(name):
 
         return classifier_factory
     if name == "build_classifier":
-        from src.application.router.classifier_factory import build_classifier
+        from src.application.classifier_factory import build_classifier
 
         return build_classifier
     if name == "QueryClassifier":

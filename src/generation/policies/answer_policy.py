@@ -1,79 +1,63 @@
-# Answer Policy Module
-"""Policies for controlling answer generation."""
+"""
+Answer Policy Module for Athar Islamic QA system.
 
-from typing import Optional, Dict, Any
-from dataclasses import dataclass
+Determines the final response mode (answer, clarify, abstain) 
+based on confidence and verification status.
+"""
+
+from __future__ import annotations
+
 from enum import Enum
+from pydantic import BaseModel, Field
 
 
 class AnswerMode(str, Enum):
-    """Modes for answer generation."""
-
+    """Modes for response generation."""
     ANSWER = "answer"
     CLARIFY = "clarify"
     ABSTAIN = "abstain"
 
 
-@dataclass
-class AnswerPolicyConfig:
-    """Configuration for answer policy."""
-
-    min_confidence: float = 0.7
-    require_verification: bool = True
-    max_clarification_attempts: int = 2
-    abstain_on_uncertainty: bool = False
-
-
 class AnswerPolicy:
-    """Policy for controlling answer generation."""
+    """
+    Policy engine to decide how to respond to a user query.
+    
+    Rules:
+    1. If no verified evidence exists -> ABSTAIN.
+    2. If verification failed -> ABSTAIN.
+    3. If confidence is very low -> CLARIFY or ABSTAIN.
+    """
 
-    def __init__(self, config: Optional[AnswerPolicyConfig] = None):
-        self.config = config or AnswerPolicyConfig()
+    def __init__(
+        self, 
+        min_confidence: float = 0.65, 
+        abstain_threshold: float = 0.4
+    ):
+        self.min_confidence = min_confidence
+        self.abstain_threshold = abstain_threshold
 
     def determine_mode(
         self,
         confidence: float,
         verification_passed: bool,
-        can_clarify: bool = True,
+        has_evidence: bool = True,
     ) -> AnswerMode:
         """
         Determine the appropriate response mode.
-
-        Args:
-            confidence: Confidence score for the answer
-            verification_passed: Whether verification passed
-            can_clarify: Whether clarification is possible
-
-        Returns:
-            AnswerMode to use
         """
-        # If verification failed, abstain
-        if self.config.require_verification and not verification_passed:
+        # Rule 1: No evidence = No answer
+        if not has_evidence:
             return AnswerMode.ABSTAIN
 
-        # If confidence is too low, either clarify or abstain
-        if confidence < self.config.min_confidence:
-            if can_clarify and not self.config.abstain_on_uncertainty:
-                return AnswerMode.CLARIFY
+        # Rule 2: Explicit verification failure
+        if not verification_passed:
             return AnswerMode.ABSTAIN
 
-        # Otherwise, provide answer
+        # Rule 3: Low confidence handling
+        if confidence < self.abstain_threshold:
+            return AnswerMode.ABSTAIN
+            
+        if confidence < self.min_confidence:
+            return AnswerMode.CLARIFY
+
         return AnswerMode.ANSWER
-
-    def should_clarify(self, confidence: float) -> bool:
-        """Check if clarification should be requested."""
-        return (
-            confidence < self.config.min_confidence and confidence >= 0.5  # Not completely uncertain
-        )
-
-    def should_abstain(self, confidence: float) -> bool:
-        """Check if the system should abstain."""
-        return confidence < 0.5 or (self.config.abstain_on_uncertainty and confidence < self.config.min_confidence)
-
-    def get_confidence_threshold(self) -> float:
-        """Get the minimum confidence threshold."""
-        return self.config.min_confidence
-
-
-# Default policy instance
-answer_policy = AnswerPolicy()

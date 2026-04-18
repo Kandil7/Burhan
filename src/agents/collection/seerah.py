@@ -46,7 +46,7 @@ class SeerahCollectionAgent(CollectionAgent):
         score_threshold=0.50,
     )
 
-    NO_PASSAGES_MESSAGE = "لم أجد معلومات في السيرة النبوية مرتبطة بهذا السؤال."
+    NO_PASSAGES_MESSAGE = "لم أجد في النصوص المتاحة ما يتعلق بهذا السؤال من السيرة النبوية."
 
     def __init__(
         self,
@@ -166,31 +166,37 @@ class SeerahCollectionAgent(CollectionAgent):
         parts = []
         for i, p in enumerate(passages, 1):
             content = p.get("content", "")
-            if len(content) > 500:
-                content = content[:500] + "…"
-            parts.append(f"[C{i}] {content}")
+            if len(content) > 600:
+                content = content[:600] + "…"
+            parts.append(f"--- النص رقم {i} ---\n{content}")
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
         # Load shared preamble + agent-specific prompt
         preamble = self._load_shared_preamble()
-        try:
-            with open("prompts/seerah_agent.txt", encoding="utf-8") as f:
-                agent_prompt = f.read()
-        except FileNotFoundError:
-            agent_prompt = """أنت متخصص في السيرة النبوية.
-استند فقط إلى النصوص المسترجعة.
-Use مراجع المصادر [C1]، [C2]."""
+        agent_prompt = """أنت باحث متفحص في السيرة النبوية، مهمتك كتابة إجابات سردية موثقة.
+يجب أن يكون أسلوبك سردياً متصلاً (Narrative) كما في كتب السير الكبرى، بعيداً عن أسلوب النقاط أو القوائم.
+توقف عن الكتابة فور انتهاء المعلومات المستقاة من النصوص.
+لا تقدم ملخصات أو استنتاجات شخصية."""
         if preamble:
             return f"{preamble}\n\n{agent_prompt}"
         return agent_prompt
 
     def _build_user_prompt(self, query: str, passages: str, language: str) -> str:
-        return f"""السؤال: {query}
-اللغة المطلوبة: {language}
-نصوص السيرة:
+        return f"""أجب على السؤال التالي المتعلق بالسيرة النبوية بأسلوب سردي علمي رصين، مع الالتزام التام بالنصوص المسترجعة المرفقة.
+
+السؤال: {query}
+اللغة: {language}
+
+النصوص الموثقة:
 {passages}
-أجب مع الاستشهاد."""
+
+الضوابط الصارمة:
+- صُغ الإجابة كفقرات مترابطة بأسلوب الكتب العلمية، مع دمج الاستشهادات [C1]، [C2] بسلاسة.
+- **ممنوع تماماً**: لا تضف أي خاتمة، أو ملخص، أو فقرة "دروس مستفادة"، أو نصائح وعبر، ما لم ترد حرفياً في النصوص.
+- توقف فوراً بعد ذكر المعلومات المستمدة من النصوص.
+- لا تضف أي معلومات من خارج هذه النصوص المحددة.
+- التزم باللغة العربية الفصحى، وتجنب أي تنسيقات غير ضرورية."""
 
     def __repr__(self) -> str:
         return f"<SeerahCollectionAgent: {self.name}, collection={self.COLLECTION}>"

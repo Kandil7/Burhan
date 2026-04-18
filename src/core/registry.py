@@ -87,7 +87,7 @@ class AgentRegistry:
     def get_tool(self, name: str) -> Optional[BaseTool]:
         """Get tool by name, initializing if necessary."""
         reg = self._registrations.get(name)
-        if not reg or reg.is_agent:
+        if not reg:
             return None
 
         if reg.instance is None and reg.factory:
@@ -131,8 +131,20 @@ def get_registry() -> AgentRegistry:
 
 
 def initialize_registry() -> AgentRegistry:
-    """Initialize registry with Lazy Injection mappings."""
+    """Initialize registry with Lazy Injection mappings for V2 Agents."""
     registry = AgentRegistry()
+
+    # Helpers for dependencies
+    def get_deps():
+        from fastapi import FastAPI
+        # This is a bit of a hack to get global state if needed
+        # In a real DI system, we'd inject these
+        from src.api.main import app
+        return {
+            "embedding_model": getattr(app.state, "embedding_model", None),
+            "vector_store": getattr(app.state, "vector_store", None),
+            "llm_client": getattr(app.state, "llm_client", None),
+        }
 
     # Helpers for lazy instantiation
     def build_zakat():
@@ -162,22 +174,22 @@ def initialize_registry() -> AgentRegistry:
     registry.register_tool("hijri_tool", factory=build_hijri)
     registry.register_tool("dua_tool", factory=build_dua)
 
-    # Register Agents lazily
+    # Register V2 Collection Agents lazily with dependency injection
     def build_fiqh():
-        from src.agents.collection import FiqhCollectionAgent
-        return FiqhCollectionAgent()
+        from src.agents.collection.fiqh import FiqhCollectionAgent
+        return FiqhCollectionAgent(**get_deps())
 
     def build_hadith():
-        from src.agents.collection import HadithCollectionAgent
-        return HadithCollectionAgent()
+        from src.agents.collection.hadith import HadithCollectionAgent
+        return HadithCollectionAgent(**get_deps())
 
     def build_general():
-        from src.agents.collection import GeneralCollectionAgent
-        return GeneralCollectionAgent()
+        from src.agents.collection.general import GeneralCollectionAgent
+        return GeneralCollectionAgent(**get_deps())
 
     def build_seerah():
-        from src.agents.collection import SeerahCollectionAgent
-        return SeerahCollectionAgent()
+        from src.agents.collection.seerah import SeerahCollectionAgent
+        return SeerahCollectionAgent(**get_deps())
 
     registry.register_agent("fiqh_agent", factory=build_fiqh)
     registry.register_agent("hadith_agent", factory=build_hadith)
@@ -185,5 +197,5 @@ def initialize_registry() -> AgentRegistry:
     registry.register_agent("seerah_agent", factory=build_seerah)
 
     registry._initialized = True
-    logger.info("registry.initialized.lazy")
+    logger.info("registry.initialized.v2")
     return registry

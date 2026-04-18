@@ -452,28 +452,32 @@ class CollectionAgent(ABC):
 
         # Step 6: Policy gate — determine answer mode
         policy = AnswerPolicy()
+        has_evidence = len(verification.verified_passages) > 0
+        
         answer_mode = policy.determine_mode(
             confidence=verification.confidence,
             verification_passed=verification.is_verified,
+            has_evidence=has_evidence
         )
 
         if answer_mode == AnswerMode.ABSTAIN:
-            abstain_msg = getattr(self, "NO_PASSAGES_MESSAGE", "عذراً، لم أتمكن من العثور على إجابة موثوقة.")
+            abstain_msg = getattr(self, "NO_PASSAGES_MESSAGE", "عذراً، لم أجد في النصوص المتاحة ما يجيب على سؤالك.")
             return AgentOutput(
                 answer=abstain_msg,
                 citations=[],
                 metadata={
                     "intent": intent.value,
+                    "sub_intent": intent.value,
                     "collection": self.config.collection_name,
                     "answer_mode": "abstain",
                     "retrieved": len(candidates),
                     "verified": 0,
                     "is_verified": False,
-                    "verification_confidence": verification.confidence,
-                    "verification_issues": verification.issues,
+                    "verification_confidence": 0.0 if not has_evidence else verification.confidence,
+                    "verification_issues": verification.issues + (["No evidence found"] if not has_evidence else []),
                     "timing": timing,
                 },
-                confidence=verification.confidence,
+                confidence=0.0 if not has_evidence else verification.confidence,
                 requires_human_review=True,
             )
 

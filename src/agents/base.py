@@ -10,9 +10,9 @@ This module provides backward compatibility through __getattr__ for lazy depreca
 from __future__ import annotations
 
 import re
-
+import time
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,6 @@ def __getattr__(name: str):
         "BaseAgent": "src.agents.collection.base.CollectionAgent",
         "AgentInput": "src.agents.collection.base.AgentInput (not yet exported, use src.agents.base.AgentInput)",
         "AgentOutput": "src.agents.collection.base.AgentOutput (not yet exported, use src.agents.base.AgentOutput)",
-        "Citation": "src.agents.base.Citation (still valid)",
     }
 
     if name in deprecated_items:
@@ -121,16 +120,18 @@ _MULTI_SPACE_RE = re.compile(r"\s+")
 
 def _clean_text_excerpt(raw: str, max_chars: int = 300) -> str:
     """Clean text excerpt: strip HTML, normalize whitespace, truncate."""
+    if not raw:
+        return ""
     text = _HTML_TAG_RE.sub("", raw)
     text = text.replace("\r", "\n")
     text = _MULTI_SPACE_RE.sub(" ", text).strip()
     return text[:max_chars]
 
 
-_COT_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+_COT_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _COT_PREAMBLE_RE = re.compile(
-    r"^(Okay|Let me|I need to|First,|Looking at|I notice|I should|The user).*?\n\n",
-    re.DOTALL,
+    r"^(Okay|Let me|I need to|First,|Looking at|I notice|I should|The user|Based on|According to|In the provided).*?($|(?=[\u0600-\u06FF]))",
+    re.DOTALL | re.IGNORECASE,
 )
 
 
@@ -138,13 +139,29 @@ def strip_cot_leakage(answer: str) -> str:
     """Strip LLM chain-of-thought leakage from generated answer.
 
     Removes:
-    - <think>...</think> blocks
+    - <think>...</think> blocks (case-insensitive)
     - English preamble lines ("Okay, the user is asking...")
+    - Any lingering think tags
     """
-    # Strip <think> blocks
+    if not answer:
+        return ""
+
+    # 1. Strip <think> blocks
     answer = _COT_THINK_RE.sub("", answer).strip()
-    # Strip English reasoning preamble
+    
+    # 2. Strip English reasoning preamble
+    # We look for the start of Arabic text or the end of the string
     answer = _COT_PREAMBLE_RE.sub("", answer).strip()
+    
+    # 3. Clean up any orphaned tags
+    answer = re.sub(r"<think>.*", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
+    answer = re.sub(r".*</think>", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
+    
+    # 4. If the result is empty after stripping but the original wasn't, 
+    # it means the model ONLY provided reasoning.
+    if not answer:
+        return "عذراً، لم أتمكن من استخلاص إجابة دقيقة من المصادر."
+
     return answer
 
 
@@ -173,13 +190,6 @@ class BaseAgent(ABC):
     Abstract base class for all agents.
 
     DEPRECATED: Use CollectionAgent from src/agents/collection/base.py instead.
-
-    Usage:
-        class FiqhAgent(BaseAgent):
-            name = "fiqh_agent"
-
-            async def execute(self, input: AgentInput) -> AgentOutput:
-                return AgentOutput(answer="...", citations=[...])
     """
 
     # ClassVar — excluded from Pydantic field scanning
@@ -193,10 +203,6 @@ class BaseAgent(ABC):
     async def __call__(self, input: AgentInput | None = None, **kwargs) -> AgentOutput:
         """
         Allow agent to be called directly.
-
-        Accepts either a pre-built AgentInput or raw kwargs:
-            await agent(AgentInput(query="…"))
-            await agent(query="…", language="ar")
         """
         if input is None:
             input = AgentInput(**kwargs)
@@ -206,8 +212,7 @@ class BaseAgent(ABC):
         return f"<Agent: {self.name}>"
 
 
-# Backward compatibility - allow direct import of deprecated classes
-# These will trigger the deprecation warning via __getattr__
+# Backward compatibility
 __all__ = [
     "Citation",
     "AgentInput",

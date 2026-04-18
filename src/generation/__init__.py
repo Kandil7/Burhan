@@ -13,11 +13,13 @@ Components:
 """
 
 from src.generation.schemas import (
-    AnswerRequest,
-    AnswerResponse,
-    GenerationConfig,
+    GenerationRequest as AnswerRequest,
+    GeneratedAnswer as AnswerResponse,
     PromptTemplate,
 )
+
+# Aliases for backward compatibility
+GenerationConfig = dict
 
 from src.generation.composers.answer_composer import AnswerComposer
 from src.generation.composers.citation_composer import CitationComposer

@@ -15,7 +15,7 @@ def warm_models(app: FastAPI):
     try:
         if app.state.embedding_model:
             # This is usually the heavy part (BGE-M3)
-            # EmbeddingModel.load_model() is async in some versions, but if it blocks, 
+            # EmbeddingModel.load_model() is async in some versions, but if it blocks,
             # we do it here. If it's pure async, we'd use a Task.
             # Assuming load_model is what warms it.
             pass
@@ -27,9 +27,10 @@ def warm_models(app: FastAPI):
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
-    
+
     # ── 1. Verification Suite ─────────────────────────────────────────────────
     from src.verifiers.suite_builder import register_all_checks
+
     register_all_checks()
 
     # ── 2. Infrastructure (Shared) ────────────────────────────────────────────
@@ -43,7 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     embedding_model = EmbeddingModel(cache_enabled=True)
     # Background warming
-    asyncio.create_task(embedding_model.load_model()) 
+    asyncio.create_task(embedding_model.load_model())
     app.state.embedding_model = embedding_model
 
     vector_store = VectorStore()
@@ -52,30 +53,29 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # ── 3. Registry (Lazy) ────────────────────────────────────────────────────
     from src.core.registry import get_registry
+
     app.state.registry = get_registry()
 
     # ── 4. Use Case & Service ─────────────────────────────────────────────────
     from src.application.use_cases.answer_query import AnswerQueryUseCase
     from src.application.services.ask_service import AskService
-    from src.application.router.router_agent import RouterAgent
-    from src.application.router.classifier_factory import build_classifier
+    from src.application.router import RouterAgent, build_classifier
 
-    # Build Router
-    classifier = build_classifier()
+    # Build Router - use build_classifier for robust intent detection
+    # Inject embedding_model to enable Phase 5 semantic routing
+    classifier = build_classifier(embedding_model=app.state.embedding_model)
     router = RouterAgent(classifier=classifier)
     app.state.router = router
 
     # AnswerQueryUseCase
-    use_case = AnswerQueryUseCase(
-        agent_registry=app.state.registry,
-        router=router
-    )
+    use_case = AnswerQueryUseCase(agent_registry=app.state.registry, router=router)
 
     # AskService
     app.state.ask_service = AskService(answer_query_use_case=use_case)
 
     # ── 5. Standard Agents (Static) ───────────────────────────────────────────
     from src.agents.chatbot_agent import ChatbotAgent
+
     app.state.chatbot = ChatbotAgent()
 
     logger.info("lifespan.startup.complete")

@@ -12,11 +12,9 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from src.agents.base import AgentInput, AgentOutput
-from src.application.router.router_agent import get_router_agent
-from src.core.registry import get_registry
 from src.config.logging_config import get_logger
 
 logger = get_logger()
@@ -52,6 +50,17 @@ class AnswerQueryUseCase:
     Coordinates between the router, the agent registry, and the agents.
     """
 
+    def __init__(self, agent_registry: Any = None, router: Any = None):
+        """
+        Initialize with injected dependencies.
+        
+        Args:
+            agent_registry: AgentRegistry instance
+            router: RouterAgent instance
+        """
+        self._registry = agent_registry
+        self._router = router
+
     async def execute(self, input_data: AnswerQueryInput) -> AnswerQueryOutput:
         """
         Execute the answer query flow.
@@ -64,8 +73,19 @@ class AnswerQueryUseCase:
         """
         start_time = time.time()
         
-        # 1. Routing & Intent Classification
-        router = get_router_agent()
+        # 1. Resolve Dependencies
+        # Use injected or global fallbacks
+        router = self._router
+        if not router:
+            from src.application.router.router_agent import get_router_agent
+            router = get_router_agent()
+            
+        registry = self._registry
+        if not registry:
+            from src.core.registry import get_registry
+            registry = get_registry()
+        
+        # 2. Routing & Intent Classification
         decision = await router.route(input_data.query)
         intent = decision.result.intent
         
@@ -76,17 +96,24 @@ class AnswerQueryUseCase:
         )
 
         # 2. Agent Selection from Registry
-        registry = get_registry()
+        registry = self._registry
+        if not registry:
+            from src.core.registry import get_registry
+            registry = get_registry()
+            
+        # IMPORTANT: Use the intent from the router to find the specialized agent
         agent, is_agent = registry.get_for_intent(intent)
         
         if not agent:
-            logger.warning("use_case.answer_query.no_agent", intent=intent.value)
+            logger.warning("use_case.answer_query.no_agent_for_intent", intent=intent.value)
             # Fallback to general agent or chatbot
             agent = registry.get_agent("general_islamic_agent")
             if not agent:
                 agent = registry.get_agent("chatbot_agent")
+        else:
+            logger.info("use_case.answer_query.selected_agent", agent_name=getattr(agent, 'name', 'unknown'))
 
-        # 3. Agent Execution
+        # 4. Agent Execution
         # V2 agents use .run() for the full pipeline; legacy agents use .execute()
         try:
             if hasattr(agent, "run"):
@@ -117,17 +144,18 @@ class AnswerQueryUseCase:
 
         processing_time_ms = int((time.time() - start_time) * 1000)
 
-        # 4. Build Output
+        # 5. Build Output
+        # Use router confidence for the top-level 'confidence' field (intent_confidence in API)
         return AnswerQueryOutput(
             answer=result.answer,
             intent=intent.value,
-            confidence=result.confidence,
+            confidence=decision.result.confidence, # Correct: intent classification confidence
             citations=[c.model_dump() for c in result.citations],
             metadata={
                 **result.metadata,
+                "verification_confidence": result.confidence, # Now separate
                 "processing_time_ms": processing_time_ms,
                 "router_method": decision.result.method,
-                "router_confidence": decision.result.confidence,
             },
             requires_human_review=result.requires_human_review,
         )
@@ -145,12 +173,15 @@ class AnswerQueryUseCase:
 
 
 # Singleton instance
-_instance: AnswerQueryUseCase | None = None
+_instance: Optional[AnswerQueryUseCase] = None
 
 
-def get_answer_query_use_case() -> AnswerQueryUseCase:
-    """Get global use case instance."""
+def get_answer_query_use_case(agent_registry: Any = None, router: Any = None) -> AnswerQueryUseCase:
+    """Get or create global use case instance."""
     global _instance
     if _instance is None:
-        _instance = AnswerQueryUseCase()
+        _instance = AnswerQueryUseCase(agent_registry=agent_registry, router=router)
     return _instance
+
+#default use case 
+answer_query_use_case =AnswerQueryUseCase()
