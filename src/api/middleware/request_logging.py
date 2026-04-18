@@ -87,16 +87,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
     def _get_client_ip(self, request: Request) -> str:
         """Extract client IP from request."""
-        # Check for forwarded headers
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-
-        real_ip = request.headers.get("x-real-ip")
-        if real_ip:
-            return real_ip
-
-        # Fall back to direct client
+        # Use direct client IP to avoid spoofed forwarding headers.
         if request.client:
             return request.client.host
 

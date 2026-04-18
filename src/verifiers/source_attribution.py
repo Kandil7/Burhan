@@ -171,7 +171,7 @@ class SourceAttributionVerifier(BaseVerifier):
                     if source_lower in text.lower():
                         return True
 
-        return True  # Default to pass for unknown sources
+        return False
 
 
 # Default verifier instance

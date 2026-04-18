@@ -37,15 +37,15 @@ class HybridClassifier:
                 details={},
             )
 
-        results = []
+        weighted_results: list[tuple[Any, dict]] = []
         for classifier in self.classifiers:
             try:
                 result = await classifier.classify(query)
-                results.append(result)
+                weighted_results.append((classifier, result))
             except Exception:
                 continue
 
-        if not results:
+        if not weighted_results:
             return ClassificationResult(
                 category="general_islamic",
                 confidence=0.5,
@@ -54,10 +54,12 @@ class HybridClassifier:
             )
 
         category_scores: Dict[str, float] = {}
-        for result in results:
+        for classifier, result in weighted_results:
             category = result.get("category", "general_islamic")
             confidence = result.get("confidence", 0.5)
-            weight = self.weights.get(category, 1.0)
+            classifier_key = classifier.__class__.__name__
+            # Prefer classifier weight, with optional category fallback.
+            weight = self.weights.get(classifier_key, self.weights.get(category, 1.0))
 
             if category not in category_scores:
                 category_scores[category] = 0.0
@@ -81,7 +83,7 @@ class HybridClassifier:
             method="hybrid",
             details={
                 "all_categories": category_scores,
-                "classifier_count": len(results),
+                "classifier_count": len(weighted_results),
             },
         )
 

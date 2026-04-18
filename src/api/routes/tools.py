@@ -28,6 +28,7 @@ from src.tools.zakat_calculator import Madhhab, ZakatAssets, ZakatCalculator
 
 logger = get_logger()
 tools_router = APIRouter(prefix="/tools", tags=["Tools"])
+GENERIC_TOOL_ERROR = "Unable to process the request right now."
 
 
 def _build_trace_id() -> str:
@@ -136,7 +137,7 @@ async def calculate_zakat(request: ZakatRequest):
 
     except Exception as e:
         logger.error("tools.zakat_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e
 
 
 # ==========================================
@@ -196,7 +197,7 @@ async def calculate_inheritance(request: InheritanceRequest):
 
     except Exception as e:
         logger.error("tools.inheritance_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e
 
 
 # ==========================================
@@ -243,7 +244,7 @@ async def get_prayer_times(request: PrayerTimesRequest):
         raise
     except Exception as e:
         logger.error("tools.prayer_times_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e
 
 
 # ==========================================
@@ -289,7 +290,7 @@ async def convert_hijri(request: HijriRequest):
         raise
     except Exception as e:
         logger.error("tools.hijri_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e
 
 
 # ==========================================
@@ -336,4 +337,4 @@ async def get_duas(request: DuaRequest):
         raise
     except Exception as e:
         logger.error("tools.duas_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e

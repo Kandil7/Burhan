@@ -19,7 +19,8 @@ Phase 6 Refactoring:
 """
 
 import hashlib
-import pickle
+import json
+import time
 from typing import Any
 
 import numpy as np
@@ -66,6 +67,8 @@ class EmbeddingCache:
         self._redis_pool = None
         self._local_cache: dict[str, np.ndarray] = {}  # Fallback when Redis unavailable
         self._redis_available = True  # Track Redis availability
+        self._last_redis_error_at = 0.0
+        self._redis_retry_interval_sec = 30.0
         self._hits = 0
         self._misses = 0
 
@@ -90,6 +93,29 @@ class EmbeddingCache:
             self._redis_pool = None
             self._redis_available = False
 
+    def _serialize_embedding(self, embedding: np.ndarray) -> bytes:
+        """Serialize embedding in a safe JSON format."""
+        payload = {
+            "dtype": str(embedding.dtype),
+            "shape": list(embedding.shape),
+            "data": embedding.tolist(),
+        }
+        return json.dumps(payload, separators=(",", ":")).encode("utf-8")
+
+    def _deserialize_embedding(self, data: bytes) -> np.ndarray:
+        """Deserialize embedding from safe JSON payload."""
+        payload = json.loads(data.decode("utf-8"))
+        dtype = np.dtype(payload.get("dtype", "float32"))
+        array = np.array(payload["data"], dtype=dtype)
+        shape = tuple(payload.get("shape", array.shape))
+        return array.reshape(shape)
+
+    def _allow_redis_retry(self) -> bool:
+        """Permit periodic Redis retries after transient failures."""
+        if self._redis_available:
+            return True
+        return (time.time() - self._last_redis_error_at) >= self._redis_retry_interval_sec
+
     async def get(self, text_hash: str) -> np.ndarray | None:
         """
         Get embedding from cache (with async Redis + local fallback).
@@ -101,11 +127,15 @@ class EmbeddingCache:
             logger.debug("embedding_cache.local_hit", hash=text_hash[:8])
             return self._local_cache[text_hash]
 
-        if not self._redis_available or not self._redis:
+        if not self._redis:
+            self._misses += 1
+            return None
+        if not self._allow_redis_retry():
             self._misses += 1
             return None
 
         try:
+            self._redis_available = True
             key = f"{self.KEY_PREFIX}{text_hash}"
             data = await self._redis.get(key)  # Phase 6: Async call
 
@@ -114,7 +144,7 @@ class EmbeddingCache:
                 return None
 
             # Deserialize numpy array
-            embedding = pickle.loads(data)
+            embedding = self._deserialize_embedding(data)
             # Store in local cache
             self._local_cache[text_hash] = embedding
             self._hits += 1
@@ -125,6 +155,7 @@ class EmbeddingCache:
         except Exception as e:
             logger.warning("embedding_cache.get_failed", error=str(e))
             self._redis_available = False
+            self._last_redis_error_at = time.time()
             self._misses += 1
             return None
 
@@ -147,12 +178,15 @@ class EmbeddingCache:
             for key in keys_to_remove:
                 del self._local_cache[key]
 
-        if not self._redis_available or not self._redis:
+        if not self._redis:
+            return True
+        if not self._allow_redis_retry():
             return True
 
         try:
+            self._redis_available = True
             key = f"{self.KEY_PREFIX}{text_hash}"
-            serialized = pickle.dumps(embedding)
+            serialized = self._serialize_embedding(embedding)
 
             await self._redis.setex(key, ttl or self.ttl, serialized)
 
@@ -162,6 +196,7 @@ class EmbeddingCache:
         except Exception as e:
             logger.warning("embedding_cache.set_failed", error=str(e))
             self._redis_available = False
+            self._last_redis_error_at = time.time()
             return True  # Still succeeded locally
 
     async def clear(self) -> bool:

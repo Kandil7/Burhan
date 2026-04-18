@@ -11,6 +11,10 @@ Provides:
 Phase 4: Foundation for all RAG retrieval pipelines.
 """
 
+import asyncio
+import hashlib
+import json
+
 import numpy as np
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -71,13 +75,32 @@ class VectorStore:
         self.client = None
         self._initialized = False
 
+    async def _run_blocking(self, fn, *args, **kwargs):
+        """Run blocking Qdrant calls in a worker thread."""
+        return await asyncio.to_thread(fn, *args, **kwargs)
+
+    def _build_point_id(self, collection: str, doc: dict, index: int) -> str:
+        """Build a deterministic ID with metadata context to avoid collisions."""
+        metadata = doc.get("metadata", {}) or {}
+        identity = {
+            "collection": collection,
+            "content": doc.get("content", ""),
+            "source": metadata.get("source"),
+            "reference": metadata.get("reference"),
+            "book_id": metadata.get("book_id"),
+            "chunk_index": doc.get("chunk_index", index),
+        }
+        raw = json.dumps(identity, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
     async def ensure_collection(self, name: str, dimension: int = 1024):
         """Ensure a collection exists, create if not."""
         if not self._initialized:
             await self.initialize()
 
-        if not self.client.collection_exists(name):
-            self.client.create_collection(
+        if not await self._run_blocking(self.client.collection_exists, name):
+            await self._run_blocking(
+                self.client.create_collection,
                 collection_name=name,
                 vectors_config=VectorParams(
                     size=dimension,
@@ -104,8 +127,10 @@ class VectorStore:
 
             # Create collections
             for collection_name, config in self.COLLECTIONS.items():
-                if not self.client.collection_exists(collection_name):
-                    self.client.create_collection(
+                exists = await self._run_blocking(self.client.collection_exists, collection_name)
+                if not exists:
+                    await self._run_blocking(
+                        self.client.create_collection,
                         collection_name=collection_name,
                         vectors_config=VectorParams(
                             size=config["dimension"],
@@ -143,16 +168,16 @@ class VectorStore:
 
         if collection not in self.COLLECTIONS:
             raise VectorStoreError(f"Collection '{collection}' does not exist")
+        if len(documents) != len(embeddings):
+            raise VectorStoreError(
+                f"Documents/embeddings length mismatch: {len(documents)} docs vs {len(embeddings)} embeddings"
+            )
 
         try:
-            import hashlib
-
             # Build points with deterministic IDs based on content
             points = []
-            for i, (doc, embedding) in enumerate(zip(documents, embeddings, strict=False)):
-                # Phase 6: Deterministic ID to prevent duplicates
-                content = doc.get("content", "")
-                doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]
+            for i, (doc, embedding) in enumerate(zip(documents, embeddings, strict=True)):
+                doc_id = self._build_point_id(collection, doc, i)
 
                 point = PointStruct(
                     id=doc_id,  # Phase 6: Deterministic ID
@@ -166,7 +191,8 @@ class VectorStore:
                 points.append(point)
 
             # Upsert to Qdrant
-            self.client.upsert(
+            await self._run_blocking(
+                self.client.upsert,
                 collection_name=collection,
                 points=points,
             )
@@ -205,7 +231,8 @@ class VectorStore:
                 qdrant_filter = Filter(must=conditions)
 
             # Search using query_points (new Qdrant API)
-            response = self.client.query_points(
+            response = await self._run_blocking(
+                self.client.query_points,
                 collection_name=collection,
                 query=query_embedding.tolist(),
                 query_filter=qdrant_filter,

@@ -53,7 +53,7 @@ class Citation(BaseModel):
     text_excerpt: str | None = Field(default=None, description="Quoted passage (≤ 300 chars)")
 
     @classmethod
-    def from_passage(cls, passage: dict, index: int) -> "Citation":
+    def from_passage(cls, passage: dict, index: int) -> Citation:
         meta = passage.get("metadata", {})
 
         # Infer type from collection or explicit metadata field

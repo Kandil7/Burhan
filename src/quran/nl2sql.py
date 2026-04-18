@@ -11,6 +11,7 @@ Fixes:
 """
 from __future__ import annotations
 
+import asyncio
 import re
 
 from sqlalchemy import text
@@ -217,9 +218,12 @@ class NL2SQLEngine:
         """Execute a validated SELECT query and return rows as dicts."""
         self._validate_sql(sql)
         try:
-            result   = self.session.execute(text(sql))
-            columns  = list(result.keys())
-            rows     = [dict(zip(columns, row)) for row in result.fetchall()]
+            def _execute() -> list[dict]:
+                result = self.session.execute(text(sql))
+                columns = list(result.keys())
+                return [dict(zip(columns, row)) for row in result.fetchall()]
+
+            rows = await asyncio.to_thread(_execute)
             logger.info("nl2sql.executed", sql=sql, rows=len(rows))
             return rows
         except Exception as e:

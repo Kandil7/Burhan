@@ -1,6 +1,8 @@
 # Verification Suite Builder Module
 """Builds and runs verification suites for different agents."""
 
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any
 
 from src.agents.collection_agent import (
@@ -347,10 +349,7 @@ def _run_check(
         # Instantiate the check
         checker = check_class()
 
-        # Run the check (simplified synchronous wrapper)
-        import asyncio
-
-        result = asyncio.run(
+        result = _run_coroutine_sync(
             checker.verify(
                 claim=query,
                 evidence=passages,
@@ -372,6 +371,22 @@ def _run_check(
             "message": f"Check '{check_name}' error: {str(e)}",
             "check_name": check_name,
         }
+
+
+def _run_coroutine_sync(coro):
+    """
+    Run an async coroutine from sync code safely.
+
+    If already inside an event loop, run coroutine in a dedicated thread.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(asyncio.run, coro)
+        return future.result()
 
 
 # =============================================================================

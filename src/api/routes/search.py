@@ -28,6 +28,7 @@ from src.config.settings import settings
 
 logger = get_logger()
 search_router = APIRouter(prefix="/search", tags=["Search"])
+GENERIC_SEARCH_ERROR = "Search service temporarily unavailable."
 
 # ── Availability flag ────────────────────────────────────────────────────
 try:
@@ -348,7 +349,7 @@ async def simple_rag_query(
         )
     except Exception as e:
         logger.error("search.simple_encode_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=f"Failed to encode query: {str(e)}") from e
+        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
 
     # 2. Search
     try:
@@ -361,7 +362,7 @@ async def simple_rag_query(
         logger.info("search.simple_search", trace_id=trace_id, results_count=len(results))
     except Exception as e:
         logger.error("search.simple_search_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=f"Vector store search failed: {str(e)}") from e
+        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
 
     if not results:
         processing_time_ms = int((time.time() - start_time) * 1000)
@@ -448,7 +449,7 @@ async def basic_search(
         )
     except Exception as e:
         logger.error("search.basic_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=f"Search failed: {str(e)}") from e
+        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 

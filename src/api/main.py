@@ -20,6 +20,7 @@ from src.api.routes.tools import tools_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.fiqh import fiqh_router
 from src.api.lifespan import lifespan
+from src.config.environment_validation import validate_environment
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
 
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     # ── Logging: هنا فقط، مرة واحدة ─────────────────────────────────────
     setup_logging()
     logger = get_logger()
+    validate_environment()
 
     app = FastAPI(
         title=settings.app_name,
