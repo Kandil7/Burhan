@@ -25,6 +25,7 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
+from src.agents.base import strip_cot_leakage
 
 # =============================================================================
 # Arabic Text Normalization
@@ -152,6 +153,8 @@ class HadithCollectionAgent(CollectionAgent):
         """Rerank retrieved candidates."""
         threshold = self.strategy.score_threshold if self.strategy else 0.50
         filtered = [p for p in candidates if p.get("score", 0) >= threshold]
+        # Deduplicate by content prefix
+        filtered = self._deduplicate_passages(filtered)
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
@@ -188,9 +191,10 @@ class HadithCollectionAgent(CollectionAgent):
                         {"role": "user", "content": self._build_user_prompt(query, formatted, language)},
                     ],
                     temperature=0.1,  # Low temperature for exact text preservation
-                    max_tokens=2048,
+                    max_tokens=1024,
                 )
-                return response.choices[0].message.content
+                raw_answer = response.choices[0].message.content
+                return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
@@ -215,17 +219,21 @@ class HadithCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
-        """Get system prompt from file or use default."""
+        """Get system prompt from file with shared preamble."""
+        preamble = self._load_shared_preamble()
         try:
             with open("prompts/hadith_agent.txt", encoding="utf-8") as f:
-                return f.read()
+                agent_prompt = f.read()
         except FileNotFoundError:
-            return """أنت متخصص في علم الحديث النبوي ورواياته.
+            agent_prompt = """أنت متخصص في علم الحديث النبوي ورواياته.
 تحذير مطلق: لا تختلق أي حديث أو إسناد.
 استند حصراً إلى النصوص المسترجاعة.
 اعرض الأحاديث حرفياً كما وردت.
 اذكر درجة الحديث (صحيح، حسن، ضعيف، موضوع) إن وُجدت.
 Use مراجع المصادر [C1]، [C2]، ... after each hadith."""
+        if preamble:
+            return f"{preamble}\n\n{agent_prompt}"
+        return agent_prompt
 
     def _build_user_prompt(self, query: str, passages: str, language: str) -> str:
         """Build user prompt from template."""

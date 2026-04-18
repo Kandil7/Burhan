@@ -50,7 +50,7 @@ UNAVAILABLE = _Unavailable()
 # ── Compiled regexes ────────────────────────────────────────────────────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _CARRIAGE_RE = re.compile(r"\r")
-_THINK_RE = re.compile(r"<think>.*?", re.DOTALL)
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
 def _build_trace_id() -> str:

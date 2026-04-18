@@ -23,8 +23,8 @@ class RunRetrievalOutput:
 
     results: List[Dict[str, Any]]
     query_expansions: Optional[List[str]] = None
-    retrieval_strategy: str
-    execution_time_ms: float
+    retrieval_strategy: str = ""
+    execution_time_ms: float = 0.0
     metadata: Optional[Dict[str, Any]] = None
 
 

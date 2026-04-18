@@ -27,7 +27,7 @@ logger = get_logger()
 fiqh_router = APIRouter(prefix="/fiqh", tags=["Fiqh"])
 
 # ── Regex patterns ─────────────────────────────────────────────────────────
-_THINK_RE = re.compile(r"<think>.*?", re.DOTALL)
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
 def _strip_thinking(text: str) -> str:

@@ -6,6 +6,8 @@ Request/response models for the main query answering endpoint.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -97,6 +99,48 @@ class QueryFilters(BaseModel):
     death_year_max: int | None = Field(None, ge=0, description="Maximum author death year")
 
 
+class TimingBreakdown(BaseModel):
+    """Per-stage timing breakdown for pipeline observability."""
+
+    intake_ms: int = Field(default=0, ge=0, description="Query normalization time")
+    classification_ms: int = Field(default=0, ge=0, description="Intent classification time")
+    retrieval_ms: int = Field(default=0, ge=0, description="Document retrieval time")
+    rerank_ms: int = Field(default=0, ge=0, description="Reranking + dedup time")
+    verification_ms: int = Field(default=0, ge=0, description="Passage verification time")
+    generation_ms: int = Field(default=0, ge=0, description="Answer generation time")
+
+
+class AgentMetadata(BaseModel):
+    """Metadata from the agent execution pipeline."""
+
+    intent: str = Field(description="Agent-level classified intent")
+    sub_intent: str | None = Field(default=None, description="Agent-level sub-intent")
+    collection: str = Field(description="Qdrant collection used")
+    answer_mode: str = Field(
+        default="answer",
+        description="Pipeline decision: answer, clarify, or abstain",
+    )
+    retrieved: int = Field(default=0, ge=0, description="Number of passages retrieved")
+    verified: int = Field(default=0, ge=0, description="Number of passages that passed verification")
+    is_verified: bool = Field(default=False, description="Overall verification status")
+    verification_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    verification_issues: list[str] = Field(default_factory=list)
+    timing: TimingBreakdown | None = Field(default=None, description="Per-stage timing breakdown")
+
+
+class AskResponseMetadata(BaseModel):
+    """Top-level metadata in AskResponse."""
+
+    agent: str = Field(description="Agent that handled the query")
+    classification_method: str = Field(
+        default="hybrid",
+        description="Method used for classification: keyword, embedding, llm, hybrid",
+    )
+    language: str = Field(default="ar", description="Detected/requested language")
+    hierarchical: bool = Field(default=False)
+    agent_metadata: AgentMetadata = Field(description="Agent pipeline metadata")
+
+
 class AskResponse(BaseModel):
     """
     Response model for POST /api/v1/ask endpoint.
@@ -114,6 +158,11 @@ class AskResponse(BaseModel):
         description="Detected intent",
         examples=["fiqh", "quran", "zakat", "inheritance"],
     )
+    sub_intent: str | None = Field(
+        default=None,
+        description="Agent-level sub-intent (e.g. seerah_event, fiqh_hukm)",
+        examples=["seerah_event", "fiqh_hukm", "hadith_takhrij"],
+    )
     intent_confidence: float = Field(
         ...,
         ge=0.0,
@@ -122,17 +171,26 @@ class AskResponse(BaseModel):
         examples=[0.92, 0.85],
     )
     answer: str = Field(..., description="Generated answer text")
-    citations: list[dict] = Field(
+    answer_mode: str = Field(
+        default="answer",
+        description="Pipeline decision: answer, clarify, or abstain",
+        examples=["answer", "clarify", "abstain"],
+    )
+    citations: list[dict[str, Any]] = Field(
         default_factory=list,
         description="List of citations with structured references",
     )
-    metadata: dict = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Processing metadata (agent, time, madhhab, etc.)",
     )
     follow_up_suggestions: list[str] = Field(
         default_factory=list,
         description="Suggested follow-up questions",
+    )
+    requires_human_review: bool = Field(
+        default=False,
+        description="Whether the answer requires human scholarly review",
     )
     # Trace metadata
     trace_id: str = Field(..., description="Request trace ID")

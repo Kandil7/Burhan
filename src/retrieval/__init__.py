@@ -11,7 +11,8 @@ from src.retrieval.strategies import (
 from src.retrieval.retrievers.hybrid_retriever import HybridSearcher
 from src.retrieval.retrievers.bm25_retriever import BM25Retriever
 from src.retrieval.retrievers.dense_retriever import DenseRetriever
-from src.retrieval.schemas import RetrievalResult, RetrievalQuery
+from src.retrieval.schemas import RetrievalResult
+from src.retrieval.schemas import QueryType as RetrievalQuery
 
 __all__ = [
     # Strategy
@@ -25,5 +26,5 @@ __all__ = [
     "DenseRetriever",
     # Schemas
     "RetrievalResult",
-    "RetrievalQuery",
+    "RetrievalQuery",  # alias for QueryType
 ]

@@ -189,7 +189,7 @@ class CitationResponse(BaseModel):
     )
     type: str = Field(
         description="Source type",
-        examples=["quran", "hadith", "fatwa", "fiqh_book", "dua"],
+        examples=["quran", "hadith", "fatwa", "fiqh_book", "dua", "seerah", "tafsir", "aqeedah"],
     )
     source: str = Field(description="Normalized source name")
     reference: str = Field(description="Specific reference")

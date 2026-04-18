@@ -25,7 +25,7 @@ from src.knowledge.title_loader import TitleLoader
 
 logger = get_logger()
 
-_THINK_RE = re.compile(r"<think>.*?", re.DOTALL)
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
 def _strip_thinking(text: str) -> str:

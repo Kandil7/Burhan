@@ -9,6 +9,8 @@ This module provides backward compatibility through __getattr__ for lazy depreca
 
 from __future__ import annotations
 
+import re
+
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
@@ -65,6 +67,10 @@ class Citation(BaseModel):
             if "quran" in collection
             else "seerah"
             if "seerah" in collection
+            else "tafsir"
+            if "tafsir" in collection
+            else "aqeedah"
+            if "aqeedah" in collection
             else "fiqh_book"
         )
 
@@ -72,14 +78,28 @@ class Citation(BaseModel):
         death_year = meta.get("author_death", "")
         page = meta.get("page_number", "")
 
+        # Filter sentinel death year values (99999 = unknown/living)
+        death_year_valid = ""
+        if death_year:
+            try:
+                dy = int(death_year)
+                if 0 < dy < 1500:
+                    death_year_valid = str(dy)
+            except (ValueError, TypeError):
+                pass
+
         ref_parts = filter(
             None,
             [
                 author,
-                f"ت {death_year} هـ" if death_year else "",
+                f"ت {death_year_valid} هـ" if death_year_valid else "",
                 f"ص{page}" if page else "",
             ],
         )
+
+        # Clean text excerpt: strip HTML, normalize whitespace
+        raw_excerpt = passage.get("content", "")
+        text_excerpt = _clean_text_excerpt(raw_excerpt) or None
 
         return cls(
             id=f"C{index}",
@@ -87,8 +107,45 @@ class Citation(BaseModel):
             source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
             reference=" — ".join(ref_parts),
             url=None,
-            text_excerpt=passage.get("content", "")[:300] or None,
+            text_excerpt=text_excerpt,
         )
+
+
+# ============================================================================
+# Shared Utilities
+# ============================================================================
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_MULTI_SPACE_RE = re.compile(r"\s+")
+
+
+def _clean_text_excerpt(raw: str, max_chars: int = 300) -> str:
+    """Clean text excerpt: strip HTML, normalize whitespace, truncate."""
+    text = _HTML_TAG_RE.sub("", raw)
+    text = text.replace("\r", "\n")
+    text = _MULTI_SPACE_RE.sub(" ", text).strip()
+    return text[:max_chars]
+
+
+_COT_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
+_COT_PREAMBLE_RE = re.compile(
+    r"^(Okay|Let me|I need to|First,|Looking at|I notice|I should|The user).*?\n\n",
+    re.DOTALL,
+)
+
+
+def strip_cot_leakage(answer: str) -> str:
+    """Strip LLM chain-of-thought leakage from generated answer.
+
+    Removes:
+    - <think>...</think> blocks
+    - English preamble lines ("Okay, the user is asking...")
+    """
+    # Strip <think> blocks
+    answer = _COT_THINK_RE.sub("", answer).strip()
+    # Strip English reasoning preamble
+    answer = _COT_PREAMBLE_RE.sub("", answer).strip()
+    return answer
 
 
 class AgentInput(BaseModel):
@@ -151,4 +208,11 @@ class BaseAgent(ABC):
 
 # Backward compatibility - allow direct import of deprecated classes
 # These will trigger the deprecation warning via __getattr__
-__all__ = ["Citation", "AgentInput", "AgentOutput", "BaseAgent"]
+__all__ = [
+    "Citation",
+    "AgentInput",
+    "AgentOutput",
+    "BaseAgent",
+    "strip_cot_leakage",
+    "_clean_text_excerpt",
+]

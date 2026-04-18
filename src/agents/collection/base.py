@@ -12,6 +12,7 @@ This is the canonical base class for v2 agents.
 
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
@@ -20,7 +21,7 @@ from pydantic import BaseModel, Field
 
 # Import Citation and AgentInput from canonical location (src/agents/base.py)
 # This ensures Pydantic treats all Citation instances as the same type
-from src.agents.base import AgentInput, Citation
+from src.agents.base import AgentInput, Citation, strip_cot_leakage
 
 
 class AgentOutput(BaseModel):
@@ -344,6 +345,38 @@ class CollectionAgent(ABC):
         """
         ...
 
+    # ==========================================
+    # Shared Helpers (used by all agents)
+    # ==========================================
+
+    @staticmethod
+    def _deduplicate_passages(passages: list[dict]) -> list[dict]:
+        """
+        Remove duplicate passages based on content similarity.
+
+        Uses a hash of the first 200 characters to detect duplicates.
+        """
+        seen: set[int] = set()
+        deduped: list[dict] = []
+        for p in passages:
+            content_hash = hash(p.get("content", "")[:200])
+            if content_hash not in seen:
+                seen.add(content_hash)
+                deduped.append(p)
+        return deduped
+
+    @staticmethod
+    def _load_shared_preamble() -> str:
+        """
+        Load the shared preamble prepended to all agent system prompts.
+        Returns empty string on failure (prompt still works without it).
+        """
+        try:
+            with open("prompts/_shared_preamble.txt", encoding="utf-8") as f:
+                return f.read().strip()
+        except FileNotFoundError:
+            return ""
+
     async def execute(self, input_data: AgentInput) -> AgentOutput:
         """
         Adapter to support the standard agent interface.
@@ -372,10 +405,11 @@ class CollectionAgent(ABC):
         1. Normalize query (query_intake)
         2. Classify intent (classify_intent)
         3. Retrieve candidates (retrieve_candidates)
-        4. Rerank candidates (rerank_candidates)
+        4. Rerank & deduplicate candidates (rerank_candidates)
         5. Verify candidates (run_verification)
-        6. Generate answer (generate_answer)
-        7. Assemble citations (assemble_citations)
+        6. Policy gate (AnswerPolicy: answer/clarify/abstain)
+        7. Generate answer (generate_answer) + strip CoT
+        8. Assemble citations (assemble_citations)
 
         Args:
             raw_question: Raw user question
@@ -384,43 +418,113 @@ class CollectionAgent(ABC):
         Returns:
             AgentOutput with answer, citations, and metadata
         """
+        from src.generation.policies.answer_policy import AnswerMode, AnswerPolicy
+
         meta = meta or {}
         language = meta.get("language", "ar")
+        timing: dict[str, int] = {}
 
         # Step 1: Query intake - normalize
+        t0 = time.time()
         normalized = self.query_intake(raw_question)
+        timing["intake_ms"] = int((time.time() - t0) * 1000)
 
         # Step 2: Classify intent
+        t0 = time.time()
         intent = self.classify_intent(normalized)
+        timing["classification_ms"] = int((time.time() - t0) * 1000)
 
         # Step 3: Retrieve candidates
+        t0 = time.time()
         candidates = await self.retrieve_candidates(normalized)
+        timing["retrieval_ms"] = int((time.time() - t0) * 1000)
 
-        # Step 4: Rerank candidates
+        # Step 4: Rerank + deduplicate candidates
+        t0 = time.time()
         ranked = await self.rerank_candidates(normalized, candidates)
+        ranked = self._deduplicate_passages(ranked)
+        timing["rerank_ms"] = int((time.time() - t0) * 1000)
 
         # Step 5: Run verification
+        t0 = time.time()
         verification = await self.run_verification(normalized, ranked)
+        timing["verification_ms"] = int((time.time() - t0) * 1000)
 
-        # Step 6: Generate answer
+        # Step 6: Policy gate — determine answer mode
+        policy = AnswerPolicy()
+        answer_mode = policy.determine_mode(
+            confidence=verification.confidence,
+            verification_passed=verification.is_verified,
+        )
+
+        if answer_mode == AnswerMode.ABSTAIN:
+            abstain_msg = getattr(self, "NO_PASSAGES_MESSAGE", "عذراً، لم أتمكن من العثور على إجابة موثوقة.")
+            return AgentOutput(
+                answer=abstain_msg,
+                citations=[],
+                metadata={
+                    "intent": intent.value,
+                    "collection": self.config.collection_name,
+                    "answer_mode": "abstain",
+                    "retrieved": len(candidates),
+                    "verified": 0,
+                    "is_verified": False,
+                    "verification_confidence": verification.confidence,
+                    "verification_issues": verification.issues,
+                    "timing": timing,
+                },
+                confidence=verification.confidence,
+                requires_human_review=True,
+            )
+
+        if answer_mode == AnswerMode.CLARIFY:
+            clarify_msg = (
+                "سؤالك يحتمل أكثر من معنى. "
+                "هل يمكنك توضيح سؤالك بشكل أدق حتى أتمكن من تقديم إجابة دقيقة؟"
+            )
+            return AgentOutput(
+                answer=clarify_msg,
+                citations=[],
+                metadata={
+                    "intent": intent.value,
+                    "collection": self.config.collection_name,
+                    "answer_mode": "clarify",
+                    "retrieved": len(candidates),
+                    "verified": len(verification.verified_passages),
+                    "is_verified": verification.is_verified,
+                    "verification_confidence": verification.confidence,
+                    "verification_issues": verification.issues,
+                    "timing": timing,
+                },
+                confidence=verification.confidence,
+                requires_human_review=False,
+            )
+
+        # Step 7: Generate answer + strip CoT leakage
+        t0 = time.time()
         answer = await self.generate_answer(
             normalized,
             verification.verified_passages,
             language,
         )
+        answer = strip_cot_leakage(answer)
+        timing["generation_ms"] = int((time.time() - t0) * 1000)
 
-        # Step 7: Assemble citations
+        # Step 8: Assemble citations
         citations = self.assemble_citations(verification.verified_passages)
 
-        # Build metadata
+        # Build metadata with timing breakdown
         output_meta = {
             "intent": intent.value,
+            "sub_intent": intent.value,  # Agent-level sub-intent
             "collection": self.config.collection_name,
+            "answer_mode": "answer",
             "retrieved": len(candidates),
             "verified": len(verification.verified_passages),
             "is_verified": verification.is_verified,
             "verification_confidence": verification.confidence,
             "verification_issues": verification.issues,
+            "timing": timing,
         }
 
         # Determine if human review is needed

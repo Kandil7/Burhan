@@ -54,19 +54,27 @@ async def handle_ask(
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 
+    # Extract sub_intent and answer_mode from agent metadata
+    agent_meta = output.metadata or {}
+    sub_intent = agent_meta.get("sub_intent")
+    answer_mode = agent_meta.get("answer_mode", "answer")
+    requires_human_review = getattr(output, "requires_human_review", False)
+
     # Build response from Use Case output
     return AskResponse(
         query_id=trace_id,
         intent=output.intent,
+        sub_intent=sub_intent,
         intent_confidence=output.confidence,
         answer=output.answer,
+        answer_mode=answer_mode,
         citations=output.citations,
         metadata={
-            **output.metadata,
-            "processing_time_ms": processing_time_ms,
+            **agent_meta,
             "trace_id": trace_id,
         },
-        follow_up_suggestions=output.metadata.get("follow_up_suggestions", []),
+        follow_up_suggestions=agent_meta.get("follow_up_suggestions", []),
+        requires_human_review=requires_human_review,
         trace_id=trace_id,
         processing_time_ms=processing_time_ms,
     )
