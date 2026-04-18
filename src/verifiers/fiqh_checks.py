@@ -6,18 +6,27 @@ from .base import BaseVerifier, VerificationResult, VerifierType
 
 
 class QuoteValidator(BaseVerifier):
-    """Verifies exact quote matching for Fiqh texts.
+    """Verifies exact quote matching for Fiqh texts with robust Arabic support.
 
-    Checks that quoted text matches source texts from classical
-    Fiqh works and their narrations.
-
-    Interface:
-        verify(claim, evidence, context) -> VerificationResult
-        is_applicable(claim, evidence) -> bool
+    Checks that text inside quotes ("..." or «...») exists within the retrieved
+    evidence documents, preventing LLM hallucinations of classical texts.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.verifier_type = VerifierType.EXACT_QUOTE
+
+    def _normalize(self, text: str) -> str:
+        """Strip diacritics and non-Arabic characters for fuzzy matching."""
+        import re
+
+        # Remove diacritics (tashkeel)
+        text = re.sub(r"[\u064B-\u065F\u0670]", "", text)
+        # Unify Alef with Hamza variants
+        text = re.sub(r"[إأآٱ]", "ا", text)
+        # Unify Ta-Marbuta and Ha, and Alif-Maqsura and Ya
+        text = text.replace("ة", "ه").replace("ى", "ي")
+        # Keep only Arabic letters
+        return re.sub(r"[^\u0600-\u06FF]", "", text)
 
     async def verify(
         self,
@@ -25,92 +34,57 @@ class QuoteValidator(BaseVerifier):
         evidence: Any,
         context: Optional[Dict[str, Any]] = None,
     ) -> VerificationResult:
-        """Verify exact quote matching.
-
-        Args:
-            claim: The claim/response text containing quotes
-            evidence: Evidence passages to verify against
-            context: Additional context
-
-        Returns:
-            VerificationResult with quote verification status
         """
-        quotes = self._extract_quotes(claim)
+        Verify that quotes in the claim exist in the evidence.
+        """
+        import re
 
-        if not quotes:
+        # Detect text inside "quotes" or «brackets»
+        found_quotes = re.findall(r'["«](.*?)["»]', claim)
+        if not found_quotes:
             return VerificationResult(
                 verifier_type=self.verifier_type,
                 passed=True,
                 confidence=1.0,
-                message="No quotes found in claim",
+                message="No quotes found to verify.",
             )
 
-        failed_quotes = []
-        passed_quotes = []
+        # Merge all evidence content into a single searchable blob
+        if isinstance(evidence, list):
+            evidence_text = " ".join([e.get("content", e.get("text", "")) for e in evidence])
+        else:
+            evidence_text = str(evidence)
 
-        for quote in quotes:
-            if self._quote_matches(quote, evidence):
-                passed_quotes.append(quote)
-            else:
+        norm_evidence = self._normalize(evidence_text)
+        failed_quotes = []
+
+        for quote in found_quotes:
+            norm_quote = self._normalize(quote)
+            # Ignore very short quotes (< 15 chars) to avoid false positives
+            if len(norm_quote) > 15 and norm_quote not in norm_evidence:
                 failed_quotes.append(quote)
 
         if failed_quotes:
             return VerificationResult(
                 verifier_type=self.verifier_type,
                 passed=False,
-                confidence=0.8,
-                message=f"Quotes not matching source: {failed_quotes}",
-                details={
-                    "failed_quotes": failed_quotes,
-                    "passed_quotes": passed_quotes,
-                },
+                confidence=0.0,
+                message=f"Possible hallucination: {len(failed_quotes)} quotes not found in sources.",
+                details={"failed_quotes": failed_quotes},
             )
 
         return VerificationResult(
             verifier_type=self.verifier_type,
             passed=True,
-            confidence=0.95,
-            message="All quotes match source text",
-            details={"verified_quotes": passed_quotes},
+            confidence=1.0,
+            message="All quotes verified against sources.",
         )
 
     def is_applicable(self, claim: str, evidence: Any) -> bool:
-        """Check if this verifier is applicable."""
-        return len(self._extract_quotes(claim)) > 0
-
-    def _extract_quotes(self, claim: str) -> List[str]:
-        """Extract quotes from claim text."""
+        """Check if any quotes are present in the claim."""
         import re
 
-        patterns = [
-            r'"([^"]+)"',
-            r"'([^']+)'",
-        ]
-
-        extracted = []
-        for pattern in patterns:
-            matches = re.findall(pattern, claim)
-            extracted.extend(matches)
-
-        return extracted
-
-    def _quote_matches(self, quote: str, evidence: Any) -> bool:
-        """Check if quote matches evidence."""
-        if not evidence:
-            return False
-
-        if isinstance(evidence, list):
-            evidence_texts = [e.get("text", "") for e in evidence if isinstance(e, dict)]
-        elif isinstance(evidence, dict):
-            evidence_texts = [evidence.get("text", "")]
-        else:
-            evidence_texts = [str(evidence)]
-
-        for text in evidence_texts:
-            if quote.lower() in text.lower():
-                return True
-
-        return False
+        return bool(re.search(r'["«]', claim))
 
 
 class SourceAttributor(BaseVerifier):

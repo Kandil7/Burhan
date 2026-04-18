@@ -2,7 +2,18 @@
 """Hybrid classifier combining multiple classification approaches."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+# Re-export HybridIntentClassifier from canonical location
+# This provides backward compatibility for imports from router/hybrid_classifier
+try:
+    from src.application.hybrid_classifier import (
+        HybridIntentClassifier,
+        IntentClassifier,
+    )
+except ImportError:
+    HybridIntentClassifier = None  # Type alias for backward compatibility
+    IntentClassifier = None
 
 
 @dataclass
@@ -12,7 +23,7 @@ class ClassificationResult:
     category: str
     confidence: float
     method: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 class HybridClassifier:
@@ -20,8 +31,8 @@ class HybridClassifier:
 
     def __init__(
         self,
-        classifiers: Optional[List[Any]] = None,
-        weights: Optional[Dict[str, float]] = None,
+        classifiers: list[Any] | None = None,
+        weights: dict[str, float] | None = None,
     ) -> None:
         """Initialize hybrid classifier with optional classifiers and weights."""
         self.classifiers = classifiers or []
@@ -53,7 +64,7 @@ class HybridClassifier:
                 details={},
             )
 
-        category_scores: Dict[str, float] = {}
+        category_scores: dict[str, float] = {}
         for classifier, result in weighted_results:
             category = result.get("category", "general_islamic")
             confidence = result.get("confidence", 0.5)

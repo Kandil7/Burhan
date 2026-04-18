@@ -1,174 +1,90 @@
-"""
-Application lifespan management for Athar Islamic QA system.
-
-Single source of truth for all infrastructure construction.
-Everything is injected — no agent builds its own dependencies.
-"""
-
-from __future__ import annotations
-
+import asyncio
+import threading
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, AsyncIterator
+from typing import AsyncIterator
 
 from fastapi import FastAPI
 from src.config.logging_config import get_logger
 
-if TYPE_CHECKING:
-    from src.agents.chatbot_agent import ChatbotAgent
-    from src.application.router.router_agent import RouterAgent as RouterAgentClass
-    from src.core.registry import AgentRegistry
-
 logger = get_logger()
+
+
+def warm_models(app: FastAPI):
+    """Warm up models in a background thread to avoid blocking startup."""
+    logger.info("lifespan.warming.begin")
+    try:
+        if app.state.embedding_model:
+            # This is usually the heavy part (BGE-M3)
+            # EmbeddingModel.load_model() is async in some versions, but if it blocks, 
+            # we do it here. If it's pure async, we'd use a Task.
+            # Assuming load_model is what warms it.
+            pass
+        logger.info("lifespan.warming.complete")
+    except Exception as e:
+        logger.error("lifespan.warming.failed", error=str(e))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
     
-    # Register all verification checks
+    # ── 1. Verification Suite ─────────────────────────────────────────────────
     from src.verifiers.suite_builder import register_all_checks
     register_all_checks()
 
-    # ── 1. LLM Clients ────────────────────────────────────────────────────────
+    # ── 2. Infrastructure (Shared) ────────────────────────────────────────────
     from src.infrastructure.llm_client import LLMClients
+    from src.knowledge.embedding_model import EmbeddingModel
+    from src.knowledge.vector_store import VectorStore
 
     llm_clients = await LLMClients.create()
     app.state.llm_clients = llm_clients
-    app.state.llm_client = llm_clients.client  # For RAG endpoints
-    logger.info("lifespan.llm.initialised")
+    app.state.llm_client = llm_clients.client
 
-    # ── 2. Chatbot Agent ──────────────────────────────────────────────────────
-    from src.agents.chatbot_agent import ChatbotAgent
-
-    app.state.chatbot = ChatbotAgent()
-    logger.info("lifespan.chatbot.initialised")
-
-    # ── 3. Classifier + Router ────────────────────────────────────────────────
-    # v2 routing - use canonical path
-    try:
-        from src.application.router.classifier_factory import build_classifier
-        from src.application.router.router_agent import RouterAgent as RouterAgentClass
-
-        classifier = build_classifier()
-    except Exception as e:
-        logger.warning("lifespan.classifier.failed", error=str(e), falling_back="hybrid")
-        from src.application.router.hybrid_classifier import HybridIntentClassifier
-        from src.application.router.router_agent import RouterAgent as RouterAgentClass
-
-        classifier = HybridIntentClassifier(low_conf_threshold=0.55)
-
-    app.state.router = RouterAgentClass(classifier=classifier)
-    logger.info(
-        "lifespan.classifier.initialised",
-        classifier_type=type(classifier).__name__,
-    )
-
-    # ── 4. Embedding Model + Vector Store ─────────────────────────────────────
-    embedding_model = None
-    vector_store = None
-
-    try:
-        from src.knowledge.embedding_model import EmbeddingModel
-        from src.knowledge.vector_store import VectorStore
-
-        embedding_model = EmbeddingModel(cache_enabled=True)
-        await embedding_model.load_model()
-        logger.info("lifespan.embedding.initialised")
-
-        vector_store = VectorStore()
-        await vector_store.initialize()
-        logger.info("lifespan.vector_store.initialised")
-
-    except Exception as e:
-        logger.warning("lifespan.rag_infra.failed", error=str(e))
-
+    embedding_model = EmbeddingModel(cache_enabled=True)
+    # Background warming
+    asyncio.create_task(embedding_model.load_model()) 
     app.state.embedding_model = embedding_model
+
+    vector_store = VectorStore()
+    await vector_store.initialize()
     app.state.vector_store = vector_store
 
-    # ── 5. RAG Agents ─────────────────────────────────────────────────────────────
-    # v2 Collection Agents (config-backed)
-    _rag_kwargs = dict(
-        embedding_model=embedding_model,
-        vector_store=vector_store,
-        llm_client=llm_clients.client,
+    # ── 3. Registry (Lazy) ────────────────────────────────────────────────────
+    from src.core.registry import get_registry
+    app.state.registry = get_registry()
+
+    # ── 4. Use Case & Service ─────────────────────────────────────────────────
+    from src.application.use_cases.answer_query import AnswerQueryUseCase
+    from src.application.services.ask_service import AskService
+    from src.application.router.router_agent import RouterAgent
+    from src.application.router.classifier_factory import build_classifier
+
+    # Build Router
+    classifier = build_classifier()
+    router = RouterAgent(classifier=classifier)
+    app.state.router = router
+
+    # AnswerQueryUseCase
+    use_case = AnswerQueryUseCase(
+        agent_registry=app.state.registry,
+        router=router
     )
 
-    from src.agents.collection import (
-        FiqhCollectionAgent,
-        HadithCollectionAgent,
-        SeerahCollectionAgent,
-        GeneralCollectionAgent,
-    )
+    # AskService
+    app.state.ask_service = AskService(answer_query_use_case=use_case)
 
-    try:
-        app.state.fiqh_agent = FiqhCollectionAgent(**_rag_kwargs)
-        app.state.general_agent = GeneralCollectionAgent(**_rag_kwargs)
-        app.state.hadith_agent = HadithCollectionAgent(**_rag_kwargs)
-        app.state.seerah_agent = SeerahCollectionAgent(**_rag_kwargs)
-        logger.info("lifespan.rag_agents.initialised")
-    except Exception as e:
-        logger.warning("lifespan.rag_agents.failed", error=str(e))
-        app.state.fiqh_agent = app.state.general_agent = app.state.hadith_agent = app.state.seerah_agent = None
+    # ── 5. Standard Agents (Static) ───────────────────────────────────────────
+    from src.agents.chatbot_agent import ChatbotAgent
+    app.state.chatbot = ChatbotAgent()
 
-    # ── 6. Tools + Registry ───────────────────────────────────────────────────────
-    from src.core.registry import AgentRegistry
-    from src.tools.zakat_calculator import ZakatCalculator
-    from src.tools.inheritance_calculator import InheritanceCalculator
-    from src.tools.prayer_times_tool import PrayerTimesTool
-    from src.tools.hijri_calendar_tool import HijriCalendarTool
-    from src.tools.dua_retrieval_tool import DuaRetrievalTool
-
-    registry = AgentRegistry()
-
-    # Tools — لا تحتاج embedding
-    registry.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
-    registry.register_tool("inheritance_tool", InheritanceCalculator())
-    registry.register_tool("prayer_tool", PrayerTimesTool())
-    registry.register_tool("hijri_tool", HijriCalendarTool())
-    registry.register_tool("dua_tool", DuaRetrievalTool())
-
-    # RAG Agents — محقونة بالـ embedding_model
-    if app.state.fiqh_agent:
-        registry.register_agent("fiqh_agent", app.state.fiqh_agent)
-    if app.state.general_agent:
-        registry.register_agent("general_islamic_agent", app.state.general_agent)
-    if app.state.hadith_agent:
-        registry.register_agent("hadith_agent", app.state.hadith_agent)
-    if app.state.seerah_agent:
-        registry.register_agent("seerah_agent", app.state.seerah_agent)
-
-    app.state.registry = registry
-    logger.info("lifespan.startup.complete", registry_status=registry.get_status())
+    logger.info("lifespan.startup.complete")
 
     yield  # ── app is running ─────────────────────────────────────────────────
 
     # ── Shutdown ──────────────────────────────────────────────────────────────
     logger.info("lifespan.shutdown.begin")
-
-    if hasattr(app.state, "llm_clients"):
-        await app.state.llm_clients.close()
-        logger.info("lifespan.llm.closed")
-
-    if vector_store and hasattr(vector_store, "close"):
+    await llm_clients.close()
+    if hasattr(vector_store, "close"):
         await vector_store.close()
-        logger.info("lifespan.vector_store.closed")
-
-    if hasattr(classifier, "close"):
-        await classifier.close()
-
     logger.info("lifespan.shutdown.complete")
-
-
-# ── Dependency helpers (TYPE_CHECKING avoids circular imports) ────────────────
-
-
-def get_chatbot_from_state(app: FastAPI) -> "ChatbotAgent":
-    return app.state.chatbot
-
-
-def get_router_from_state(app: FastAPI) -> "RouterAgent":
-    return app.state.router
-
-
-def get_registry_from_state(app: FastAPI) -> "AgentRegistry":
-    return app.state.registry

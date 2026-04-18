@@ -1,48 +1,21 @@
-# Ask Service Module
-"""Service for handling ask/query operations."""
+from typing import Optional
 
-from typing import Optional, Dict, Any
-from src.application.use_cases.answer_query import AnswerQueryInput, AnswerQueryOutput
+from src.application.use_cases.answer_query import AnswerQueryOutput, AnswerQueryUseCase
 
 
 class AskService:
-    """Service for processing ask queries."""
+    """Service for processing ask queries bridging API and Use Case."""
 
-    def __init__(self):
-        pass
+    def __init__(self) -> None:
+        self.use_case = AnswerQueryUseCase()
 
     async def process_query(
-        self,
-        query: str,
-        user_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        self, query: str, language: str = "ar", madhhab: Optional[str] = None
     ) -> AnswerQueryOutput:
         """
-        Process an ask query.
-
-        Args:
-            query: User query
-            user_id: Optional user ID
-            context: Optional context
-
-        Returns:
-            AnswerQueryOutput with response
+        Process an ask query using the AnswerQueryUseCase.
         """
-        # Placeholder - would orchestrate the full flow
-        input_data = AnswerQueryInput(
-            query=query,
-            user_id=user_id,
-            context=context,
-        )
-
-        # For now, return placeholder
-        return AnswerQueryOutput(
-            response="Please use the ask endpoint through the API.",
-            mode="answer",
-            confidence=0.0,
-            sources=None,
-            metadata={"note": "Service placeholder"},
-        )
+        return await self.use_case.execute(query, language=language, madhhab=madhhab)
 
 
 # Default service instance

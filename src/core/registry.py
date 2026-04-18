@@ -1,15 +1,9 @@
-"""
-Agent Registry for Athar Islamic QA System.
-
-Manages registration and retrieval of agents and tools.
-Following Single Responsibility Principle - separates registration logic from orchestration.
-"""
-
 from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from src.agents.base import BaseAgent
-from src.domain.intents import INTENT_ROUTING, Intent
 from src.config.logging_config import get_logger
+from src.domain.intents import INTENT_ROUTING, Intent
 from src.tools.base import BaseTool
 
 logger = get_logger()
@@ -20,211 +14,176 @@ class AgentRegistration:
     """Registration info for an agent or tool."""
 
     name: str
-    instance: BaseAgent | BaseTool
-    is_agent: bool
-    intents: list[Intent] = field(default_factory=list)
+    instance: Optional[Union[BaseAgent, BaseTool]] = None
+    factory: Optional[Callable[[], Union[BaseAgent, BaseTool]]] = None
+    is_agent: bool = True
+    intents: List[Intent] = field(default_factory=list)
     description: str = ""
 
 
 class AgentRegistry:
     """
-    Central registry for all agents and tools.
-
-    Provides:
-    - Registration of agents and tools
-    - Lookup by name
-    - Lookup by intent
-    - Status reporting
-
-    Usage:
-        registry = AgentRegistry()
-        registry.register_agent("fiqh_agent", FiqhAgent(...))
-        registry.register_tool("zakat_tool", ZakatCalculator(...))
-
-        # Get by name
-        agent = registry.get_agent("fiqh_agent")
-
-        # Get by intent
-        agent = registry.get_agent_for_intent(Intent.FIQH)
+    Central registry for all agents and tools with Lazy Initialization support.
     """
 
-    def __init__(self):
-        self.agents: dict[str, BaseAgent] = {}
-        self.tools: dict[str, BaseTool] = {}
-        self._registrations: dict[str, AgentRegistration] = {}
+    def __init__(self) -> None:
+        self._registrations: Dict[str, AgentRegistration] = {}
         self._initialized = False
 
-    def register_agent(self, name: str, agent: BaseAgent, intents: list[Intent] = None, description: str = ""):
-        """
-        Register an agent.
-
-        Args:
-            name: Agent name (e.g., "fiqh_agent")
-            agent: Agent instance
-            intents: List of intents this agent handles
-            description: Agent description
-        """
+    def register_agent(
+        self,
+        name: str,
+        agent: Optional[BaseAgent] = None,
+        factory: Optional[Callable[[], BaseAgent]] = None,
+        intents: Optional[List[Intent]] = None,
+        description: str = "",
+    ) -> None:
         if intents is None:
-            # Auto-detect from INTENT_ROUTING
             intents = [i for i, target in INTENT_ROUTING.items() if target == name]
 
-        self.agents[name] = agent
         self._registrations[name] = AgentRegistration(
-            name=name, instance=agent, is_agent=True, intents=intents, description=description
+            name=name,
+            instance=agent,
+            factory=factory,
+            is_agent=True,
+            intents=intents,
+            description=description,
         )
+        logger.info("registry.agent_registered", name=name, lazy=bool(factory))
 
-        logger.info("registry.agent_registered", name=name, intents=[i.value for i in intents])
-
-    def register_tool(self, name: str, tool: BaseTool, intents: list[Intent] = None, description: str = ""):
-        """
-        Register a tool.
-
-        Args:
-            name: Tool name (e.g., "zakat_tool")
-            tool: Tool instance
-            intents: List of intents this tool handles
-            description: Tool description
-        """
+    def register_tool(
+        self,
+        name: str,
+        tool: Optional[BaseTool] = None,
+        factory: Optional[Callable[[], BaseTool]] = None,
+        intents: Optional[List[Intent]] = None,
+        description: str = "",
+    ) -> None:
         if intents is None:
-            # Auto-detect from INTENT_ROUTING
             intents = [i for i, target in INTENT_ROUTING.items() if target == name]
 
-        self.tools[name] = tool
         self._registrations[name] = AgentRegistration(
-            name=name, instance=tool, is_agent=False, intents=intents, description=description
+            name=name,
+            instance=tool,
+            factory=factory,
+            is_agent=False,
+            intents=intents,
+            description=description,
         )
+        logger.info("registry.tool_registered", name=name, lazy=bool(factory))
 
-        logger.info("registry.tool_registered", name=name, intents=[i.value for i in intents])
+    def get_agent(self, name: str) -> Optional[BaseAgent]:
+        """Get agent by name, initializing if necessary."""
+        reg = self._registrations.get(name)
+        if not reg or not reg.is_agent:
+            return None
 
-    def get_agent(self, name: str) -> BaseAgent | None:
-        """Get agent by name."""
-        return self.agents.get(name)
+        if reg.instance is None and reg.factory:
+            logger.info("registry.lazy_init", name=name)
+            reg.instance = reg.factory()
 
-    def get_tool(self, name: str) -> BaseTool | None:
-        """Get tool by name."""
-        return self.tools.get(name)
+        return reg.instance  # type: ignore
 
-    def get_for_intent(self, intent: Intent) -> tuple[BaseAgent | BaseTool | None, bool]:
-        """
-        Get agent or tool for an intent.
+    def get_tool(self, name: str) -> Optional[BaseTool]:
+        """Get tool by name, initializing if necessary."""
+        reg = self._registrations.get(name)
+        if not reg or reg.is_agent:
+            return None
 
-        Args:
-            intent: The intent to look up
+        if reg.instance is None and reg.factory:
+            logger.info("registry.lazy_init_tool", name=name)
+            reg.instance = reg.factory()
 
-        Returns:
-            Tuple of (instance, is_agent)
-        """
+        return reg.instance  # type: ignore
+
+    def get_for_intent(self, intent: Intent) -> Tuple[Optional[Union[BaseAgent, BaseTool]], bool]:
+        """Get agent or tool for an intent with lazy resolution."""
         target = INTENT_ROUTING.get(intent)
         if not target:
             return None, False
 
-        # Try agents first
-        if target in self.agents:
-            return self.agents[target], True
+        reg = self._registrations.get(target)
+        if not reg:
+            return None, False
 
-        # Then tools
-        if target in self.tools:
-            return self.tools[target], False
-
-        return None, False
-
-    def is_available(self, name: str) -> bool:
-        """Check if agent or tool is available."""
-        return name in self.agents or name in self.tools
-
-    def list_agents(self) -> list[str]:
-        """List all registered agent names."""
-        return list(self.agents.keys())
-
-    def list_tools(self) -> list[str]:
-        """List all registered tool names."""
-        return list(self.tools.keys())
+        instance = self.get_agent(target) if reg.is_agent else self.get_tool(target)
+        return instance, reg.is_agent
 
     def get_status(self) -> dict:
         """Get registry status."""
         return {
-            "agents": list(self.agents.keys()),
-            "tools": list(self.tools.keys()),
-            "total": len(self.agents) + len(self.tools),
-            "initialized": self._initialized,
+            "registered": list(self._registrations.keys()),
+            "initialized_count": sum(1 for r in self._registrations.values() if r.instance),
+            "total": len(self._registrations),
         }
 
 
 # Global registry instance
-_registry: AgentRegistry | None = None
+_registry: Optional[AgentRegistry] = None
 
 
 def get_registry() -> AgentRegistry:
-    """Get global agent registry instance. Auto-initializes if not yet initialized."""
+    """Get global agent registry instance."""
     global _registry
-    if _registry is None or not _registry._initialized:
+    if _registry is None:
         _registry = initialize_registry()
     return _registry
 
 
 def initialize_registry() -> AgentRegistry:
-    """
-    Initialize registry with all agents and tools.
+    """Initialize registry with Lazy Injection mappings."""
+    registry = AgentRegistry()
 
-    Call this during application startup.
-     Refactoring: Added all RAG agents (FiqhAgent, HadithAgent, GeneralIslamicAgent, SeerahAgent)
-    """
-    global _registry
-    _registry = AgentRegistry()
+    # Helpers for lazy instantiation
+    def build_zakat():
+        from src.tools.zakat_calculator import ZakatCalculator
+        return ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9)
 
-    # Import and register tools
-    from src.tools.dua_retrieval_tool import DuaRetrievalTool
-    from src.tools.hijri_calendar_tool import HijriCalendarTool
-    from src.tools.inheritance_calculator import InheritanceCalculator
-    from src.tools.prayer_times_tool import PrayerTimesTool
-    from src.tools.zakat_calculator import ZakatCalculator
+    def build_inheritance():
+        from src.tools.inheritance_calculator import InheritanceCalculator
+        return InheritanceCalculator()
 
-    # Register tools
-    _registry.register_tool("zakat_tool", ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9))
-    _registry.register_tool("inheritance_tool", InheritanceCalculator())
-    _registry.register_tool("prayer_tool", PrayerTimesTool())
-    _registry.register_tool("hijri_tool", HijriCalendarTool())
-    _registry.register_tool("dua_tool", DuaRetrievalTool())
+    def build_prayer():
+        from src.tools.prayer_times_tool import PrayerTimesTool
+        return PrayerTimesTool()
 
-    # Import and register agents
-    from src.agents.chatbot_agent import ChatbotAgent
+    def build_hijri():
+        from src.tools.hijri_calendar_tool import HijriCalendarTool
+        return HijriCalendarTool()
 
-    _registry.register_agent("chatbot_agent", ChatbotAgent())
+    def build_dua():
+        from src.tools.dua_retrieval_tool import DuaRetrievalTool
+        return DuaRetrievalTool()
 
-    #  Register RAG agents
-    try:
-        from src.agents.fiqh_agent import FiqhAgent
+    # Register tools lazily
+    registry.register_tool("zakat_tool", factory=build_zakat)
+    registry.register_tool("inheritance_tool", factory=build_inheritance)
+    registry.register_tool("prayer_tool", factory=build_prayer)
+    registry.register_tool("hijri_tool", factory=build_hijri)
+    registry.register_tool("dua_tool", factory=build_dua)
 
-        _registry.register_agent("fiqh_agent", FiqhAgent())
-        logger.info("registry.fiqh_agent_registered")
-    except Exception as e:
-        logger.warning("registry.fiqh_agent_registration_failed", error=str(e))
+    # Register Agents lazily
+    def build_fiqh():
+        from src.agents.collection import FiqhCollectionAgent
+        return FiqhCollectionAgent()
 
-    try:
-        from src.agents.hadith_agent import HadithAgent
+    def build_hadith():
+        from src.agents.collection import HadithCollectionAgent
+        return HadithCollectionAgent()
 
-        _registry.register_agent("hadith_agent", HadithAgent())
-        logger.info("registry.hadith_agent_registered")
-    except Exception as e:
-        logger.warning("registry.hadith_agent_registration_failed", error=str(e))
+    def build_general():
+        from src.agents.collection import GeneralCollectionAgent
+        return GeneralCollectionAgent()
 
-    try:
-        from src.agents.general_islamic_agent import GeneralIslamicAgent
+    def build_seerah():
+        from src.agents.collection import SeerahCollectionAgent
+        return SeerahCollectionAgent()
 
-        _registry.register_agent("general_islamic_agent", GeneralIslamicAgent())
-        logger.info("registry.general_agent_registered")
-    except Exception as e:
-        logger.warning("registry.general_agent_registration_failed", error=str(e))
+    registry.register_agent("fiqh_agent", factory=build_fiqh)
+    registry.register_agent("hadith_agent", factory=build_hadith)
+    registry.register_agent("general_islamic_agent", factory=build_general)
+    registry.register_agent("seerah_agent", factory=build_seerah)
 
-    try:
-        from src.agents.seerah_agent import SeerahAgent
-
-        _registry.register_agent("seerah_agent", SeerahAgent())
-        logger.info("registry.seerah_agent_registered")
-    except Exception as e:
-        logger.warning("registry.seerah_agent_registration_failed", error=str(e))
-
-    _registry._initialized = True
-    logger.info("registry.initialized", status=_registry.get_status())
-
-    return _registry
+    registry._initialized = True
+    logger.info("registry.initialized.lazy")
+    return registry
