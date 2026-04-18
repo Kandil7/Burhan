@@ -1,6 +1,9 @@
 """
 Agent Registry for Athar Islamic QA System.
 
+DEPRECATED: Use src/application/routing/intent_router.py for v2 architecture.
+This module is kept for backward compatibility during migration.
+
 Centralized agent management with lazy initialization.
 Supports dynamic agent loading, intent-based routing, and collection-aware retrieval.
 
@@ -9,6 +12,15 @@ Epic 6: Added collection-aware agent registration with explicit mappings.
 """
 
 from __future__ import annotations
+
+import warnings
+
+# Deprecation warning
+warnings.warn(
+    "src.agents.registry is deprecated. Use src.application.routing.intent_router.IntentRouter instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 from typing import TYPE_CHECKING, Any
 

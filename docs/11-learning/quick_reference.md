@@ -3,7 +3,7 @@
 ## 🕌 ما هو Athar؟
 
 نظام إجابة على الأسئلة الإسلامية يستخدم:
-- **13 وكيل متخصص** (Agents)
+- **13 وكيل متخصص** (Agents) ← v2: 10 وكلاء CollectionAgent
 - **5 أدوات حتمية** (Tools)
 - **16 نوع نية** (Intents) + 4 فرعية للقرآن
 - **10 مستويات أولوية** (المرحلة 8)
@@ -11,6 +11,11 @@
 - **5.7 مليون وثيقة** جاهزة للـ RAG
 - **11.3 مليون** وثيقة لوكين
 - **42.6 GB** بيانات على HuggingFace
+
+### الإصدار v2 (أبريل 2026)
+- **معمارية Config-Backed** - نظام تصريحي YAML
+- **10 وكلاء CollectionAgent** - تكوين منفصل
+- **طبقات جديدة**: retrieval, verification, generation
 
 ---
 
@@ -337,6 +342,33 @@ curl -X POST http://localhost:8000/api/v1/query \
 - **~91% اختبار تغطية**
 
 **المرحلة 8 مكتملة!** 🎉
+
+---
+
+## 🏗️ الإصدار v2 - المعمارية الجديدة (أبريل 2026)
+
+### ما الجديد؟
+الإصدار v2 يقدم **نظام تصريحي** (declarative) مع:
+- **10 ملفات YAML** للتكوين
+- **ملفات Prompts منفصلة**
+- **CollectionAgent** جديد
+- **طبقات جديدة**: retrieval, verification, generation
+
+### المسارات الجديدة
+
+```
+src/agents/collection/     ← 10 وكلاء CollectionAgent
+config/agents/             ← 10 ملفات YAML
+prompts/                  ← ملفات Prompts
+src/retrieval/            ← طبقة الاسترجاع
+src/verification/         ← طبقة التحقق
+src/application/routing/ ← التوجيه
+src/generation/           ← التوليد
+```
+
+### للمزيد
+- [02_folder_structure.md](02_folder_structure.md) - المعمارية الكاملة
+- [V2_MIGRATION_NOTES.md](../8-development/refactoring/V2_MIGRATION_NOTES.md) - دليل الانتقال
 
 ---
 

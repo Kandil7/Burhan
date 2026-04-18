@@ -584,6 +584,111 @@ docker/
 
 ---
 
+## 🏗️ المعمارية الجديدة v2 - Era of Config-Backed Systems
+
+### نظرة عامة
+مع الإصدار v2، انتقلنا من **الكود الصلب** (hardcoded) إلى **النظام التصريحي** (declarative). كل شيء الآن يُعرَّف في ملفات YAML والت prompts.
+
+### المجلدات الجديدة
+
+```
+src/
+├── agents/
+│   ├── collection/           ← NEW! 10 وكلاء بمعمارية CollectionAgent
+│   │   ├── base.py            # CollectionAgent الأساسي
+│   │   ├── fiqh.py            # وكيل الفقه (config-backed)
+│   │   ├── hadith.py          # وكيل الحديث
+│   │   ├── tafsir.py          # وكيل التفسير
+│   │   ├── aqeedah.py         # وكيل العقيدة
+│   │   ├── seerah.py          # وكيل السيرة
+│   │   ├── usul_fiqh.py       # وكيل أصول الفقه
+│   │   ├── history.py         # وكيل التاريخ
+│   │   ├── language.py        # وكيل اللغة العربية
+│   │   ├── tazkiyah.py        # وكيل التربية الروحية
+│   │   └── general.py         # وكيل العام
+│   └── legacy/                ← DEPRECATED! الوكلاء القدامى
+│
+├── retrieval/                 ← NEW! طبقة الاسترجاع
+│   ├── schemas.py             # مخططات الاسترجاع
+│   ├── filters/               # فلاتر الاسترجاع
+│   ├── fusion/                # دمج النتائج (RRF)
+│   └── mapping/               # خرائط الاسترجاع
+│
+├── verification/              ← NEW! طبقة التحقق
+│   ├── schemas.py             # مخططات التحقق
+│   ├── trace.py               # تتبع التحقق
+│   └── checks/                # فحوصات التحقق
+│
+├── application/               ← NEW! طبقة التطبيق
+│   └── routing/
+│       ├── intent_router.py   # توجيه النيات
+│       ├── planner.py         # مخطط الاستجابة
+│       └── executor.py        # منفذ الاستجابة
+│
+├── infrastructure/
+│   └── qdrant/               ← NEW! طبقة Qdrant
+│       ├── client.py         # عميل Qdrant
+│       ├── collections.py    # إدارة المجموعات
+│       └── payload_indexes.py # فهارس البيانات
+│
+└── generation/               ← NEW! طبقة التوليد
+    ├── schemas.py            # مخططات التوليد
+    └── prompt_loader.py     # محمل الـ Prompts
+```
+
+### ملفات التكوين
+
+```
+config/
+└── agents/
+    ├── fiqh.yaml            # تكوين وكيل الفقه
+    ├── hadith.yaml          # تكوين وكيل الحديث
+    ├── tafsir.yaml          # تكوين وكيل التفسير
+    ├── aqeedah.yaml         # تكوين وكيل العقيدة
+    ├── seerah.yaml          # تكوين وكيل السيرة
+    ├── usul_fiqh.yaml       # تكوين وكيل أصول الفقه
+    ├── history.yaml         # تكوين وكيل التاريخ
+    ├── language.yaml        # تكوين وكيل اللغة
+    ├── tazkiyah.yaml        # تكوين وكيل التربية
+    └── general.yaml         # تكوين وكيل العام
+```
+
+### ملفات الـ Prompts
+
+```
+prompts/
+├── fiqh/
+│   ├── system.txt           # prompt النظام
+│   └── user.txt             # prompt المستخدم
+├── hadith/
+├── tafsir/
+├── ... (10 وكلاء)
+└── common/
+    └── verification.txt     # prompt التحقق
+```
+
+### الفرق بين v1 و v2
+
+| الجانب | v1 (Legacy) | v2 (Config-Backed) |
+|--------|-------------|-------------------|
+| **التكوين** | كود صلب في Python | ملفات YAML |
+| **الـ Prompts** | strings في الكود | ملفات .txt منفصلة |
+| **الوكلاء** | BaseAgent, BaseRAGAgent | CollectionAgent |
+| **الاسترجاع** | knowledge/ | retrieval/ |
+| **التحقق** | مضمن في الوكلاء | طبقة منفصلة verification/ |
+| **التوجيه** | core/router.py | application/routing/ |
+| **التوليد** | في الوكلاء | generation/ طبقة منفصلة |
+
+### لماذا v2؟
+
+1. **فصل الاهتمامات**: التكوين منفصل عن الكود
+2. **الصيانة**: تغيير الـ prompts لا يتطلب إعادة نشر الكود
+3. **المرونة**: إضافة وكيل جديد مجرد إضافة ملف YAML
+4. **الاختبار**: يمكن اختبار التكوينات بدون كود
+5. **التوثيق**: الـ prompts تصبح التوثيق نفسه
+
+---
+
 ## 🎯 الخلاصة العملية
 
 ### ما الذي يجب أن تفهمه فعلاً من هذا الجزء؟

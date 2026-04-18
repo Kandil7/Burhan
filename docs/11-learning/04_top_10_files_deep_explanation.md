@@ -760,3 +760,57 @@ intent: FIQH (confidence: 0.92)
 **📖 الدليل الكامل:** [`docs/mentoring/`](docs/mentoring/)
 
 **🚀 ابدأ الآن:** اقرأ الملفات بالترتيب من 1 إلى 10
+
+---
+
+## 🏗️ التحديثات في الإصدار v2 - أهم الملفات
+
+### نظرة عامة على المعمارية الجديدة
+مع الإصدار v2، تم إضافة مسارات جديدة مهمة:
+
+```
+src/
+├── config/
+│   └── agents/              ← NEW! 10 ملفات YAML للوكلاء
+│       ├── fiqh.yaml
+│       ├── hadith.yaml
+│       └── ... (10 وكلاء)
+├── prompts/                 ← NEW! ملفات الـ Prompts منفصلة
+│   ├── fiqh/
+│   ├── hadith/
+│   └── ... (10 وكلاء)
+├── agents/
+│   ├── collection/         ← NEW! CollectionAgent 10 وكلاء
+│   ├── legacy/             ← DEPRECATED!
+│   └── base.py             ← DEPRECATED!
+├── retrieval/              ← NEW! طبقة الاسترجاع
+│   ├── schemas.py
+│   ├── filters/
+│   ├── fusion/
+│   └── mapping/
+├── verification/           ← NEW! طبقة التحقق
+├── application/            ← NEW! طبقة التطبيق
+│   └── routing/
+├── infrastructure/
+│   └── qdrant/            ← NEW! عميل Qdrant
+└── generation/             ← NEW! طبقة التوليد
+```
+
+### الملفات الجديدة في v2
+
+| الملف | السطور | الوظيفة |
+|-------|--------|---------|
+| `src/agents/collection/base.py` | ~200 | CollectionAgent الأساسي |
+| `src/application/routing/intent_router.py` | ~150 |router جديد |
+| `src/retrieval/strategies.py` | ~150 | استراتيجيات الاسترجاع |
+| `src/verification/` | ~100 | طبقة التحقق |
+
+### السبب وراء التغييرات
+1. **فصل الاهتمامات**: كل طبقة مسئولة عن شيء واحد
+2. **النظام التصريحي**: التكوين في ملفات YAML
+3. **الصيانة**: تغيير الـ prompts بدون كود
+4. **الاختبار**: اختبار التكوينات منفصلاً
+
+### للمزيد من التفاصيل
+- راجع: [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md)
+- راجع: [`02_folder_structure.md`](02_folder_structure.md) - المعمارية الجديدة

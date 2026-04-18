@@ -6,17 +6,18 @@
 
 ---
 
-## 🎉 أحدث إنجاز: المرحلة الثامنة مكتملة (15 أبريل 2026)
+## 🎉 أحدث إنجاز: ترحيل v2 مكتمل (أبريل 2026)
 
-### مصنف النية الهجين (Hybrid Intent Classifier)
+### البنية الجديدة v2 - التكوين التصريحي (Declarative Config)
 
-اعتباراً من **15 أبريل 2026**، النظام يتضمن الآن:
+اعتباراً من **أبريل 2026**، النظام يتضمن الآن:
 
-- ✅ **تصنيف سريع مبني على الكلمات المفتاحية** (100+ نمط، لا يتطلب LLM)
-- ✅ **نقطة نهاية `/classify` جديدة** لكشف النية الفوري (<50 مللي ثانية)
-- ✅ **10 مستويات أولوية** لحلConflicts بين النيات المتعددة
-- ✅ **كشف النيات الفرعية للقرآن** (4 أنواع: VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
-- ✅ **بوابة الثقة مع احتياطي** إلى ISLAMIC_KNOWLEDGE عندما تكون الثقة < 0.5
+- ✅ **وكلاء مبنيين على YAML** - 10 ملفات تكوين + 11 ملف prompts
+- ✅ **مسارات cannonical جديدة** - src/agents/collection/, src/retrieval/, src/verification/
+- ✅ **طبقات من الدرجة الأولى** - retrieval, verification, routing كحزم منفصلة
+- ✅ **بنية Qdrant** - src/infrastructure/qdrant/
+- ✅ **مراقبة الطلبات** - RequestIDMiddleware + ResponseTrace
+- ✅ **102+ اختبار** للنظام الجديد
 
 ---
 

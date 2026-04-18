@@ -477,4 +477,47 @@ def initialize_registry() -> AgentRegistry:
 
 ---
 
+## 🏗️ التحديثات في الإصدار v2 - نظام التسجيل الجديد
+
+### ما الجديد؟
+مع الإصدار v2، انتقل التسجيل من `src/core/registry.py` إلى **نظام جديد**:
+
+```
+src/application/routing/
+├── intent_router.py    ← router + registry معاً (v2)
+├── planner.py          ← مخطط الاستجابة
+└── executor.py         ← منفذ الاستجابة
+```
+
+### الفرق بين v1 و v2
+
+| الجانب | v1 (Legacy) | v2 (Config-Backed) |
+|--------|-------------|-------------------|
+| **التسجيل** | `src/core/registry.py` | `src/application/routing/intent_router.py` |
+| **الوكلاء** | AgentRegistry | Config-backed CollectionAgent |
+| **التكوين** | كود Python | YAML + prompts |
+| **الاسترجاع** | registry.get() | config-driven |
+
+### ملفات التكوين في v2
+
+```yaml
+# config/agents/fiqh.yaml
+agent:
+  name: fiqh
+  intent_label: FIQH
+  collections:
+    - fiqh_passages
+    - usul_fiqh
+  retrieval:
+    strategy: HYBRID
+    top_k: 15
+    score_threshold: 0.65
+```
+
+### للمزيد من التفاصيل
+- راجع: [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md)
+- راجع: [`02_folder_structure.md`](02_folder_structure.md)
+
+---
+
 **📖 الدليل الكامل:** [`docs/mentoring/`](docs/mentoring/)

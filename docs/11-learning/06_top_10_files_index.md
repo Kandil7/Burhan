@@ -319,6 +319,43 @@
 
 ---
 
+## 🏗️ الإصدار v2 - المعمارية الجديدة
+
+### ما الجديد في v2؟
+مع الإصدار v2، появиت مسارات جديدة مهمة:
+
+```
+src/
+├── agents/collection/    ← 10 وكلاء CollectionAgent جدد
+├── config/agents/        ← 10 ملفات YAML للتكوين
+├── prompts/              ← ملفات Prompts منفصلة
+├── retrieval/            ← طبقة الاسترجاع الجديدة
+├── verification/         ← طبقة التحقق الجديدة
+├── application/routing/  ← نظام التوجيه الجديد
+├── infrastructure/qdrant/ ← عميل Qdrant
+└── generation/           ← طبقة التوليد الجديدة
+```
+
+### الملفات الجديدة في v2
+
+| الملف | الوظيفة |
+|-------|---------|
+| `src/agents/collection/base.py` | CollectionAgent الأساسي |
+| `src/application/routing/intent_router.py` | router الجديد |
+| `src/retrieval/strategies.py` | استراتيجيات الاسترجاع |
+| `src/verification/` | طبقة التحقق |
+
+### لماذا v2؟
+1. **فصل الاهتمامات**: كل طبقة مسئولة عن شيء واحد
+2. **النظام التصريحي**: التكوين في ملفات YAML
+3. **الصيانة**: تغيير الـ prompts بدون كود
+
+### للمزيد من التفاصيل
+- [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md)
+- [`02_folder_structure.md`](02_folder_structure.md)
+
+---
+
 **مُعد الفهرس:** AI Mentor System  
 **التاريخ:** أبريل 2026  
 **الإصدار:** 1.0

@@ -470,6 +470,45 @@ arabic_ratio = 15 / 15 = 1.0
 
 ---
 
+## 🏗️ التحديثات في الإصدار v2 - نظام التوجيه الجديد
+
+### ما الجديد؟
+مع الإصدار v2، انتقل التوجيه من `src/core/router.py` إلى **نظام تصريحي** جديد:
+
+```
+src/application/routing/
+├── intent_router.py    ← router هجين جديد (v2)
+├── planner.py          ← مخطط الاستجابة
+└── executor.py        ← منفذ الاستجابة
+```
+
+### الفرق بين v1 و v2
+
+| الجانب | v1 (Legacy) | v2 (Config-Backed) |
+|--------|-------------|-------------------|
+| **التوجيه** | `src/core/router.py` | `src/application/routing/intent_router.py` |
+| **التصنيف** | HybridQueryClassifier (3 tiers) | IntentRouter + decision tree |
+| **التكوين** | كود صلب | YAML config |
+| **الـ Prompts** | strings في الكود | ملفات منفصلة |
+
+### مثال على التوجيه في v2
+
+```python
+from src.application.routing import IntentRouter
+
+router = IntentRouter()
+result = await router.route("ما حكم الزكاة؟")
+# result.agent = "fiqh"
+# result.confidence = 0.95
+# result.strategy = "semantic"
+```
+
+### للمزيد من التفاصيل
+- راجع: [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md)
+- راجع: [`02_folder_structure.md`](02_folder_structure.md) - المعمارية الجديدة
+
+---
+
 ## 5️⃣ الخلاصة العملية
 
 ### ما الذي يجب أن تفهمه فعلاً؟

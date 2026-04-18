@@ -23,6 +23,7 @@
 | **42.6 GB** على HuggingFace | البيانات جاهزة للتضمين |
 | **20 endpoint** | (جديد: `/classify` في المرحلة 8) |
 | **مكتبة الشاملة** (ElShamela) | 8,425 كتاب من 3,146 عالم |
+| **معمارية v2 Config-Backed** | نظام تصريحي بـ YAML + Prompts منفصلة |
 
 ---
 
@@ -43,11 +44,32 @@ Athar/
 │   ├── config/                   # الإعدادات والثوابت
 │   ├── core/                     # المنطق الأساسي (تصنيف، توجيه، اقتباسات)
 │   ├── agents/                   # الوكلاء المتخصصون (13 وكيل)
+│   │   ├── collection/           ← NEW! v2 10 وكلاء config-backed
+│   │   │   ├── base.py          ← CollectionAgent الأساسي
+│   │   │   └── [fiqh, hadith, tafsir, ...].py
+│   │   └── legacy/               ← DEPRECATED!
 │   ├── tools/                    # الأدوات الحتمية (5 أدوات)
 │   ├── quran/                    # خط إنتاج القرآن (6 وحدات)
 │   ├── knowledge/                # بنية الـ RAG (تضمين، متجهات، بحث)
+│   ├── retrieval/                ← NEW! v2 طبقة الاسترجاع
+│   ├── verification/             ← NEW! v2 طبقة التحقق
+│   ├── generation/               ← NEW! v2 طبقة التوليد
 │   ├── infrastructure/           # الخدمات الخارجية (DB, Redis, LLM)
+│   │   └── qdrant/              ← NEW! v2 Qdrant client
 │   └── data/                     # نماذج البيانات والتحميل
+│
+├── config/                       ← NEW! v2 ملفات التكوين
+│   └── agents/                   # 10 ملفات YAML للوكلاء
+│       ├── fiqh.yaml
+│       ├── hadith.yaml
+│       └── ... (10 وكلاء)
+│
+├── prompts/                      ← NEW! v2 ملفات الـ Prompts
+│   ├── fiqh/
+│   │   ├── system.txt
+│   │   └── user.txt
+│   ├── hadith/
+│   └── ... (10 وكلاء)
 │
 ├── data/                         # البيانات
 │   ├── mini_dataset/             # مجموعة بيانات مصغرة (1.7 MB)
