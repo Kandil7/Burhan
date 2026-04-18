@@ -17,6 +17,8 @@ This document provides a comprehensive index and navigation guide for the Multi-
 | [RETRIEVAL_STRATEGIES](./RETRIEVAL_STRATEGIES.md) | Retrieval configuration | Strategy matrix, Qdrant config, filtering |
 | [VERIFICATION_FRAMEWORK](./VERIFICATION_FRAMEWORK.md) | Verification system | Verifiers, fail policies, suites |
 | [ORCHESTRATION_PATTERNS](./ORCHESTRATION_PATTERNS.md) | Multi-agent patterns | SEQUENTIAL/PARALLEL/HIERARCHICAL |
+| [CONFIG_BACKED_AGENTS](./CONFIG_BACKED_AGENTS.md) | Declarative agent config | YAML configs, prompt files, config loader |
+| [DOMAIN_KEYWORDS](./DOMAIN_KEYWORDS.md) | Routing keywords | Keyword patterns, confidence calculation |
 
 ---
 
@@ -96,7 +98,8 @@ src/verifiers/
 
 src/application/router/
 ├── orchestration.py                # Multi-agent orchestration
-└── multi_agent.py                  # Multi-agent router
+├── multi_agent.py                  # Multi-agent router
+└── config_router.py                # Config-backed keyword router
 
 src/evaluation/
 ├── golden_set_schema.py           # Golden set data model
@@ -109,6 +112,23 @@ src/indexing/
 └── vectorstores/
     ├── hybrid_config.py           # Collection configs
     └── hybrid_client.py           # Hybrid Qdrant client
+
+config/
+├── agents/                        # Agent YAML configs (10 files)
+│   ├── fiqh.yaml
+│   ├── hadith.yaml
+│   ├── tafsir.yaml
+│   └── ... (10 agents total)
+└── (future: router.yaml)
+
+prompts/
+├── _shared_preamble.txt          # Common rules
+├── fiqh_agent.txt                # Agent prompts (10 files)
+└── ... (10 agents total)
+
+src/config/
+├── __init__.py                   # AgentConfigManager
+└── loader.py                     # Config loading utilities
 ```
 
 ---
@@ -178,6 +198,38 @@ print(f"Precision: {results.precision}")
 print(f"Recall: {results.recall}")
 ```
 
+### 6. Using Config-Backed Agents
+
+```python
+from src.config import get_config_manager
+
+cm = get_config_manager()
+
+# Load agent config
+config = cm.load_config("fiqh")
+print(config.retrieval.alpha)  # 0.6
+
+# Load system prompt
+prompt = cm.load_system_prompt("fiqh")
+print(len(prompt))  # ~2355 chars
+
+# Get CollectionAgentConfig
+agent_config = cm.get_collection_agent_config("fiqh")
+```
+
+### 7. Using Config Router
+
+```python
+from src.application.router.config_router import get_config_router
+
+router = get_config_router()
+
+# Route a query
+result = router.route("ما حكم صلاة الجماعة؟")
+print(result.agent_name)  # "fiqh_agent"
+print(result.confidence)  # 0.85
+```
+
 ---
 
 ## 🧪 Testing
@@ -204,6 +256,9 @@ pytest tests/test_evaluation/test_metrics.py -v
 
 # API tests
 pytest tests/test_api/test_fiqh.py -v
+
+# Config-backed agent tests
+pytest tests/test_config_backed_agents.py -v
 ```
 
 ### Test Coverage
@@ -218,8 +273,9 @@ pytest tests/test_api/test_fiqh.py -v
 | `test_orchestration.py` | 24 tests |
 | `test_metrics.py` | 25 tests |
 | `test_fiqh.py` | 20 tests |
+| `test_config_backed_agents.py` | 27 tests |
 
-**Total**: 228 tests
+**Total**: 255+ tests
 
 ---
 
@@ -338,7 +394,10 @@ pytest tests/test_agents/ tests/test_retrieval/ tests/test_verifiers/ -v
 - ✅ Added Evaluation framework
 - ✅ Added Hybrid Qdrant configuration
 - ✅ Added Metadata enrichment
-- ✅ Added 5 documentation files
+- ✅ Added Config-backed agent system (YAML + Prompts)
+- ✅ Added ConfigRouter with DOMAIN_KEYWORDS
+- ✅ Added AgentConfigManager for config loading
+- ✅ Added 7 comprehensive documentation files
 
 ### Previous Phases
 

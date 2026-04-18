@@ -22,7 +22,9 @@
 - ✅ **8 Collection Agents** - Fiqh, Hadith, Tafsir, Aqeedah, Seerah, Usul, History, Language
 - ✅ **Evaluation Framework** - Precision, Recall, Citation accuracy, Ikhtilaf coverage
 - ✅ **Hybrid Qdrant** - Collection configs with HNSW and quantization
-- ✅ **Documentation** - 5 new reference documents
+- ✅ **Config-Backed Agents** - YAML configs + system prompts for all 10 agents
+- ✅ **ConfigRouter** - DOMAIN_KEYWORDS-based routing with keyword patterns
+- ✅ **Documentation** - 7 new reference documents
 
 See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECTION_ARCHITECTURE.md) for details.
 
@@ -71,6 +73,9 @@ See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECT
 | **API Endpoints** | 30+ |
 | **Verification Suites** | 8 (per-agent) |
 | **Retrieval Strategies** | 9 (per-agent) |
+| **Agent Configs** | 10 YAML files |
+| **System Prompts** | 11 prompt files |
+| **Tests** | 255+ tests |
 
 ---
 
@@ -148,6 +153,10 @@ User Query → Intent Classifier → Multi-Agent Orchestration →
 | `OrchestrationPattern` | SEQUENTIAL/PARALLEL/HIERARCHICAL | ✅ NEW |
 | `HybridQdrantClient` | Hybrid dense/sparse search | ✅ NEW |
 | `EvaluationMetrics` | Precision/Recall/Citations | ✅ NEW |
+| `ConfigRouter` | DOMAIN_KEYWORDS-based routing | ✅ NEW |
+| `AgentConfigManager` | YAML config loading | ✅ NEW |
+| `prompts/*` | System prompts (11 files) | ✅ NEW |
+| `config/agents/*` | YAML configs (10 files) | ✅ NEW |
 
 ### Intent Priority System (Phase 10)
 
@@ -567,7 +576,11 @@ Athar/
 │   │       ├── request.py            # Request models
 │   │       └── response.py           # Response models
 │   │
-│   ├── retrieval/                  # Retrieval layer (NEW - Phase 10)
+│   ├── config/                       # Config loader (NEW - Phase 10)
+│   │   ├── __init__.py              # AgentConfigManager
+│   │   └── loader.py                # YAML config loading
+│   │
+│   ├── retrieval/                  # Retrieval layer (Phase 10)
 │   │   ├── strategies.py            # Per-agent retrieval strategies
 │   │   ├── retrievers/             # Dense, sparse, hybrid retrievers
 │   │   ├── ranking/                 # Reranking, scoring
@@ -576,7 +589,7 @@ Athar/
 │   │   ├── aggregation/            # Result aggregation
 │   │   └── planning/               # Retrieval planning
 │   │
-│   ├── verifiers/                  # Verification layer (NEW - Phase 10)
+│   ├── verifiers/                  # Verification layer (Phase 10)
 │   │   ├── base.py                 # BaseVerifier, VerificationResult
 │   │   ├── suite_builder.py       # Verification suite builder
 │   │   ├── fiqh_checks.py          # Fiqh-specific verifiers
@@ -587,12 +600,12 @@ Athar/
 │   │   ├── evidence_sufficiency.py # Evidence sufficiency
 │   │   └── policies.py             # Verification policies
 │   │
-│   ├── evaluation/                 # Evaluation framework (NEW - Phase 10)
+│   ├── evaluation/                 # Evaluation framework (Phase 10)
 │   │   ├── golden_set_schema.py   # Golden set data model
 │   │   ├── metrics.py              # Precision, Recall, Citations
 │   │   └── cli.py                  # Evaluation CLI
 │   │
-│   ├── indexing/                   # Indexing & metadata (NEW - Phase 10)
+│   ├── indexing/                   # Indexing & metadata (Phase 10)
 │   │   ├── metadata/               # Metadata enrichment
 │   │   ├── embeddings/            # Embedding models
 │   │   ├── vectorstores/          # Qdrant configurations
@@ -600,17 +613,18 @@ Athar/
 │   │   └── lexical/               # BM25/Lucene indexes
 │   │
 │   ├── application/               # Application layer
-│   │   ├── router/                # Routing & orchestration (enhanced)
+│   │   ├── router/                # Routing & orchestration
 │   │   │   ├── router_agent.py    # RouterAgent
-│   │   │   ├── orchestration.py   # Multi-agent orchestration (NEW)
-│   │   │   └── multi_agent.py     # Multi-agent router (NEW)
+│   │   │   ├── orchestration.py   # Multi-agent orchestration
+│   │   │   ├── multi_agent.py     # Multi-agent router
+│   │   │   └── config_router.py   # DOMAIN_KEYWORDS router (NEW)
 │   │   ├── container.py          # DI container
 │   │   ├── interfaces.py         # Protocol definitions
 │   │   ├── classifier_factory.py # Classifier factory
 │   │   ├── hybrid_classifier.py  # HybridIntentClassifier
 │   │   └── models.py              # RoutingDecision models
 │   │
-│   ├── generation/               # Generation layer (NEW - Phase 10)
+│   ├── generation/               # Generation layer (Phase 10)
 │   │   ├── prompts/              # Prompt templates per agent
 │   │   ├── composers/            # Prompt composition
 │   │   └── policies/             # Generation policies
@@ -679,7 +693,7 @@ Athar/
 │   │   └── models.py
 │   │
 │   ├── core/                       # Core utilities
-│   │   ��─�� exceptions.py          # Exception hierarchy (Phase 9)
+│   │   ├── exceptions.py          # Exception hierarchy (Phase 9)
 │   │   ├── router.py
 │   │   ├── registry.py
 │   │   └── citation.py
@@ -689,8 +703,35 @@ Athar/
 │       ├── era_classifier.py
 │       └── lazy_singleton.py
 │
+├── config/                         # Agent configurations (NEW - Phase 10)
+│   └── agents/
+│       ├── fiqh.yaml              # FiqhAgent config
+│       ├── hadith.yaml            # HadithAgent config
+│       ├── tafsir.yaml            # TafsirAgent config
+│       ├── aqeedah.yaml           # AqeedahAgent config
+│       ├── seerah.yaml            # SeerahAgent config
+│       ├── history.yaml           # HistoryAgent config
+│       ├── language.yaml           # LanguageAgent config
+│       ├── tazkiyah.yaml          # TazkiyahAgent config
+│       ├── general.yaml           # GeneralIslamicAgent config
+│       └── usul_fiqh.yaml         # UsulFiqhAgent config
+│
+├── prompts/                        # System prompts (NEW - Phase 10)
+│   ├── _shared_preamble.txt       # Common rules for all agents
+│   ├── fiqh_agent.txt             # FiqhAgent prompt
+│   ├── hadith_agent.txt           # HadithAgent prompt
+│   ├── tafsir_agent.txt           # TafsirAgent prompt
+│   ├── aqeedah_agent.txt          # AqeedahAgent prompt
+│   ├── seerah_agent.txt           # SeerahAgent prompt
+│   ├── history_agent.txt         # HistoryAgent prompt
+│   ├── language_agent.txt         # LanguageAgent prompt
+│   ├── tazkiyah_agent.txt         # TazkiyahAgent prompt
+│   ├── general_agent.txt          # GeneralIslamicAgent prompt
+│   └── usul_fiqh_agent.txt        # UsulFiqhAgent prompt
+│
 ├── tests/                          # Test suite (Phase 9)
-│   ├── test_comprehensive.py       # 40+ unit tests (NEW)
+│   ├── test_comprehensive.py       # 40+ unit tests
+│   ├── test_config_backed_agents.py # Config tests (NEW)
 │   └── ...
 │
 ├── docker/                        # Docker configuration
@@ -737,7 +778,9 @@ The comprehensive Phase 10 update provides:
 6. **Evaluation Framework** - Precision, Recall, Citation accuracy, Ikhtilaf coverage
 7. **Hybrid Qdrant** - Collection configs with HNSW and quantization
 8. **Metadata Enrichment** - Era classification, madhhab inference
-9. **Documentation** - 5 new reference documents
+9. **Config-Backed Agents** - 10 YAML configs + 11 system prompts
+10. **ConfigRouter** - DOMAIN_KEYWORDS-based routing
+11. **Documentation** - 7 new reference documents
 
 See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECTION_ARCHITECTURE.md) for details.
 
