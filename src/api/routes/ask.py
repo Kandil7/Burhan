@@ -17,7 +17,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from src.agents.base import AgentInput, AgentOutput
 from src.api.schemas.ask import AskRequest, AskResponse
 from src.api.schemas.common import CitationResponse, ErrorResponse
-from src.config.intents import Intent
+from src.domain.intents import Intent
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 

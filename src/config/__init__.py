@@ -32,6 +32,7 @@ from src.agents.collection.base import (
     VerificationSuite,
 )
 from src.agents.base import AgentOutput
+from src.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -305,4 +306,6 @@ __all__ = [
     "get_config_manager",
     "CONFIG_DIR",
     "PROMPTS_DIR",
+    # Also export settings for convenience
+    "settings",
 ]

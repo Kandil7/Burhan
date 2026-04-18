@@ -8,7 +8,7 @@ This is the fallback agent for questions that don't match specific domains.
 
 from __future__ import annotations
 
-from src.agents.base import Citation
+from src.agents.collection.base import Citation
 from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,

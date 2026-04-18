@@ -13,7 +13,7 @@ import json
 
 from pydantic import BaseModel, Field
 
-from src.config.intents import (
+from src.domain.intents import (
     INTENT_DESCRIPTIONS,
     KEYWORD_PATTERNS,
     Intent,

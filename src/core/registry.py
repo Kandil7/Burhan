@@ -8,7 +8,7 @@ Following Single Responsibility Principle - separates registration logic from or
 from dataclasses import dataclass, field
 
 from src.agents.base import BaseAgent
-from src.config.intents import INTENT_ROUTING, Intent
+from src.domain.intents import INTENT_ROUTING, Intent
 from src.config.logging_config import get_logger
 from src.tools.base import BaseTool
 
@@ -188,11 +188,13 @@ def initialize_registry() -> AgentRegistry:
 
     # Import and register agents
     from src.agents.chatbot_agent import ChatbotAgent
+
     _registry.register_agent("chatbot_agent", ChatbotAgent())
 
     #  Register RAG agents
     try:
         from src.agents.fiqh_agent import FiqhAgent
+
         _registry.register_agent("fiqh_agent", FiqhAgent())
         logger.info("registry.fiqh_agent_registered")
     except Exception as e:
@@ -200,6 +202,7 @@ def initialize_registry() -> AgentRegistry:
 
     try:
         from src.agents.hadith_agent import HadithAgent
+
         _registry.register_agent("hadith_agent", HadithAgent())
         logger.info("registry.hadith_agent_registered")
     except Exception as e:
@@ -207,6 +210,7 @@ def initialize_registry() -> AgentRegistry:
 
     try:
         from src.agents.general_islamic_agent import GeneralIslamicAgent
+
         _registry.register_agent("general_islamic_agent", GeneralIslamicAgent())
         logger.info("registry.general_agent_registered")
     except Exception as e:
@@ -214,6 +218,7 @@ def initialize_registry() -> AgentRegistry:
 
     try:
         from src.agents.seerah_agent import SeerahAgent
+
         _registry.register_agent("seerah_agent", SeerahAgent())
         logger.info("registry.seerah_agent_registered")
     except Exception as e:

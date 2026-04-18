@@ -6,7 +6,7 @@ Uses YAML config from config/agents/usul_fiqh.yaml
 
 from __future__ import annotations
 
-from src.agents.base import Citation
+from src.agents.collection.base import Citation
 from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,

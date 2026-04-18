@@ -3,23 +3,40 @@ Base Agent abstraction for Athar Islamic QA system.
 
 DEPRECATED: Use src/agents/collection/base.py for the v2 config-backed architecture.
 Migration: All agents should inherit from CollectionAgent instead of BaseAgent.
+
+This module provides backward compatibility through __getattr__ for lazy deprecation warnings.
 """
 
 from __future__ import annotations
-
-import warnings
-
-# Deprecation warning
-warnings.warn(
-    "src.agents.base is deprecated. Use src.agents.collection.base.CollectionAgent instead.",
-    DeprecationWarning,
-    stacklevel=2,
-)
 
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from pydantic import BaseModel, Field
+
+
+# Lazy deprecation handler - only warns when actually accessed
+def __getattr__(name: str):
+    """Lazy deprecation handler - warns only when deprecated items are accessed."""
+    deprecated_items = {
+        "BaseAgent": "src.agents.collection.base.CollectionAgent",
+        "AgentInput": "src.agents.collection.base.AgentInput (not yet exported, use src.agents.base.AgentInput)",
+        "AgentOutput": "src.agents.collection.base.AgentOutput (not yet exported, use src.agents.base.AgentOutput)",
+        "Citation": "src.agents.base.Citation (still valid)",
+    }
+
+    if name in deprecated_items:
+        import warnings
+
+        new_path = deprecated_items[name]
+        warnings.warn(
+            f"src.agents.base.{name} is deprecated. Use {new_path} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    # Raise AttributeError for unknown items to maintain normal Python behavior
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class Citation(BaseModel):
@@ -66,7 +83,7 @@ class Citation(BaseModel):
 
         return cls(
             id=f"C{index}",
-            type=source_type,  # ✅
+            type=source_type,
             source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
             reference=" — ".join(ref_parts),
             url=None,
@@ -98,6 +115,8 @@ class BaseAgent(ABC):
     """
     Abstract base class for all agents.
 
+    DEPRECATED: Use CollectionAgent from src/agents/collection/base.py instead.
+
     Usage:
         class FiqhAgent(BaseAgent):
             name = "fiqh_agent"
@@ -128,3 +147,8 @@ class BaseAgent(ABC):
 
     def __repr__(self) -> str:
         return f"<Agent: {self.name}>"
+
+
+# Backward compatibility - allow direct import of deprecated classes
+# These will trigger the deprecation warning via __getattr__
+__all__ = ["Citation", "AgentInput", "AgentOutput", "BaseAgent"]

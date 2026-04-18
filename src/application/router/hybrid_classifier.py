@@ -1,9 +1,8 @@
 # Hybrid Classifier Module
 """Hybrid classifier combining multiple classification approaches."""
 
-from typing import Any, Dict, List, Optional
-
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -25,8 +24,8 @@ class HybridClassifier:
         weights: Optional[Dict[str, float]] = None,
     ) -> None:
         """Initialize hybrid classifier with optional classifiers and weights."""
-        self.classifiers: List[Any] = classifiers or []
-        self.weights: Dict[str, float] = weights or {}
+        self.classifiers = classifiers or []
+        self.weights = weights or {}
 
     async def classify(self, query: str) -> ClassificationResult:
         """Classify using ensemble of classifiers."""
@@ -38,7 +37,6 @@ class HybridClassifier:
                 details={},
             )
 
-        # Collect results from all classifiers
         results = []
         for classifier in self.classifiers:
             try:
@@ -55,9 +53,7 @@ class HybridClassifier:
                 details={},
             )
 
-        # Combine results using weighted voting
         category_scores: Dict[str, float] = {}
-
         for result in results:
             category = result.get("category", "general_islamic")
             confidence = result.get("confidence", 0.5)
@@ -67,15 +63,17 @@ class HybridClassifier:
                 category_scores[category] = 0.0
             category_scores[category] += confidence * weight
 
-        # Get best category
         if not category_scores:
-            best_category = "general_islamic"
-            best_confidence = 0.5
-        else:
-            best_category = max(category_scores, key=category_scores.get)
-            # Normalize confidence
-            total = sum(category_scores.values())
-            best_confidence = category_scores[best_category] / total if total > 0 else 0.5
+            return ClassificationResult(
+                category="general_islamic",
+                confidence=0.5,
+                method="fallback",
+                details={},
+            )
+
+        best_category = max(category_scores, key=category_scores.get)
+        total = sum(category_scores.values())
+        best_confidence = category_scores[best_category] / total if total > 0 else 0.5
 
         return ClassificationResult(
             category=best_category,
@@ -90,7 +88,6 @@ class HybridClassifier:
     def add_classifier(self, classifier: Any, weight: float = 1.0) -> None:
         """Add a classifier to the ensemble."""
         self.classifiers.append(classifier)
-        # Use category as weight key
         self.weights[classifier.__class__.__name__] = weight
 
 

@@ -7,9 +7,10 @@ Fixes:
   - _keyword_match return type corrected to QuranSubIntent | None
   - _llm_classify: exact token match replaces loose `in` substring check
 """
+
 from __future__ import annotations
 
-from src.config.intents import QuranSubIntent
+from src.domain.intents import QuranSubIntent
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 
@@ -30,7 +31,7 @@ QURAN_KEYWORD_PATTERNS: list[tuple[QuranSubIntent, list[str]]] = [
     (
         QuranSubIntent.QUOTATION_VALIDATION,
         [
-            "هل هذه آية",       # "هل هذه آية من القرآن؟"
+            "هل هذه آية",  # "هل هذه آية من القرآن؟"
             "هل هذا قرآن",
             "هل هذا من القرآن",
             "is this a verse",
@@ -95,7 +96,7 @@ QURAN_KEYWORD_PATTERNS: list[tuple[QuranSubIntent, list[str]]] = [
             "surah",
             "سورة",
             "ayah",
-            "آية",         # generic — must stay LAST
+            "آية",  # generic — must stay LAST
             "اية",
         ],
     ),
@@ -126,10 +127,10 @@ Query: {query}"""
 
 # Valid LLM responses (exact set)
 _VALID_LLM_TOKENS: dict[str, QuranSubIntent] = {
-    "VERSE_LOOKUP":          QuranSubIntent.VERSE_LOOKUP,
-    "INTERPRETATION":        QuranSubIntent.INTERPRETATION,
-    "ANALYTICS":             QuranSubIntent.ANALYTICS,
-    "QUOTATION_VALIDATION":  QuranSubIntent.QUOTATION_VALIDATION,
+    "VERSE_LOOKUP": QuranSubIntent.VERSE_LOOKUP,
+    "INTERPRETATION": QuranSubIntent.INTERPRETATION,
+    "ANALYTICS": QuranSubIntent.ANALYTICS,
+    "QUOTATION_VALIDATION": QuranSubIntent.QUOTATION_VALIDATION,
 }
 
 
@@ -164,23 +165,20 @@ class QuranSubRouter:
         # Tier 1: keyword match
         keyword_result = self._keyword_match(query)
         if keyword_result is not None:
-            logger.info("quran_router.keyword_match",
-                        query=query[:60], sub_intent=keyword_result.value)
+            logger.info("quran_router.keyword_match", query=query[:60], sub_intent=keyword_result.value)
             return keyword_result
 
         # Tier 2: LLM
         if self.llm_client:
             try:
                 llm_result = await self._llm_classify(query)
-                logger.info("quran_router.llm_classify",
-                            query=query[:60], sub_intent=llm_result.value)
+                logger.info("quran_router.llm_classify", query=query[:60], sub_intent=llm_result.value)
                 return llm_result
             except Exception as e:
                 logger.error("quran_router.llm_error", error=str(e), exc_info=True)
 
         # Fallback
-        logger.warning("quran_router.default_fallback",
-                       query=query[:60], default=QuranSubIntent.VERSE_LOOKUP.value)
+        logger.warning("quran_router.default_fallback", query=query[:60], default=QuranSubIntent.VERSE_LOOKUP.value)
         return QuranSubIntent.VERSE_LOOKUP
 
     # ── Tier 1: keyword ────────────────────────────────────────────────────────
@@ -214,7 +212,7 @@ class QuranSubRouter:
             model=settings.llm_model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
-            max_tokens=20,          # sub-intent name is ≤ 25 chars
+            max_tokens=20,  # sub-intent name is ≤ 25 chars
         )
 
         raw = response.choices[0].message.content.strip().upper()

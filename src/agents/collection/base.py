@@ -18,7 +18,65 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.agents.base import AgentOutput, Citation
+
+# Re-exported from base (will use lazy deprecation)
+# These are also defined here for v2 architecture
+class Citation(BaseModel):
+    """
+    Normalized citation reference.
+    Returned by every agent — mapped to CitationResponse at the API layer.
+    """
+
+    id: str = Field(description="Citation ID: C1, C2, C3, …")
+    type: str = Field(description="quran | hadith | fatwa | fiqh_book | dua")
+    source: str = Field(description="Normalized source name")
+    reference: str = Field(description="Book / chapter / hadith number")
+    url: str | None = Field(default=None, description="External URL")
+    text_excerpt: str | None = Field(default=None, description="Quoted passage (≤ 300 chars)")
+
+    @classmethod
+    def from_passage(cls, passage: dict, index: int) -> "Citation":
+        """Create Citation from passage dictionary."""
+        meta = passage.get("metadata", {})
+        collection = meta.get("collection", "")
+        source_type = meta.get("source_type") or (
+            "hadith"
+            if "hadith" in collection
+            else "quran"
+            if "quran" in collection
+            else "seerah"
+            if "seerah" in collection
+            else "fiqh_book"
+        )
+        author = meta.get("author", "")
+        death_year = meta.get("author_death", "")
+        page = meta.get("page_number", "")
+        ref_parts = filter(
+            None,
+            [
+                author,
+                f"ت {death_year} هـ" if death_year else "",
+                f"ص{page}" if page else "",
+            ],
+        )
+        return cls(
+            id=f"C{index}",
+            type=source_type,
+            source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
+            reference=" — ".join(ref_parts),
+            url=None,
+            text_excerpt=passage.get("content", "")[:300] or None,
+        )
+
+
+class AgentOutput(BaseModel):
+    """Standardized output for all agents."""
+
+    answer: str = Field(description="Agent answer text")
+    citations: list[Citation] = Field(default_factory=list)
+    metadata: dict = Field(default_factory=dict)
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+    requires_human_review: bool = Field(default=False)
 
 
 class IntentLabel(str, Enum):

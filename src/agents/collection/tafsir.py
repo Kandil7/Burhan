@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from src.agents.base import Citation
+from src.agents.collection.base import Citation
 from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,

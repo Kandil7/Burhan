@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.agents.base import AgentOutput, Citation
+from src.agents.collection.base import AgentOutput, Citation
 from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
@@ -289,3 +289,10 @@ Use مراجع المصادر [C1]، [C2]، ... after each sentence.
 
     def __repr__(self) -> str:
         return f"<FiqhCollectionAgent: {self.name}, collection={self.COLLECTION}>"
+
+
+# Re-export for backward compatibility
+__all__ = [
+    "FiqhCollectionAgent",
+    "_normalize_arabic",
+]

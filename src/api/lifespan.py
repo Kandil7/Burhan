@@ -15,7 +15,7 @@ from src.config.logging_config import get_logger
 
 if TYPE_CHECKING:
     from src.agents.chatbot_agent import ChatbotAgent
-    from src.application.router import RouterAgent
+    from src.application.router.router_agent import RouterAgent as RouterAgentClass
     from src.core.registry import AgentRegistry
 
 logger = get_logger()
@@ -40,19 +40,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.chatbot.initialised")
 
     # ── 3. Classifier + Router ────────────────────────────────────────────────
+    # v2 routing - use canonical path
     try:
-        from src.application.classifier_factory import build_classifier
-        from src.application.router.router_agent import RouterAgent
+        from src.application.router.classifier_factory import build_classifier
+        from src.application.router.router_agent import RouterAgent as RouterAgentClass
 
         classifier = build_classifier()
     except Exception as e:
         logger.warning("lifespan.classifier.failed", error=str(e), falling_back="hybrid")
-        from src.application.hybrid_classifier import HybridIntentClassifier
-        from src.application.router.router_agent import RouterAgent
+        from src.application.router.hybrid_classifier import HybridIntentClassifier
+        from src.application.router.router_agent import RouterAgent as RouterAgentClass
 
         classifier = HybridIntentClassifier(low_conf_threshold=0.55)
 
-    app.state.router = RouterAgent(classifier=classifier)
+    app.state.router = RouterAgentClass(classifier=classifier)
     logger.info(
         "lifespan.classifier.initialised",
         classifier_type=type(classifier).__name__,
@@ -81,22 +82,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.vector_store = vector_store
 
     # ── 5. RAG Agents ─────────────────────────────────────────────────────────────
+    # v2 Collection Agents (config-backed)
     _rag_kwargs = dict(
         embedding_model=embedding_model,
         vector_store=vector_store,
         llm_client=llm_clients.client,
     )
 
-    from src.agents.fiqh_agent import FiqhAgent
-    from src.agents.general_islamic_agent import GeneralIslamicAgent
-    from src.agents.hadith_agent import HadithAgent
-    from src.agents.seerah_agent import SeerahAgent
+    from src.agents.collection import (
+        FiqhCollectionAgent,
+        HadithCollectionAgent,
+        SeerahCollectionAgent,
+        GeneralCollectionAgent,
+    )
 
     try:
-        app.state.fiqh_agent = FiqhAgent(**_rag_kwargs)
-        app.state.general_agent = GeneralIslamicAgent(**_rag_kwargs)
-        app.state.hadith_agent = HadithAgent(**_rag_kwargs)
-        app.state.seerah_agent = SeerahAgent(**_rag_kwargs)
+        app.state.fiqh_agent = FiqhCollectionAgent(**_rag_kwargs)
+        app.state.general_agent = GeneralCollectionAgent(**_rag_kwargs)
+        app.state.hadith_agent = HadithCollectionAgent(**_rag_kwargs)
+        app.state.seerah_agent = SeerahCollectionAgent(**_rag_kwargs)
         logger.info("lifespan.rag_agents.initialised")
     except Exception as e:
         logger.warning("lifespan.rag_agents.failed", error=str(e))
