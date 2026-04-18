@@ -78,12 +78,6 @@ class Settings(BaseSettings):
     # HuggingFace
     hf_token: str | None = None
 
-    # ==========================================
-    # API Configuration
-    # ==========================================
-    api_timeout: int = 30
-    max_query_length: int = 1000
-
     @property
     def llm_model(self) -> str:
         """Return the correct model based on provider."""
@@ -116,8 +110,8 @@ class Settings(BaseSettings):
     )
     low_conf_threshold: float = 0.55
     openai_base_url: str = "https://api.openai.com/v1"
-    llm_temperature: float = 0.0
-    llm_max_tokens: int = 350
+    classifier_llm_temperature: float = 0.0
+    classifier_llm_max_tokens: int = 350
 
     # ==========================================
     # Rate Limiting
@@ -158,12 +152,6 @@ class Settings(BaseSettings):
     # ==========================================
     log_level: str = "INFO"
     log_format: str = "json"
-
-    # ==========================================
-    # API Configuration
-    # ==========================================
-    api_timeout: int = 30
-    max_query_length: int = 1000
 
     # ==========================================
     # Application Version

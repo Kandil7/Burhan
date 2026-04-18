@@ -1,7 +1,8 @@
 # Hybrid Classifier Module
 """Hybrid classifier combining multiple classification approaches."""
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 from dataclasses import dataclass
 
 
@@ -22,9 +23,10 @@ class HybridClassifier:
         self,
         classifiers: Optional[List[Any]] = None,
         weights: Optional[Dict[str, float]] = None,
-    ):
-        self.classifiers = classifiers or []
-        self.weights = weights or {}
+    ) -> None:
+        """Initialize hybrid classifier with optional classifiers and weights."""
+        self.classifiers: List[Any] = classifiers or []
+        self.weights: Dict[str, float] = weights or {}
 
     async def classify(self, query: str) -> ClassificationResult:
         """Classify using ensemble of classifiers."""

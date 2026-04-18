@@ -20,7 +20,7 @@ from typing import Any
 import numpy as np
 
 from src.config.logging_config import get_logger
-from src.indexing.vectorstores.base import VectorStore  # Updated import
+from src.indexing.vectorstores.qdrant_store import VectorStore
 from src.utils.era_classifier import EraClassifier  # Phase 6: Shared utility
 
 logger = get_logger()
