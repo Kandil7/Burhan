@@ -8,6 +8,7 @@ This is the fallback agent for questions that don't match specific domains.
 
 from __future__ import annotations
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -99,6 +100,8 @@ class GeneralCollectionAgent(CollectionAgent):
     async def rerank_candidates(self, query: str, candidates: list[dict]) -> list[dict]:
         threshold = self.strategy.score_threshold if self.strategy else 0.35
         filtered = [p for p in candidates if p.get("score", 0) >= threshold]
+        # Deduplicate by content prefix
+        filtered = self._deduplicate_passages(filtered)
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
@@ -122,7 +125,8 @@ class GeneralCollectionAgent(CollectionAgent):
                     temperature=0.3,
                     max_tokens=1536,
                 )
-                return response.choices[0].message.content
+                raw_answer = response.choices[0].message.content
+                return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
@@ -144,9 +148,10 @@ class GeneralCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
+        preamble = self._load_shared_preamble()
         try:
             with open("prompts/general_agent.txt", encoding="utf-8") as f:
-                return f.read()
+                agent_prompt = f.read()
         except FileNotFoundError:
             return """أنت معلم إسلامي متخصص.
 استند حصراً إلى المصادر المُقدَّمة.

@@ -1,9 +1,25 @@
-from dataclasses import dataclass
-from typing import Any, List, Optional
+"""
+Answer Query Use Case for Athar Islamic QA system.
+
+Orchestrates the full query answering flow:
+1. Intent classification & routing
+2. Agent selection from registry
+3. RAG pipeline execution (retrieve -> verify -> generate)
+4. Policy enforcement
+"""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+from typing import Any
 
 from src.agents.base import AgentInput, AgentOutput
-from src.application.router.router_agent import RouterAgent, get_router_agent
-from src.core.registry import AgentRegistry, get_registry
+from src.application.router.router_agent import get_router_agent
+from src.core.registry import get_registry
+from src.config.logging_config import get_logger
+
+logger = get_logger()
 
 
 @dataclass
@@ -12,7 +28,9 @@ class AnswerQueryInput:
 
     query: str
     language: str = "ar"
-    madhhab: Optional[str] = None
+    madhhab: str | None = None
+    user_id: str | None = None
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -20,64 +38,119 @@ class AnswerQueryOutput:
     """Output for answer query use case."""
 
     answer: str
-    citations: List[Any]
-    metadata: dict
-    confidence: float
     intent: str
+    confidence: float
+    citations: list[dict[str, Any]]
+    metadata: dict[str, Any] = field(default_factory=dict)
+    requires_human_review: bool = False
 
 
 class AnswerQueryUseCase:
     """
-    Use case for answering user queries using v2 architecture.
-    Orchestrates the flow: Router -> AgentRegistry -> CollectionAgent.
+    Main use case for answering user queries.
+
+    Coordinates between the router, the agent registry, and the agents.
     """
 
-    def __init__(self, agent_registry: Optional[AgentRegistry] = None, router: Optional[RouterAgent] = None):
-        self._registry = agent_registry
-        self._router = router
-
-    async def execute(self, query: str, language: str = "ar", madhhab: Optional[str] = None) -> AnswerQueryOutput:
+    async def execute(self, input_data: AnswerQueryInput) -> AnswerQueryOutput:
         """
-        Execute the answer query use case.
+        Execute the answer query flow.
 
-        1. Route identifying intent.
-        2. Get appropriate agent from registry.
-        3. Run agent (retrieve -> verify -> generate).
+        Args:
+            input_data: Request parameters
+
+        Returns:
+            AnswerQueryOutput with response and metadata
         """
-        router = self._router or get_router_agent()
-        registry = self._registry or get_registry()
-
-        # 1. Intent Classification & Routing
-        decision = await router.route(query)
+        start_time = time.time()
+        
+        # 1. Routing & Intent Classification
+        router = get_router_agent()
+        decision = await router.route(input_data.query)
         intent = decision.result.intent
+        
+        logger.info(
+            "use_case.answer_query.routed",
+            intent=intent.value,
+            confidence=decision.result.confidence,
+        )
 
-        # 2. Resolve V2 Agent
-        # Try finding a V2 collection agent first, fallback to general
-        agent, is_v2 = registry.get_for_intent(intent)
+        # 2. Agent Selection from Registry
+        registry = get_registry()
+        agent, is_agent = registry.get_for_intent(intent)
+        
         if not agent:
-            # Re-fetch general agent
+            logger.warning("use_case.answer_query.no_agent", intent=intent.value)
+            # Fallback to general agent or chatbot
             agent = registry.get_agent("general_islamic_agent")
-            is_v2 = True  # Assuming v2 by default for this registry
+            if not agent:
+                agent = registry.get_agent("chatbot_agent")
 
-        if not agent:
-            raise RuntimeError("No suitable agent found in registry for intent: " + str(intent))
+        # 3. Agent Execution
+        # V2 agents use .run() for the full pipeline; legacy agents use .execute()
+        try:
+            if hasattr(agent, "run"):
+                # V2 Collection-aware RAG pipeline
+                result: AgentOutput = await agent.run(
+                    input_data.query,
+                    meta={
+                        "language": input_data.language,
+                        "madhhab": input_data.madhhab,
+                        "sub_intent": getattr(decision.result, "quran_subintent", None),
+                    }
+                )
+            else:
+                # Standard/Legacy adapter
+                result: AgentOutput = await agent.execute(
+                    AgentInput(
+                        query=input_data.query,
+                        language=input_data.language,
+                        metadata={
+                            "madhhab": input_data.madhhab,
+                            "sub_intent": getattr(decision.result, "quran_subintent", None),
+                        }
+                    )
+                )
+        except Exception as e:
+            logger.error("use_case.answer_query.agent_error", error=str(e), exc_info=True)
+            return self._build_error_output(input_data, str(e))
 
-        # 3. Execution (Full RAG Pipeline)
-        # V2 CollectionAgent.run() handles Retrieve -> Rerank -> Verify -> Generate
-        if is_v2 and hasattr(agent, "run"):
-            result: AgentOutput = await agent.run(query, meta={"language": language, "madhhab": madhhab})
-        else:
-            # Fallback for legacy or standard agents
-            result = await agent.execute(AgentInput(query=query, language=language, metadata={"madhhab": madhhab}))
+        processing_time_ms = int((time.time() - start_time) * 1000)
 
+        # 4. Build Output
         return AnswerQueryOutput(
             answer=result.answer,
-            citations=result.citations,
-            metadata=result.metadata,
+            intent=intent.value,
             confidence=result.confidence,
-            intent=intent.value if hasattr(intent, "value") else str(intent),
+            citations=[c.model_dump() for c in result.citations],
+            metadata={
+                **result.metadata,
+                "processing_time_ms": processing_time_ms,
+                "router_method": decision.result.method,
+                "router_confidence": decision.result.confidence,
+            },
+            requires_human_review=result.requires_human_review,
+        )
+
+    def _build_error_output(self, input_data: AnswerQueryInput, error: str) -> AnswerQueryOutput:
+        """Build error response when agent fails."""
+        return AnswerQueryOutput(
+            answer="عذراً، حدث خطأ أثناء معالجة طلبك. يرجى المحاولة لاحقاً.",
+            intent="unknown",
+            confidence=0.0,
+            citations=[],
+            metadata={"error": error},
+            requires_human_review=True,
         )
 
 
-# Default use case instance for simple DI or migration
-answer_query_use_case = AnswerQueryUseCase()
+# Singleton instance
+_instance: AnswerQueryUseCase | None = None
+
+
+def get_answer_query_use_case() -> AnswerQueryUseCase:
+    """Get global use case instance."""
+    global _instance
+    if _instance is None:
+        _instance = AnswerQueryUseCase()
+    return _instance

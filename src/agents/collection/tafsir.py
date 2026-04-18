@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -113,6 +114,8 @@ class TafsirCollectionAgent(CollectionAgent):
     async def rerank_candidates(self, query: str, candidates: list[dict]) -> list[dict]:
         threshold = self.strategy.score_threshold if self.strategy else 0.15
         filtered = [p for p in candidates if p.get("score", 0) >= threshold]
+        # Deduplicate by content prefix
+        filtered = self._deduplicate_passages(filtered)
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
@@ -139,9 +142,10 @@ class TafsirCollectionAgent(CollectionAgent):
                         {"role": "user", "content": self._build_user_prompt(query, formatted, language)},
                     ],
                     temperature=0.2,
-                    max_tokens=2048,
+                    max_tokens=1024,
                 )
-                return response.choices[0].message.content
+                raw_answer = response.choices[0].message.content
+                return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
@@ -163,14 +167,18 @@ class TafsirCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
+        preamble = self._load_shared_preamble()
         try:
             with open("prompts/tafsir_agent.txt", encoding="utf-8") as f:
-                return f.read()
+                agent_prompt = f.read()
         except FileNotFoundError:
             return """أنت متخصص في تفسير القرآن الكريم.
 استند حصراً إلى النصوص التفسيرية.
 اذكر اسم المفسر والمصدر.
 Use مراجع المصادر [C1]، [C2]."""
+        if preamble:
+            return f"{preamble}\n\n{agent_prompt}"
+        return agent_prompt
 
     def _build_user_prompt(self, query: str, passages: str, language: str) -> str:
         return f"""السؤال: {query}
