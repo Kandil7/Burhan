@@ -159,14 +159,17 @@ class FiqhCollectionAgent(CollectionAgent):
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         """Retrieve candidate passages from Fiqh collection."""
-        if not self.vector_store:
+        if not self.vector_store or getattr(self, "embedding_model", None) is None:
+            import logging
+            logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")
             return []
 
         top_k = self.strategy.top_k if self.strategy else 15
 
         try:
+            query_embedding = await self.embedding_model.encode_query(query)
             results = await self.vector_store.search(
-                query=query,
+                query_embedding=query_embedding,
                 collection=self.COLLECTION,
                 top_k=top_k,
             )
@@ -179,7 +182,9 @@ class FiqhCollectionAgent(CollectionAgent):
                 }
                 for r in results
             ]
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.getLogger(self.__class__.__name__).error(f"Retrieval failed: {e}")
             return []
 
     async def rerank_candidates(
@@ -242,7 +247,9 @@ class FiqhCollectionAgent(CollectionAgent):
                     max_tokens=2048,
                 )
                 return response.choices[0].message.content
-            except Exception:
+            except Exception as e:
+                import logging
+                logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
                 pass
 
         return formatted

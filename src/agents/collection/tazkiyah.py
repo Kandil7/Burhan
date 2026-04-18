@@ -75,16 +75,25 @@ class TazkiyahCollectionAgent(CollectionAgent):
         return IntentLabel.TazkiyahSuluk
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
-        if not self.vector_store:
+        if not self.vector_store or getattr(self, "embedding_model", None) is None:
+            import logging
+            logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")
             return []
         top_k = self.strategy.top_k if self.strategy else 10
         try:
-            results = await self.vector_store.search(query=query, collection=self.COLLECTION, top_k=top_k)
+            query_embedding = await self.embedding_model.encode_query(query)
+            results = await self.vector_store.search(
+                query_embedding=query_embedding,
+                collection=self.COLLECTION,
+                top_k=top_k,
+            )
             return [
                 {"content": r.get("content", ""), "score": r.get("score", 0.0), "metadata": r.get("metadata", {})}
                 for r in results
             ]
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.getLogger(self.__class__.__name__).error(f"Retrieval failed: {e}")
             return []
 
     async def rerank_candidates(self, query: str, candidates: list[dict]) -> list[dict]:
@@ -114,7 +123,9 @@ class TazkiyahCollectionAgent(CollectionAgent):
                     max_tokens=1792,
                 )
                 return response.choices[0].message.content
-            except Exception:
+            except Exception as e:
+                import logging
+                logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
                 pass
         return formatted
 
