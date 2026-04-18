@@ -54,9 +54,10 @@ class Citation(BaseModel):
     text_excerpt: str | None = Field(default=None, description="Quoted passage (≤ 300 chars)")
 
     @classmethod
-    def from_passage(cls, passage: dict, index: int) -> Citation:
+    def from_passage(cls, passage: dict, index: int, prefix: str = "C") -> Citation:
         meta = passage.get("metadata", {})
-
+        citation_id = f"{prefix}{index}"
+        
         # Infer type from collection or explicit metadata field
         collection = meta.get("collection", "")
         source_type = meta.get("source_type") or (
@@ -101,7 +102,7 @@ class Citation(BaseModel):
         text_excerpt = _clean_text_excerpt(raw_excerpt) or None
 
         return cls(
-            id=f"C{index}",
+            id=citation_id,
             type=source_type,
             source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
             reference=" — ".join(ref_parts),
