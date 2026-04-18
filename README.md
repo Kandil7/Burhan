@@ -2,16 +2,18 @@
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
+> **📢 Latest: v2 Migration Complete (April 2026)** - Refactored to a declarative, config-backed architecture with canonical paths for agents, retrieval, verification, and routing. See [Migration Guide](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md) for details.
+
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![Phase](https://img.shields.io/badge/status-Phase%2010%20Complete-success.svg)](https://github.com/Kandil7/Athar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Lines of Code](https://img.shields.io/badge/Lines%20of%20Code-18,000+-orange.svg)]()
+[![Lines of Code](https://img.shields.io/badge/Lines%20of%20Code-20,000+-orange.svg)]()
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-success.svg)](https://github.com/Kandil7/Athar)
 
 ---
 
-## 🚀 Latest Update: Phase 10 - Multi-Agent Collection-Aware RAG ✅
+## 🚀 Latest Update: Phase 10 - Multi-Agent Collection-Aware RAG ✅ + v2 Migration
 
 **April 18, 2026:** Successfully completed **Phase 10** with the Multi-Agent Collection-Aware RAG system:
 
@@ -26,7 +28,15 @@
 - ✅ **ConfigRouter** - DOMAIN_KEYWORDS-based routing with keyword patterns
 - ✅ **Documentation** - 7 new reference documents
 
+**April 2026 - v2 Migration:**
+- ✅ **Declarative Config** - YAML configs + prompt files (separation of concerns)
+- ✅ **Canonical Paths** - Organized src/agents/collection/, src/retrieval/, src/verification/
+- ✅ **First-Class Layers** - retrieval, verification, routing as separate packages
+- ✅ **Infrastructure** - src/infrastructure/qdrant/ for Qdrant operations
+- ✅ **Observability** - Request ID middleware + trace schemas
+
 See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECTION_ARCHITECTURE.md) for details.
+See [v2 Migration Notes](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md) for migration details.
 
 ---
 
@@ -65,7 +75,7 @@ See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECT
 |--------|-------|
 | **Lines of Code** | 20,000+ |
 | **Python Files** | 90+ |
-| **Agents** | 16 specialized agents (8 legacy + 8 collection) |
+| **Agents** | 16+ specialized agents (10 collection + 6 legacy) |
 | **Tools** | 5 deterministic tools |
 | **Intents** | 20+ types |
 | **Collections** | 10 vector collections |
@@ -76,6 +86,7 @@ See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECT
 | **Agent Configs** | 10 YAML files |
 | **System Prompts** | 11 prompt files |
 | **Tests** | 255+ tests |
+| **v2 Canonical Modules** | 7 new packages (retrieval, verification, routing, etc.) |
 
 ---
 
@@ -141,22 +152,30 @@ User Query → Intent Classifier → Multi-Agent Orchestration →
 
 ### Component Details
 
-| Component | Purpose | New in Phase 10 |
-|-----------|---------|-----------------|
-| `CollectionAgent` | Abstract base for collection-aware RAG | ✅ NEW |
-| `FiqhCollectionAgent` | Fiqh with verification pipeline | ✅ NEW |
-| `HadithCollectionAgent` | Hadith with grade verification | ✅ NEW |
-| `TafsirCollectionAgent` | Quran tafsir with quote validation | ✅ NEW |
-| `RetrievalStrategy` | Per-agent retrieval config | ✅ NEW |
-| `VerificationSuite` | Digital Isnad verification | ✅ NEW |
-| `MultiAgentOrchestrator` | Multi-agent coordination | ✅ NEW |
-| `OrchestrationPattern` | SEQUENTIAL/PARALLEL/HIERARCHICAL | ✅ NEW |
-| `HybridQdrantClient` | Hybrid dense/sparse search | ✅ NEW |
-| `EvaluationMetrics` | Precision/Recall/Citations | ✅ NEW |
-| `ConfigRouter` | DOMAIN_KEYWORDS-based routing | ✅ NEW |
-| `AgentConfigManager` | YAML config loading | ✅ NEW |
-| `prompts/*` | System prompts (11 files) | ✅ NEW |
-| `config/agents/*` | YAML configs (10 files) | ✅ NEW |
+| Component | Purpose | New in Phase 10 | New in v2 |
+|-----------|---------|-----------------|-----------|
+| `CollectionAgent` | Abstract base for collection-aware RAG | ✅ NEW | |
+| `FiqhCollectionAgent` | Fiqh with verification pipeline | ✅ NEW | |
+| `HadithCollectionAgent` | Hadith with grade verification | ✅ NEW | |
+| `TafsirCollectionAgent` | Quran tafsir with quote validation | ✅ NEW | |
+| `RetrievalStrategy` | Per-agent retrieval config | ✅ NEW | |
+| `VerificationSuite` | Digital Isnad verification | ✅ NEW | |
+| `MultiAgentOrchestrator` | Multi-agent coordination | ✅ NEW | |
+| `OrchestrationPattern` | SEQUENTIAL/PARALLEL/HIERARCHICAL | ✅ NEW | |
+| `HybridQdrantClient` | Hybrid dense/sparse search | ✅ NEW | |
+| `EvaluationMetrics` | Precision/Recall/Citations | ✅ NEW | |
+| `ConfigRouter` | DOMAIN_KEYWORDS-based routing | ✅ NEW | |
+| `AgentConfigManager` | YAML config loading | ✅ NEW | |
+| `prompts/*` | System prompts (11 files) | ✅ NEW | |
+| `config/agents/*` | YAML configs (10 files) | ✅ NEW | |
+| `src/agents/collection/` | Canonical v2 agents | | ✅ NEW |
+| `src/verification/` | First-class verification layer | | ✅ NEW |
+| `src/application/routing/` | v2 routing (intent, planner, executor) | | ✅ NEW |
+| `src/infrastructure/qdrant/` | Qdrant infrastructure | | ✅ NEW |
+| `src/retrieval/schemas` | Retrieval data schemas | | ✅ NEW |
+| `src/generation/` | Generation schemas & prompt loader | | ✅ NEW |
+| `RequestIDMiddleware` | Request tracing | | ✅ NEW |
+| `ResponseTrace` | API response tracing | | ✅ NEW |
 
 ### Intent Priority System (Phase 10)
 
@@ -580,16 +599,25 @@ Athar/
 │   │   ├── __init__.py              # AgentConfigManager
 │   │   └── loader.py                # YAML config loading
 │   │
-│   ├── retrieval/                  # Retrieval layer (Phase 10)
-│   │   ├── strategies.py            # Per-agent retrieval strategies
+│   ├── retrieval/                  # Retrieval layer (Phase 10 + v2)
+│   │   ├── schemas.py             # RetrievalPassage, RetrievalResult (NEW)
+│   │   ├── strategies.py           # Per-agent retrieval strategies
 │   │   ├── retrievers/             # Dense, sparse, hybrid retrievers
-│   │   ├── ranking/                 # Reranking, scoring
+│   │   ├── ranking/                # Reranking, scoring
 │   │   ├── policies/                # Collection policies
 │   │   ├── expanders/              # Query expanders
 │   │   ├── aggregation/            # Result aggregation
-│   │   └── planning/               # Retrieval planning
+│   │   ├── planning/               # Retrieval planning
+│   │   ├── filters/                # v2 filter builder & presets (NEW)
+│   │   │   ├── builder.py
+│   │   │   └── presets.py
+│   │   ├── fusion/                 # v2 score fusion (NEW)
+│   │   │   └── rrf.py              # Reciprocal Rank Fusion
+│   │   └── mapping/                # v2 payload mapping (NEW)
+│   │       ├── payload_mapper.py
+│   │       └── citation_mapper.py
 │   │
-│   ├── verifiers/                  # Verification layer (Phase 10)
+│   ├── verifiers/                  # Verification layer (Phase 10 - deprecated)
 │   │   ├── base.py                 # BaseVerifier, VerificationResult
 │   │   ├── suite_builder.py       # Verification suite builder
 │   │   ├── fiqh_checks.py          # Fiqh-specific verifiers
@@ -617,25 +645,54 @@ Athar/
 │   │   │   ├── router_agent.py    # RouterAgent
 │   │   │   ├── orchestration.py   # Multi-agent orchestration
 │   │   │   ├── multi_agent.py     # Multi-agent router
-│   │   │   └── config_router.py   # DOMAIN_KEYWORDS router (NEW)
+│   │   │   ├── config_router.py   # DOMAIN_KEYWORDS router (NEW)
+│   │   │   └── routing/           # v2 routing layer (NEW)
+│   │   │       ├── intent_router.py
+│   │   │       ├── planner.py
+│   │   │       └── executor.py
 │   │   ├── container.py          # DI container
 │   │   ├── interfaces.py         # Protocol definitions
 │   │   ├── classifier_factory.py # Classifier factory
 │   │   ├── hybrid_classifier.py  # HybridIntentClassifier
 │   │   └── models.py              # RoutingDecision models
 │   │
-│   ├── generation/               # Generation layer (Phase 10)
+│   ├── generation/               # Generation layer (Phase 10 + v2)
+│   │   ├── schemas.py           # Generation schemas (NEW)
+│   │   ├── prompt_loader.py     # Prompt loader (NEW)
 │   │   ├── prompts/              # Prompt templates per agent
 │   │   ├── composers/            # Prompt composition
 │   │   └── policies/             # Generation policies
 │   │
-│   ├── agents/                      # 16 specialized agents (8 legacy + 8 collection)
+│   ├── verification/             # v2 Verification layer (NEW)
+│   │   ├── schemas.py           # VerificationReport, CheckResult
+│   │   ├── trace.py              # Verification tracing
+│   │   ├── checks/               # Individual verification checks
+│   │   └── __init__.py
+│   │
+│   ├── infrastructure/          # v2 Infrastructure layer (NEW)
+│   │   └── qdrant/              # Qdrant operations
+│   │       ├── client.py        # QdrantClientWrapper
+│   │       ├── collections.py    # Collection configs
+│   │       └── payload_indexes.py
+│   │
+│   ├── agents/                      # 16+ specialized agents
+│   │   ├── legacy/                # Legacy agents (deprecated)
+│   │   ├── collection/            # v2 canonical agents (NEW)
+│   │   │   ├── base.py            # CollectionAgent base
+│   │   │   ├── fiqh.py            # FiqhCollectionAgent
+│   │   │   ├── hadith.py          # HadithCollectionAgent
+│   │   │   ├── tafsir.py          # TafsirCollectionAgent
+│   │   │   ├── aqeedah.py         # AqeedahCollectionAgent
+│   │   │   ├── seerah.py          # SeerahCollectionAgent
+│   │   │   ├── usul_fiqh.py       # UsulFiqhCollectionAgent
+│   │   │   ├── history.py         # HistoryCollectionAgent
+│   │   │   ├── language.py        # LanguageCollectionAgent
+│   │   │   ├── tazkiyah.py        # TazkiyahCollectionAgent
+│   │   │   └── general.py          # GeneralCollectionAgent
 │   │   ├── base.py                 # BaseAgent, Citation
 │   │   ├── base_rag_agent.py       # BaseRAGAgent (legacy)
-│   │   ├── collection_agent.py    # CollectionAgent abstract (NEW)
-│   │   ├── fiqh_collection_agent.py   # FiqhCollectionAgent (NEW)
-│   │   ├── hadith_collection_agent.py # HadithCollectionAgent (NEW)
-│   │   ├── tafsir_collection_agent.py  # TafsirCollectionAgent (NEW)
+│   │   ├── collection_agent.py    # CollectionAgent (deprecated)
+│   │   ├── fiqh_collection_agent.py   # FiqhCollectionAgent (deprecated)
 │   │   ├── aqeedah_collection_agent.py # AqeedahCollectionAgent (NEW)
 │   │   ├── seerah_collection_agent.py  # SeerahCollectionAgent (NEW)
 │   │   ├── usul_fiqh_collection_agent.py # UsulFiqhCollectionAgent (NEW)
@@ -765,6 +822,7 @@ Athar/
 | **Phase 8** | ✅ Complete | Hybrid Intent Classifier |
 | **Phase 9** | ✅ Complete | Production Ready (DI, Caching, Metrics) |
 | **Phase 10** | ✅ **COMPLETE** | **Multi-Agent Collection-Aware RAG** |
+| **v2 Migration** | ✅ **COMPLETE** | **Declarative Config + Canonical Paths** |
 
 ### Phase 10: Multi-Agent Collection-Aware RAG (April 18, 2026)
 
@@ -812,6 +870,22 @@ make test-language
 | test_zakat_calculator.py | ~95% | Zakat calculations |
 | test_inheritance_calculator.py | ~95% | Inheritance rules |
 | test_hybrid_classifier.py | ~90% | Intent classification |
+| test_config_backed_agents.py | 100% | 27 (v2 config system) |
+| test_collection_agent_base.py | 100% | 28 (v2 agent base) |
+| test_retrieval/test_strategies.py | 100% | 25 (retrieval strategies) |
+| test_router/test_orchestration.py | 100% | 22 (orchestration) |
+
+### v2 Migration Testing
+
+The v2 migration adds 102+ tests for the new canonical paths:
+
+```bash
+# Run v2 core tests
+pytest tests/test_config_backed_agents.py tests/test_agents/test_collection_agent_base.py -v
+
+# Verify imports work
+python -c "from src.agents.collection import FiqhCollectionAgent; from src.verification import VerificationReport; from src.application.routing import IntentRouter"
+```
 
 ---
 

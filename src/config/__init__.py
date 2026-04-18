@@ -23,7 +23,7 @@ from typing import Optional
 import yaml
 from pydantic import BaseModel, Field
 
-from src.agents.collection_agent import (
+from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
@@ -34,6 +34,15 @@ from src.agents.collection_agent import (
 from src.agents.base import AgentOutput
 
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# Config Paths
+# ============================================================================
+
+# Project root
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+CONFIG_DIR = PROJECT_ROOT / "config" / "agents"
+PROMPTS_DIR = PROJECT_ROOT / "prompts"
 
 # ============================================================================
 # Config Data Models (mirroring YAML structure)
@@ -124,8 +133,6 @@ class AgentConfigManager:
             config_dir: Path to config/agents directory
             prompts_dir: Path to prompts directory
         """
-        from src.config.loader import CONFIG_DIR, PROMPTS_DIR
-
         self._config_dir = config_dir or CONFIG_DIR
         self._prompts_dir = prompts_dir or PROMPTS_DIR
         self._configs: dict[str, AgentYamlConfig] = {}
@@ -296,4 +303,6 @@ __all__ = [
     "FallbackConfig",
     "AbstentionConfig",
     "get_config_manager",
+    "CONFIG_DIR",
+    "PROMPTS_DIR",
 ]

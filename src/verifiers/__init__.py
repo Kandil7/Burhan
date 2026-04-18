@@ -1,111 +1,30 @@
-# Verifiers Module
-"""Verification framework for Islamic QA system.
+"""
+Verifiers Module - DEPRECATED.
 
-Provides verifiers for:
-- Exact quote matching (Quran, Hadith)
-- Source attribution
-- Evidence sufficiency
-- Contradiction detection
-- Islamic school (madhhab) consistency
-- Temporal consistency
-- Hadith grading
-- Groundedness assessment
+This module is DEPRECATED. The canonical verification layer is now in src/verification/.
 
-Usage:
-    from src.verifiers import (
-        VerifierPipeline,
-        VerificationResult,
-        VerificationReport,
-        VerificationPolicy,
-        VerificationLevel,
-    )
-
-    pipeline = create_verification_pipeline()
-    result = await pipeline.verify_claim(claim, evidence, context)
+Migration:
+- src/verifiers/base.py -> src/verification/base.py
+- src/verifiers/suite_builder.py -> src/verification/suite_builder.py
+- src/verifiers/fiqh_checks.py -> src/verification/checks/fiqh_checks.py
+- src/verifiers/exact_quote.py -> src/verification/checks/exact_quote.py
+- src/verifiers/hadith_grade.py -> src/verification/checks/hadith_grade.py
+- src/verifiers/source_attribution.py -> src/verification/checks/source_attribution.py
+- src/verifiers/contradiction.py -> src/verification/checks/contradiction.py
+- src/verifiers/evidence_sufficiency.py -> src/verification/checks/evidence_sufficiency.py
+- src/verifiers/policies.py -> src/verification/policies.py
 """
 
-from .base import (
-    BaseVerifier,
-    VerificationResult,
-    VerificationReport,
-    VerifierType,
-)
-from .pipeline import (
-    VerifierPipeline,
-    verifier_pipeline,
-    create_verification_pipeline,
-)
-from .policies import (
-    VerificationPolicy,
-    VerificationLevel,
-)
-from .quote_span import QuoteSpan, QuoteSpanDetector
-from .exact_quote import ExactQuoteVerifier, exact_quote_verifier
-from .hadith_grade import (
-    HadithGradeVerifier,
-    HadithGrade,
-    HADITH_COLLECTIONS,
-    hadith_grade_verifier,
-)
-from .source_attribution import SourceAttributionVerifier, source_attribution_verifier
-from .evidence_sufficiency import (
-    EvidenceSufficiencyVerifier,
-    SufficiencyCriteria,
-    evidence_sufficiency_verifier,
-)
-from .contradiction import ContradictionVerifier, contradiction_verifier
-from .school_consistency import (
-    SchoolConsistencyVerifier,
-    SchoolConsistencyCriteria,
-    ISLAMIC_SCHOOLS,
-    school_consistency_verifier,
-)
-from .temporal_consistency import TemporalConsistencyVerifier, temporal_consistency_verifier
-from .groundedness_judge import (
-    GroundednessJudge,
-    GroundednessLevel,
-    GroundednessScore,
-    groundedness_judge,
+import warnings
+
+warnings.warn(
+    "src.verifiers is DEPRECATED. Use src.verification instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
-__all__ = [
-    # Base classes
-    "BaseVerifier",
-    "VerificationResult",
-    "VerificationReport",
-    "VerifierType",
-    # Pipeline
-    "VerifierPipeline",
-    "verifier_pipeline",
-    "create_verification_pipeline",
-    # Policies
-    "VerificationPolicy",
-    "VerificationLevel",
-    # Quote span
-    "QuoteSpan",
-    "QuoteSpanDetector",
-    # Verifiers
-    "ExactQuoteVerifier",
-    "exact_quote_verifier",
-    "HadithGradeVerifier",
-    "HadithGrade",
-    "HADITH_COLLECTIONS",
-    "hadith_grade_verifier",
-    "SourceAttributionVerifier",
-    "source_attribution_verifier",
-    "EvidenceSufficiencyVerifier",
-    "SufficiencyCriteria",
-    "evidence_sufficiency_verifier",
-    "ContradictionVerifier",
-    "contradiction_verifier",
-    "SchoolConsistencyVerifier",
-    "SchoolConsistencyCriteria",
-    "ISLAMIC_SCHOOLS",
-    "school_consistency_verifier",
-    "TemporalConsistencyVerifier",
-    "temporal_consistency_verifier",
-    "GroundednessJudge",
-    "GroundednessLevel",
-    "GroundednessScore",
-    "groundedness_judge",
-]
+# Re-export from new location
+from src.verifiers.base import VerificationReport
+from src.verifiers.suite_builder import build_verification_suite_for, run_verification_suite
+
+__all__ = ["VerificationReport", "build_verification_suite_for", "run_verification_suite"]
