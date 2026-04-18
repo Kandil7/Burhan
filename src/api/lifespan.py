@@ -24,6 +24,10 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
+    
+    # Register all verification checks
+    from src.verifiers.suite_builder import register_all_checks
+    register_all_checks()
 
     # ── 1. LLM Clients ────────────────────────────────────────────────────────
     from src.infrastructure.llm_client import LLMClients

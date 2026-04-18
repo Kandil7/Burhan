@@ -6,14 +6,13 @@ Uses YAML config from config/agents/language.yaml
 
 from __future__ import annotations
 
-from src.agents.collection.base import Citation
 from src.agents.collection.base import (
+    Citation,
     CollectionAgent,
     CollectionAgentConfig,
+    FallbackPolicy,
     IntentLabel,
     RetrievalStrategy,
-    VerificationSuite,
-    FallbackPolicy,
     VerificationReport,
 )
 
@@ -52,10 +51,11 @@ class LanguageCollectionAgent(CollectionAgent):
         llm_client=None,
     ) -> None:
         if config is None:
+            from src.verifiers.suite_builder import build_verification_suite_for
             config = CollectionAgentConfig(
                 collection_name=self.COLLECTION,
                 strategy=self.DEFAULT_STRATEGY,
-                verification_suite=VerificationSuite(checks=[], fail_fast=False),
+                verification_suite=build_verification_suite_for(self.name),
                 fallback_policy=FallbackPolicy(strategy="chatbot"),
             )
 
@@ -147,7 +147,7 @@ class LanguageCollectionAgent(CollectionAgent):
 
     def _get_system_prompt(self) -> str:
         try:
-            with open("prompts/language_agent.txt", "r", encoding="utf-8") as f:
+            with open("prompts/language_agent.txt", encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return """أنت متخصص في اللغة العربية.

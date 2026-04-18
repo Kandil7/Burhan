@@ -12,17 +12,14 @@ Phase 2: FiqhAgent with full verification pipeline.
 from __future__ import annotations
 
 import re
-from typing import Any
 
-from src.agents.collection.base import AgentOutput, Citation
 from src.agents.collection.base import (
+    Citation,
     CollectionAgent,
     CollectionAgentConfig,
+    FallbackPolicy,
     IntentLabel,
     RetrievalStrategy,
-    VerificationSuite,
-    VerificationCheck,
-    FallbackPolicy,
     VerificationReport,
 )
 
@@ -122,17 +119,11 @@ class FiqhCollectionAgent(CollectionAgent):
     ) -> None:
         # Build config from defaults if not provided
         if config is None:
+            from src.verifiers.suite_builder import build_verification_suite_for
             config = CollectionAgentConfig(
                 collection_name=self.COLLECTION,
                 strategy=self.DEFAULT_STRATEGY,
-                verification_suite=VerificationSuite(
-                    checks=[
-                        VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
-                        VerificationCheck(name="source_attributor", fail_policy="warn", enabled=True),
-                        VerificationCheck(name="evidence_sufficiency", fail_policy="abstain", enabled=True),
-                    ],
-                    fail_fast=True,
-                ),
+                verification_suite=build_verification_suite_for(self.name),
                 fallback_policy=FallbackPolicy(strategy="chatbot"),
             )
 
@@ -273,7 +264,7 @@ class FiqhCollectionAgent(CollectionAgent):
     def _get_system_prompt(self) -> str:
         """Get system prompt from file or use default."""
         try:
-            with open("prompts/fiqh_agent.txt", "r", encoding="utf-8") as f:
+            with open("prompts/fiqh_agent.txt", encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             return """أنت مساعد إسلامي متخصص في الفقه الإسلامي.

@@ -146,11 +146,67 @@ AGENT_SUITE_MAP: Dict[str, VerificationSuite] = {
 
 
 # =============================================================================
-# Check Implementations Registry
-# =============================================================================
-
 # Registry mapping check names to their implementation classes
 CHECK_IMPLEMENTATIONS: Dict[str, type] = {}
+
+
+def register_all_checks() -> None:
+    """Register all available verification checks.
+
+    This should be called at application startup (e.g., in lifespan).
+    """
+    # 1. Domain-specific checks (Fiqh)
+    try:
+        from src.verifiers.fiqh_checks import register_fiqh_checks
+        register_fiqh_checks()
+    except ImportError:
+        pass
+
+    # 2. Hadith Grading
+    try:
+        from src.verifiers.hadith_grade import HadithGradeVerifier
+        # Register both aliases to support hadith.py and HADITH_VERIFICATION_SUITE
+        register_check("hadith_grade", HadithGradeVerifier)
+        register_check("hadith_grade_checker", HadithGradeVerifier)
+    except ImportError:
+        pass
+
+    # 3. Temporal Consistency
+    try:
+        from src.verifiers.temporal_consistency import TemporalConsistencyVerifier
+        register_check("temporal_consistency", TemporalConsistencyVerifier)
+    except ImportError:
+        pass
+
+    # 4. Global/Generic Checks (can override or supplement)
+    try:
+        from src.verifiers.exact_quote import ExactQuoteVerifier
+        # Only register if not already registered by domain checks
+        if "quote_validator" not in CHECK_IMPLEMENTATIONS:
+            register_check("quote_validator", ExactQuoteVerifier)
+    except ImportError:
+        pass
+
+    try:
+        from src.verifiers.source_attribution import SourceAttributionVerifier
+        if "source_attributor" not in CHECK_IMPLEMENTATIONS:
+            register_check("source_attributor", SourceAttributionVerifier)
+    except ImportError:
+        pass
+
+    try:
+        from src.verifiers.contradiction import ContradictionVerifier
+        if "contradiction_detector" not in CHECK_IMPLEMENTATIONS:
+            register_check("contradiction_detector", ContradictionVerifier)
+    except ImportError:
+        pass
+
+    try:
+        from src.verifiers.evidence_sufficiency import EvidenceSufficiencyVerifier
+        if "evidence_sufficiency" not in CHECK_IMPLEMENTATIONS:
+            register_check("evidence_sufficiency", EvidenceSufficiencyVerifier)
+    except ImportError:
+        pass
 
 
 def register_check(name: str, check_class: type) -> None:
