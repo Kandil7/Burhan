@@ -110,7 +110,7 @@ class SeerahCollectionAgent(CollectionAgent):
         filtered = [p for p in candidates if p.get("score", 0) >= threshold]
         # Deduplicate by content prefix
         filtered = self._deduplicate_passages(filtered)
-        top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
+        top_k = self.strategy.top_k if self.strategy else 10
         return filtered[:top_k]
 
     async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:

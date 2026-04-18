@@ -279,21 +279,8 @@ def run_verification_suite(
     query: str,
     candidates: list[dict],
 ) -> VerificationReport:
-    """Run a verification suite against candidates.
-
-    Args:
-        suite: VerificationSuite to run
-        query: Original query string
-        candidates: List of candidate passage dictionaries
-
-    Returns:
-        VerificationReport with verified passages
-
-    The function iterates through checks in the suite:
-    - abstain: Return empty verified_passages on failure
-    - warn: Log warning and continue
-    - proceed: Continue regardless of failure
-    """
+    """Run a verification suite against candidates."""
+    initial_count = len(candidates)
     verified_passages: list[dict] = list(candidates)
     all_issues: list[str] = []
     check_results: Dict[str, Any] = {}
@@ -321,7 +308,6 @@ def run_verification_suite(
 
             # Handle fail_policy
             if check.fail_policy == "abstain":
-                # Return empty report on failure
                 return VerificationReport(
                     is_verified=False,
                     confidence=0.0,
@@ -330,22 +316,34 @@ def run_verification_suite(
                     verified_passages=[],
                 )
             elif check.fail_policy == "warn":
-                # Log warning but continue
-                # Issue already added to all_issues
                 pass
-            # proceed: continue regardless
 
         # If fail_fast and check failed, stop processing
         if suite.fail_fast and not result["passed"]:
             break
 
+    # Final Count Logic: If one check filtered out passages, verified_passages would be smaller
+    final_count = len(verified_passages)
+    
     # Calculate overall verification status
-    is_verified = len(all_issues) == 0
-    confidence = round(1.0 - (len(all_issues) * 0.2), 3) if all_issues else 1.0
+    is_verified = len(all_issues) == 0 and (initial_count == final_count or initial_count == 0)
+    
+    # Start with 1.0 confidence
+    confidence = 1.0
+    
+    # Penalize for issues
+    if all_issues:
+        confidence -= (len(all_issues) * 0.2)
+        
+    # Penalize for lost evidence (if count dropped, someone didn't pass)
+    if initial_count > 0 and final_count < initial_count:
+        drop_ratio = (initial_count - final_count) / initial_count
+        confidence -= (drop_ratio * 0.3)
+        all_issues.append(f"Evidence reduced from {initial_count} to {final_count} during verification.")
 
     return VerificationReport(
         is_verified=is_verified,
-        confidence=min(confidence, 1.0),
+        confidence=max(0.0, round(confidence, 3)),
         issues=all_issues,
         details=check_results,
         verified_passages=verified_passages,
