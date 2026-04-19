@@ -147,7 +147,7 @@ class VerificationReport(BaseModel):
 
     is_verified: bool = Field(description="Overall verification status")
     confidence: float = Field(description="Overall confidence score", ge=0.0, le=1.0)
-    issues: list[str] = Field(default_factory=list, description="Verification issues")
+    issues: list[Any] = Field(default_factory=list, description="Verification issues")
     details: dict[str, Any] = Field(default_factory=dict, description="Detailed results")
     verified_passages: list[dict] = Field(default_factory=list, description="Passages that passed verification")
 
@@ -157,7 +157,7 @@ class VerificationReport(BaseModel):
         passages: list[dict],
         is_verified: bool = True,
         confidence: float = 1.0,
-        issues: list[str] | None = None,
+        issues: list[Any] | None = None,
     ) -> VerificationReport:
         """
         Create a verification report from retrieved passages.
@@ -400,55 +400,49 @@ class CollectionAgent(ABC):
     ) -> AgentOutput:
         """
         Execute the full RAG pipeline end-to-end.
-
-        Pipeline steps:
-        1. Normalize query (query_intake)
-        2. Classify intent (classify_intent)
-        3. Retrieve candidates (retrieve_candidates)
-        4. Rerank & deduplicate candidates (rerank_candidates)
-        5. Verify candidates (run_verification)
-        6. Policy gate (AnswerPolicy: answer/clarify/abstain)
-        7. Generate answer (generate_answer) + strip CoT
-        8. Assemble citations (assemble_citations)
-
-        Args:
-            raw_question: Raw user question
-            meta: Optional metadata (language, filters, etc.)
-
-        Returns:
-            AgentOutput with answer, citations, and metadata
         """
         from src.generation.policies.answer_policy import AnswerMode, AnswerPolicy
+        import time
 
         meta = meta or {}
         language = meta.get("language", "ar")
         timing: dict[str, int] = {}
 
         # Step 1: Query intake - normalize
-        t0 = time.time()
+        t0 = time.perf_counter()
         normalized = self.query_intake(raw_question)
-        timing["intake_ms"] = int((time.time() - t0) * 1000)
+        timing["intake_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 2: Classify intent
-        t0 = time.time()
+        t0 = time.perf_counter()
         intent = self.classify_intent(normalized)
-        timing["classification_ms"] = int((time.time() - t0) * 1000)
+        timing["classification_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 3: Retrieve candidates
-        t0 = time.time()
+        t0 = time.perf_counter()
         candidates = await self.retrieve_candidates(normalized)
-        timing["retrieval_ms"] = int((time.time() - t0) * 1000)
+        timing["retrieval_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 4: Rerank + deduplicate candidates
-        t0 = time.time()
+        t0 = time.perf_counter()
         ranked = await self.rerank_candidates(normalized, candidates)
         ranked = self._deduplicate_passages(ranked)
-        timing["rerank_ms"] = int((time.time() - t0) * 1000)
+        timing["rerank_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 5: Run verification
-        t0 = time.time()
+        t0 = time.perf_counter()
         verification = await self.run_verification(normalized, ranked)
-        timing["verification_ms"] = int((time.time() - t0) * 1000)
+        timing["verification_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # Track filtered evidence
+        removed_count = len(candidates) - len(verification.verified_passages)
+        if removed_count > 0:
+            verification.confidence = min(verification.confidence, 0.90)
+            verification.issues.append({
+                "type": "evidence_filtered_out",
+                "removed_count": removed_count,
+                "message": f"تم استبعاد {removed_count} من المقاطع أثناء التصفية والتحقق من الأدلة."
+            })
 
         # Step 6: Policy gate — determine answer mode
         policy = AnswerPolicy()
@@ -505,14 +499,14 @@ class CollectionAgent(ABC):
             )
 
         # Step 7: Generate answer + strip CoT leakage
-        t0 = time.time()
+        t0 = time.perf_counter()
         answer = await self.generate_answer(
             normalized,
             verification.verified_passages,
             language,
         )
         answer = strip_cot_leakage(answer)
-        timing["generation_ms"] = int((time.time() - t0) * 1000)
+        timing["generation_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 8: Assemble citations
         citations = self.assemble_citations(verification.verified_passages)
