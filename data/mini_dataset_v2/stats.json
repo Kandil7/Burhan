@@ -1,0 +1,46 @@
+{
+  "total_records": 100000,
+  "samples_per_collection": 10000,
+  "collections": [
+    {
+      "collection": "aqeedah_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "arabic_language_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "fiqh_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "general_islamic",
+      "sampled": 10000
+    },
+    {
+      "collection": "hadith_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "islamic_history_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "quran_tafsir",
+      "sampled": 10000
+    },
+    {
+      "collection": "seerah_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "spirituality_passages",
+      "sampled": 10000
+    },
+    {
+      "collection": "usul_fiqh",
+      "sampled": 10000
+    }
+  ]
+}

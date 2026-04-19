@@ -1,90 +1,43 @@
 """
-Classifier Factory for Athar Islamic QA system.
+Intent Classifier Factory for Athar Islamic QA System.
 
-Returns the correct IntentClassifier based on CLASSIFIER_BACKEND setting.
-
-┌──────────────────────┬───────────────────────────────────────────────────┐
-│ CLASSIFIER_BACKEND   │ What you get                                      │
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ hybrid  (default)    │ HybridIntentClassifier                            │
-│                      │ • Zero external dependencies                      │
-│                      │ • Keyword fast-path + Jaccard fallback    │
-│                      │ • Ideal for dev / offline environments    │
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ llm                  │ LLMIntentClassifier                           │
-│                      │ • Requires OPENAI_API_KEY                 │
-│                      │ • Works with any OpenAI-compatible API  │
-│                      │ • Silent fallback to ISLAMIC_KNOWLEDGE│
-├──────────────────────┼───────────────────────────────────────────────────┤
-│ chain                │ FallbackChainClassifier                     │
-│                      │ • LLM primary (raises on error)          │
-│                      │ • HybridIntentClassifier fallback      │
-│                      │ • Best for production: accuracy +     │
-│                      │   reliability                      │
-└──────────────────────┴───────────────────────────────────────────────────┘
+Returns the correct IntentClassifier implementation based on settings.
+Coordinates between Keyword, Hybrid (Master), and LLM-based classifiers.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Any
 
-from src.application.hybrid_classifier import HybridIntentClassifier
 from src.application.interfaces import IntentClassifier
+from src.application.router.hybrid_classifier import MasterHybridClassifier
 from src.domain.models import ClassificationResult
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# FallbackChainClassifier
+# Fallback Chain Classifier
 # ============================================================================
-
 
 class FallbackChainClassifier(IntentClassifier):
     """
-    Tries `primary` first; on any unhandled exception falls back to `secondary`.
-
-    Typical use:  LLMIntentClassifier (primary)  →  HybridIntentClassifier (fallback)
-
-    Guarantees:
-    • The primary must be configured with raise_on_error=True so that failures
-      propagate here instead of being silently swallowed inside the primary.
-    • Fallback is always HybridIntentClassifier — pure in-process, never fails.
-    • The returned ClassificationResult.method is preserved from whichever
-      classifier succeeded, so downstream logging shows the actual path taken.
+    Tries primary classifier first, falls back to secondary on any error.
+    Useful for LLM -> Hybrid fallback patterns.
     """
-
-    def __init__(
-        self,
-        primary: IntentClassifier,
-        fallback: IntentClassifier,
-    ) -> None:
+    def __init__(self, primary: IntentClassifier, fallback: IntentClassifier):
         self._primary = primary
         self._fallback = fallback
 
     async def classify(self, query: str) -> ClassificationResult:
-        """Try primary, fall back to secondary on error."""
         try:
-            result = await self._primary.classify(query)
-            logger.debug(
-                "chain_classifier.primary_ok",
-                extra={"method": result.method, "intent": result.intent.value},
-            )
-            return result
-        except Exception as exc:
-            logger.warning(
-                "chain_classifier.primary_failed_using_fallback",
-                exc_info=exc,
-                extra={"fallback": type(self._fallback).__name__},
-            )
+            return await self._primary.classify(query)
+        except Exception as e:
+            logger.warning(f"Primary classifier failed, using fallback: {e}")
             return await self._fallback.classify(query)
 
     async def close(self) -> None:
-        """Clean up both classifiers."""
         if hasattr(self._primary, "close"):
             await self._primary.close()
         if hasattr(self._fallback, "close"):
@@ -92,66 +45,58 @@ class FallbackChainClassifier(IntentClassifier):
 
 
 # ============================================================================
-# Factory
+# Build Classifier Factory Function
 # ============================================================================
 
-
-def build_classifier() -> IntentClassifier:
+def build_classifier(embedding_model: Any = None) -> IntentClassifier:
     """
-    Returns the correct IntentClassifier based on CLASSIFIER_BACKEND setting.
-
-    LLM infrastructure imports are deferred: openai package is NOT imported
-    when backend=hybrid, keeping startup fast and dependency-free.
+    Constructs and returns an IntentClassifier based on application settings.
+    
+    Args:
+        embedding_model: Optional BGE-M3 model for semantic classification.
     """
-    from src.config.settings import Settings
-
-    # Get settings instance to check backend
-    settings = Settings()
+    from src.config.settings import settings
+    
     backend = settings.classifier_backend
-    logger.info("classifier_factory.build", extra={"backend": backend.value})
+    logger.info(f"Building classifier with backend: {backend}, embedding_model_present: {embedding_model is not None}")
 
-    # ── hybrid ────────────────────────────────────────────────────────────
-    if backend.value == "hybrid":
-        return HybridIntentClassifier(
-            low_conf_threshold=settings.low_conf_threshold,
-        )
+    # 1. Base Master Hybrid Classifier (Keyword + Semantic) - Always available
+    master_hybrid = MasterHybridClassifier(
+        embedding_model=embedding_model,
+        low_conf_threshold=settings.low_conf_threshold
+    )
 
-    # ── llm | chain ─────────────────────────────────────────────────
-    if backend.value in ("llm", "chain"):
+    if backend == "hybrid":
+        return master_hybrid
+
+    # 2. LLM Classifier (requires API keys)
+    if backend in ("llm", "chain"):
         try:
-            # Deferred import: openai is only required for LLM backends
             from src.infrastructure.llm.llm_classifier import LLMIntentClassifier
             from src.infrastructure.llm.openai_client import build_openai_client
 
             client = build_openai_client()
-
-            llm = LLMIntentClassifier(
+            llm_classifier = LLMIntentClassifier(
                 client=client,
-                model=settings.openai_model,  # Use openai_model from settings
-                temperature=settings.llm_temperature,
-                max_tokens=settings.llm_max_tokens,
-                # raise_on_error=True so FallbackChainClassifier catches the exception
-                raise_on_error=(backend.value == "chain"),
+                model=settings.openai_model,
+                temperature=settings.classifier_llm_temperature,
+                max_tokens=settings.classifier_llm_max_tokens,
+                raise_on_error=(backend == "chain")
             )
 
-            if backend.value == "chain":
-                hybrid_fallback = HybridIntentClassifier(
-                    low_conf_threshold=settings.low_conf_threshold,
-                )
+            if backend == "chain":
                 return FallbackChainClassifier(
-                    primary=llm,
-                    fallback=hybrid_fallback,
+                    primary=llm_classifier,
+                    fallback=master_hybrid
                 )
+            
+            return llm_classifier
 
-            return llm
-        except ImportError as e:
-            logger.warning(
-                "classifier_factory.openai_not_installed",
-                extra={"error": str(e), "falling_back": "hybrid"},
-            )
-            # Fall back to hybrid if openai not installed
-            return HybridIntentClassifier(
-                low_conf_threshold=settings.low_conf_threshold,
-            )
+        except (ImportError, ValueError) as e:
+            logger.error(f"Failed to initialize LLM classifier: {e}. Falling back to Hybrid.")
+            return master_hybrid
 
-    raise ValueError(f"Unknown classifier backend: {backend!r}")
+    # Default fallback
+    return master_hybrid
+
+__all__ = ["build_classifier", "FallbackChainClassifier"]

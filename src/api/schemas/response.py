@@ -15,8 +15,8 @@ class CitationResponse(BaseModel):
     """
     id: str = Field(description="Citation ID: C1, C2, C3, etc.")
     type: str = Field(
-        description="Source type: quran, hadith, fatwa, fiqh_book, dua",
-        examples=["quran", "hadith", "fatwa"]
+        description="Source type: quran, hadith, fatwa, fiqh_book, dua, seerah, tafsir, aqeedah",
+        examples=["quran", "hadith", "fatwa", "fiqh_book", "dua", "seerah", "tafsir", "aqeedah"]
     )
     source: str = Field(description="Normalized source name")
     reference: str = Field(description="Specific reference (book, chapter, number)")

@@ -1,0 +1,15 @@
+{"query": "كم عدد آيات سورة البقرة؟", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما هي أطول سورة في القرآن؟", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "آتني آية الكرسي", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "Verse 2:255 Arabic", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "Read Surah Al-Fatihah", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "تفسير ابن كثير للآية 255", "expected_intent": "tafsir", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "معنى قوله تعالى في سورة البقرة", "expected_intent": "tafsir", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "How many verses in Surah Yasin?", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "ما هي السور المكية؟", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "Tell me the first verse of chapter 2", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "Is this a real Quran verse: لا إله إلا الله؟", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "hard"}
+{"query": "What is the meaning of Ayah 33 in Surah Al-An'am?", "expected_intent": "tafsir", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "medium"}
+{"query": "How many chapters does the Quran have?", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "answer", "difficulty": "easy"}
+{"query": "Quran verse about light", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "clarify", "difficulty": "medium"}
+{"query": "Tell me about theverse revealed in Mecca", "expected_intent": "quran", "expected_agent": "tafsir_agent", "expected_collections": ["quran"], "expected_mode": "clarify", "difficulty": "hard"}

@@ -1838,6 +1838,38 @@ def initialize_registry():
 
 ---
 
+## 🏗️ الإصدار v2 - مسار تعلم جديد
+
+### ما الجديد في v2؟
+مع الإصدار v2، появиت مسارات جديدة مهمة:
+
+```
+src/agents/collection/     ← 10 وكلاء CollectionAgent جدد
+src/retrieval/            ← طبقة الاسترجاع
+src/verification/         ← طبقة التحقق
+src/application/routing/ ← التوجيه الجديد
+src/infrastructure/qdrant/← عميل Qdrant
+src/generation/           ← طبقة التوليد
+
+config/agents/            ← 10 ملفات YAML
+prompts/                  ← ملفات Prompts منفصلة
+```
+
+### المسار المقترح لـ v2
+
+| المستوى | المحتوى | الوقت |
+|---------|---------|-------|
+| **v2 Basics** | فهم CollectionAgent + التكوين YAML | 5 ساعات |
+| **v2 Retrieval** | طبقة الاسترجاع + الاستراتيجيات | 4 ساعات |
+| **v2 Routing** | IntentRouter + Planner + Executor | 4 ساعات |
+| **v2 Verification** | نظام التحقق + Trace | 3 ساعات |
+
+### الموارد
+- [`02_folder_structure.md`](02_folder_structure.md) - المعمارية الكاملة
+- [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md) - دليل الانتقال
+
+---
+
 **مُعد الشرح:** AI Mentor System  
 **التاريخ:** أبريل 2026  
 **الإصدار:** 1.0  

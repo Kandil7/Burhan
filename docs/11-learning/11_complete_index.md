@@ -265,6 +265,40 @@
 
 ---
 
+## 🏗️ الإصدار v2 - ملخص المعمارية الجديدة
+
+### نظرة سريعة على v2
+الإصدار v2 يقدم **نظام تصريحي** (declarative) حيث كل شيء يُعرَّف في ملفات YAML:
+
+| الجانب | v1 (Legacy) | v2 (Config-Backed) |
+|--------|-------------|-------------------|
+| **التكوين** | كود Python | ملفات YAML |
+| **الـ Prompts** | strings في الكود | ملفات .txt منفصلة |
+| **الوكلاء** | BaseAgent, BaseRAGAgent | CollectionAgent |
+| **التوجيه** | core/router.py | application/routing/ |
+| **الاسترجاع** | knowledge/ | retrieval/ |
+| **التحقق** | في الوكلاء | verification/ طبقة منفصلة |
+
+### المسارات الجديدة في v2
+```
+src/
+├── agents/collection/     ← 10 وكلاء جدد (config-backed)
+├── config/agents/         ← 10 ملفات YAML
+├── prompts/               ← ملفات Prompts منفصلة
+├── retrieval/            ← طبقة الاسترجاع
+├── verification/         ← طبقة التحقق
+├── application/routing/  ← التوجيه الجديد
+├── infrastructure/qdrant/← عميل Qdrant
+└── generation/           ← طبقة التوليد
+```
+
+### للانتقال إلى v2
+- [`02_folder_structure.md`](02_folder_structure.md) - المعمارية الكاملة
+- [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md) - دليل الانتقال
+- [`README.md`](README.md) - نظرة عامة على المشروع
+
+---
+
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
 **الإصدار:** 2.0 (مكتمل)  

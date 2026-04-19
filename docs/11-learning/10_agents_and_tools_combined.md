@@ -708,4 +708,66 @@ def calculate_crops_zakat(self, total_value: float, irrigation_type: str = "irri
 
 ---
 
+## 🏗️ التحديثات في الإصدار v2 - الوكلاء والأدوات
+
+### ما الجديد؟
+مع الإصدار v2، تم إعادة هيكلة الوكلاء والأدوات:
+
+```
+src/agents/
+├── collection/           ← NEW! 10 وكلاء بمعمارية CollectionAgent
+│   ├── base.py           ← CollectionAgent الأساسي
+│   ├── fiqh.py          ← وكيل الفقه (config-backed)
+│   ├── hadith.py        ← وكيل الحديث
+│   ├── tafsir.py        ← وكيل التفسير
+│   ├── aqeedah.py       ← وكيل العقيدة
+│   ├── seerah.py        ← وكيل السيرة
+│   ├── usul_fiqh.py     ← وكيل أصول الفقه
+│   ├── history.py       ← وكيل التاريخ
+│   ├── language.py      ← وكيل اللغة العربية
+│   ├── tazkiyah.py      ← وكيل التربية الروحية
+│   └── general.py       ← وكيل العام
+├── legacy/               ← DEPRECATED! الوكلاء القدامى
+├── base.py              ← DEPRECATED! (base.py القديم)
+└── ... (individual agents) ← DEPRECATED!
+
+src/tools/
+└── (لا تغيير - الأدوات الحتمية تبقى كما هي)
+```
+
+### الفرق بين v1 و v2
+
+| الجانب | v1 (Legacy) | v2 (Config-Backed) |
+|--------|-------------|-------------------|
+| **الفئة الأساسية** | `BaseAgent` | `CollectionAgent` |
+| **التكوين** | كود Python | YAML files |
+| **الـ Prompts** | strings في الكود | ملفات .txt منفصلة |
+| **عدد الوكلاء** | 13 وكيل | 10 وكلاء collection + legacy |
+
+### مثال على CollectionAgent في v2
+
+```python
+from src.agents.collection import FiqhAgent
+
+# إنشاء الوكيل من التكوين
+agent = FiqhAgent()
+
+# أو من التكوين المخصص
+agent = FiqhAgent(
+    config_path="config/agents/fiqh.yaml",
+    prompt_path="prompts/fiqh/"
+)
+```
+
+### لماذا لم تتغير الأدوات؟
+- الأدوات (Tools) هي **حتمية** deterministic
+- لا تحتاج LLM أو RAG
+- `ZakatCalculator`, `InheritanceCalculator` تبقى كما هي
+
+### للمزيد من التفاصيل
+- راجع: [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md)
+- راجع: [`02_folder_structure.md`](02_folder_structure.md)
+
+---
+
 **📖 الدليل الكامل:** [`docs/mentoring/`](docs/mentoring/)

@@ -1,0 +1,45 @@
+# Fiqh Agent Configuration
+# Retrieval, verification, and fallback policies for FiqhCollectionAgent
+
+name: FiqhAgent
+domain: fiqh
+collection_name: fiqh_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.6
+  topk_initial: 80
+  topk_reranked: 12
+  min_relevance: 0.45
+  metadata_filters_priority:
+    - madhhab
+    - category_sub
+    - era
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: contradiction_detector
+      enabled: true
+      fail_policy: proceed
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  high_risk_personal_fatwa: true
+  require_diverse_evidence: true
+  minimum_sources: 3

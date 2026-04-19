@@ -1,0 +1,44 @@
+# History Agent Configuration
+# Retrieval, verification, and fallback policies for HistoryCollectionAgent
+
+name: HistoryAgent
+domain: history
+collection_name: history_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.5
+  topk_initial: 60
+  topk_reranked: 12
+  min_relevance: 0.45
+  metadata_filters_priority:
+    - period
+    - dynasty
+    - region
+
+verification:
+  fail_fast: false
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: warn
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: chronology_checker
+      enabled: false
+      fail_policy: warn
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: proceed
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_diverse_sources: false
+  minimum_sources: 1

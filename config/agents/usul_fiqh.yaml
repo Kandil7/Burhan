@@ -1,0 +1,46 @@
+# Usul Fiqh Agent Configuration
+# Retrieval, verification, and fallback policies for UsulFiqhCollectionAgent
+
+name: UsulFiqhAgent
+domain: usul_fiqh
+collection_name: usul_fiqh_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.7
+  topk_initial: 40
+  topk_reranked: 10
+  min_relevance: 0.55
+  metadata_filters_priority:
+    - topic
+    - scholar
+    - school
+    - era
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: usul_methodology_checker
+      enabled: true
+      fail_policy: proceed
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_academic_sources: true
+  require_diverse_evidence: false
+  minimum_sources: 2

@@ -6,26 +6,30 @@
 
 ---
 
-## 🎉 أحدث إنجاز: المرحلة الثامنة مكتملة (15 أبريل 2026)
+## 🎉 أحدث إنجاز: ترحيل v2 مكتمل (أبريل 2026)
 
-### مصنف النية الهجين (Hybrid Intent Classifier)
+### البنية الجديدة v2 - التكوين التصريحي (Declarative Config)
 
-اعتباراً من **15 أبريل 2026**، النظام يتضمن الآن:
+اعتباراً من **أبريل 2026**، النظام يتضمن الآن:
 
-- ✅ **تصنيف سريع مبني على الكلمات المفتاحية** (لا يتطلب LLM للاستعلامات البسيطة)
-- ✅ **نقطة نهاية `/classify` جديدة** لكشف النية الفوري (<50 مللي ثانية)
-- ✅ **10 مستويات أولوية** لحلConflicts بين النيات المتعددة
-- ✅ **كشف النيات الفرعية للقرآن** (4 أنواع: VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
-- ✅ **بوابة الثقة مع احتياطي** إلى ISLAMIC_KNOWLEDGE عندما تكون الثقة < 0.5
+- ✅ **وكلاء مبنيين على YAML** - 10 ملفات تكوين + 11 ملف prompts
+- ✅ **مسارات cannonical جديدة** - src/agents/collection/, src/retrieval/, src/verification/
+- ✅ **طبقات من الدرجة الأولى** - retrieval, verification, routing كحزم منفصلة
+- ✅ **بنية Qdrant** - src/infrastructure/qdrant/
+- ✅ **مراقبة الطلبات** - RequestIDMiddleware + ResponseTrace
+- ✅ **102+ اختبار** للنظام الجديد
 
-### ما الجديد في المرحلة 8
+### ما الجديد في v2 Migration
 
-| المكون | الوصف |
-|--------|-------|
-| `src/application/hybrid_classifier.py` | مصنف النية الهجين الجديد |
-| `src/application/router.py` | توجيه الوكيل |
-| `src/domain/intents.py` | 16 نوع نية مع الأولويات |
-| `src/api/routes/classification.py` | نقطة نهاية `/classify` |
+| المكون | الوصف | المسار الجديد |
+|--------|-------|--------------|
+| Collection Agents | وكلاء RAG مبنيين على التكوين | `src/agents/collection/` |
+| Retrieval Layer | طبقة الاسترجاع المحسنة | `src/retrieval/` + schemas, filters, fusion |
+| Verification | التحقق من المصادر | `src/verification/` |
+| Routing | توجيه الوكلاء | `src/application/routing/` |
+| Infrastructure | عمليات Qdrant | `src/infrastructure/qdrant/` |
+| Generation | توليد الإجابات | `src/generation/` |
+| Observability | التتبع والمراقبة | `src/api/middleware/request_id.py` |
 
 ---
 
@@ -46,7 +50,7 @@
 
 ---
 
-### الجزء الثاني: شرح المجلدات
+### الجزء الثاني: شرح المجلدات (مُحدث!)
 **الملف:** [`02_folder_structure.md`](02_folder_structure.md)
 
 **ماذا ستتعلم:**
@@ -54,18 +58,24 @@
 - كيف تتدفق البيانات بين المجلدات
 - نمط التصميم المستخدم في كل مجلد
 - أين تبدأ القراءة في كل مجلد
+- **المجلدات الجديدة في v2**: `src/agents/collection/`, `src/verification/`, `src/application/routing/`, `src/infrastructure/qdrant/`, `src/generation/`
 
 **المجلدات المغطاة:**
-1. `src/api/` - طبقة واجهة البرمجة (20 endpoint)
-2. `src/application/` - طبقة التطبيق الجديدة (المرحلة 8)
+1. `src/api/` - طبقة واجهة البرمجة (25+ endpoint)
+2. `src/application/` - طبقة التطبيق (incl. v2 routing/)
 3. `src/domain/` - تعريفات النطاق (intents, models)
 4. `src/config/` - الإعدادات والثوابت
 5. `src/core/` - المنطق الأساسي
-6. `src/agents/` - الوكلاء المتخصصون (13 وكيل)
+6. `src/agents/` - الوكلاء المتخصصون (16+ وكيل)
+   - `legacy/` - الوكلاء التقليديون (مُهمل)
+   - `collection/` - الوكلاء الجدد v2 (canonical)
 7. `src/tools/` - الأدوات الحتمية (5 أدوات)
 8. `src/quran/` - خط إنتاج القرآن
-9. `src/knowledge/` - بنية الـ RAG
-10. `src/infrastructure/` - الخدمات الخارجية
+9. `src/knowledge/` - بنية RAG (مُهمل → استخدم src/retrieval/)
+10. `src/infrastructure/` - الخدمات الخارجية (incl. v2 Qdrant)
+11. `src/retrieval/` - **جديد v2** طبقة الاسترجاع
+12. `src/verification/` - **جديد v2** طبقة التحقق
+13. `src/generation/` - **جديد v2** طبقة التوليد
 
 **المدة المتوقعة:** 45-60 دقيقة
 
@@ -115,13 +125,22 @@
 اليوم 7-8:  src/knowledge/vector_store.py     ← Qdrant
 ```
 
-### للمتقدمين جداً (أسبوع 7-8) - جديد!
+### للمتقدمين جداً (أسبوع 7-8)
 
 ```
 اليوم 1-2:  src/application/hybrid_classifier.py  ← مصنف النية الهجين
 اليوم 3-4:  src/domain/intents.py          ← 16 نوع نية مع الأولويات
 اليوم 5-6:  src/api/routes/classification.py  ← نقطة نهاية /classify
 اليوم 7-8:  تجربة التصنيف الجديد
+```
+
+### لـ v2 Migration (أسبوع 9-10) - جديد!
+
+```
+اليوم 1-2:  src/agents/collection/base.py    ← قاعدة CollectionAgent
+اليوم 3-4:  config/agents/*.yaml            ← ملفات التكوين
+اليوم 5-6:  src/config/__init__.py        ← تحميل التكوين
+اليوم 7-8:  src/application/routing/       ← التوجيه الجديد
 ```
 
 ---
@@ -219,7 +238,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 
 ---
 
-### Intent Classification (تصنيف النية) - مُحدث!
+### Intent Classification (تصنيف النية)
 **تعريف**: فهم ما يريده المستخدم من السؤال.
 
 **لماذا مهم**:
@@ -227,9 +246,25 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - يحسن دقة الإجابة
 
 **في Athar**: 
-- **المرحلة 8**: Hybrid (keyword → Jaccard → confidence gating)
+- **v2**: ConfigRouter مبني على DOMAIN_KEYWORDS
+- **Phase 8**: Hybrid (keyword → Jaccard → confidence gating)
 - **16 نوع نية** مع 10 مستويات أولوية
 - **4 أنواع فرعية للقرآن**
+
+---
+
+### Config-Backed Agents (الوكلاء المبنيون على التكوين) - جديد!
+**تعريف**: وكلاء يتم تحديدهم من ملفات YAML بدلاً من الكود.
+
+**لماذا مهم**:
+- فصل التكوين عن الكود
+- سهولة التغيير بدون تعديل الكود
+- تكوين مختلف لكل مجال
+
+**في Athar v2**:
+- 10 ملفات YAML في `config/agents/`
+- 11 ملف prompts في `prompts/`
+- `AgentConfigManager` يحمّل التكوين
 
 ---
 
@@ -284,12 +319,20 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - [ ] قراءة `src/tools/inheritance_calculator.py`
 - [ ] فهم deterministic tools
 
-### المرحلة 7: المرحلة الثامنة - مصنف النية الهجين (أسبوع 13-14) - جديد!
+### المرحلة 7: المرحلة الثامنة - مصنف النية الهجين (أسبوع 13-14)
 - [ ] قراءة `src/application/hybrid_classifier.py`
 - [ ] قراءة `src/domain/intents.py`
 - [ ] قراءة `src/application/router.py`
 - [ ] قراءة `src/api/routes/classification.py`
 - [ ] تجربة نقطة نهاية `/classify`
+
+### المرحلة 8: ترحيل v2 (أسبوع 15-16) - جديد!
+- [ ] قراءة `src/agents/collection/base.py` - قاعدة CollectionAgent
+- [ ] قراءة `config/agents/fiqh.yaml` - مثال على التكوين
+- [ ] قراءة `src/config/__init__.py` - تحميل التكوين
+- [ ] قراءة `src/application/routing/intent_router.py` - التوجيه الجديد
+- [ ] قراءة `src/verification/schemas.py` - مخطط التحقق
+- [ ] تجربة: استيراد الوكلاء الجدد
 
 ---
 
@@ -297,11 +340,11 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 
 | المقياس | القيمة |
 |---------|--------|
-| **الأسطر البرمجية** | ~15,500 سطر |
-| **الملفات** | ~130 ملف |
-| **الاختبارات** | 9 ملفات (~91% تغطية) |
-| **الـ Endpoints** | 20 endpoint (جديد: /classify) |
-| **الوكلاء** | 13 وكيل |
+| **الأسطر البرمجية** | ~20,000 سطر |
+| **الملفات** | ~140 ملف |
+| **الاختبارات** | 12+ ملف (~92% تغطية) |
+| **الـ Endpoints** | 25+ endpoint |
+| **الوكلاء** | 16+ وكيل (10 collection + 6 legacy) |
 | **الأدوات** | 5 أدوات حتمية |
 | **أنواع النية** | 16 نوع + 4 فرعية للقرآن |
 | **مستويات الأولوية** | 10 مستويات |
@@ -309,7 +352,9 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 | **المستندات** | 8,425 كتاب |
 | **العلماء** | 3,146 عالم |
 | **لوكين Documents** | 11,316,717 وثيقة |
-| **بيانات HuggingFace** | 42.6 GB |
+| **بيانات HuggingFace** | 45+ GB |
+| **ملفات التكوين (v2)** | 10 YAML + 11 prompts |
+| **حزم v2 الجديدة** | 7 حزم (retrieval, verification, routing, etc.) |
 
 ---
 
@@ -400,12 +445,21 @@ http://localhost:8000/docs
 ### تمرين 4: قراءة ملف
 افتح `src/domain/intents.py`. اقرأه دون شرح. ماذا فهمت؟
 
-### تمرين 5: اختبار /classify (جديد!)
+### تمرين 5: اختبار /classify
 جرب نقطة النهاية الجديدة:
 ```bash
 curl -X POST http://localhost:8000/classify \
   -H "Content-Type: application/json" \
   -d '{"query": "ما حكم الزكاة؟"}'
+```
+
+### تمرين 6: اختبار v2 (جديد!)
+```bash
+# اختبار استيراد الوكلاء الجدد
+python -c "from src.agents.collection import FiqhCollectionAgent; print('v2 import OK!')"
+
+# اختبار التوجيه
+python -c "from src.application.routing import IntentRouter; print('Routing OK!')"
 ```
 
 ---
@@ -426,10 +480,12 @@ curl -X POST http://localhost:8000/classify \
 
 ---
 
-## 📚 مصادر إضافية للمرحلة 8
+## 📚 مصادر إضافية
 
+- **[docs/8-development/refactoring/V2_MIGRATION_NOTES.md](../8-development/refactoring/V2_MIGRATION_NOTES.md)** - تفاصيل ترحيل v2
+- **[docs/9-reference/CONFIG_BACKED_AGENTS.md](../9-reference/CONFIG_BACKED_AGENTS.md)** - الوكلاء المبنيين على التكوين
+- **[docs/9-reference/DOMAIN_KEYWORDS.md](../9-reference/DOMAIN_KEYWORDS.md)** - كلمات المفتاح للتوجيه
 - **[docs/10-operations/LUCENE_MERGE_COMPLETE.md](../10-operations/LUCENE_MERGE_COMPLETE.md)** - تفاصيل المرحلة 7
-- **[docs/10-operations/BACKUP_AND_RESTORE_GUIDE.md](../10-operations/BACKUP_AND_RESTORE_GUIDE.md)** - النسخ الاحتياطي
 - **[notebooks/COLAB_GPU_EMBEDDING_GUIDE.md](../notebooks/COLAB_GPU_EMBEDDING_GUIDE.md)** - تشغيل التضمين على GPU
 
 ---
@@ -444,5 +500,5 @@ curl -X POST http://localhost:8000/classify \
 
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
-**الإصدار:** 2.0  
-**المشروع:** Athar Islamic QA System v0.8.0 (Phase 8 Complete)
+**الإصدار:** 3.0  
+**المشروع:** Athar Islamic QA System v2.0 (v2 Migration Complete)

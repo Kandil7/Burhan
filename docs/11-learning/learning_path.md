@@ -693,7 +693,39 @@ https://huggingface.co/BAAI/bge-m3     ← BGE-m3 model
 
 ---
 
+## 🏗️ الإصدار v2 - المعمارية الجديدة (أبريل 2026)
+
+### ما الجديد؟
+الإصدار v2 يقدم **نظام تصريحي** (declarative) مع ملفات YAML + Prompts منفصلة:
+
+```
+src/
+├── agents/collection/     ← 10 وكلاء CollectionAgent جدد
+├── config/agents/         ← 10 ملفات YAML للتكوين
+├── prompts/              ← ملفات Prompts منفصلة
+├── retrieval/            ← طبقة الاسترجاع الجديدة
+├── verification/         ← طبقة التحقق الجديدة
+├── application/routing/ ← نظام التوجيه الجديد
+├── infrastructure/qdrant/← عميل Qdrant
+└── generation/           ← طبقة التوليد الجديدة
+```
+
+### مسار تعلم v2
+
+| المستوى | المدة | الموضوع |
+|---------|-------|---------|
+| **v2 Basics** | يوم واحد | CollectionAgent + YAML |
+| **v2 Retrieval** | يوم واحد | الاستراتيجيات + Fusion |
+| **v2 Routing** | يوم واحد | IntentRouter + Planner |
+| **v2 Integration** | يوم واحد | الـ End-to-End |
+
+### الموارد
+- [`02_folder_structure.md`](02_folder_structure.md) - المعمارية الكاملة
+- [`V2_MIGRATION_NOTES.md`](../../8-development/refactoring/V2_MIGRATION_NOTES.md) - دليل الانتقال
+
+---
+
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
-**الإصدار:** 2.0  
-**المشروع:** Athar Islamic QA System v0.8.0 (Phase 8 Complete)
+**الإصدار:** 2.1  
+**المشروع:** Athar Islamic QA System v2.0 (Config-Backed Architecture)

@@ -13,7 +13,7 @@ from typing import Optional
 
 from openai import AsyncOpenAI
 
-from src.application.hybrid_classifier import (
+from src.application.router.hybrid_classifier import (
     _classify_quran_subintent,
     _detect_language,
     _infer_requires_retrieval,

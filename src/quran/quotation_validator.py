@@ -3,10 +3,12 @@ Quotation Validation Engine for Athar Islamic QA system.
 
 v3 — Complete file (no partial snippets):
   - candidates fetched once per validate() call
-  - text_uthmani replaces text_simple (hamza-safe)
+  - text_uthmani replaces text_simple (hamza-safe output)
+  - text_simple used for DB filtering (diacritics-free LIKE)
   - suggestion uses normalized length comparison
   - _check_* sync helpers replace async _find_* triplets
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -20,12 +22,12 @@ from src.data.models.quran import Ayah
 
 logger = get_logger()
 
-_ARABIC_RE     = re.compile(r"[\u064B-\u065F\u0670]")
-_ALEF_RE       = re.compile(r"[أإآٱ]")
-_YA_RE         = re.compile(r"ى")
+_ARABIC_RE = re.compile(r"[\u064B-\u065F\u0670]")
+_ALEF_RE = re.compile(r"[أإآٱ]")
+_YA_RE = re.compile(r"ى")
 _TA_MARBUTA_RE = re.compile(r"ة")
 _NON_ARABIC_RE = re.compile(r"[^\u0600-\u06FF\s]")
-_SPACES_RE     = re.compile(r"\s+")
+_SPACES_RE = re.compile(r"\s+")
 
 _MIN_INPUT_LEN = 5
 
@@ -44,8 +46,12 @@ class QuotationValidator:
                                   → _check_fuzzy
     """
 
-    def __init__(self, session: Session, similarity_threshold: float = 0.85) -> None:
-        self.session   = session
+    def __init__(
+        self,
+        session: Session,
+        similarity_threshold: float = 0.85,
+    ) -> None:
+        self.session = session
         self.threshold = similarity_threshold
 
     # ── Public API ──────────────────────────────────────────────────────────
@@ -53,15 +59,18 @@ class QuotationValidator:
     async def validate(self, text: str) -> dict:
         if not text or not text.strip():
             return {
-                "is_quran": False, "confidence": 0.0,
-                "matched_ayah": None, "suggestion": "No text provided",
+                "is_quran": False,
+                "confidence": 0.0,
+                "matched_ayah": None,
+                "suggestion": "No text provided",
             }
 
         normalized = self.normalize_arabic(text)
 
         if len(normalized) < _MIN_INPUT_LEN:
             return {
-                "is_quran": False, "confidence": 0.0,
+                "is_quran": False,
+                "confidence": 0.0,
                 "matched_ayah": None,
                 "suggestion": "النص قصير جداً للتحقق — أدخل على الأقل كلمتين.",
             }
@@ -73,22 +82,27 @@ class QuotationValidator:
         exact = self._check_exact(normalized, candidates)
         if exact:
             return {
-                "is_quran": True, "confidence": 1.0,
-                "matched_ayah": exact, "suggestion": None,
+                "is_quran": True,
+                "confidence": 1.0,
+                "matched_ayah": exact,
+                "suggestion": None,
             }
 
         # 2. Fragment / containment match
         fragment = self._check_fragment(normalized, candidates)
         if fragment:
-            norm_ayah = self.normalize_arabic(fragment["ayah"]["text_uthmani"])
+            norm_ayah = self.normalize_arabic(
+                fragment["ayah"]["text_uthmani"]
+            )
             is_partial = len(normalized) < len(norm_ayah) * 0.9
             return {
-                "is_quran":     True,
-                "confidence":   fragment["confidence"],
+                "is_quran": True,
+                "confidence": fragment["confidence"],
                 "matched_ayah": fragment["ayah"],
                 "suggestion": (
                     f"النص جزء من: {fragment['ayah']['text_uthmani'][:60]}…"
-                    if is_partial else None
+                    if is_partial
+                    else None
                 ),
             }
 
@@ -96,14 +110,15 @@ class QuotationValidator:
         fuzzy = self._check_fuzzy(normalized, candidates)
         if fuzzy:
             return {
-                "is_quran":     True,
-                "confidence":   fuzzy["similarity"],
+                "is_quran": True,
+                "confidence": fuzzy["similarity"],
                 "matched_ayah": fuzzy["ayah"],
-                "suggestion":   f"Did you mean: {fuzzy['ayah']['text_uthmani']}",
+                "suggestion": f"Did you mean: {fuzzy['ayah']['text_uthmani']}",
             }
 
         return {
-            "is_quran": False, "confidence": 0.0,
+            "is_quran": False,
+            "confidence": 0.0,
             "matched_ayah": None,
             "suggestion": "This text does not match any Quranic verse.",
         }
@@ -132,13 +147,19 @@ class QuotationValidator:
 
     # ── Database ─────────────────────────────────────────────────────────────
 
-    def _get_candidates(self, normalized_text: str, limit: int = 50) -> list[Ayah]:
+    def _get_candidates(
+        self,
+        normalized_text: str,
+        limit: int = 50,
+    ) -> list[Ayah]:
         """
-        Fetch ayah candidates using text_uthmani (not text_simple).
-        text_uthmani retains original hamza letters under diacritics,
-        so LIKE '%ابراهيم%' correctly finds 'إِبْرَاهِيم'.
+        Fetch ayah candidates using text_simple for LIKE filtering
+        (diacritics-free, hamza-unified), while returning full Ayah
+        objects with text_uthmani intact for output.
 
-        Uses longest words (≥4 chars) as AND-filter for precision.
+        Using text_simple for the LIKE query ensures normalized words
+        (e.g. 'ابراهيم') correctly match DB rows where text_uthmani
+        contains 'إِبْرَاهِيم'.
         """
         words = [w for w in normalized_text.split() if len(w) >= 4][:2]
         if not words:
@@ -146,13 +167,16 @@ class QuotationValidator:
 
         q = self.session.query(Ayah).options(joinedload(Ayah.surah))
         for word in words:
-            q = q.filter(Ayah.text_uthmani.contains(word))
+            # Filter on text_simple — diacritics-free column in DB
+            q = q.filter(Ayah.text_simple.contains(word))
         return q.limit(limit).all()
 
     # ── Matchers (sync — candidates pre-fetched) ─────────────────────────────
 
     def _check_exact(
-        self, normalized_text: str, candidates: list[Ayah]
+        self,
+        normalized_text: str,
+        candidates: list[Ayah],
     ) -> dict | None:
         for ayah in candidates:
             if self.normalize_arabic(ayah.text_uthmani) == normalized_text:
@@ -160,24 +184,37 @@ class QuotationValidator:
         return None
 
     def _check_fragment(
-        self, normalized_text: str, candidates: list[Ayah]
+        self,
+        normalized_text: str,
+        candidates: list[Ayah],
     ) -> dict | None:
         """
         Detects partial ayah input (most common user pattern).
         Two tiers:
-          confidence=1.0 — exact substring after normalization
-          confidence=0.95 — substring after space-stripping (waw-attachment edge case)
+          confidence=1.0  — exact substring after normalization
+          confidence=0.95 — substring after space-stripping
+                            (waw-attachment edge case)
         """
         for ayah in candidates:
             ayah_norm = self.normalize_arabic(ayah.text_uthmani)
             if normalized_text in ayah_norm:
-                return {"confidence": 1.0, "ayah": self._ayah_to_dict(ayah)}
-            if normalized_text.replace(" ", "") in ayah_norm.replace(" ", ""):
-                return {"confidence": 0.95, "ayah": self._ayah_to_dict(ayah)}
+                return {
+                    "confidence": 1.0,
+                    "ayah": self._ayah_to_dict(ayah),
+                }
+            if normalized_text.replace(" ", "") in ayah_norm.replace(
+                " ", ""
+            ):
+                return {
+                    "confidence": 0.95,
+                    "ayah": self._ayah_to_dict(ayah),
+                }
         return None
 
     def _check_fuzzy(
-        self, normalized_text: str, candidates: list[Ayah]
+        self,
+        normalized_text: str,
+        candidates: list[Ayah],
     ) -> dict | None:
         """
         Ratcliff/Obershelp similarity for typo-tolerant full-ayah matching.
@@ -186,25 +223,36 @@ class QuotationValidator:
         best_score: float = 0.0
         best_match: dict | None = None
         for ayah in candidates:
-            ayah_norm  = self.normalize_arabic(ayah.text_uthmani)
-            similarity = SequenceMatcher(None, normalized_text, ayah_norm).ratio()
+            ayah_norm = self.normalize_arabic(ayah.text_uthmani)
+            similarity = SequenceMatcher(
+                None, normalized_text, ayah_norm
+            ).ratio()
             if similarity > best_score and similarity >= self.threshold:
                 best_score = similarity
                 best_match = {
                     "similarity": similarity,
-                    "ayah":       self._ayah_to_dict(ayah),
+                    "ayah": self._ayah_to_dict(ayah),
                 }
         return best_match
 
     # ── Helper ────────────────────────────────────────────────────────────────
 
     def _ayah_to_dict(self, ayah: Ayah) -> dict:
+        """
+        Convert Ayah ORM object to plain dict.
+        Accesses ayah.surah once (must be eagerly loaded via joinedload).
+        Includes surah_name_ar for Arabic UI display.
+        """
+        surah = ayah.surah
         return {
-            "surah_number":  ayah.surah.number,
-            "surah_name_en": ayah.surah.name_en,
-            "ayah_number":   ayah.number_in_surah,
-            "text_uthmani":  ayah.text_uthmani,
-            "quran_url":     f"https://quran.com/{ayah.surah.number}/{ayah.number_in_surah}",
+            "surah_number": surah.number,
+            "surah_name_en": surah.name_en,
+            "surah_name_ar": getattr(surah, "name_ar", ""),
+            "ayah_number": ayah.number_in_surah,
+            "text_uthmani": ayah.text_uthmani,
+            "quran_url": (
+                f"https://quran.com/{surah.number}/{ayah.number_in_surah}"
+            ),
         }
 
 

@@ -2,32 +2,48 @@
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
+> **📢 Latest: Legacy Cleanup Complete (April 2026)** - Removed 20+ orphaned files, fixed missing modules, added complete file-by-file documentation. See [docs/11-learning/](docs/11-learning/) for details.
+
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
-[![Phase](https://img.shields.io/badge/status-Phase%209%20Complete-success.svg)](https://github.com/Kandil7/Athar)
+[![Phase](https://img.shields.io/badge/status-Phase%2010%20Complete-success.svg)](https://github.com/Kandil7/Athar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Lines of Code](https://img.shields.io/badge/Lines%20of%20Code-18,000+-orange.svg)]()
+[![Lines of Code](https://img.shields.io/badge/Lines%20of%20Code-20,000+-orange.svg)]()
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-success.svg)](https://github.com/Kandil7/Athar)
 
 ---
 
-## 🚀 Latest Update: Phase 9 Complete - Production Ready ✅
+## 🚀 Latest Update: Legacy Code Cleanup Complete (April 2026)
 
-**April 16, 2026:** Successfully completed **Phase 9** with comprehensive production enhancements:
+**April 19, 2026:** Successfully completed **legacy code cleanup**:
 
-- ✅ **Structured Exception Hierarchy** - Custom exceptions with error codes
-- ✅ **Dependency Injection Container** - Full DI for all components
-- ✅ **Enhanced Protocol Interfaces** - Retriever, Generator, Reranker protocols
-- ✅ **Agent Registry** - Centralized agent management
-- ✅ **Embedding Cache** - Redis + local fallback caching
-- ✅ **Query Cache** - LLM response caching
-- ✅ **BM25 Retrieval** - Pure Python keyword search
-- ✅ **Query Expander** - 80+ Islamic synonyms
-- ✅ **Cross-Encoder Reranker** - LLM-based reranking
-- ✅ **Comprehensive Test Suite** - 40+ unit tests
-- ✅ **CI/CD Workflow** - GitHub Actions automation
-- ✅ **Environment Validation** - Startup validation
-- ✅ **Metrics Endpoint** - Full observability
+- ✅ **Removed 20+ orphaned files** - test_*.py, debug_*.py, *.log
+- ✅ **Fixed missing modules** - Created `src/agents/base.py` and `src/agents/collection_agent.py` 
+- ✅ **Migrated imports** - All imports now use canonical paths
+- ✅ **Complete documentation** - File-by-file guide in docs/11-learning/
+
+**April 18, 2026:** Successfully completed **Phase 10** with the Multi-Agent Collection-Aware RAG system:
+
+- ✅ **CollectionAgent Base** - Abstract base class with 7-stage RAG pipeline
+- ✅ **Retrieval Strategies Matrix** - Per-agent optimized dense/sparse weights
+- ✅ **Verification Suite** - Digital Isnad verification with fail policies
+- ✅ **Multi-Agent Orchestration** - SEQUENTIAL/PARALLEL/HIERARCHICAL patterns
+- ✅ **8 Collection Agents** - Fiqh, Hadith, Tafsir, Aqeedah, Seerah, Usul, History, Language
+- ✅ **Evaluation Framework** - Precision, Recall, Citation accuracy, Ikhtilaf coverage
+- ✅ **Hybrid Qdrant** - Collection configs with HNSW and quantization
+- ✅ **Config-Backed Agents** - YAML configs + system prompts for all 10 agents
+- ✅ **ConfigRouter** - DOMAIN_KEYWORDS-based routing with keyword patterns
+- ✅ **Documentation** - 7 new reference documents
+
+**April 2026 - v2 Migration:**
+- ✅ **Declarative Config** - YAML configs + prompt files (separation of concerns)
+- ✅ **Canonical Paths** - Organized src/agents/collection/, src/retrieval/, src/verification/
+- ✅ **First-Class Layers** - retrieval, verification, routing as separate packages
+- ✅ **Infrastructure** - src/infrastructure/qdrant/ for Qdrant operations
+- ✅ **Observability** - Request ID middleware + trace schemas
+
+See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECTION_ARCHITECTURE.md) for details.
+See [v2 Migration Notes](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md) for migration details.
 
 ---
 
@@ -64,98 +80,128 @@
 
 | Metric | Value |
 |--------|-------|
-| **Lines of Code** | 18,000+ |
-| **Python Files** | 78 |
-| **Agents** | 8 specialized agents |
+| **Lines of Code** | ~15,500 |
+| **Python Files** | ~200 files |
+| **Agents** | 11 CollectionAgents (v2 architecture) |
 | **Tools** | 5 deterministic tools |
-| **Intents** | 16 types |
+| **Intents** | 20+ types |
 | **Collections** | 10 vector collections |
 | **Test Coverage** | ~92% |
-| **API Endpoints** | 25+ |
+| **API Endpoints** | 20+ |
+| **Verification Checks** | 8 (in src/verifiers/) |
+| **Retrieval Strategies** | Per-agent matrix |
+| **Agent Configs** | 10 YAML files |
+| **System Prompts** | 11 prompt files |
+| **v2 Modules** | Well organized with canonical paths |
 
 ---
 
 ## 🏗️ Architecture
 
-### 5-Layer Architecture
+### 6-Layer Architecture (Updated in Phase 10)
 
 ```
-User Query → Intent Classifier → Route to Agent →
-  RAG Retrieval / Calculator → Generate Answer →
-    Citation Normalization → Response with [C1], [C2]
+User Query → Intent Classifier → Multi-Agent Orchestration →
+  ┌────────────────────────────────────────────────────────┐
+  │         COLLECTION-AWARE RAG PIPELINE                 │
+  │  • Retrieval Strategies (per-agent config)            │
+  │  • Hybrid Dense/Sparse Search                          │
+  │  • Verification Suite (Digital Isnad)                  │
+  │  • LLM Generation with Citations                       │
+  └────────────────────────────────────────────────────────┘
+  → Response with [C1], [C2], confidence, metadata
 ```
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 API Layer (FastAPI)                      │
-│  POST /classify  •  POST /query  •  25+ endpoints      │
+│  POST /classify  •  POST /ask  •  POST /fiqh/answer    │
 │  Middleware: CORS, Rate Limit, Security, Error Handler │
-└──────────��─────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
+└─────────────────────────────┬────────────────────────────┘
+                              │
+┌────────────────────────────▼────────────────────────────┐
 │              Application Layer                          │
 │  HybridIntentClassifier  •  RouterAgent                │
-│  ├── Keyword fast-path (KEYWORD_PATTERNS)            │
-│  ├── Jaccard similarity fallback                    │
-│  └── DI Container (Phase 9)                        │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│                  Agent Layer                        │
-│  FiqhAgent  •  HadithAgent  •  SeerahAgent         │
-│  GeneralIslamicAgent  •  ChatbotAgent              │
-│  AgentRegistry (Phase 9)                          │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│                  RAG Pipeline                       │
-│  Embedding (BGE-M3)  •  Hybrid Search              │
-│  BM25 Retrieval  •  Query Expansion (80+ terms)   │
-│  Reranking  •  Enrichment (title, grade, weight) │
-└────────────────────────┬────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────┐
-│               Infrastructure                        │
-│  LLM (OpenAI/Groq)  •  PostgreSQL  •  Redis      │
-│  Qdrant Vector DB  •  Caching (Phase 9)           │
-└──────────────────────────────────────────────────────┘
+│  MultiAgentOrchestrator • Orchestration Patterns      │
+└─────────────────────────────┬────────────────────────────┘
+                              │
+┌────────────────────────────▼────────────────────────────┐
+│         COLLECTION-AGENT LAYER (NEW - Phase 10)        │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
+│  │ FiqhCollect │ │ HadithCollect│ │ TafsirCollect  │   │
+│  │   Agent     │ │   Agent      │ │   Agent        │   │
+│  └─────────────┘ └─────────────┘ └─────────────────┘   │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
+│  │ AqeedahColl │ │ SeerahColl  │ │ UsulFiqhCollect │   │
+│  │   Agent     │ │   Agent     │ │   Agent         │   │
+│  └─────────────┘ └─────────────┘ └─────────────────┘   │
+└─────────────────────────────┬────────────────────────────┘
+                              │
+┌────────────────────────────▼────────────────────────────┐
+│                    RETRIEVAL LAYER                     │
+│  Retrieval Strategies (matrix)  •  Hybrid Qdrant      │
+│  BM25 + Dense  •  Reranking  •  Score Thresholds       │
+└─────────────────────────────┬────────────────────────────┘
+                              │
+┌────────────────────────────▼────────────────────────────┐
+│                  VERIFICATION LAYER                    │
+│  QuoteValidator  •  SourceAttributor  •  Contradiction │
+│  EvidenceSufficiency  •  HadithGrade  •  Groundedness│
+└─────────────────────────────┬────────────────────────────┘
+                              │
+┌────────────────────────────▼────────────────────────────┐
+│               Infrastructure                           │
+│  LLM (OpenAI/Groq)  •  PostgreSQL  •  Redis          │
+│  Qdrant Vector DB  •  Caching                           │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Details
 
-| Component | Purpose | New in Phase 9 |
-|-----------|---------|----------------|
-| `HybridIntentClassifier` | Fast intent detection | - |
-| `RouterAgent` | Route to appropriate agent | - |
-| `AgentRegistry` | Centralized agent management | ✅ NEW |
-| `EmbeddingCache` | Redis + local caching | ✅ NEW |
-| `QueryCache` | LLM response caching | ✅ NEW |
-| `BM25Retriever` | Keyword search | ✅ NEW |
-| `QueryExpander` | Islamic synonyms | ✅ NEW |
-| `CrossEncoderReranker` | LLM reranking | ✅ NEW |
-| `MetricsCollector` | Observability | ✅ NEW |
-| `EnvironmentValidator` | Startup validation | ✅ NEW |
+| Component | Purpose | New in Phase 10 | New in v2 |
+|-----------|---------|-----------------|-----------|
+| `CollectionAgent` | Abstract base for collection-aware RAG | ✅ NEW | |
+| `FiqhCollectionAgent` | Fiqh with verification pipeline | ✅ NEW | |
+| `HadithCollectionAgent` | Hadith with grade verification | ✅ NEW | |
+| `TafsirCollectionAgent` | Quran tafsir with quote validation | ✅ NEW | |
+| `RetrievalStrategy` | Per-agent retrieval config | ✅ NEW | |
+| `VerificationSuite` | Digital Isnad verification | ✅ NEW | |
+| `MultiAgentOrchestrator` | Multi-agent coordination | ✅ NEW | |
+| `OrchestrationPattern` | SEQUENTIAL/PARALLEL/HIERARCHICAL | ✅ NEW | |
+| `HybridQdrantClient` | Hybrid dense/sparse search | ✅ NEW | |
+| `EvaluationMetrics` | Precision/Recall/Citations | ✅ NEW | |
+| `ConfigRouter` | DOMAIN_KEYWORDS-based routing | ✅ NEW | |
+| `AgentConfigManager` | YAML config loading | ✅ NEW | |
+| `prompts/*` | System prompts (11 files) | ✅ NEW | |
+| `config/agents/*` | YAML configs (10 files) | ✅ NEW | |
+| `src/agents/collection/` | Canonical v2 agents | | ✅ NEW |
+| `src/verification/` | First-class verification layer | | ✅ NEW |
+| `src/application/routing/` | v2 routing (intent, planner, executor) | | ✅ NEW |
+| `src/infrastructure/qdrant/` | Qdrant infrastructure | | ✅ NEW |
+| `src/retrieval/schemas` | Retrieval data schemas | | ✅ NEW |
+| `src/generation/` | Generation schemas & prompt loader | | ✅ NEW |
+| `RequestIDMiddleware` | Request tracing | | ✅ NEW |
+| `ResponseTrace` | API response tracing | | ✅ NEW |
 
-### Intent Priority System
+### Intent Priority System (Phase 10)
 
 | Intent | Priority | Agent | Requires Retrieval |
 |--------|----------|-------|-------------------|
-| TAFSIR | 10 | general_islamic_agent | ✅ |
-| QURAN | 9 | quran:* | depends |
+| TAFSIR | 10 | tafsir_agent | ✅ |
+| QURAN | 9 | tafsir_agent | ✅ |
 | HADITH | 9 | hadith_agent | ✅ |
 | SEERAH | 8 | seerah_agent | ✅ |
-| ISLAMIC_HISTORY | 7 | seerah_agent | ✅ |
-| ARABIC_LANGUAGE | 6 | general_islamic_agent | ✅ |
+| AQEEDAH | 8 | aqeedah_agent | ✅ |
+| USUL_FIQH | 8 | usul_fiqh_agent | ✅ |
+| ARABIC_LANGUAGE | 7 | language_agent | ✅ |
+| ISLAMIC_HISTORY | 6 | history_agent | ✅ |
 | FIQH | 5 | fiqh_agent | ✅ |
-| AQEDAH | 5 | fiqh_agent | ✅ |
-| USUL_FIQH | 4 | fiqh_agent | ✅ |
-| SPIRITUALITY | 3 | general_islamic_agent | ✅ |
-| ZAKAT | 2 | Calculator | ❌ |
-| INHERITANCE | 2 | Calculator | ❌ |
-| GREETING | 2 | chatbot_agent | ❌ |
-| DUA | 2 | DuaRetrievalTool | ✅ |
-| HIJRI_CALENDAR | 2 | Calculator | ❌ |
-| PRAYER_TIMES | 2 | Calculator | ❌ |
+| ZAKAT | 5 | tool_agent (Calculator) | ❌ |
+| INHERITANCE | 5 | tool_agent (Calculator) | ❌ |
+| PRAYER_TIMES | 4 | tool_agent (Calculator) | ❌ |
+| HIJRI_CALENDAR | 4 | tool_agent (Calculator) | ❌ |
+| DUA | 4 | general_islamic_agent | ✅ |
+| GREETING | 3 | chatbot_agent | ❌ |
 | ISLAMIC_KNOWLEDGE | 1 | general_islamic_agent | ✅ |
 
 ---
@@ -537,41 +583,119 @@ ElShamela Library (8,425 books)
 
 ```
 Athar/
-├── src/                              # Python backend (FastAPI)
-│   ├── api/                          # 15 REST API files
-│   │   ├── main.py                   # FastAPI app factory
+├── src/                              # Python backend (~200 files)
+│   ├── api/                          # FastAPI routes, schemas, middleware
+│   │   ├── main.py                   # FastAPI app
 │   │   ├── lifespan.py               # Startup/shutdown lifecycle
-│   │   ├── routes/
-│   │   │   ├── query.py              # Main query endpoint
-│   │   │   ├── classification.py    # Intent classification
-│   │   │   ├── quran.py             # Quran endpoints
-│   │   │   ├── rag.py               # RAG endpoints
-│   │   │   ├── tools.py             # Calculator tools
-│   │   │   └── health.py            # Health + metrics
-│   │   ├── middleware/
-│   │   │   ├── error_handler.py    # Error handling
-│   │   │   └── security.py          # Rate limiting
-│   │   └── schemas/
-│   │       ├── request.py            # Request models
-│   │       └── response.py           # Response models
+│   │   ├── routes/                  # /ask, /search, /tools, /quran, /classify
+│   │   ├── schemas/                 # Pydantic request/response models
+│   │   └── middleware/              # Security, logging, error handling
 │   │
-│   ├── application/                 # NEW: Application layer
-│   │   ├── container.py            # DI container (Phase 9)
-│   │   ├── interfaces.py            # Protocol definitions (Phase 9)
-│   │   ├── classifier_factory.py   # Classifier factory
-│   │   ├── hybrid_classifier.py    # HybridIntentClassifier
-│   │   ├── router.py              # RouterAgent
-│   │   └── models.py               # RoutingDecision models
+│   ├── agents/                      # AI Agents (v2 CollectionAgents)
+│   │   ├── base.py                  # Core types (AgentInput, AgentOutput, Citation)
+│   │   ├── collection_agent.py       # Legacy alias
+│   │   └── collection/              # Config-backed CollectionAgents
+│   │       ├── base.py               # CollectionAgent base class
+│   │       ├── fiqh.py, hadith.py, tafsir.py, etc.  (11 agents)
 │   │
-│   ├── agents/                      # 8 specialized agents
+│   ├── application/                 # Use cases, services, routing
+│   │   ├── use_cases/              # AnswerQuery, ClassifyQuery, RunTool
+│   │   ├── services/              # AskService, SearchService
+│   │   ├── router/                # Hybrid classifier, orchestration
+│   │   └── classifier_factory.py  # Classifier creation
+│   │
+│   ├── retrieval/                  # Retrieval layer (well organized)
+│   │   ├── retrievers/             # Hybrid, BM25, Dense retrievers
+│   │   ├── ranking/               # Reranking, scoring
+│   │   ├── filters/               # Query filtering
+│   │   ├── fusion/                # Reciprocal Rank Fusion
+│   │   └── strategies.py          # Per-agent strategies
+│   │
+│   ├── verification/              # v2 verification wrapper
+│   │   └── schemas.py
+│   │
+│   ├── verifiers/                # Full verification implementation
+│   │   ├── suite_builder.py       # Build verification suites
+│   │   ├── exact_quote.py          # Quote validation
+│   │   ├── hadith_grade.py         # Hadith grading
+│   │   └── ... 15 more files
+│   │
+│   ├── evaluation/                 # Evaluation framework (Phase 10)
+│   │   ├── golden_set_schema.py   # Golden set data model
+│   │   ├── metrics.py              # Precision, Recall, Citations
+│   │   └── cli.py                  # Evaluation CLI
+│   │
+│   ├── indexing/                   # Indexing & metadata (Phase 10)
+│   │   ├── metadata/               # Metadata enrichment
+│   │   ├── embeddings/            # Embedding models
+│   │   ├── vectorstores/          # Qdrant configurations
+│   │   ├── pipelines/             # Ingestion pipelines
+│   │   └── lexical/               # BM25/Lucene indexes
+│   │
+│   ├── application/               # Application layer
+│   │   ├── router/                # Routing & orchestration
+│   │   │   ├── router_agent.py    # RouterAgent
+│   │   │   ├── orchestration.py   # Multi-agent orchestration
+│   │   │   ├── multi_agent.py     # Multi-agent router
+│   │   │   ├── config_router.py   # DOMAIN_KEYWORDS router (NEW)
+│   │   │   └── routing/           # v2 routing layer (NEW)
+│   │   │       ├── intent_router.py
+│   │   │       ├── planner.py
+│   │   │       └── executor.py
+│   │   ├── container.py          # DI container
+│   │   ├── interfaces.py         # Protocol definitions
+│   │   ├── classifier_factory.py # Classifier factory
+│   │   ├── hybrid_classifier.py  # HybridIntentClassifier
+│   │   └── models.py              # RoutingDecision models
+│   │
+│   ├── generation/               # Generation layer (Phase 10 + v2)
+│   │   ├── schemas.py           # Generation schemas (NEW)
+│   │   ├── prompt_loader.py     # Prompt loader (NEW)
+│   │   ├── prompts/              # Prompt templates per agent
+│   │   ├── composers/            # Prompt composition
+│   │   └── policies/             # Generation policies
+│   │
+│   ├── verification/             # v2 Verification layer (NEW)
+│   │   ├── schemas.py           # VerificationReport, CheckResult
+│   │   ├── trace.py              # Verification tracing
+│   │   ├── checks/               # Individual verification checks
+│   │   └── __init__.py
+│   │
+│   ├── infrastructure/          # v2 Infrastructure layer (NEW)
+│   │   └── qdrant/              # Qdrant operations
+│   │       ├── client.py        # QdrantClientWrapper
+│   │       ├── collections.py    # Collection configs
+│   │       └── payload_indexes.py
+│   │
+│   ├── agents/                      # 16+ specialized agents
+│   │   ├── legacy/                # Legacy agents (deprecated)
+│   │   ├── collection/            # v2 canonical agents (NEW)
+│   │   │   ├── base.py            # CollectionAgent base
+│   │   │   ├── fiqh.py            # FiqhCollectionAgent
+│   │   │   ├── hadith.py          # HadithCollectionAgent
+│   │   │   ├── tafsir.py          # TafsirCollectionAgent
+│   │   │   ├── aqeedah.py         # AqeedahCollectionAgent
+│   │   │   ├── seerah.py          # SeerahCollectionAgent
+│   │   │   ├── usul_fiqh.py       # UsulFiqhCollectionAgent
+│   │   │   ├── history.py         # HistoryCollectionAgent
+│   │   │   ├── language.py        # LanguageCollectionAgent
+│   │   │   ├── tazkiyah.py        # TazkiyahCollectionAgent
+│   │   │   └── general.py          # GeneralCollectionAgent
 │   │   ├── base.py                 # BaseAgent, Citation
-│   │   ├── base_rag_agent.py       # BaseRAGAgent
-│   │   ├── registry.py             # AgentRegistry (Phase 9)
+│   │   ├── base_rag_agent.py       # BaseRAGAgent (legacy)
+│   │   ├── collection_agent.py    # CollectionAgent (deprecated)
+│   │   ├── fiqh_collection_agent.py   # FiqhCollectionAgent (deprecated)
+│   │   ├── aqeedah_collection_agent.py # AqeedahCollectionAgent (NEW)
+│   │   ├── seerah_collection_agent.py  # SeerahCollectionAgent (NEW)
+│   │   ├── usul_fiqh_collection_agent.py # UsulFiqhCollectionAgent (NEW)
+│   │   ├── history_collection_agent.py  # HistoryCollectionAgent (NEW)
+│   │   ├── language_collection_agent.py  # LanguageCollectionAgent (NEW)
+│   │   ├── registry.py             # AgentRegistry
 │   │   ├── chatbot_agent.py        # Greeting/small talk
-│   │   ├── fiqh_agent.py           # Fiqh rulings
-│   │   ├── hadith_agent.py         # Hadith
-│   │   ├── seerah_agent.py         # Seerah
-│   │   └── general_islamic_agent.py # General knowledge
+│   │   ├── fiqh_agent.py           # Fiqh rulings (legacy)
+│   │   ├── hadith_agent.py         # Hadith (legacy)
+│   │   ├── seerah_agent.py         # Seerah (legacy)
+│   │   └── general_islamic_agent.py # General knowledge (legacy)
 │   │
 │   ├── knowledge/                    # RAG pipeline (Phase 9 enhanced)
 │   │   ├── embedding_model.py      # BGE-M3 embeddings
@@ -618,7 +742,7 @@ Athar/
 │   │   └── models.py
 │   │
 │   ├── core/                       # Core utilities
-│   │   ��─�� exceptions.py          # Exception hierarchy (Phase 9)
+│   │   ├── exceptions.py          # Exception hierarchy (Phase 9)
 │   │   ├── router.py
 │   │   ├── registry.py
 │   │   └── citation.py
@@ -628,8 +752,35 @@ Athar/
 │       ├── era_classifier.py
 │       └── lazy_singleton.py
 │
+├── config/                         # Agent configurations (NEW - Phase 10)
+│   └── agents/
+│       ├── fiqh.yaml              # FiqhAgent config
+│       ├── hadith.yaml            # HadithAgent config
+│       ├── tafsir.yaml            # TafsirAgent config
+│       ├── aqeedah.yaml           # AqeedahAgent config
+│       ├── seerah.yaml            # SeerahAgent config
+│       ├── history.yaml           # HistoryAgent config
+│       ├── language.yaml           # LanguageAgent config
+│       ├── tazkiyah.yaml          # TazkiyahAgent config
+│       ├── general.yaml           # GeneralIslamicAgent config
+│       └── usul_fiqh.yaml         # UsulFiqhAgent config
+│
+├── prompts/                        # System prompts (NEW - Phase 10)
+│   ├── _shared_preamble.txt       # Common rules for all agents
+│   ├── fiqh_agent.txt             # FiqhAgent prompt
+│   ├── hadith_agent.txt           # HadithAgent prompt
+│   ├── tafsir_agent.txt           # TafsirAgent prompt
+│   ├── aqeedah_agent.txt          # AqeedahAgent prompt
+│   ├── seerah_agent.txt           # SeerahAgent prompt
+│   ├── history_agent.txt         # HistoryAgent prompt
+│   ├── language_agent.txt         # LanguageAgent prompt
+│   ├── tazkiyah_agent.txt         # TazkiyahAgent prompt
+│   ├── general_agent.txt          # GeneralIslamicAgent prompt
+│   └── usul_fiqh_agent.txt        # UsulFiqhAgent prompt
+│
 ├── tests/                          # Test suite (Phase 9)
-│   ├── test_comprehensive.py       # 40+ unit tests (NEW)
+│   ├── test_comprehensive.py       # 40+ unit tests
+│   ├── test_config_backed_agents.py # Config tests (NEW)
 │   └── ...
 │
 ├── docker/                        # Docker configuration
@@ -661,22 +812,27 @@ Athar/
 | **Phase 6** | ✅ Complete | 13 Agents, Mini-Dataset, 10 Collections |
 | **Phase 7** | ✅ Complete | Full Lucene Merge (11.3M docs) |
 | **Phase 8** | ✅ Complete | Hybrid Intent Classifier |
-| **Phase 9** | ✅ **COMPLETE** | **Production Ready** |
+| **Phase 9** | ✅ Complete | Production Ready (DI, Caching, Metrics) |
+| **Phase 10** | ✅ **COMPLETE** | **Multi-Agent Collection-Aware RAG** |
+| **v2 Migration** | ✅ **COMPLETE** | **Declarative Config + Canonical Paths** |
 
-### Phase 9: Production Ready (April 16, 2026)
+### Phase 10: Multi-Agent Collection-Aware RAG (April 18, 2026)
 
-The comprehensive Phase 9 update provides:
+The comprehensive Phase 10 update provides:
 
-1. **Code Quality** - Constants centralized (300+ magic numbers)
-2. **Type Safety** - Type hints added to all utilities
-3. **Error Handling** - Structured exception hierarchy
-4. **Dependency Injection** - Full DI container
-5. **Caching** - Redis embedding + query cache
-6. **RAG Enhancement** - BM25, query expansion, reranking
-7. **Observability** - Metrics collector + endpoints
-8. **Testing** - 40+ comprehensive tests
-9. **DevOps** - CI/CD workflow, Docker, environment validation
-10. **Documentation** - Complete code review
+1. **CollectionAgent Base** - Abstract class with 7-stage RAG pipeline
+2. **Retrieval Strategies Matrix** - Per-agent optimized configurations
+3. **Verification Suite** - Digital Isnad with fail policies (abstain/warn/proceed)
+4. **Multi-Agent Orchestration** - SEQUENTIAL/PARALLEL/HIERARCHICAL patterns
+5. **8 Collection Agents** - Fiqh, Hadith, Tafsir, Aqeedah, Seerah, Usul, History, Language
+6. **Evaluation Framework** - Precision, Recall, Citation accuracy, Ikhtilaf coverage
+7. **Hybrid Qdrant** - Collection configs with HNSW and quantization
+8. **Metadata Enrichment** - Era classification, madhhab inference
+9. **Config-Backed Agents** - 10 YAML configs + 11 system prompts
+10. **ConfigRouter** - DOMAIN_KEYWORDS-based routing
+11. **Documentation** - 7 new reference documents
+
+See [Multi-Agent Collection Architecture](./docs/9-reference/MULTI_AGENT_COLLECTION_ARCHITECTURE.md) for details.
 
 ---
 
@@ -706,6 +862,22 @@ make test-language
 | test_zakat_calculator.py | ~95% | Zakat calculations |
 | test_inheritance_calculator.py | ~95% | Inheritance rules |
 | test_hybrid_classifier.py | ~90% | Intent classification |
+| test_config_backed_agents.py | 100% | 27 (v2 config system) |
+| test_collection_agent_base.py | 100% | 28 (v2 agent base) |
+| test_retrieval/test_strategies.py | 100% | 25 (retrieval strategies) |
+| test_router/test_orchestration.py | 100% | 22 (orchestration) |
+
+### v2 Migration Testing
+
+The v2 migration adds 102+ tests for the new canonical paths:
+
+```bash
+# Run v2 core tests
+pytest tests/test_config_backed_agents.py tests/test_agents/test_collection_agent_base.py -v
+
+# Verify imports work
+python -c "from src.agents.collection import FiqhCollectionAgent; from src.verification import VerificationReport; from src.application.routing import IntentRouter"
+```
 
 ---
 
@@ -756,6 +928,14 @@ All magic numbers are centralized in `src/config/constants.py`:
 - **Linting:** Ruff (line length 120)
 - **Type Checking:** MyPy (strict mode)
 - **Testing:** pytest with coverage (~92%)
+
+### Documentation
+
+See `docs/11-learning/` for complete file-by-file documentation:
+
+- [18_src_modules_complete_guide.md](docs/11-learning/18_src_modules_complete_guide.md) - Module overview
+- [19_complete_file_index.md](docs/11-learning/19_complete_file_index.md) - File index with line counts  
+- [20_src_complete_file_by_file.md](docs/11-learning/20_src_complete_file_by_file.md) - Detailed explanations
 
 ---
 

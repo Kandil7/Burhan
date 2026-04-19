@@ -74,11 +74,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if api_key:
             return hashlib.sha256(api_key.encode()).hexdigest()[:16]
 
-        # Fall back to IP address
-        forwarded = request.headers.get("X-Forwarded-For")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-
+        # Use direct client IP to avoid spoofed forwarding headers.
         return request.client.host if request.client else "unknown"
 
     def _check_rate_limit(self, client_id: str) -> bool:

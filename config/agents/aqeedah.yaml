@@ -1,0 +1,47 @@
+# Aqeedah Agent Configuration
+# Retrieval, verification, and fallback policies for AqeedahCollectionAgent
+
+name: AqeedahAgent
+domain: aqeedah
+collection_name: aqeedah_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.7
+  topk_initial: 40
+  topk_reranked: 8
+  min_relevance: 0.6
+  metadata_filters_priority:
+    - topic
+    - scholar
+    - school
+    - era
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: abstain
+
+    - name: aqeedah_orthodoxy_checker
+      enabled: true
+      fail_policy: abstain
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
+
+fallback:
+  strategy: human_review
+  message: null
+
+abstention:
+  require_authentic_sources: true
+  require_sahih_evidence_only: true
+  minimum_sources: 2
+  block_kufr_tafreet_statements: true

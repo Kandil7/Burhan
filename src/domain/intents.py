@@ -31,6 +31,13 @@ class Intent(str, Enum):
     USUL_FIQH = "usul_fiqh"
     ISLAMIC_HISTORY = "islamic_history"
     ARABIC_LANGUAGE = "arabic_language"
+    # Additional intents for specific tools and queries
+    ZAKAT = "zakat"
+    INHERITANCE = "inheritance"
+    GREETING = "greeting"
+    DUAS = "duas"
+    PRAYER_TIMES = "prayer_times"
+    HIJRI_CALENDAR = "hijri_calendar"
 
 
 class QuranSubIntent(str, Enum):
@@ -68,26 +75,38 @@ INTENT_DESCRIPTIONS: Dict[Intent, str] = {
     Intent.ARABIC_LANGUAGE: (
         "Arabic language: grammar (nahw), morphology (sarf), rhetoric (balaghah), literature, poetry, dictionaries"
     ),
+    # Additional intents for specific tools
+    Intent.ZAKAT: ("Zakat calculation and rulings (zakat al-fitr, niacin, wealth)"),
+    Intent.INHERITANCE: ("Islamic inheritance distribution and rulings"),
+    Intent.GREETING: ("Greetings and salam exchanges"),
+    Intent.DUAS: ("Islamic supplications and duas"),
+    Intent.PRAYER_TIMES: ("Prayer times calculation and schedules"),
+    Intent.HIJRI_CALENDAR: ("Hijri calendar conversion and dates"),
 }
 
 
 # ============================================================================
-# Intent → agent/tool routing table
+# Intent → agent/tool routing table (Epic 6 - Collection-aware)
 # ============================================================================
 
 INTENT_ROUTING: Dict[Intent, str] = {
     Intent.FIQH: "fiqh_agent",
-    Intent.QURAN: "quran_agent",  # further refined by QuranSubIntent
+    Intent.QURAN: "tafsir_agent",  # Tafsir handles Quran interpretation
     Intent.ISLAMIC_KNOWLEDGE: "general_islamic_agent",
     Intent.HADITH: "hadith_agent",
     Intent.SEERAH: "seerah_agent",
-    # The intents below currently share general_islamic_agent.
-    # Dedicated agents will be added in later phases.
-    Intent.TAFSIR: "general_islamic_agent",
-    Intent.AQEEDAH: "general_islamic_agent",
-    Intent.USUL_FIQH: "general_islamic_agent",
-    Intent.ISLAMIC_HISTORY: "general_islamic_agent",
-    Intent.ARABIC_LANGUAGE: "general_islamic_agent",
+    Intent.TAFSIR: "tafsir_agent",  # Dedicated tafsir agent (Epic 6)
+    Intent.AQEEDAH: "aqeedah_agent",  # Dedicated aqeedah agent (Epic 6)
+    Intent.USUL_FIQH: "usul_fiqh_agent",  # Dedicated usul_fiqh agent (Epic 6)
+    Intent.ISLAMIC_HISTORY: "history_agent",  # Dedicated history agent (Epic 6)
+    Intent.ARABIC_LANGUAGE: "language_agent",  # Dedicated language agent (Epic 6)
+    # Additional intents route to tools or appropriate agents
+    Intent.ZAKAT: "tool_agent",  # Zakat calculator tool
+    Intent.INHERITANCE: "tool_agent",  # Inheritance calculator tool
+    Intent.GREETING: "chatbot_agent",  # Greeting responses
+    Intent.DUAS: "general_islamic_agent",  # Duas retrieval
+    Intent.PRAYER_TIMES: "tool_agent",  # Prayer times tool
+    Intent.HIJRI_CALENDAR: "tool_agent",  # Hijri calendar tool
 }
 
 
@@ -107,6 +126,12 @@ INTENT_PRIORITY: Dict[Intent, int] = {
     Intent.ARABIC_LANGUAGE: 7,
     Intent.ISLAMIC_HISTORY: 6,
     Intent.FIQH: 5,
+    Intent.ZAKAT: 5,
+    Intent.INHERITANCE: 5,
+    Intent.PRAYER_TIMES: 4,
+    Intent.HIJRI_CALENDAR: 4,
+    Intent.DUAS: 4,
+    Intent.GREETING: 3,
     Intent.ISLAMIC_KNOWLEDGE: 1,  # most general — matched last
 }
 
@@ -265,6 +290,60 @@ KEYWORD_PATTERNS: Dict[Intent, List[str]] = {
         "what is",
         "who is",
         "tell me about",
+    ],
+    # New intent keyword patterns
+    Intent.ZAKAT: [
+        "زكاة",
+        "زكاه",
+        "zakat",
+        "zakah",
+        "زكاة المال",
+        "زكاة الفطر",
+        "نصاب",
+    ],
+    Intent.INHERITANCE: [
+        "ميراث",
+        "ميرات",
+        "inheritance",
+        "إرث",
+        "ارث",
+        "قسمة",
+        "ورثة",
+    ],
+    Intent.GREETING: [
+        "سلام",
+        "السلام",
+        "السلام عليكم",
+        "hello",
+        "hi",
+        "assalam",
+        "salaam",
+    ],
+    Intent.DUAS: [
+        "دعاء",
+        "ادعية",
+        "dua",
+        "supplication",
+        "ذكر",
+        "اذكار",
+    ],
+    Intent.PRAYER_TIMES: [
+        "مواقيت الصلاة",
+        "اوقات الصلاة",
+        "prayer times",
+        "صلاة",
+        "فجر",
+        "ظهر",
+        "عصر",
+        "مغرب",
+        "عشاء",
+    ],
+    Intent.HIJRI_CALENDAR: [
+        "هجري",
+        " hijri",
+        "التقويم الهجري",
+        "ميلادي",
+        "التحويل",
     ],
 }
 

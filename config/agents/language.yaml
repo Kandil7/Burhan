@@ -1,0 +1,44 @@
+# Language Agent Configuration
+# Retrieval, verification, and fallback policies for LanguageCollectionAgent
+
+name: LanguageAgent
+domain: language
+collection_name: language_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.4
+  topk_initial: 40
+  topk_reranked: 10
+  min_relevance: 0.5
+  metadata_filters_priority:
+    - topic
+    - grammar_type
+    - reference_book
+
+verification:
+  fail_fast: false
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: warn
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: arabic_grammar_checker
+      enabled: true
+      fail_policy: proceed
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: proceed
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  require_grammatically_correct: true
+  minimum_sources: 1

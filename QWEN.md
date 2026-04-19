@@ -545,6 +545,19 @@ HF_TOKEN=your-huggingface-token
 CORS_ORIGINS=http://localhost:3000,http://localhost:8000
 ```
 
+  ┃                                                                                                                                                                                                     
+  ┃  $ cd "K:/business/projects_v2/Athar" && wc -l data/processed/lucene_pages/collections/*.jsonl                                                                                                      
+  ┃                                                                                                                                                                                                     
+  ┃  738003 data/processed/lucene_pages/collections/aqeedah_passages.jsonl
+  ┃      1015311 data/processed/lucene_pages/collections/arabic_language_passages.jsonl
+  ┃      2397988 data/processed/lucene_pages/collections/fiqh_passages.jsonl
+  ┃      3410436 data/processed/lucene_pages/collections/general_islamic.jsonl                                                                                                                          
+  ┃      5059547 data/processed/lucene_pages/collections/hadith_passages.jsonl                                                                                                                          
+  ┃      2850288 data/processed/lucene_pages/collections/islamic_history_passages.jsonl                                                                                                                 
+  ┃      2128606 data/processed/lucene_pages/collections/quran_tafsir.jsonl                                                                                                                             
+  ┃       294623 data/processed/lucene_pages/collections/seerah_passages.jsonl                                                                                                                          
+  ┃       438776 data/processed/lucene_pages/collections/spirituality_passages.jsonl                                                                                                                    
+  ┃       368388 data/processed/lucene_pages/collections/usul_fiqh.jsonl  
 ---
 
 ## 🧪 Testing

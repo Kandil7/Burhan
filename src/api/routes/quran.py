@@ -288,7 +288,8 @@ async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_se
         result = await engine.execute(request.query)
         return NL2SQLResponse(**result)
     except NL2SQLQueryError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+        logger.warning("quran.analytics.query_error", error=str(e))
+        raise HTTPException(status_code=400, detail="Unable to process this analytics query.") from e
 
 
 # ==========================================

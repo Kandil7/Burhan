@@ -1,0 +1,44 @@
+# Tazkiyah Agent Configuration
+# Retrieval, verification, and fallback policies for TazkiyahCollectionAgent
+
+name: TazkiyahAgent
+domain: tazkiyah
+collection_name: tazkiyah_passages
+
+retrieval:
+  primary: hybrid
+  alpha: 0.6
+  topk_initial: 50
+  topk_reranked: 10
+  min_relevance: 0.5
+  metadata_filters_priority:
+    - topic
+    - source_book
+
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: warn
+
+    - name: source_attributor
+      enabled: true
+      fail_policy: warn
+
+    - name: tazkiyah_balance_checker
+      enabled: true
+      fail_policy: proceed
+
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: proceed
+
+fallback:
+  strategy: chatbot
+  message: null
+
+abstention:
+  block_extreme_statements: true
+  require_balanced_presentation: true
+  minimum_sources: 1
