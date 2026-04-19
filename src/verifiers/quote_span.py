@@ -2,12 +2,16 @@
 Quote span detection for Athar verification pipeline.
 
 Design contract (enforced by tests):
-  ✅  ﴿...﴾   — Quranic brackets        → extract inner text
-  ✅  «...»   — Arabic quotation marks  → extract inner text
-  ✅  "..."   — Neutral double quotes   → extract inner text (short terms)
+  ✅  ﴿...﴾   — Quranic brackets        → extract inner text (strict match)
+  ✅  «...»   — Arabic quotation marks  → extract inner text (strict match)
+  ✅  "..."   — Neutral double quotes   → extract inner text (relaxed match)
   ❌  [CX] sentence...  — citation + narrative  → NOT a quote
   ❌  sentence... [CX]  — narrative + citation  → NOT a quote
   ❌  كما ورد في [CX]  — paraphrase prefix     → NOT a quote
+
+Delimiter policy (consumed by ExactQuoteVerifier):
+  quran / arabic → strict exact substring match required
+  neutral        → relaxed fuzzy match (0.75) — may be LLM paraphrase
 """
 
 from __future__ import annotations
@@ -38,7 +42,9 @@ _QURAN_RE = re.compile(r"﴿(.{5,500}?)﴾", re.DOTALL | re.UNICODE)
 _ARABIC_RE = re.compile(r"«(.{5,300}?)»", re.DOTALL | re.UNICODE)
 
 # "..." — neutral double quotes, 3–150 chars
-# Upper bound intentionally tight to exclude narrative sentences
+# Upper bound intentionally tight to exclude narrative sentences.
+# NOTE: Neutral quotes are treated as LLM paraphrase candidates —
+# ExactQuoteVerifier applies relaxed (fuzzy) matching for this type.
 _NEUTRAL_RE = re.compile(r'"(.{3,150}?)"', re.DOTALL | re.UNICODE)
 
 # Union for has_quotes() fast check
@@ -53,6 +59,12 @@ _PATTERNS: list[tuple[re.Pattern, str, bool]] = [
     (_NEUTRAL_RE, "neutral", False),
 ]
 
+# delimiter_type values that require strict exact match in the verifier
+STRICT_DELIMITER_TYPES: frozenset[str] = frozenset({"quran", "arabic"})
+
+# delimiter_type values where relaxed fuzzy match is acceptable
+RELAXED_DELIMITER_TYPES: frozenset[str] = frozenset({"neutral"})
+
 
 class QuoteSpanDetector:
     """
@@ -65,6 +77,10 @@ class QuoteSpanDetector:
         - Narrative sentences attributed to [CX] citations
         - Paraphrase introduced by كما ورد / أشار / ذكر
         - Any text not inside a recognised opening+closing delimiter
+
+    Delimiter semantics for downstream verifiers:
+        quran / arabic → strict exact match (Quran verses, hadiths)
+        neutral        → relaxed fuzzy match (may be LLM summary)
     """
 
     # ── Public API ────────────────────────────────────────────────────────
@@ -76,8 +92,8 @@ class QuoteSpanDetector:
         Returns deduplicated list in order of appearance.
         Returns [] if no delimited quotes are found.
 
-        Args:
-            text: Answer or claim text to scan
+        NOTE: Downstream callers that need match-strictness info
+        should use extract_with_spans() instead.
 
         Examples:
             >>> d = QuoteSpanDetector()
@@ -136,8 +152,13 @@ class QuoteSpanDetector:
         """
         Extract quotes with their character spans and delimiter type.
 
+        Used by ExactQuoteVerifier to apply per-type match strictness:
+          - delimiter_type in STRICT_DELIMITER_TYPES  → exact match
+          - delimiter_type in RELAXED_DELIMITER_TYPES → fuzzy match
+
         Returns:
-            List of dicts: {content, start, end, delimiter_type}
+            List of dicts sorted by start position:
+            {content, start, end, delimiter_type, requires_strict_match}
         """
         return [
             {
@@ -145,6 +166,7 @@ class QuoteSpanDetector:
                 "start": s.start,
                 "end": s.end,
                 "delimiter_type": s.delimiter_type,
+                "requires_strict_match": s.delimiter_type in STRICT_DELIMITER_TYPES,
             }
             for s in self.detect_quotes(text)
         ]
@@ -176,4 +198,10 @@ class QuoteSpanDetector:
 # Default singleton
 quote_span_detector = QuoteSpanDetector()
 
-__all__ = ["QuoteSpan", "QuoteSpanDetector", "quote_span_detector"]
+__all__ = [
+    "QuoteSpan",
+    "QuoteSpanDetector",
+    "quote_span_detector",
+    "STRICT_DELIMITER_TYPES",
+    "RELAXED_DELIMITER_TYPES",
+]
