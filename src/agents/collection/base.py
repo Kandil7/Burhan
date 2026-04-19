@@ -510,6 +510,8 @@ class CollectionAgent(ABC):
 
         # Post-generation Grounding Check (lazy import to avoid circular)
         from src.verifiers.exact_quote import exact_quote_verifier
+        from src.verifiers.source_attribution import source_attribution_verifier
+        from src.verifiers.groundedness_judge import groundedness_judge
 
         quote_eval = await exact_quote_verifier.verify(answer, verification.verified_passages)
         if not quote_eval.passed:
@@ -521,6 +523,30 @@ class CollectionAgent(ABC):
                 }
             )
             verification.confidence = min(verification.confidence, 0.80)
+
+        # Post-generation Source Attribution Check
+        source_eval = await source_attribution_verifier.verify(answer, verification.verified_passages)
+        if not source_eval.passed:
+            verification.issues.append(
+                {
+                    "type": "source_attribution_violation",
+                    "message": "Answer claims sources that are not present in the verified passages.",
+                    "details": source_eval.details,
+                }
+            )
+            verification.confidence = min(verification.confidence, 0.85)
+
+        # Post-generation Speculative / Groundedness Check
+        groundedness_eval = await groundedness_judge.verify(answer, verification.verified_passages)
+        if not groundedness_eval.passed:
+            verification.issues.append(
+                {
+                    "type": "speculative_answer",
+                    "message": "Answer adds speculative or ungrounded factual claims beyond the provided evidence.",
+                    "details": groundedness_eval.details,
+                }
+            )
+            verification.confidence = min(verification.confidence, 0.70)
 
         # Step 8: Assemble citations
         citations = self.assemble_citations(verification.verified_passages)

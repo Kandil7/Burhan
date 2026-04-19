@@ -78,6 +78,7 @@ class QuoteSpanDetector:
         - "[C2] content here"
         - "quoted text"
         - « Arabic quotes »
+        - ﴿ Quranic quotes ﴾
         """
         results = []
 
@@ -85,13 +86,15 @@ class QuoteSpanDetector:
         matches = re.findall(r"\[[Cc]\d+\]\s*([^.\n]+)", text)
         results.extend([m.strip() for m in matches if m.strip()])
 
-        # Pattern 2: Quotation marks: "quoted", 'quoted', «quoted»
-        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»', text)
-        for g1, g2 in matches:
+        # Pattern 2: Quotation marks: "quoted", 'quoted', «quoted», ﴿quoted﴾
+        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»|﴿([^﴾]+)﴾', text)
+        for g1, g2, g3 in matches:
             if g1:
                 results.append(g1.strip())
             elif g2:
                 results.append(g2.strip())
+            elif g3:
+                results.append(g3.strip())
 
         return results
 

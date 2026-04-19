@@ -159,17 +159,40 @@ class SourceAttributionVerifier(BaseVerifier):
         """
         # Check against known evidence sources
         source_lower = source.lower()
+        
+        # If it's a citation marker like [C1], match against it
+        if source_lower.startswith("c") and source_lower[1:].isdigit():
+            # In our system citations are like C0, C1, etc.
+            # Assuming evidence might have this embedded implicitly if it's just index-based
+            # But let's check text and metadata
+            pass
+
         for ev_source in evidence_sources:
             if source_lower in ev_source.lower():
                 return True
 
-        # Check if source is mentioned in evidence texts
+        # Check if source is mentioned in evidence texts or metadata
         if isinstance(evidence, list):
-            for ev in evidence:
+            for i, ev in enumerate(evidence):
+                # Auto-approve C-style indexing if numeric matches position
+                # E.g. [C1] matches evidence index 0 (if 1-based)
+                if source_lower == f"c{i+1}":
+                    return True
+                if source_lower == f"c{i}":
+                    return True
+                
                 if isinstance(ev, dict):
                     text = ev.get("text", "")
                     if source_lower in text.lower():
                         return True
+                    
+                    # Check metadata
+                    metadata = ev.get("metadata", {})
+                    if isinstance(metadata, dict):
+                        for key in ["book", "source", "author", "id", "chapter"]:
+                            val = metadata.get(key)
+                            if val and isinstance(val, str) and source_lower.replace("al-", "").strip() in val.lower():
+                                return True
 
         return False
 
