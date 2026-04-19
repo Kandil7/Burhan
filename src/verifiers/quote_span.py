@@ -1,103 +1,179 @@
-# Quote Span Module
-"""Quote span detection and validation."""
+"""
+Quote span detection for Athar verification pipeline.
 
-from typing import List, Optional, Dict, Any
-from dataclasses import dataclass
+Design contract (enforced by tests):
+  ✅  ﴿...﴾   — Quranic brackets        → extract inner text
+  ✅  «...»   — Arabic quotation marks  → extract inner text
+  ✅  "..."   — Neutral double quotes   → extract inner text (short terms)
+  ❌  [CX] sentence...  — citation + narrative  → NOT a quote
+  ❌  sentence... [CX]  — narrative + citation  → NOT a quote
+  ❌  كما ورد في [CX]  — paraphrase prefix     → NOT a quote
+"""
+
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
 class QuoteSpan:
-    """Represents a span of quoted text."""
+    """Represents a span of explicitly delimited quoted text."""
 
     start: int
     end: int
     text: str
+    delimiter_type: str = "unknown"  # quran | arabic | neutral
     is_arabic: bool = False
     validation_status: Optional[str] = None
 
 
+# ── Compiled patterns (delimiter-pair based only) ────────────────────────────
+
+# ﴿...﴾ — Quranic verses, 5–500 chars
+_QURAN_RE = re.compile(r"﴿(.{5,500}?)﴾", re.DOTALL | re.UNICODE)
+
+# «...» — Arabic quotation marks, 5–300 chars
+_ARABIC_RE = re.compile(r"«(.{5,300}?)»", re.DOTALL | re.UNICODE)
+
+# "..." — neutral double quotes, 3–150 chars
+# Upper bound intentionally tight to exclude narrative sentences
+_NEUTRAL_RE = re.compile(r'"(.{3,150}?)"', re.DOTALL | re.UNICODE)
+
+# Union for has_quotes() fast check
+_ANY_QUOTE_RE = re.compile(
+    r'﴿.{5,500}?﴾|«.{5,300}?»|".{3,150}?"',
+    re.DOTALL | re.UNICODE,
+)
+
+_PATTERNS: list[tuple[re.Pattern, str, bool]] = [
+    (_QURAN_RE,   "quran",   True),
+    (_ARABIC_RE,  "arabic",  True),
+    (_NEUTRAL_RE, "neutral", False),
+]
+
+
 class QuoteSpanDetector:
-    """Detects and validates quote spans in text."""
+    """
+    Detects explicitly delimited quotations in Arabic/Islamic text.
 
-    # Arabic quote patterns
-    ARABIC_QUOTE_PATTERNS = [
-        r"[\u2018\u2019\u201C\u201D]",  # Smart quotes
-        r'["\"]',  # Straight quotes
-        r"«»",  # French quotes
-        r"〞〟",  # CJK quotes
-    ]
+    Only recognises text enclosed in a matched delimiter pair:
+        ﴿﴾  «»  ""
 
-    def __init__(self):
-        self.arabic_pattern = re.compile(
-            f"({'|'.join(self.ARABIC_QUOTE_PATTERNS)})",
-            re.UNICODE,
-        )
+    Intentionally ignores:
+        - Narrative sentences attributed to [CX] citations
+        - Paraphrase introduced by كما ورد / أشار / ذكر
+        - Any text not inside a recognised opening+closing delimiter
+    """
 
-    def detect_quotes(self, text: str) -> List[QuoteSpan]:
-        """Detect all quoted spans in text."""
-        spans = []
+    # ── Public API ────────────────────────────────────────────────────────
 
-        # Find all quoted sections
-        for match in self.arabic_pattern.finditer(text):
-            quote_char = match.group()
+    def extract_quote_content(self, text: str) -> list[str]:
+        """
+        Extract inner content of all delimited quotations.
 
-            # Simple detection - would need more sophisticated parsing
-            start = match.start()
-            end = start + 1
+        Returns deduplicated list in order of appearance.
+        Returns [] if no delimited quotes are found.
 
-            # Check if it's an opening quote
-            is_arabic = "\u2018" in quote_char or "\u201c" in quote_char
+        Args:
+            text: Answer or claim text to scan
 
-            if is_arabic:
-                spans.append(
-                    QuoteSpan(
-                        start=start,
-                        end=end,
-                        text=quote_char,
-                        is_arabic=True,
+        Examples:
+            >>> d = QuoteSpanDetector()
+            >>> d.extract_quote_content('قال ﴿وما أرسلناك إلا رحمة﴾ وأضاف «المتوكل»')
+            ['وما أرسلناك إلا رحمة', 'المتوكل']
+
+            >>> d.extract_quote_content('كما ورد في النص [C6] أن القوم نقضوا.')
+            []
+        """
+        if not text:
+            return []
+
+        seen: set[str] = set()
+        results: list[str] = []
+
+        for pattern, _, _ in _PATTERNS:
+            for match in pattern.finditer(text):
+                content = match.group(1).strip()
+                if content and content not in seen:
+                    seen.add(content)
+                    results.append(content)
+
+        return results
+
+    def detect_quotes(self, text: str) -> list[QuoteSpan]:
+        """
+        Detect all delimited quote spans with position metadata.
+
+        Returns list of QuoteSpan sorted by start position.
+        """
+        if not text:
+            return []
+
+        seen: set[str] = set()
+        spans: list[QuoteSpan] = []
+
+        for pattern, dtype, is_arabic in _PATTERNS:
+            for match in pattern.finditer(text):
+                content = match.group(1).strip()
+                if content and content not in seen:
+                    seen.add(content)
+                    spans.append(
+                        QuoteSpan(
+                            start=match.start(),
+                            end=match.end(),
+                            text=content,
+                            delimiter_type=dtype,
+                            is_arabic=is_arabic,
+                        )
                     )
-                )
 
+        spans.sort(key=lambda s: s.start)
         return spans
+
+    def extract_with_spans(self, text: str) -> list[dict]:
+        """
+        Extract quotes with their character spans and delimiter type.
+
+        Returns:
+            List of dicts: {content, start, end, delimiter_type}
+        """
+        return [
+            {
+                "content": s.text,
+                "start": s.start,
+                "end": s.end,
+                "delimiter_type": s.delimiter_type,
+            }
+            for s in self.detect_quotes(text)
+        ]
+
+    def has_quotes(self, text: str) -> bool:
+        """Return True if text contains any delimited quotation."""
+        return bool(_ANY_QUOTE_RE.search(text)) if text else False
 
     def validate_span(
         self,
         span: QuoteSpan,
         source_text: str,
     ) -> bool:
-        """Validate that a quote span matches the source."""
-        # Placeholder - would implement actual validation
-        return True
-
-    def extract_quote_content(self, text: str) -> List[str]:
-        """Extract content between quote marks and citation markers.
-
-        Handles:
-        - "[C1] quoted text"
-        - "[C2] content here"
-        - "quoted text"
-        - « Arabic quotes »
-        - ﴿ Quranic quotes ﴾
         """
-        results = []
+        Validate that a quote span's text appears in source_text.
 
-        # Pattern 1: Citation markers [C1], [C2], etc. followed by quoted text
-        matches = re.findall(r"\[[Cc]\d+\]\s*([^.\n]+)", text)
-        results.extend([m.strip() for m in matches if m.strip()])
+        Args:
+            span:        QuoteSpan to validate
+            source_text: Reference text to search in
 
-        # Pattern 2: Quotation marks: "quoted", 'quoted', «quoted», ﴿quoted﴾
-        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»|﴿([^﴾]+)﴾', text)
-        for g1, g2, g3 in matches:
-            if g1:
-                results.append(g1.strip())
-            elif g2:
-                results.append(g2.strip())
-            elif g3:
-                results.append(g3.strip())
-
-        return results
+        Returns:
+            True if span.text is a substring of source_text
+        """
+        if not source_text:
+            return False
+        return span.text in source_text
 
 
-# Default detector instance
+# Default singleton
 quote_span_detector = QuoteSpanDetector()
+
+__all__ = ["QuoteSpan", "QuoteSpanDetector", "quote_span_detector"]
