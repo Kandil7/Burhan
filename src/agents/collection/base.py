@@ -548,6 +548,101 @@ class CollectionAgent(ABC):
             )
             verification.confidence = min(verification.confidence, 0.70)
 
+        # ==========================================
+        # Auto-Healing for Quran (by Source Reference or Text Quote)
+        # ==========================================
+        invalid_sources = source_eval.details.get("invalid_sources", []) if not source_eval.passed else []
+        failed_quotes = quote_eval.details.get("failed_quotes", []) if not quote_eval.passed else []
+
+        if invalid_sources or failed_quotes:
+            import asyncio
+            from src.infrastructure.database import get_sync_session
+            from src.quran.verse_retrieval import VerseRetrievalEngine
+            from src.quran.quotation_validator import QuotationValidator
+
+            def fetch_quran_healing():
+                new_passages = []
+                rem_sources = list(invalid_sources)
+                rem_quotes = list(failed_quotes)
+
+                with get_sync_session() as session:
+                    engine = VerseRetrievalEngine(session)
+                    validator = QuotationValidator(session)
+                    
+                    # Create a new event loop for this thread to run async Quran methods
+                    new_loop = asyncio.new_event_loop()
+                    try:
+                        asyncio.set_event_loop(new_loop)
+                        
+                        # 1. Search by reference (e.g. "المائدة: 82")
+                        for src in invalid_sources:
+                            try:
+                                v_info = new_loop.run_until_complete(engine.lookup(str(src), include_translation=False))
+                                verses = v_info if isinstance(v_info, list) else [v_info]
+                                
+                                added = False
+                                for v in verses:
+                                    new_passages.append({
+                                        "id": f"quran_{v['surah_number']}_{v['ayah_number']}",
+                                        "text": v["text_uthmani"],
+                                        "metadata": {
+                                            "book": "القرآن الكريم",
+                                            "source": f"سورة {v.get('surah_name_ar', '')}",
+                                            "chapter": v.get("surah_name_ar", ""),
+                                        }
+                                    })
+                                    added = True
+                                if added and src in rem_sources:
+                                    rem_sources.remove(src)
+                            except Exception:
+                                pass
+                                
+                        # 2. Search by text quote
+                        for q_text in failed_quotes:
+                            try:
+                                val_res = new_loop.run_until_complete(validator.validate(str(q_text)))
+                                if val_res.get("is_quran") and val_res.get("matched_ayah"):
+                                    ayah = val_res["matched_ayah"]
+                                    new_passages.append({
+                                        "id": f"quran_{ayah['surah_number']}_{ayah['ayah_number']}",
+                                        "text": ayah["text_uthmani"],
+                                        "metadata": {
+                                            "book": "القرآن الكريم",
+                                            "source": f"سورة {ayah.get('surah_name_ar', ayah.get('surah_name_en', ''))}",
+                                            "chapter": ayah.get("surah_name_ar", ayah.get("surah_name_en", "")),
+                                        }
+                                    })
+                                    if q_text in rem_quotes:
+                                        rem_quotes.remove(q_text)
+                            except Exception:
+                                pass
+                                
+                    finally:
+                        new_loop.close()
+                return new_passages, rem_sources, rem_quotes
+
+            try:
+                new_passages, rem_sources, rem_quotes = await asyncio.to_thread(fetch_quran_healing)
+                if new_passages:
+                    # Deduplicate before extending
+                    existing_texts = {p.get("text", "") for p in verification.verified_passages}
+                    added_new = False
+                    for np in new_passages:
+                        if np["text"] not in existing_texts:
+                            verification.verified_passages.append(np)
+                            existing_texts.add(np["text"])
+                            added_new = True
+                            
+                    if added_new:
+                        # Clean up issues if fully healed
+                        if not rem_sources:
+                            verification.issues = [i for i in verification.issues if i.get("type") != "source_attribution_violation"]
+                        if not rem_quotes:
+                            verification.issues = [i for i in verification.issues if i.get("type") != "strict_grounding_violation"]
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning("quran_healing_error", error=str(e))
+
         # Step 8: Assemble citations
         citations = self.assemble_citations(verification.verified_passages)
 
