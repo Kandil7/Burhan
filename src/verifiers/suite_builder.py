@@ -5,7 +5,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any
 
-from src.agents.collection_agent import (
+from src.agents.collection.base import (
     VerificationCheck,
     VerificationSuite,
     VerificationReport,
@@ -157,6 +157,7 @@ def register_all_checks() -> None:
     # 1. High-Integrity Domain Checks (Quote Verification)
     try:
         from src.verifiers.fiqh_checks import QuoteValidator, EvidenceSufficiency
+
         register_check("quote_validator", QuoteValidator)
         register_check("evidence_sufficiency", EvidenceSufficiency)
     except ImportError:
@@ -165,6 +166,7 @@ def register_all_checks() -> None:
     # 2. Hadith Grading
     try:
         from src.verifiers.hadith_grade import HadithGradeVerifier
+
         # Register both aliases to support hadith.py and HADITH_VERIFICATION_SUITE
         register_check("hadith_grade", HadithGradeVerifier)
         register_check("hadith_grade_checker", HadithGradeVerifier)
@@ -174,6 +176,7 @@ def register_all_checks() -> None:
     # 3. Temporal Consistency
     try:
         from src.verifiers.temporal_consistency import TemporalConsistencyVerifier
+
         register_check("temporal_consistency", TemporalConsistencyVerifier)
     except ImportError:
         pass
@@ -181,6 +184,7 @@ def register_all_checks() -> None:
     # 4. Global/Generic Checks (can override or supplement)
     try:
         from src.verifiers.exact_quote import ExactQuoteVerifier
+
         # Only register if not already registered by domain checks
         if "quote_validator" not in CHECK_IMPLEMENTATIONS:
             register_check("quote_validator", ExactQuoteVerifier)
@@ -189,6 +193,7 @@ def register_all_checks() -> None:
 
     try:
         from src.verifiers.source_attribution import SourceAttributionVerifier
+
         if "source_attributor" not in CHECK_IMPLEMENTATIONS:
             register_check("source_attributor", SourceAttributionVerifier)
     except ImportError:
@@ -196,6 +201,7 @@ def register_all_checks() -> None:
 
     try:
         from src.verifiers.contradiction import ContradictionVerifier
+
         if "contradiction_detector" not in CHECK_IMPLEMENTATIONS:
             register_check("contradiction_detector", ContradictionVerifier)
     except ImportError:
@@ -203,6 +209,7 @@ def register_all_checks() -> None:
 
     try:
         from src.verifiers.evidence_sufficiency import EvidenceSufficiencyVerifier
+
         if "evidence_sufficiency" not in CHECK_IMPLEMENTATIONS:
             register_check("evidence_sufficiency", EvidenceSufficiencyVerifier)
     except ImportError:
@@ -324,21 +331,21 @@ def run_verification_suite(
 
     # Final Count Logic: If one check filtered out passages, verified_passages would be smaller
     final_count = len(verified_passages)
-    
+
     # Calculate overall verification status
     is_verified = len(all_issues) == 0 and (initial_count == final_count or initial_count == 0)
-    
+
     # Start with 1.0 confidence
     confidence = 1.0
-    
+
     # Penalize for issues
     if all_issues:
-        confidence -= (len(all_issues) * 0.2)
-        
+        confidence -= len(all_issues) * 0.2
+
     # Penalize for lost evidence (if count dropped, someone didn't pass)
     if initial_count > 0 and final_count < initial_count:
         drop_ratio = (initial_count - final_count) / initial_count
-        confidence -= (drop_ratio * 0.3)
+        confidence -= drop_ratio * 0.3
         all_issues.append(f"Evidence reduced from {initial_count} to {final_count} during verification.")
 
     return VerificationReport(

@@ -71,15 +71,27 @@ class QuoteSpanDetector:
         return True
 
     def extract_quote_content(self, text: str) -> List[str]:
-        """Extract content between quote marks."""
+        """Extract content between quote marks and citation markers.
+
+        Handles:
+        - "[C1] quoted text"
+        - "[C2] content here"
+        - "quoted text"
+        - « Arabic quotes »
+        """
         results = []
 
-        # Find typical quotes including Quranic and Arabic quotes
-        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»|﴿([^﴾]+)﴾', text)
-        for g1, g2, g3 in matches:
-            if g1: results.append(g1.strip())
-            elif g2: results.append(g2.strip())
-            elif g3: results.append(g3.strip())
+        # Pattern 1: Citation markers [C1], [C2], etc. followed by quoted text
+        matches = re.findall(r"\[[Cc]\d+\]\s*([^.\n]+)", text)
+        results.extend([m.strip() for m in matches if m.strip()])
+
+        # Pattern 2: Quotation marks: "quoted", 'quoted', «quoted»
+        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»', text)
+        for g1, g2 in matches:
+            if g1:
+                results.append(g1.strip())
+            elif g2:
+                results.append(g2.strip())
 
         return results
 

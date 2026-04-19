@@ -15,15 +15,16 @@ from __future__ import annotations
 import time
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any
-
-from src.verifiers.exact_quote import exact_quote_verifier
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 # Import Citation and AgentInput from canonical location (src/agents/base.py)
 # This ensures Pydantic treats all Citation instances as the same type
 from src.agents.base import AgentInput, Citation, strip_cot_leakage
+
+# Lazy import to avoid circular imports
+# Will be imported inside verify() method when needed
 
 
 class AgentOutput(BaseModel):
@@ -440,20 +441,20 @@ class CollectionAgent(ABC):
         removed_count = len(candidates) - len(verification.verified_passages)
         if removed_count > 0:
             verification.confidence = min(verification.confidence, 0.90)
-            verification.issues.append({
-                "type": "evidence_filtered_out",
-                "removed_count": removed_count,
-                "message": f"تم استبعاد {removed_count} من المقاطع أثناء التصفية والتحقق من الأدلة."
-            })
+            verification.issues.append(
+                {
+                    "type": "evidence_filtered_out",
+                    "removed_count": removed_count,
+                    "message": f"تم استبعاد {removed_count} من المقاطع أثناء التصفية والتحقق من الأدلة.",
+                }
+            )
 
         # Step 6: Policy gate — determine answer mode
         policy = AnswerPolicy()
         has_evidence = len(verification.verified_passages) > 0
-        
+
         answer_mode = policy.determine_mode(
-            confidence=verification.confidence,
-            verification_passed=verification.is_verified,
-            has_evidence=has_evidence
+            confidence=verification.confidence, verification_passed=verification.is_verified, has_evidence=has_evidence
         )
 
         if answer_mode == AnswerMode.ABSTAIN:
@@ -478,10 +479,7 @@ class CollectionAgent(ABC):
             )
 
         if answer_mode == AnswerMode.CLARIFY:
-            clarify_msg = (
-                "سؤالك يحتمل أكثر من معنى. "
-                "هل يمكنك توضيح سؤالك بشكل أدق حتى أتمكن من تقديم إجابة دقيقة؟"
-            )
+            clarify_msg = "سؤالك يحتمل أكثر من معنى. هل يمكنك توضيح سؤالك بشكل أدق حتى أتمكن من تقديم إجابة دقيقة؟"
             return AgentOutput(
                 answer=clarify_msg,
                 citations=[],
@@ -510,14 +508,18 @@ class CollectionAgent(ABC):
         answer = strip_cot_leakage(answer)
         timing["generation_ms"] = int((time.perf_counter() - t0) * 1000)
 
-        # Post-generation Grounding Check
+        # Post-generation Grounding Check (lazy import to avoid circular)
+        from src.verifiers.exact_quote import exact_quote_verifier
+
         quote_eval = await exact_quote_verifier.verify(answer, verification.verified_passages)
         if not quote_eval.passed:
-            verification.issues.append({
-                "type": "strict_grounding_violation",
-                "message": "Answer contains exact string quotes (verses, hadiths, or excerpts) not strictly grounded in passages.",
-                "details": quote_eval.details
-            })
+            verification.issues.append(
+                {
+                    "type": "strict_grounding_violation",
+                    "message": "Answer contains exact string quotes (verses, hadiths, or excerpts) not strictly grounded in passages.",
+                    "details": quote_eval.details,
+                }
+            )
             verification.confidence = min(verification.confidence, 0.80)
 
         # Step 8: Assemble citations
