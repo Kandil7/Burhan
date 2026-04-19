@@ -17,6 +17,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
+from src.verifiers.exact_quote import exact_quote_verifier
+
 from pydantic import BaseModel, Field
 
 # Import Citation and AgentInput from canonical location (src/agents/base.py)
@@ -507,6 +509,16 @@ class CollectionAgent(ABC):
         )
         answer = strip_cot_leakage(answer)
         timing["generation_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # Post-generation Grounding Check
+        quote_eval = await exact_quote_verifier.verify(answer, verification.verified_passages)
+        if not quote_eval.passed:
+            verification.issues.append({
+                "type": "strict_grounding_violation",
+                "message": "Answer contains exact string quotes (verses, hadiths, or excerpts) not strictly grounded in passages.",
+                "details": quote_eval.details
+            })
+            verification.confidence = min(verification.confidence, 0.80)
 
         # Step 8: Assemble citations
         citations = self.assemble_citations(verification.verified_passages)

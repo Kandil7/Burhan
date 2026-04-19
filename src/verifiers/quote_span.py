@@ -74,18 +74,12 @@ class QuoteSpanDetector:
         """Extract content between quote marks."""
         results = []
 
-        # Simple extraction - would need more sophisticated parsing
-        in_quote = False
-        current_quote = ""
-
-        for char in text:
-            if char in "'\"":
-                if in_quote:
-                    results.append(current_quote)
-                    current_quote = ""
-                in_quote = not in_quote
-            elif in_quote:
-                current_quote += char
+        # Find typical quotes including Quranic and Arabic quotes
+        matches = re.findall(r'["\']([^"\']+)["\']|«([^»]+)»|﴿([^﴾]+)﴾', text)
+        for g1, g2, g3 in matches:
+            if g1: results.append(g1.strip())
+            elif g2: results.append(g2.strip())
+            elif g3: results.append(g3.strip())
 
         return results
 
