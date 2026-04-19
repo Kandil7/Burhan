@@ -2,7 +2,7 @@
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
-> **📢 Latest: v2 Migration Complete (April 2026)** - Refactored to a declarative, config-backed architecture with canonical paths for agents, retrieval, verification, and routing. See [Migration Guide](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md) for details.
+> **📢 Latest: Legacy Cleanup Complete (April 2026)** - Removed 20+ orphaned files, fixed missing modules, added complete file-by-file documentation. See [docs/11-learning/](docs/11-learning/) for details.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
@@ -13,7 +13,14 @@
 
 ---
 
-## 🚀 Latest Update: Phase 10 - Multi-Agent Collection-Aware RAG ✅ + v2 Migration
+## 🚀 Latest Update: Legacy Code Cleanup Complete (April 2026)
+
+**April 19, 2026:** Successfully completed **legacy code cleanup**:
+
+- ✅ **Removed 20+ orphaned files** - test_*.py, debug_*.py, *.log
+- ✅ **Fixed missing modules** - Created `src/agents/base.py` and `src/agents/collection_agent.py` 
+- ✅ **Migrated imports** - All imports now use canonical paths
+- ✅ **Complete documentation** - File-by-file guide in docs/11-learning/
 
 **April 18, 2026:** Successfully completed **Phase 10** with the Multi-Agent Collection-Aware RAG system:
 
@@ -73,20 +80,19 @@ See [v2 Migration Notes](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md)
 
 | Metric | Value |
 |--------|-------|
-| **Lines of Code** | 20,000+ |
-| **Python Files** | 90+ |
-| **Agents** | 16+ specialized agents (10 collection + 6 legacy) |
+| **Lines of Code** | ~15,500 |
+| **Python Files** | ~200 files |
+| **Agents** | 11 CollectionAgents (v2 architecture) |
 | **Tools** | 5 deterministic tools |
 | **Intents** | 20+ types |
 | **Collections** | 10 vector collections |
 | **Test Coverage** | ~92% |
-| **API Endpoints** | 30+ |
-| **Verification Suites** | 8 (per-agent) |
-| **Retrieval Strategies** | 9 (per-agent) |
+| **API Endpoints** | 20+ |
+| **Verification Checks** | 8 (in src/verifiers/) |
+| **Retrieval Strategies** | Per-agent matrix |
 | **Agent Configs** | 10 YAML files |
 | **System Prompts** | 11 prompt files |
-| **Tests** | 255+ tests |
-| **v2 Canonical Modules** | 7 new packages (retrieval, verification, routing, etc.) |
+| **v2 Modules** | Well organized with canonical paths |
 
 ---
 
@@ -577,56 +583,42 @@ ElShamela Library (8,425 books)
 
 ```
 Athar/
-├── src/                              # Python backend (FastAPI)
-│   ├── api/                          # 15 REST API files
-│   │   ├── main.py                   # FastAPI app factory
+├── src/                              # Python backend (~200 files)
+│   ├── api/                          # FastAPI routes, schemas, middleware
+│   │   ├── main.py                   # FastAPI app
 │   │   ├── lifespan.py               # Startup/shutdown lifecycle
-│   │   ├── routes/
-│   │   │   ├── query.py              # Main query endpoint
-│   │   │   ├── classification.py    # Intent classification
-│   │   │   ├── quran.py             # Quran endpoints
-│   │   │   ├── rag.py               # RAG endpoints
-│   │   │   ├── tools.py             # Calculator tools
-│   │   │   └── health.py            # Health + metrics
-│   │   ├── middleware/
-│   │   │   ├── error_handler.py    # Error handling
-│   │   │   └── security.py          # Rate limiting
-│   │   └── schemas/
-│   │       ├── request.py            # Request models
-│   │       └── response.py           # Response models
+│   │   ├── routes/                  # /ask, /search, /tools, /quran, /classify
+│   │   ├── schemas/                 # Pydantic request/response models
+│   │   └── middleware/              # Security, logging, error handling
 │   │
-│   ├── config/                       # Config loader (NEW - Phase 10)
-│   │   ├── __init__.py              # AgentConfigManager
-│   │   └── loader.py                # YAML config loading
+│   ├── agents/                      # AI Agents (v2 CollectionAgents)
+│   │   ├── base.py                  # Core types (AgentInput, AgentOutput, Citation)
+│   │   ├── collection_agent.py       # Legacy alias
+│   │   └── collection/              # Config-backed CollectionAgents
+│   │       ├── base.py               # CollectionAgent base class
+│   │       ├── fiqh.py, hadith.py, tafsir.py, etc.  (11 agents)
 │   │
-│   ├── retrieval/                  # Retrieval layer (Phase 10 + v2)
-│   │   ├── schemas.py             # RetrievalPassage, RetrievalResult (NEW)
-│   │   ├── strategies.py           # Per-agent retrieval strategies
-│   │   ├── retrievers/             # Dense, sparse, hybrid retrievers
-│   │   ├── ranking/                # Reranking, scoring
-│   │   ├── policies/                # Collection policies
-│   │   ├── expanders/              # Query expanders
-│   │   ├── aggregation/            # Result aggregation
-│   │   ├── planning/               # Retrieval planning
-│   │   ├── filters/                # v2 filter builder & presets (NEW)
-│   │   │   ├── builder.py
-│   │   │   └── presets.py
-│   │   ├── fusion/                 # v2 score fusion (NEW)
-│   │   │   └── rrf.py              # Reciprocal Rank Fusion
-│   │   └── mapping/                # v2 payload mapping (NEW)
-│   │       ├── payload_mapper.py
-│   │       └── citation_mapper.py
+│   ├── application/                 # Use cases, services, routing
+│   │   ├── use_cases/              # AnswerQuery, ClassifyQuery, RunTool
+│   │   ├── services/              # AskService, SearchService
+│   │   ├── router/                # Hybrid classifier, orchestration
+│   │   └── classifier_factory.py  # Classifier creation
 │   │
-│   ├── verifiers/                  # Verification layer (Phase 10 - deprecated)
-│   │   ├── base.py                 # BaseVerifier, VerificationResult
-│   │   ├── suite_builder.py       # Verification suite builder
-│   │   ├── fiqh_checks.py          # Fiqh-specific verifiers
+│   ├── retrieval/                  # Retrieval layer (well organized)
+│   │   ├── retrievers/             # Hybrid, BM25, Dense retrievers
+│   │   ├── ranking/               # Reranking, scoring
+│   │   ├── filters/               # Query filtering
+│   │   ├── fusion/                # Reciprocal Rank Fusion
+│   │   └── strategies.py          # Per-agent strategies
+│   │
+│   ├── verification/              # v2 verification wrapper
+│   │   └── schemas.py
+│   │
+│   ├── verifiers/                # Full verification implementation
+│   │   ├── suite_builder.py       # Build verification suites
 │   │   ├── exact_quote.py          # Quote validation
-│   │   ├── hadith_grade.py         # Hadith grade verification
-│   │   ├── source_attribution.py   # Source attribution
-│   │   ├── contradiction.py       # Contradiction detection
-│   │   ├── evidence_sufficiency.py # Evidence sufficiency
-│   │   └── policies.py             # Verification policies
+│   │   ├── hadith_grade.py         # Hadith grading
+│   │   └── ... 15 more files
 │   │
 │   ├── evaluation/                 # Evaluation framework (Phase 10)
 │   │   ├── golden_set_schema.py   # Golden set data model
@@ -936,6 +928,14 @@ All magic numbers are centralized in `src/config/constants.py`:
 - **Linting:** Ruff (line length 120)
 - **Type Checking:** MyPy (strict mode)
 - **Testing:** pytest with coverage (~92%)
+
+### Documentation
+
+See `docs/11-learning/` for complete file-by-file documentation:
+
+- [18_src_modules_complete_guide.md](docs/11-learning/18_src_modules_complete_guide.md) - Module overview
+- [19_complete_file_index.md](docs/11-learning/19_complete_file_index.md) - File index with line counts  
+- [20_src_complete_file_by_file.md](docs/11-learning/20_src_complete_file_by_file.md) - Detailed explanations
 
 ---
 
