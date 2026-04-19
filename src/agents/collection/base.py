@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -24,6 +25,23 @@ from pydantic import BaseModel, Field
 from src.agents.base import AgentInput, Citation, strip_cot_leakage
 
 logger = logging.getLogger(__name__)
+
+# Arabic sentence-ending characters for truncation detection
+_SENTENCE_ENDINGS = {".", "؟", "!", ")", "﴾", "»", "\u06d4"}
+
+# Normalize "المائدة: 82" → "المائدة:82" for VerseRetrievalEngine
+_COLON_SPACES_RE = re.compile(r"\s*:\s*")
+
+
+def _normalize_source_ref(src: str) -> str:
+    """Remove spaces around colon in verse references."""
+    return _COLON_SPACES_RE.sub(":", src.strip())
+
+
+def _is_answer_truncated(answer: str) -> bool:
+    """Return True if answer appears cut mid-sentence (max_tokens reached)."""
+    stripped = answer.rstrip()
+    return not stripped or stripped[-1] not in _SENTENCE_ENDINGS
 
 
 class AgentOutput(BaseModel):
@@ -222,9 +240,11 @@ class CollectionAgent(ABC):
     c. speculative_answer           - groundedness_judge
     d. misattributed_quran_text     - detect_misattributed_quran
     e. missing_requested_evidence   - detect_missing_requested_evidence
+    f. answer_truncated             - _is_answer_truncated
 
     Auto-healing:
     - Fetches Quran passages for unresolved sources/quotes
+    - Normalizes verse refs (e.g. "المائدة: 82" → "المائدة:82")
 
     Subclasses MUST define:
         - COLLECTION: str (Qdrant collection name)
@@ -427,9 +447,7 @@ class CollectionAgent(ABC):
         from src.verifiers.exact_quote import exact_quote_verifier
         from src.verifiers.groundedness_judge import groundedness_judge
         from src.verifiers.misattribution import detect_misattributed_quran
-        from src.verifiers.missing_evidence import (
-            detect_missing_requested_evidence,
-        )
+        from src.verifiers.missing_evidence import detect_missing_requested_evidence
         from src.verifiers.source_attribution import source_attribution_verifier
 
         # a. Strict Grounding Check
@@ -516,10 +534,13 @@ class CollectionAgent(ABC):
                         asyncio.set_event_loop(new_loop)
 
                         for src in invalid_sources:
+                            # Normalize "المائدة: 82" → "المائدة:82"
+                            normalized_src = _normalize_source_ref(str(src))
                             try:
                                 v_info = new_loop.run_until_complete(
                                     engine.lookup(
-                                        str(src), include_translation=False
+                                        normalized_src,
+                                        include_translation=False,
                                     )
                                 )
                                 verses = (
@@ -539,9 +560,7 @@ class CollectionAgent(ABC):
                                             "metadata": {
                                                 "book": "القرآن الكريم",
                                                 "source": f"سورة {v.get('surah_name_ar', '')}",
-                                                "chapter": v.get(
-                                                    "surah_name_ar", ""
-                                                ),
+                                                "chapter": v.get("surah_name_ar", ""),
                                             },
                                         }
                                     )
@@ -550,8 +569,9 @@ class CollectionAgent(ABC):
                                     rem_sources.remove(src)
                             except Exception:
                                 logger.warning(
-                                    "quran_healing_lookup_failed for %s",
+                                    "quran_healing_lookup_failed for %s (normalized: %s)",
                                     src,
+                                    normalized_src,
                                     exc_info=True,
                                 )
 
@@ -596,9 +616,12 @@ class CollectionAgent(ABC):
                 return new_passages, rem_sources, rem_quotes
 
             try:
+                t0 = time.perf_counter()
                 new_passages, rem_sources, rem_quotes = (
                     await asyncio.to_thread(fetch_quran_healing)
                 )
+                timing["healing_ms"] = int((time.perf_counter() - t0) * 1000)
+
                 if new_passages:
                     existing_texts = {
                         p.get("content", "")
@@ -665,6 +688,19 @@ class CollectionAgent(ABC):
             )
             verification.confidence = min(verification.confidence, 0.85)
 
+        # f. Truncation Check
+        if _is_answer_truncated(answer):
+            verification.issues.append(
+                {
+                    "type": "answer_truncated",
+                    "message": (
+                        "Generated answer appears to be cut mid-sentence "
+                        "(max_tokens likely reached)."
+                    ),
+                }
+            )
+            verification.confidence = min(verification.confidence, 0.75)
+
         # ==========================================
         # Build output metadata
         # ==========================================
@@ -690,7 +726,9 @@ class CollectionAgent(ABC):
                 v["type"] == "missing_hadith_evidence" for v in missing_ev
             )
 
-        # Determine if human review is needed
+        # ==========================================
+        # Determine requires_human_review
+        # ==========================================
         requires_human_review = (
             len(verification.verified_passages) == 0
             or not verification.is_verified
@@ -709,12 +747,19 @@ class CollectionAgent(ABC):
             requires_human_review = True
 
         # Misattributed Quran → always escalate
-        has_misattribution = any(
+        if any(
             isinstance(issue, dict)
             and issue.get("type") == "misattributed_quran_text"
             for issue in verification.issues
-        )
-        if has_misattribution:
+        ):
+            requires_human_review = True
+
+        # Truncated answer → always escalate
+        if any(
+            isinstance(issue, dict)
+            and issue.get("type") == "answer_truncated"
+            for issue in verification.issues
+        ):
             requires_human_review = True
 
         return AgentOutput(
