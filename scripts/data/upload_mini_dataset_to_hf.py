@@ -18,7 +18,7 @@ from huggingface_hub import HfApi, create_repo
 
 
 # Configuration
-DATASET_NAME = "Athar-Mini-Dataset-v2"
+DATASET_NAME = "Athar-Datasets"
 DATASET_REPO_ID = f"Kandil7/{DATASET_NAME}"
 DATASET_DIR = Path("data/mini_dataset_v2")
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
@@ -39,14 +39,10 @@ def main():
     # Initialize API
     api = HfApi(token=LOCAL_TOKEN)
 
-    # Check if repo exists
+    # Check if repo exists (skip if exists, create if not)
     try:
         api.repo_info(repo_id=DATASET_REPO_ID, repo_type="dataset")
-        print(f"Repository {DATASET_REPO_ID} already exists")
-        response = input("Do you want to overwrite? (y/N): ")
-        if response.lower() != "y":
-            print("Aborted.")
-            return
+        print(f"Repository {DATASET_REPO_ID} already exists, will upload files...")
     except Exception:
         # Create repo
         print(f"Creating repository: {DATASET_REPO_ID}")

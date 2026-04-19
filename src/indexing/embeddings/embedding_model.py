@@ -98,16 +98,16 @@ class EmbeddingModel:
     def _load_model_sync(self) -> None:
         token = os.environ.get("HF_TOKEN") or getattr(settings, "hf_token", None)
 
-        # float16 on GPU only — float32 on CPU/MPS (float16 not reliably supported)
-        torch_dtype = torch.float16 if self.device == "cuda" else torch.float32
-
+        # Use device_map="auto" to handle meta tensor loading properly
+        # This avoids "Cannot copy out of meta tensor" errors
         self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, trust_remote_code=True, token=token)
         self.model = AutoModel.from_pretrained(
             self.MODEL_NAME,
-            torch_dtype=torch_dtype,  # ← كانت dtype= (خاطئ)
+            device_map=self.device,
             trust_remote_code=True,
             token=token,
-        ).to(self.device)
+            low_cpu_mem_usage=True,
+        )
         self.model.eval()
 
     # ── Public API ────────────────────────────────────────────────────────────
