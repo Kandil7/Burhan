@@ -32,6 +32,9 @@ _SENTENCE_ENDINGS = {".", "؟", "!", ")", "﴾", "»", "\u06d4"}
 # Normalize "المائدة: 82" → "المائدة:82" for VerseRetrievalEngine
 _COLON_SPACES_RE = re.compile(r"\s*:\s*")
 
+# Maximum seconds allowed for retrieve_candidates() before TimeoutError
+_RETRIEVAL_TIMEOUT_SECONDS = 8.0
+
 
 def _normalize_source_ref(src: str) -> str:
     """Remove spaces around colon in verse references."""
@@ -246,6 +249,10 @@ class CollectionAgent(ABC):
     - Fetches Quran passages for unresolved sources/quotes
     - Normalizes verse refs (e.g. "المائدة: 82" → "المائدة:82")
 
+    Retrieval safety:
+    - retrieve_candidates() is bounded by _RETRIEVAL_TIMEOUT_SECONDS (8s)
+    - TimeoutError → retrieval_timeout issue + abstain path
+
     Subclasses MUST define:
         - COLLECTION: str (Qdrant collection name)
         - name: str (agent identifier)
@@ -329,7 +336,7 @@ class CollectionAgent(ABC):
 
         meta = meta or {}
         language = meta.get("language", "ar")
-        timing: dict[str, int] = {}
+        timing: dict[str, Any] = {}
 
         # Step 1: Query intake
         t0 = time.perf_counter()
@@ -341,9 +348,33 @@ class CollectionAgent(ABC):
         intent = self.classify_intent(normalized)
         timing["classification_ms"] = int((time.perf_counter() - t0) * 1000)
 
-        # Step 3: Retrieve candidates
+        # Step 3: Retrieve candidates (bounded by timeout)
+        retrieval_issues: list[dict] = []
         t0 = time.perf_counter()
-        candidates = await self.retrieve_candidates(normalized)
+        try:
+            candidates = await asyncio.wait_for(
+                self.retrieve_candidates(normalized),
+                timeout=_RETRIEVAL_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            elapsed_ms = int((time.perf_counter() - t0) * 1000)
+            logger.warning(
+                "retrieve_candidates timed out after %.1fs — query='%s…'",
+                _RETRIEVAL_TIMEOUT_SECONDS,
+                normalized[:60],
+            )
+            candidates = []
+            timing["retrieval_timeout"] = True
+            retrieval_issues.append(
+                {
+                    "type": "retrieval_timeout",
+                    "message": (
+                        f"Retrieval exceeded {_RETRIEVAL_TIMEOUT_SECONDS:.0f}s "
+                        "timeout and returned 0 results."
+                    ),
+                    "details": {"elapsed_ms": elapsed_ms},
+                }
+            )
         timing["retrieval_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 4: Rerank + deduplicate
@@ -356,6 +387,9 @@ class CollectionAgent(ABC):
         t0 = time.perf_counter()
         verification = await self.run_verification(normalized, ranked)
         timing["verification_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # Attach retrieval issues to verification (before policy gate)
+        verification.issues.extend(retrieval_issues)
 
         # Track filtered evidence
         removed_count = len(candidates) - len(verification.verified_passages)
@@ -387,6 +421,14 @@ class CollectionAgent(ABC):
                 "NO_PASSAGES_MESSAGE",
                 "عذراً، لم أجد في النصوص المتاحة ما يجيب على سؤالك.",
             )
+            abstain_issues = list(verification.issues)
+            if not has_evidence:
+                abstain_issues.append(
+                    {
+                        "type": "no_evidence_found",
+                        "message": "Retrieval returned 0 passages.",
+                    }
+                )
             return AgentOutput(
                 answer=abstain_msg,
                 citations=[],
@@ -401,10 +443,7 @@ class CollectionAgent(ABC):
                     "verification_confidence": (
                         0.0 if not has_evidence else verification.confidence
                     ),
-                    "verification_issues": (
-                        verification.issues
-                        + (["No evidence found"] if not has_evidence else [])
-                    ),
+                    "verification_issues": abstain_issues,
                     "timing": timing,
                 },
                 confidence=0.0 if not has_evidence else verification.confidence,
@@ -534,7 +573,6 @@ class CollectionAgent(ABC):
                         asyncio.set_event_loop(new_loop)
 
                         for src in invalid_sources:
-                            # Normalize "المائدة: 82" → "المائدة:82"
                             normalized_src = _normalize_source_ref(str(src))
                             try:
                                 v_info = new_loop.run_until_complete(

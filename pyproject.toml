@@ -39,6 +39,7 @@ optional = true
 [tool.poetry.group.rag.dependencies]
 torch = ">=2.2.0"
 transformers = ">=4.40.0"
+accelerate = ">=0.34.0"
 
 [tool.poetry.group.data]
 optional = true
