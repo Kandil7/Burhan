@@ -1,35 +1,20 @@
 """
-Legacy Collection Agent Base - DEPRECATED.
+Alias for retrieval strategy (legacy v1 path re-export).
 
-Migrated to: src/agents/collection/base.py (config-backed pattern)
+This module exists for backward compatibility. The canonical location
+is now src.agents.collection.base.RetrievalStrategy
 """
 
-import warnings
-
-warnings.warn(
-    "src.agents.collection_agent is DEPRECATED. Use src.agents.collection.base instead.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
 from src.agents.collection.base import (
-    CollectionAgent,
-    CollectionAgentConfig,
-    IntentLabel,
     RetrievalStrategy,
-    VerificationSuite,
     VerificationCheck,
-    FallbackPolicy,
     VerificationReport,
+    VerificationSuite,
 )
 
 __all__ = [
-    "CollectionAgent",
-    "CollectionAgentConfig",
-    "IntentLabel",
     "RetrievalStrategy",
-    "VerificationSuite",
     "VerificationCheck",
-    "FallbackPolicy",
+    "VerificationSuite",
     "VerificationReport",
 ]

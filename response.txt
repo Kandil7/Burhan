@@ -1,1 +1,0 @@
-{"detail":"Vector store search failed: Search failed: 'coroutine' object has no attribute 'tolist'"}

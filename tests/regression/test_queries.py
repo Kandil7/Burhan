@@ -19,8 +19,8 @@ import warnings
 # Suppress the deprecation warning for backward compatibility
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Import the classifier via the path that works
-from src.application.hybrid_classifier import HybridIntentClassifier
+# Import the classifier via the new path
+from src.application.router import HybridIntentClassifier
 from src.domain.intents import Intent, get_agent_for_intent
 
 

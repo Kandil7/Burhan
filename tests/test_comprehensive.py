@@ -512,8 +512,7 @@ class TestRouter:
     @pytest.mark.asyncio
     async def test_router_confidence_threshold(self):
         """Test router confidence threshold."""
-        from src.application.hybrid_classifier import HybridIntentClassifier
-        from src.application.router import RouterAgent
+        from src.application.router import HybridIntentClassifier, RouterAgent
 
         classifier = HybridIntentClassifier(low_conf_threshold=0.55)
         router = RouterAgent(classifier=classifier, conf_threshold=0.7)
@@ -524,14 +523,13 @@ class TestRouter:
         assert result.result.intent.value
         assert result.route
 
-    def test_build_route(self):
-        """Test route building."""
-        from src.domain.intents import Intent
-        from src.application.router import _build_route
+    def test_get_agent_for_intent(self):
+        """Test agent routing via intents."""
+        from src.domain.intents import Intent, get_agent_for_intent
 
-        route = _build_route(Intent.FIQH, None)
+        agent = get_agent_for_intent(Intent.FIQH)
 
-        assert route == "fiqh:rag"
+        assert agent == "fiqh:rag"
 
 
 # ==========================================

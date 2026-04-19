@@ -1,183 +1,53 @@
 """
-Base Agent abstraction for Athar Islamic QA system.
+Base types for Athar agents.
 
-DEPRECATED: Use src/agents/collection/base.py for the v2 config-backed architecture.
-Migration: All agents should inherit from CollectionAgent instead of BaseAgent.
-
-This module provides backward compatibility through __getattr__ for lazy deprecation warnings.
+This module provides core types that were expected to be migrated from v1
+but were never implemented. Re-exports from canonical locations.
 """
 
 from __future__ import annotations
 
 import re
-import time
-from abc import ABC, abstractmethod
-from typing import ClassVar, Any, Optional
 
 from pydantic import BaseModel, Field
 
-
-# Lazy deprecation handler - only warns when actually accessed
-def __getattr__(name: str):
-    """Lazy deprecation handler - warns only when deprecated items are accessed."""
-    deprecated_items = {
-        "BaseAgent": "src.agents.collection.base.CollectionAgent",
-        "AgentInput": "src.agents.collection.base.AgentInput (not yet exported, use src.agents.base.AgentInput)",
-        "AgentOutput": "src.agents.collection.base.AgentOutput (not yet exported, use src.agents.base.AgentOutput)",
-    }
-
-    if name in deprecated_items:
-        import warnings
-
-        new_path = deprecated_items[name]
-        warnings.warn(
-            f"src.agents.base.{name} is deprecated. Use {new_path} instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    # Raise AttributeError for unknown items to maintain normal Python behavior
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# ============================================================================
+# Citation - Re-export from domain
+# ============================================================================
 
 
 class Citation(BaseModel):
-    """
-    Normalized citation reference.
-    Returned by every agent — mapped to CitationResponse at the API layer.
-    """
+    """Source citation for agent answers."""
 
-    id: str = Field(description="Citation ID: C1, C2, C3, …")
-    type: str = Field(description="quran | hadith | fatwa | fiqh_book | dua")
-    source: str = Field(description="Normalized source name")
-    reference: str = Field(description="Book / chapter / hadith number")
-    url: str | None = Field(default=None, description="External URL")
-    text_excerpt: str | None = Field(default=None, description="Quoted passage (≤ 300 chars)")
+    source_id: str = Field(description="Source document ID")
+    text: str = Field(description="Quoted text from source")
+    book_title: str | None = Field(default=None, description="Book title")
+    page: int | None = Field(default=None, description="Page number")
+    grade: str | None = Field(default=None, description="Hadith grade (sahih, hasan, daif)")
+    url: str | None = Field(default=None, description="Source URL")
+    metadata: dict = Field(default_factory=dict)
 
-    @classmethod
-    def from_passage(cls, passage: dict, index: int, prefix: str = "C") -> Citation:
-        meta = passage.get("metadata", {})
-        citation_id = f"{prefix}{index}"
-        
-        # Infer type from collection or explicit metadata field
-        collection = meta.get("collection", "")
-        source_type = meta.get("source_type") or (
-            "hadith"
-            if "hadith" in collection
-            else "quran"
-            if "quran" in collection
-            else "seerah"
-            if "seerah" in collection
-            else "tafsir"
-            if "tafsir" in collection
-            else "aqeedah"
-            if "aqeedah" in collection
-            else "fiqh_book"
-        )
-
-        author = meta.get("author", "")
-        death_year = meta.get("author_death", "")
-        page = meta.get("page_number", "")
-
-        # Filter sentinel death year values (99999 = unknown/living)
-        death_year_valid = ""
-        if death_year:
-            try:
-                dy = int(death_year)
-                if 0 < dy < 1500:
-                    death_year_valid = str(dy)
-            except (ValueError, TypeError):
-                pass
-
-        ref_parts = filter(
-            None,
-            [
-                author,
-                f"ت {death_year_valid} هـ" if death_year_valid else "",
-                f"ص{page}" if page else "",
-            ],
-        )
-
-        # Clean text excerpt: strip HTML, normalize whitespace
-        raw_excerpt = passage.get("content", "")
-        text_excerpt = _clean_text_excerpt(raw_excerpt) or None
-
-        return cls(
-            id=citation_id,
-            type=source_type,
-            source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
-            reference=" — ".join(ref_parts),
-            url=None,
-            text_excerpt=text_excerpt,
-        )
+    model_config = {"extra": "allow"}
 
 
 # ============================================================================
-# Shared Utilities
+# Agent Input/Output
 # ============================================================================
-
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
-_MULTI_SPACE_RE = re.compile(r"\s+")
-
-
-def _clean_text_excerpt(raw: str, max_chars: int = 300) -> str:
-    """Clean text excerpt: strip HTML, normalize whitespace, truncate."""
-    if not raw:
-        return ""
-    text = _HTML_TAG_RE.sub("", raw)
-    text = text.replace("\r", "\n")
-    text = _MULTI_SPACE_RE.sub(" ", text).strip()
-    return text[:max_chars]
-
-
-_COT_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
-_COT_PREAMBLE_RE = re.compile(
-    r"^(Okay|Let me|I need to|First,|Looking at|I notice|I should|The user|Based on|According to|In the provided).*?($|(?=[\u0600-\u06FF]))",
-    re.DOTALL | re.IGNORECASE,
-)
-
-
-def strip_cot_leakage(answer: str) -> str:
-    """Strip LLM chain-of-thought leakage from generated answer.
-
-    Removes:
-    - <think>...</think> blocks (case-insensitive)
-    - English preamble lines ("Okay, the user is asking...")
-    - Any lingering think tags
-    """
-    if not answer:
-        return ""
-
-    # 1. Strip <think> blocks
-    answer = _COT_THINK_RE.sub("", answer).strip()
-    
-    # 2. Strip English reasoning preamble
-    # We look for the start of Arabic text or the end of the string
-    answer = _COT_PREAMBLE_RE.sub("", answer).strip()
-    
-    # 3. Clean up any orphaned tags
-    answer = re.sub(r"<think>.*", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
-    answer = re.sub(r".*</think>", "", answer, flags=re.DOTALL | re.IGNORECASE).strip()
-    
-    # 4. If the result is empty after stripping but the original wasn't, 
-    # it means the model ONLY provided reasoning.
-    if not answer:
-        return "عذراً، لم أتمكن من استخلاص إجابة دقيقة من المصادر."
-
-    return answer
 
 
 class AgentInput(BaseModel):
-    """Standardized input for all agents."""
+    """Standard input for agents."""
 
-    query: str = Field(description="User's question")
-    language: str = Field(default="ar", description="ar | en")
-    context: dict | None = Field(default=None)
-    retrieved_passages: list | None = Field(default=None)
+    query: str = Field(description="User query")
+    language: str = Field(default="ar", description="Query language (ar/en)")
+    collection: str | None = Field(default=None, description="Target collection")
     metadata: dict = Field(default_factory=dict)
+
+    model_config = {"extra": "allow"}
 
 
 class AgentOutput(BaseModel):
-    """Standardized output for all agents."""
+    """Standard output for agents."""
 
     answer: str = Field(description="Agent answer text")
     citations: list[Citation] = Field(default_factory=list)
@@ -185,40 +55,51 @@ class AgentOutput(BaseModel):
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
 
+    model_config = {"extra": "allow"}
 
-class BaseAgent(ABC):
-    """
-    Abstract base class for all agents.
 
-    DEPRECATED: Use CollectionAgent from src/agents/collection/base.py instead.
-    """
+class BaseAgent:
+    """Base class for agents (placeholder)."""
 
-    # ClassVar — excluded from Pydantic field scanning
-    name: ClassVar[str] = "base_agent"
-
-    @abstractmethod
     async def execute(self, input: AgentInput) -> AgentOutput:
-        """Execute agent logic and return standardized result."""
-        ...
-
-    async def __call__(self, input: AgentInput | None = None, **kwargs) -> AgentOutput:
-        """
-        Allow agent to be called directly.
-        """
-        if input is None:
-            input = AgentInput(**kwargs)
-        return await self.execute(input)
-
-    def __repr__(self) -> str:
-        return f"<Agent: {self.name}>"
+        """Execute the agent."""
+        raise NotImplementedError
 
 
-# Backward compatibility
+# ============================================================================
+# Utility Functions
+# ============================================================================
+
+# Chain-of-thought markers to strip
+_COT_PATTERNS = [
+    re.compile(r"##?\s*(Analysis|Reasoning|Thought|Chain of Thought).*?\\n\\n", re.IGNORECASE | re.DOTALL),
+    re.compile(r"<\\s*(analysis|reasoning|thought)\\s*>\\s*", re.IGNORECASE),
+    re.compile(r"###\\s*(?:Let me|I'll|I will).*?\\n\\s*", re.IGNORECASE),
+]
+
+
+def strip_cot_leakage(text: str) -> str:
+    """Remove chain-of-thought leakage from generated text.
+
+    Strips patterns like:
+    - "## Analysis\n...", "## Reasoning\n..."
+    - <analysis>...</analysis>
+    - "### Let me...\n"
+    """
+    if not text:
+        return text
+
+    result = text
+    for pattern in _COT_PATTERNS:
+        result = pattern.sub("", result)
+
+    return result.strip()
+
+
 __all__ = [
     "Citation",
     "AgentInput",
     "AgentOutput",
     "BaseAgent",
     "strip_cot_leakage",
-    "_clean_text_excerpt",
 ]

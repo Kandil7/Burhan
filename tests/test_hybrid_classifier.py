@@ -6,7 +6,7 @@ Tests the keyword fast-path and Jaccard fallback classification pipeline.
 
 import pytest
 
-from src.application.hybrid_classifier import HybridIntentClassifier
+from src.application.router import HybridIntentClassifier
 from src.domain.intents import Intent, QuranSubIntent
 
 

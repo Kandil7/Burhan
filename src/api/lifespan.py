@@ -59,7 +59,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ── 4. Use Case & Service ─────────────────────────────────────────────────
     from src.application.use_cases.answer_query import AnswerQueryUseCase
     from src.application.services.ask_service import AskService
-    from src.application.router import RouterAgent, build_classifier
+    from src.application.router import RouterAgent
+    from src.application.classifier_factory import build_classifier
 
     # Build Router - use build_classifier for robust intent detection
     # Inject embedding_model to enable Phase 5 semantic routing
