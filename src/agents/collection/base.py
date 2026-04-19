@@ -568,6 +568,14 @@ class CollectionAgent(ABC):
         # Determine if human review is needed
         requires_human_review = len(verification.verified_passages) == 0 or not verification.is_verified
 
+        # Flag high-risk attribution for sensitive domains (e.g., seerah)
+        has_source_violation = any(
+            isinstance(issue, dict) and issue.get("type") == "source_attribution_violation"
+            for issue in verification.issues
+        )
+        if has_source_violation and intent.value.startswith("seerah"):
+            requires_human_review = True
+
         return AgentOutput(
             answer=answer,
             citations=citations,
