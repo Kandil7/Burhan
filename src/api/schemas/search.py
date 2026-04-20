@@ -143,7 +143,7 @@ class SimpleRAGRequest(BaseModel):
     """Request model for simple RAG endpoint."""
 
     query: str = Field(..., min_length=1, max_length=2000)
-    collection: str = Field(default="general_islamic")
+    collection: str = Field(default="all")
     language: str = Field("ar", pattern="^(ar|en)$")
     top_k: int = Field(5, ge=1, le=20)
 

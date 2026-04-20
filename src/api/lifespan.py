@@ -35,8 +35,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # ── 2. Infrastructure (Shared) ────────────────────────────────────────────
     from src.infrastructure.llm_client import LLMClients
-    from src.knowledge.embedding_model import EmbeddingModel
-    from src.knowledge.vector_store import VectorStore
+    from src.indexing.embeddings.embedding_model import EmbeddingModel
+    from src.indexing.vectorstores.qdrant_store import VectorStore
 
     llm_clients = await LLMClients.create()
     app.state.llm_clients = llm_clients
@@ -73,6 +73,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     # AskService
     app.state.ask_service = AskService(answer_query_use_case=use_case)
+
+    # SearchService - requires properly initialized RunRetrievalUseCase
+    from src.application.services.search_service import get_search_service
+    from src.application.use_cases.run_retrieval import get_run_retrieval_use_case
+
+    # Create properly initialized RunRetrievalUseCase
+    # Use existing embedding_model and vector_store from app.state
+    run_retrieval_use_case = get_run_retrieval_use_case(
+        embedding_model=app.state.embedding_model,
+        vector_store=app.state.vector_store,
+    )
+
+    # Create SearchService
+    app.state.search_service = get_search_service(run_retrieval_uc=run_retrieval_use_case)
 
     # ── 5. Standard Agents (Static) ───────────────────────────────────────────
     from src.agents.chatbot_agent import ChatbotAgent

@@ -319,12 +319,7 @@ async def get_rag_stats(
 # ── POST /search/simple ────────────────────────────────────────────────────
 
 
-@search_router.post(
-    "/simple",
-    response_model=SimpleRAGResponse,
-    summary="Simple RAG query",
-    responses={503: {"model": ErrorResponse, "description": "Service unavailable"}},
-)
+@search_router.post("/simple", response_model=SimpleRAGResponse)
 async def simple_rag_query(
     request: Request,
     req: SimpleRAGRequest,
@@ -332,42 +327,33 @@ async def simple_rag_query(
     vector_store=Depends(get_vector_store),
     llm_client=Depends(get_llm_client),
 ):
-    """Simple RAG query with retrieval + generation."""
     trace_id = _build_trace_id()
     start_time = time.time()
-
     _require_rag_available()
 
-    # 1. Embed
-    try:
-        query_embedding = await embedding_model.encode_query(req.query)
-        logger.info(
-            "search.simple_encode",
-            trace_id=trace_id,
-            query=req.query[:50],
-            embedding_type=type(embedding_model).__name__,
-        )
-    except Exception as e:
-        logger.error("search.simple_encode_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
-
-    # 2. Search
-    try:
-        results = await vector_store.search(
-            collection=req.collection,
-            query_embedding=query_embedding,
+    # 1. استخدم SearchService عشان يفسّر "all"
+    search_service = request.app.state.search_service
+    if req.collection == "all":
+        retrieval_output = await search_service.search(
+            query=req.query,
+            collections=None,  # ← all = DEFAULT_COLLECTIONS
             top_k=req.top_k,
             filters=None,
         )
-        logger.info("search.simple_search", trace_id=trace_id, results_count=len(results))
-    except Exception as e:
-        logger.error("search.simple_search_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
+    else:
+        retrieval_output = await search_service.search(
+            query=req.query,
+            collections=[req.collection],
+            top_k=req.top_k,
+            filters=None,
+        )
+
+    results = retrieval_output.results
 
     if not results:
         processing_time_ms = int((time.time() - start_time) * 1000)
         return SimpleRAGResponse(
-            answer=f"لم يتم العثور على نتائج في مجموعة «{req.collection}».",
+            answer=f"لم يتم العثور على نتائج.",
             sources=[],
             metadata={
                 "collection": req.collection,
@@ -379,25 +365,21 @@ async def simple_rag_query(
             processing_time_ms=processing_time_ms,
         )
 
-    # 3. Build context
+    # 2. Build context
     context, context_results = _build_context(results)
     deduped = _deduplicate_results(results)
 
-    # 4. Generate
-    try:
-        system_prompt, user_prompt = _build_llm_prompt(context, req.query, req.language)
-        response = await llm_client.chat.completions.create(
-            model=settings.llm_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=settings.rag_temperature,
-            max_tokens=settings.rag_max_tokens,
-        )
-    except Exception as e:
-        logger.error("search.simple_llm_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail="LLM service temporarily unavailable.") from e
+    # 3. Generate
+    system_prompt, user_prompt = _build_llm_prompt(context, req.query, req.language)
+    response = await llm_client.chat.completions.create(
+        model=settings.llm_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=settings.rag_temperature,
+        max_tokens=settings.rag_max_tokens,
+    )
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 

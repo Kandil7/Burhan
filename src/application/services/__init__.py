@@ -13,7 +13,7 @@ Each service coordinates use cases and handles API-level concerns.
 """
 
 from src.application.services.ask_service import AskService, ask_service
-from src.application.services.search_service import SearchService, search_service
+from src.application.services.search_service import SearchService
 from src.application.services.classify_service import ClassifyService, classify_service
 from src.application.services.tool_service import ToolService, tool_service
 from src.application.services.trace_service import TraceService, trace_service
