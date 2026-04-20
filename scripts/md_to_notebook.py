@@ -25,31 +25,37 @@ def md_to_notebook(md_text: str) -> dict:
         # Markdown cell (text before code block)
         before = md_text[last_end : m.start()].strip()
         if before:
-            cells.append({
-                "cell_type": "markdown",
-                "metadata": {},
-                "source": before.splitlines(keepends=True),
-            })
+            cells.append(
+                {
+                    "cell_type": "markdown",
+                    "metadata": {},
+                    "source": before.splitlines(keepends=True),
+                }
+            )
 
         # Code cell
         code = m.group(2).rstrip("\n")
-        cells.append({
-            "cell_type": "code",
-            "execution_count": None,
-            "metadata": {},
-            "outputs": [],
-            "source": code.splitlines(keepends=True),
-        })
+        cells.append(
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": code.splitlines(keepends=True),
+            }
+        )
         last_end = m.end()
 
     # Trailing markdown
     tail = md_text[last_end:].strip()
     if tail:
-        cells.append({
-            "cell_type": "markdown",
-            "metadata": {},
-            "source": tail.splitlines(keepends=True),
-        })
+        cells.append(
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": tail.splitlines(keepends=True),
+            }
+        )
 
     return {
         "nbformat": 4,
@@ -70,14 +76,12 @@ def md_to_notebook(md_text: str) -> dict:
 
 def convert(md_path: Path, out_path: Path | None = None) -> Path:
     out_path = out_path or md_path.with_suffix(".ipynb")
-    md_text  = md_path.read_text(encoding="utf-8")
-    nb       = md_to_notebook(md_text)
-    out_path.write_text(json.dumps(nb, ensure_ascii=False, indent=1),
-                        encoding="utf-8")
+    md_text = md_path.read_text(encoding="utf-8")
+    nb = md_to_notebook(md_text)
+    out_path.write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
     n_code = sum(1 for c in nb["cells"] if c["cell_type"] == "code")
-    n_md   = sum(1 for c in nb["cells"] if c["cell_type"] == "markdown")
-    print(f"✅  {md_path.name}  →  {out_path.name}"
-          f"  [{n_code} code | {n_md} markdown]")
+    n_md = sum(1 for c in nb["cells"] if c["cell_type"] == "markdown")
+    print(f"[OK] {md_path.name} -> {out_path.name} [{n_code} code | {n_md} markdown]")
     return out_path
 
 
@@ -94,7 +98,7 @@ def main():
     else:
         for p in paths:
             if not p.exists():
-                print(f"⚠  File not found: {p}")
+                print(f"[!!] File not found: {p}")
                 continue
             convert(p)
 
