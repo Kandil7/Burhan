@@ -95,5 +95,6 @@ def get_ask_service(answer_query_use_case: Any = None) -> AskService:
     return _ask_service
 
 
+
 # For backward compatibility with lifespan.py
 ask_service = get_ask_service()

@@ -39,6 +39,7 @@ class AnswerQueryOutput:
     intent: str
     confidence: float
     citations: list[dict[str, Any]]
+    citation_chunks: list[dict[str, Any]] = field(default_factory=list)  
     metadata: dict[str, Any] = field(default_factory=dict)
     requires_human_review: bool = False
 
@@ -143,6 +144,7 @@ class AnswerQueryUseCase:
             return self._build_error_output(input_data, str(e))
 
         processing_time_ms = int((time.time() - start_time) * 1000)
+        
 
         # 5. Build Output
         # Use router confidence for the top-level 'confidence' field (intent_confidence in API)
@@ -157,8 +159,10 @@ class AnswerQueryUseCase:
                 "processing_time_ms": processing_time_ms,
                 "router_method": decision.result.method,
             },
+            citation_chunks=result.citation_chunks,
             requires_human_review=result.requires_human_review,
         )
+    
 
     def _build_error_output(self, input_data: AnswerQueryInput, error: str) -> AnswerQueryOutput:
         """Build error response when agent fails."""

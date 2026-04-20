@@ -52,6 +52,7 @@ class AgentOutput(BaseModel):
 
     answer: str = Field(description="Agent answer text")
     citations: list[Citation] = Field(default_factory=list)
+    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)  
     metadata: dict = Field(default_factory=dict)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
@@ -764,6 +765,34 @@ class CollectionAgent(ABC):
                 v["type"] == "missing_hadith_evidence" for v in missing_ev
             )
 
+        
+        # Build citation_chunks from verified_passages
+        citation_chunks: list[dict[str, Any]] = []
+        for p in verification.verified_passages:
+            # p متوقع dict
+            md = p.get("metadata", {}) or {}
+
+            citation_chunks.append(
+                {
+                    "chunk_id": str(p.get("id", "")),  # لو عندك id من Qdrant، وإلا سيبه فاضي
+                    "source_id": str(md.get("book_id", "")),
+                    "collection": md.get("collection") or self.config.collection_name,
+                    "book_id": md.get("book_id"),
+                    "page_number": md.get("page_number"),
+                    "section_title": md.get("section_title"),
+                    "text": p.get("content") or p.get("text", ""),
+                    "metadata": {
+                        "author": md.get("author"),
+                        "category": md.get("category"),
+                        "content_type": md.get("content_type"),
+                        "raw_metadata": md,
+                    },
+                }
+            )
+        logger.debug(
+            "collection_agent.citation_chunks_built",
+            chunk_count=len(citation_chunks),
+        )
         # ==========================================
         # Determine requires_human_review
         # ==========================================
@@ -803,6 +832,7 @@ class CollectionAgent(ABC):
         return AgentOutput(
             answer=answer,
             citations=citations,
+            citation_chunks=citation_chunks,
             metadata=output_meta,
             confidence=verification.confidence,
             requires_human_review=requires_human_review,
