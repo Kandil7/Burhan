@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 import time
+import asyncio
 
 from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
 from src.indexing.vectorstores.qdrant_store import VectorStore
@@ -43,25 +44,36 @@ class RunRetrievalUseCase:
         # 2) (optional) expansions – حالياً بس نرجّع الـ query نفسه
         query_expansions = [input.query] if input.enable_expansion else None
 
-        all_results: List[Dict[str, Any]] = []
+        all_results: List[Dict[str, Any]] = []        
 
-        # 3) Run hybrid search على كل collection مطلوبة
+        # 3) Run hybrid search على كل collection مطلوبة (بالتوازي)
+        tasks = []
+        collections_order: list[str] = []
+
         for coll in input.collections:
-            try:
-                results = await self._hybrid_searcher.search(
+            tasks.append(
+                self._hybrid_searcher.search(
                     query=input.query,
                     query_embedding=query_embedding,
                     collection=coll,
                     top_k=input.top_k,
                 )
-                for r in results:
+            )
+            collections_order.append(coll)
+
+        all_results: List[Dict[str, Any]] = []
+
+        if tasks:
+            results_per_collection = await asyncio.gather(*tasks, return_exceptions=True)
+            for coll, res in zip(collections_order, results_per_collection):
+                if isinstance(res, Exception):
+                    # TODO: log warning with coll and error
+                    continue
+                for r in res:
                     meta = r.get("metadata", {}) or {}
                     meta.setdefault("collection", coll)
                     r["metadata"] = meta
-                all_results.extend(results)
-            except Exception:
-                # TODO: log warning
-                continue
+                all_results.extend(res)
 
         if not all_results:
             return RunRetrievalOutput(

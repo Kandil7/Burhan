@@ -1,11 +1,31 @@
-# src/retrieval/collection_hybrid_retriever.py
+from src.retrieval.multi_collection_retriever import MultiCollectionRetriever
+from src.retrieval.collection_hybrid_retriever import CollectionHybridRetriever
+from src.indexing.vectorstores.qdrant_store import vector_store
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.config.constants import CollectionNames  # اللي فيه *_passages
 
-from typing import Any, List, Dict
-import numpy as np
+embedding_model = EmbeddingModel()
+multi_retriever = MultiCollectionRetriever()
 
-from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
-from src.indexing.vectorstores.qdrant_store import VectorStore
-
+for coll in [
+    CollectionNames.FIQH,
+    CollectionNames.HADITH,
+    CollectionNames.DUA,
+    CollectionNames.GENERAL,
+    CollectionNames.QURAN_TAFSIR,
+    CollectionNames.AQEEDAH,
+    CollectionNames.SEERAH,
+    CollectionNames.ISLAMIC_HISTORY,
+    CollectionNames.ARABIC_LANGUAGE,
+    CollectionNames.SPIRITUALITY,
+    CollectionNames.USUL_FIQH,
+]:
+    retr = CollectionHybridRetriever(
+        collection=coll,
+        vector_store=vector_store,
+        embedding_model=embedding_model,
+    )
+    multi_retriever.register_retriever(coll, retr)
 
 class CollectionHybridRetriever:
     """
