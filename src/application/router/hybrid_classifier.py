@@ -145,13 +145,14 @@ class MasterHybridClassifier(IntentClassifier):
         kw_result = await self._keyword_classifier.classify(query)
         logger.debug("hybrid_classifier.keyword_result", intent=kw_result.intent.value, confidence=kw_result.confidence)
 
-        # If keyword match is VERY strong (2+ keywords), return immediately
-        if kw_result.confidence >= 0.85:
-            logger.info("hybrid_classifier.keyword_win", intent=kw_result.intent.value)
+        # If keyword match exists (even with low confidence), use it - NEVER override with embedding
+        # This ensures seerah/hijra keywords like "هجرة" work correctly
+        if kw_result.confidence > 0.0:
+            logger.info("hybrid_classifier.keyword_win", intent=kw_result.intent.value, confidence=kw_result.confidence)
             return kw_result
 
         # ── Tier 2: Semantic (Embedding) ─────────────────────────────────
-        # If keyword was weak or missing, try Embedding
+        # Only reach here if NO keywords matched at all
         logger.debug("hybrid_classifier.trying_embedding", present=self._embedding_classifier is not None)
         if self._embedding_classifier:
             try:
@@ -162,10 +163,9 @@ class MasterHybridClassifier(IntentClassifier):
                     confidence=emb_result.confidence,
                 )
 
-                # If we had NO keywords, embedding result is our best bet
-                if kw_result.confidence == 0.0:
-                    logger.info("hybrid_classifier.embedding_only_win", intent=emb_result.intent.value)
-                    return emb_result
+                # No keywords found - use embedding result
+                logger.info("hybrid_classifier.embedding_only_win", intent=emb_result.intent.value)
+                return emb_result
 
                 # If embedding result is strong, it can override weak keyword
                 if emb_result.confidence >= 0.65:
