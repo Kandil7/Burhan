@@ -195,7 +195,7 @@ async def build_collection_indexes(
 """
 from src.indexing.embeddings.embedding_model import EmbeddingModel
 from src.indexing.vectorstores.factory import get_vector_store
-from src.knowledge.hierarchical_chunker import HierarchicalChunker
+from src.indexing.hierarchical_chunker import HierarchicalChunker
 
 class CollectionIndexer:
     def __init__(self, batch_size: int = 100):

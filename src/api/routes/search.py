@@ -21,6 +21,7 @@ from src.api.schemas.search import (
     SearchResponse,
     SimpleRAGRequest,
     SimpleRAGResponse,
+    SearchResult,
 )
 from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
@@ -29,6 +30,7 @@ from src.config.settings import settings
 logger = get_logger()
 search_router = APIRouter(prefix="/search", tags=["Search"])
 GENERIC_SEARCH_ERROR = "Search service temporarily unavailable."
+
 
 # ── Availability flag ────────────────────────────────────────────────────
 try:
@@ -40,14 +42,15 @@ except ImportError:
     RAG_AVAILABLE = False
 
 
-# ── Sentinel ────────────────────────────────────────────────────────────────
+# ── Sentinel ─────────────────────────────────────────────────────────────
 class _Unavailable:
     """Typed sentinel — replaces the 'fallback' string anti-pattern."""
 
 
 UNAVAILABLE = _Unavailable()
 
-# ── Compiled regexes ────────────────────────────────────────────────────────
+
+# ── Compiled regexes ─────────────────────────────────────────────────────
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _CARRIAGE_RE = re.compile(r"\r")
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -58,9 +61,7 @@ def _build_trace_id() -> str:
     return str(uuid.uuid4())
 
 
-# ── Pure helpers ───────────────────────────────────────────────────────────
-
-
+# ── Pure helpers ────────────────────────────────────────────────────────
 def _require_rag_available() -> None:
     """Check if RAG features are available."""
     if not RAG_AVAILABLE:
@@ -70,7 +71,10 @@ def _require_rag_available() -> None:
 def _agent_unavailable_response() -> RAGQueryResponse:
     """Return unavailable response."""
     return RAGQueryResponse(
-        answer="نموذج التضمين غير متاح حالياً. الرجاء تثبيت torch و transformers للبحث المتقدم.",
+        answer=(
+            "نموذج التضمين غير متاح حالياً. "
+            "الرجاء تثبيت torch و transformers للبحث المتقدم."
+        ),
         citations=[],
         metadata={"rag_available": False},
         confidence=0.0,
@@ -93,11 +97,18 @@ def _strip_thinking(text: str) -> str:
 
 
 def _deduplicate_results(results: list[dict]) -> list[dict]:
-    """Remove exact duplicate chunks via content fingerprint."""
+    """
+    Remove exact duplicate chunks via content fingerprint.
+
+    Uses first ~200 chars of cleaned content as a fingerprint.
+    """
     seen: set[int] = set()
     unique: list[dict] = []
     for r in results:
-        fp = hash(_clean_content(r.get("content", ""))[:200])
+        raw = r.get("content", "") or ""
+        # نظف أولاً ثم خذ أوّل 200 حرف
+        cleaned = _clean_content(raw)
+        fp = hash(cleaned[:200])
         if fp not in seen:
             seen.add(fp)
             unique.append(r)
@@ -105,62 +116,166 @@ def _deduplicate_results(results: list[dict]) -> list[dict]:
 
 
 def _build_context(results: list[dict]) -> tuple[str, list[dict]]:
-    """Dedup → cap → strip HTML → number passages."""
+    """
+    Dedup → cap → strip HTML → number passages.
+
+    Returns:
+        context_str: النص الذي سيُمرّر للـ LLM (مع [1], [2], ...)
+        context_results: نفس النتائج بعد dedup + cap (تُستخدم كمصادر).
+    """
     deduped = _deduplicate_results(results)
     capped = deduped[:10]
-    parts = []
+    parts: list[str] = []
     for i, r in enumerate(capped, 1):
-        clean = _clean_content(r.get("content", ""))
+        clean = _clean_content(r.get("content", "") or "")
         if clean:
             parts.append(f"[{i}] {clean}")
     return "\n\n".join(parts), capped
 
 
 def _build_llm_prompt(context: str, query: str, language: str) -> tuple[str, str]:
-    """Build LLM prompt for generation."""
+    """Build LLM prompt for generation, orchestrating multiple Islamic domains."""
+
     if language == "en":
         system = (
-            "You are a knowledgeable Islamic scholar assistant. "
-            "Answer questions based ONLY on the provided context.\n"
-            "Structure your answer:\n"
-            "1. Direct answer (1-2 sentences)\n"
-            "2. Evidence with citations [1], [2], …\n"
-            "3. If context is insufficient, say so clearly.\n"
-            "Never fabricate information not in the context."
+            "You are an Islamic scholar assistant within a retrieval-based system. "
+            "You answer ONLY based on the provided excerpts from trusted Islamic sources.\n"
+            "\n"
+            "General methodology:\n"
+            "- Do not issue personal fatwas or new ijtihad. Just report what is in the sources.\n"
+            "- Do not invent information or attribute views to scholars without clear basis in the excerpts.\n"
+            "- Preserve Qur'an and hadith wording accurately when quoted, and clearly distinguish between text and explanation.\n"
+            "- When there is scholarly disagreement in the excerpts, present it fairly without claiming consensus.\n"
+            "\n"
+            "Multi-domain integration (collections):\n"
+            "- You may have excerpts from multiple domains: creed (aqeedah), fiqh, hadith, tafsir, seerah, "
+            "history, Arabic language, tazkiyah, usul al-fiqh, and general Islamic information.\n"
+            "- Combine all relevant domains into ONE coherent answer: connect verses, hadiths, juristic views, "
+            "aqeedah points, historical context, and spiritual insights when available in the context.\n"
+            "- If the question is fiqh-related, describe the views of the madhhabs and their evidence as shown "
+            "in the excerpts, and explicitly state that this is a presentation from the books, not a personal fatwa.\n"
+            "- If the question is about aqeedah, state the Sunni position as reflected in the excerpts and mention other views only if they appear there.\n"
+            "- If hadith excerpts appear, mention their grading and sources only as stated in the context.\n"
+            "\n"
+            "Safety and balance:\n"
+            "- For sensitive topics (sects, other religions, historical conflicts), provide a balanced, factual description.\n"
+            "- Do not generalize beyond what the excerpts state. Distinguish between those who keep covenants and those who betray them when the context indicates this.\n"
+            "- Avoid inflammatory language. Stick to academic, respectful tone.\n"
+            "\n"
+            "Answer structure:\n"
+            "1. Direct answer (2–4 sentences) summarizing the key point.\n"
+            "2. Structured explanation that integrates the different domains present in the excerpts "
+            "(e.g., verses/tafsir, hadith and their explanation, fiqh positions, aqeedah aspects, historical/seerah context, language notes, tazkiyah insights).\n"
+            "3. Evidence section: quote or paraphrase the relevant excerpts with inline citations [1], [2], …\n"
+            "4. Limitations: clearly state if the provided context is insufficient, one-sided, or does not allow a complete or applied ruling.\n"
+            "\n"
+            "Critical constraints:\n"
+            "- Answer ONLY from the provided excerpts.\n"
+            "- If the excerpts are not enough to answer or to give a balanced view, explicitly say that.\n"
+            "- Do NOT fabricate verses, hadiths, attributions, or detailed rulings that are not grounded in the context."
         )
-        user = f"Islamic sources:\n{context}\n\nQuestion: {query}\n\nAnswer strictly from the sources."
+
+        user = (
+            "You are given Islamic source excerpts (labelled [1], [2], …) which may span multiple domains:\n"
+            "- Qur'anic verses and tafsir\n"
+            "- Hadith texts and their gradings\n"
+            "- Fiqh discussions from different madhhabs\n"
+            "- Aqeedah (creed) texts\n"
+            "- Seerah and Islamic history\n"
+            "- Arabic language explanations\n"
+            "- Tazkiyah (purification) and spiritual advice\n"
+            "- Usul al-fiqh principles\n\n"
+            f"Excerpts:\n{context}\n\n"
+            f"Question: {query}\n\n"
+            "Requirements:\n"
+            "- Answer strictly from the excerpts above.\n"
+            "- Integrate all relevant domains into a single coherent answer when possible.\n"
+            "- Use inline citations [1], [2], … whenever you rely on a specific excerpt.\n"
+            "- If the excerpts focus on only one aspect (e.g. punishment), but also contain other aspects "
+            "such as covenant, mercy, justice or good treatment, make sure to mention them as well.\n"
+            "- If there is not enough information for a balanced or applied answer, clearly state that the context is incomplete."
+        )
+
     else:
         system = (
-            "أنت عالم إسلامي متخصص. أجب بناءً فقط على السياق المقدم.\n"
-            "نظّم إجابتك:\n"
-            "١. الجواب المباشر (جملة أو جملتان)\n"
-            "٢. الدليل من المصادر مع الاستشهاد [1]، [2]، …\n"
-            "٣. إن كانت المصادر غير كافية، صرّح بذلك.\n"
-            "لا تخترع معلومات غير موجودة في السياق."
+            "أنت مساعد علمي في نظام استرجاع معرفي إسلامي (أثر)، "
+            "تعمل على دمج مخرجات عدّة مجموعات متخصصة (عقيدة، فقه، حديث، تفسير، سيرة، تاريخ، لغة، تزكية، أصول فقه، معلومات عامة).\n"
+            "\n"
+            "المنهج العام:\n"
+            "- مهمّتك عرض ما في المقاطع المسترجعة من الكتب المعتمدة بدقّة وأمانة، دون اجتهاد شخصي جديد.\n"
+            "- لا تُصدر فتوى شخصية، ولا تنسب ترجيحًا لنفسك، بل انقل ما في كلام العلماء كما ورد في المقاطع.\n"
+            "- لا تخترع معلومات أو تنسب أقوالًا إلى العلماء أو المذاهب ما لم تكن ظاهرة في المقاطع.\n"
+            "- حافظ على نصوص القرآن الكريم والأحاديث كما هي عند الاقتباس، وميّز بين النص والشرح.\n"
+            "- عند وجود خلاف معتبر في المقاطع، اذكر الأقوال بأدب وإنصاف، دون ادعاء إجماع بلا نص.\n"
+            "\n"
+            "دمج المجالات (collections):\n"
+            "- قد تحتوي المقاطع على آيات وتفسيرها، وأحاديث وتخريجها، وأقوال فقهية لمذاهب مختلفة، "
+            "ونصوص في العقيدة، وأحداث من السيرة والتاريخ، وشرح لغوي، ونصوص في التزكية، وقواعد أصولية.\n"
+            "- اجمع هذه العناصر في جواب واحد متماسك: اربط بين الآيات وتفسيرها، والأحاديث وشرحها، "
+            "وأقوال الفقهاء، وتصور أهل السنة في العقيدة، والسياق التاريخي، والتنبيه اللغوي، والتوجيه الإيماني؛ "
+            "كل ذلك فقط إذا كان موجودًا في المقاطع المعطاة.\n"
+            "- في المسائل الفقهية: اذكر أقوال المذاهب وأدلتها كما في المقاطع، واستعمل عبارات مثل «قول الجمهور»، "
+            "«قول الحنفية»، «قول المالكية» إن كانت ظاهرة في النص، ثم نبّه في الختام أن هذا عرض لأقوال الفقهاء لا فتوى شخصية.\n"
+            "- في مسائل العقيدة: بيّن معتقد أهل السنة كما يظهر في المقاطع، واذكر سائر الأقوال إن كانت مذكورة.\n"
+            "- في الأحاديث: لا تحكم أنت على درجة الحديث، بل انقل الحكم كما في المقاطع (صححه فلان، ضعّفه فلان...).\n"
+            "\n"
+            "السلامة والتوازن:\n"
+            "- في الأسئلة المتعلّقة بالطوائف أو الأمم الأخرى أو الصراعات التاريخية، التزم بالوصف العلمي المتوازن.\n"
+            "- فرّق بين من التزم بالعهد ومن خان وغدر إذا دلّت المقاطع على ذلك، ولا تعمّم بلا دليل.\n"
+            "- تجنّب الخطاب الانفعالي أو التحريضي، والتزم بأسلوب علمي وقور.\n"
+            "\n"
+            "تنظيم الجواب:\n"
+            "١. الجواب المباشر في فقرتين إلى أربع فقرات قصيرة يوضّح خلاصة المسألة.\n"
+            "٢. شرحٌ منظَّم يدمج المجالات ذات الصلة الموجودة في المقاطع "
+            "(تفسير الآيات، شرح الأحاديث، أقوال الفقهاء، تقريرات العقيدة، السياق التاريخي/السيري، التنبيه اللغوي، لمحات التزكية).\n"
+            "٣. قسم الأدلّة: الاستشهاد بالمقاطع ذات الصلة مع استعمال أرقامها [1]، [2]، ...\n"
+            "٤. بيان حدود السياق: إن كانت المقاطع ناقصة، أو أحادية الجانب، أو لا تسمح بتنزيل الحكم على نازلة معيّنة، فاذكر ذلك بوضوح.\n"
+            "\n"
+            "قيود أساسية:\n"
+            "- التزم بالمقاطع المعطاة فقط.\n"
+            "- إن لم تكفِ المقاطع لتكوين صورة متوازنة أو حكم مفصّل، صرّح بأن السياق غير كافٍ، "
+            "وأن المسألة تحتاج إلى مزيد من البحث أو سؤال أهل العلم."
         )
-        user = f"المصادر الإسلامية:\n{context}\n\nالسؤال: {query}\n\nأجب بناءً على المصادر أعلاه فقط."
+
+        user = (
+            "المقاطع الآتية مرقّمة [1]، [2]، ... وهي مقتطفات من مصادر إسلامية متنوعة "
+            "(تفسير، حديث، فقه، عقيدة، سيرة، تاريخ، لغة، تزكية، أصول فقه):\n"
+            f"{context}\n\n"
+            f"السؤال: {query}\n\n"
+            "المطلوب:\n"
+            "- أجب بالعربية الفصحى الواضحة.\n"
+            "- التزم التزامًا تامًا بالمقاطع أعلاه، ولا تضف معلومات من خارجها.\n"
+            "- حاول دمج جميع الجوانب ذات الصلة الموجودة في المقاطع (النصوص، الشرح، السياق التاريخي، الفقه، العقيدة، التزكية...).\n"
+            "- استخدم أرقام المقاطع [1]، [2]، ... عند الاستشهاد.\n"
+            "- إن كان السياق المتاح ناقصًا أو منحازًا لجانب واحد، فاذكر صراحةً أن الصورة غير مكتملة، "
+            "ولا تقدّم حكمًا جازمًا يتجاوز ما في النصوص."
+        )
+
     return system, user
 
 
 def _format_sources(results: list[dict]) -> list[dict]:
-    """Format search results as sources."""
-    sources = []
-    for r in results:
-        cleaned = _clean_content(r.get("content", ""))
+    """
+    Format search results as sources.
+
+    Adds 'index' لربط [1] في الجواب بالمصدر.
+    """
+    sources: list[dict] = []
+    for i, r in enumerate(results, 1):
+        cleaned = _clean_content(r.get("content", "") or "")
         sources.append(
             {
+                "index": i,
                 "score": r.get("score", 0.0),
                 "content": cleaned[:500],
                 "content_truncated": len(cleaned) > 500,
-                "metadata": r.get("metadata", {}),
+                "metadata": r.get("metadata", {}) or {},
             }
         )
     return sources
 
 
-# ── Dependencies ────────────────────────────────────────────────────────────
-
-
+# ── Dependencies ─────────────────────────────────────────────────────────
 def _get_state(request: Request, attr: str, label: str):
     """Get state attribute from app state."""
     obj = getattr(request.app.state, attr, None)
@@ -189,97 +304,7 @@ def get_llm_client(request: Request):
     return _get_state(request, "llm_client", "LLM client")
 
 
-# ── POST /search/fiqh ──────────────────────────────────────────────────────
-
-
-@search_router.post(
-    "/fiqh",
-    response_model=RAGQueryResponse,
-    summary="Query Fiqh RAG",
-    responses={503: {"model": ErrorResponse, "description": "Service unavailable"}},
-)
-async def query_fiqh(request: Request, req: RAGQueryRequest, agent=Depends(get_fiqh_agent)):
-    """Query the Fiqh RAG agent."""
-    trace_id = _build_trace_id()
-    start_time = time.time()
-
-    if isinstance(agent, _Unavailable):
-        return _agent_unavailable_response()
-
-    from src.agents.base import AgentInput
-
-    try:
-        result = await agent.execute(
-            AgentInput(
-                query=req.query,
-                language=req.language,
-                metadata={"madhhab": req.madhhab},
-            )
-        )
-    except Exception as e:
-        logger.error("search.fiqh_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail="Fiqh RAG service temporarily unavailable.") from e
-
-    processing_time_ms = int((time.time() - start_time) * 1000)
-
-    return RAGQueryResponse(
-        answer=result.answer,
-        citations=[c.model_dump() for c in result.citations],
-        metadata=result.metadata,
-        confidence=result.confidence,
-        requires_human_review=result.requires_human_review,
-        trace_id=trace_id,
-        processing_time_ms=processing_time_ms,
-    )
-
-
-# ── POST /search/general ───────────────────────────────────────────────────
-
-
-@search_router.post(
-    "/general",
-    response_model=RAGQueryResponse,
-    summary="Query General RAG",
-    responses={503: {"model": ErrorResponse, "description": "Service unavailable"}},
-)
-async def query_general(request: Request, req: RAGQueryRequest, agent=Depends(get_general_agent)):
-    """Query the General Islamic RAG agent."""
-    trace_id = _build_trace_id()
-    start_time = time.time()
-
-    if isinstance(agent, _Unavailable):
-        return _agent_unavailable_response()
-
-    from src.agents.base import AgentInput
-
-    try:
-        result = await agent.execute(
-            AgentInput(
-                query=req.query,
-                language=req.language,
-                metadata={"madhhab": req.madhhab},
-            )
-        )
-    except Exception as e:
-        logger.error("search.general_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail="General RAG service temporarily unavailable.") from e
-
-    processing_time_ms = int((time.time() - start_time) * 1000)
-
-    return RAGQueryResponse(
-        answer=result.answer,
-        citations=[c.model_dump() for c in result.citations],
-        metadata=result.metadata,
-        confidence=result.confidence,
-        requires_human_review=result.requires_human_review,
-        trace_id=trace_id,
-        processing_time_ms=processing_time_ms,
-    )
-
-
-# ── GET /search/stats ───────────────────────────────────────────────────────
-
-
+# ── GET /search/stats ────────────────────────────────────────────────────
 @search_router.get(
     "/stats",
     response_model=RAGStatsResponse,
@@ -306,7 +331,12 @@ async def get_rag_stats(
             collections[coll] = stats
             total_docs += stats.get("vectors_count", 0)
         except Exception as e:
-            logger.warning("search.stats_failed", trace_id=trace_id, collection=coll, error=str(e))
+            logger.warning(
+                "search.stats_failed",
+                trace_id=trace_id,
+                collection=coll,
+                error=str(e),
+            )
             collections[coll] = {"vectors_count": 0, "error": "unavailable"}
 
     return RAGStatsResponse(
@@ -316,14 +346,11 @@ async def get_rag_stats(
     )
 
 
-# ── POST /search/simple ────────────────────────────────────────────────────
-
-
+# ── POST /search/simple ──────────────────────────────────────────────────
 @search_router.post(
     "/simple",
     response_model=SimpleRAGResponse,
-    summary="Simple RAG query",
-    responses={503: {"model": ErrorResponse, "description": "Service unavailable"}},
+    summary="Simple RAG search (single-turn Islamic QA)",
 )
 async def simple_rag_query(
     request: Request,
@@ -332,82 +359,76 @@ async def simple_rag_query(
     vector_store=Depends(get_vector_store),
     llm_client=Depends(get_llm_client),
 ):
-    """Simple RAG query with retrieval + generation."""
     trace_id = _build_trace_id()
     start_time = time.time()
-
     _require_rag_available()
 
-    # 1. Embed
-    try:
-        query_embedding = await embedding_model.encode_query(req.query)
-        logger.info(
-            "search.simple_encode",
-            trace_id=trace_id,
-            query=req.query[:50],
-            embedding_type=type(embedding_model).__name__,
-        )
-    except Exception as e:
-        logger.error("search.simple_encode_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
-
-    # 2. Search
-    try:
-        results = await vector_store.search(
-            collection=req.collection,
-            query_embedding=query_embedding,
+    # 1. استخدم SearchService عشان يفسّر "all"
+    search_service = request.app.state.search_service
+    if req.collection == "all":
+        retrieval_output = await search_service.search(
+            query=req.query,
+            collections=None,  # all = DEFAULT_COLLECTIONS
             top_k=req.top_k,
             filters=None,
         )
-        logger.info("search.simple_search", trace_id=trace_id, results_count=len(results))
-    except Exception as e:
-        logger.error("search.simple_search_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
+    else:
+        retrieval_output = await search_service.search(
+            query=req.query,
+            collections=[req.collection],
+            top_k=req.top_k,
+            filters=None,
+        )
+
+    results: list[dict] = retrieval_output.results
 
     if not results:
         processing_time_ms = int((time.time() - start_time) * 1000)
         return SimpleRAGResponse(
-            answer=f"لم يتم العثور على نتائج في مجموعة «{req.collection}».",
+            answer="لم يتم العثور على نتائج.",
             sources=[],
             metadata={
                 "collection": req.collection,
                 "retrieved_count": 0,
                 "unique_count": 0,
                 "context_passages": 0,
+                "language": req.language,
+                "embedding_model": embedding_model.MODEL_NAME,
+                "llm_model": settings.llm_model,
             },
             trace_id=trace_id,
             processing_time_ms=processing_time_ms,
         )
 
-    # 3. Build context
+    # 2. Build context (dedup + cap inside)
     context, context_results = _build_context(results)
-    deduped = _deduplicate_results(results)
+    # deduped = context_results  # نفس النتائج بعد إزالة التكرار وتحديد الحد الأعلى
 
-    # 4. Generate
-    try:
-        system_prompt, user_prompt = _build_llm_prompt(context, req.query, req.language)
-        response = await llm_client.chat.completions.create(
-            model=settings.llm_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=settings.rag_temperature,
-            max_tokens=settings.rag_max_tokens,
-        )
-    except Exception as e:
-        logger.error("search.simple_llm_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail="LLM service temporarily unavailable.") from e
+    # 3. Generate with LLM
+    system_prompt, user_prompt = _build_llm_prompt(context, req.query, req.language)
+    response = await llm_client.chat.completions.create(
+        model=settings.llm_model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=settings.rag_temperature,
+        max_tokens=settings.rag_max_tokens,
+    )
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 
+    # نستخدم context_results في sources حتى تطابق ما رآه الـ LLM
+    formatted_sources_dicts = _format_sources(context_results)
+    # تحويلها لنماذج SearchResult سيقوم به Pydantic تلقائيًا عند بناء SimpleRAGResponse
+
     return SimpleRAGResponse(
         answer=_strip_thinking(response.choices[0].message.content),
-        sources=_format_sources(results),
+        sources=[SearchResult(**s) for s in formatted_sources_dicts],
         metadata={
             "collection": req.collection,
             "retrieved_count": len(results),
-            "unique_count": len(deduped),
+            "unique_count": len(context_results),
             "context_passages": len(context_results),
             "language": req.language,
             "embedding_model": embedding_model.MODEL_NAME,
@@ -418,56 +439,4 @@ async def simple_rag_query(
     )
 
 
-# ── Legacy: POST /search (new basic search) ────────────────────────────────
-
-
-@search_router.post(
-    "",
-    response_model=SearchResponse,
-    summary="Basic search",
-)
-async def basic_search(
-    request: Request,
-    req: SearchRequest,
-    embedding_model=Depends(get_embedding_model),
-    vector_store=Depends(get_vector_store),
-):
-    """Basic semantic search."""
-    trace_id = _build_trace_id()
-    start_time = time.time()
-
-    _require_rag_available()
-
-    # Embed and search
-    try:
-        query_embedding = await embedding_model.encode_query(req.query)
-        results = await vector_store.search(
-            collection=req.collection or "general_islamic",
-            query_embedding=query_embedding,
-            top_k=req.top_k,
-            filters=req.filters,
-        )
-    except Exception as e:
-        logger.error("search.basic_error", trace_id=trace_id, error=str(e), exc_info=True)
-        raise HTTPException(503, detail=GENERIC_SEARCH_ERROR) from e
-
-    processing_time_ms = int((time.time() - start_time) * 1000)
-
-    return SearchResponse(
-        query_id=trace_id,
-        query=req.query,
-        results=[
-            {
-                "score": r.get("score", 0.0),
-                "content": _clean_content(r.get("content", "")),
-                "content_truncated": len(r.get("content", "")) > 500,
-                "metadata": r.get("metadata", {}),
-            }
-            for r in results
-        ],
-        total=len(results),
-        collection=req.collection,
-        metadata={"language": req.language},
-        trace_id=trace_id,
-        processing_time_ms=processing_time_ms,
-    )
+# ── 

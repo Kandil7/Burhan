@@ -129,6 +129,34 @@
 - ✅ [`17_final_refactoring_report.md`](17_final_refactoring_report.md) - التقرير النهائي
 - ✅ [`TOP_10_FILES_README.md`](TOP_10_FILES_README.md) - README لأهم الملفات
 
+### ملفات التوثيق الشامل (جديد!)
+
+- ✅ [`18_src_modules_complete_guide.md`](18_src_modules_complete_guide.md) - دليل شامل لوحدات src/
+- ✅ [`19_complete_file_index.md`](19_complete_file_index.md) - فهرس كامل للملفات
+- ✅ [`20_src_complete_file_by_file.md`](20_src_complete_file_by_file.md) - كل ملف explained in detail
+- ✅ [`21_rag_system_complete.md`](21_rag_system_complete.md) - نظام RAG الكامل
+- ✅ [`22_complete_src_reference.md`](22_complete_src_reference.md) - مرجع شامل لـ src/ (الأكثر اكتمالا!)
+- ✅ [`23_detailed_execution_steps.md`](23_detailed_execution_steps.md) - خطوات التنفيذ التفصيلية (الأكثر شاملة!)
+
+### ملفات نظام RAG المفصلة (جديد!) - الأكثر شاملة!
+
+- ✅ [`24_rag_system_detailed_explanation.md`](24_rag_system_detailed_explanation.md) - شرح شامل لنظام RAG (كل الخطوات)
+- ✅ [`25_rag_system_ultra_detailed.md`](25_rag_system_ultra_detailed.md) - شرح كل سطر وكل دالة (الأكثر detail في كل شيء!)
+- ✅ [`26_agents_detailed_explanation.md`](26_agents_detailed_explanation.md) - شرح الوكلاء العشرة بالتفصيل
+- ✅ [`27_tools_detailed_explanation.md`](27_tools_detailed_explanation.md) - شرح الأدوات الإسلامية (الزكاة، الإرث،Prayer Times)
+- ✅ [`28_retrieval_system_detailed.md`](28_retrieval_system_detailed.md) - شرح نظام الاسترجاع (Dense + BM25 + RRF)
+- ✅ [`29_verification_system_detailed.md`](29_verification_system_detailed.md) - شرح نظام التحقق
+- ✅ [`30_api_endpoints_complete.md`](30_api_endpoints_complete.md) - شرح جميع نقاط النهاية
+- ✅ [`31_data_pipeline_complete.md`](31_data_pipeline_complete.md) - شرح خط البيانات
+- ✅ [`32_llm_configuration_complete.md`](32_llm_configuration_complete.md) - شرح تكوين LLM
+- ✅ [`33_configuration_complete.md`](33_configuration_complete.md) - شرح التكوين
+- ✅ [`34_architecture_patterns_complete.md`](34_architecture_patterns_complete.md) - أنماط التصميم
+- ✅ [`35_errors_troubleshooting_complete.md`](35_errors_troubleshooting_complete.md) - الأخطاء والحلول
+- ✅ [`36_best_practices_complete.md`](36_best_practices_complete.md) - أفضل الممارسات
+- ✅ [`37_testing_complete.md`](37_testing_complete.md) - الاختبارات
+- ✅ [`38_security_complete.md`](38_security_complete.md) - الأمان
+- ✅ [`39_deployment_complete.md`](39_deployment_complete.md) - النشر
+
 ---
 
 ## 🎓 خطة التعلم المقترحة

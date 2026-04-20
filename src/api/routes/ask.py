@@ -14,7 +14,7 @@ from fastapi import APIRouter, Request
 from src.api.schemas.ask import AskRequest, AskResponse
 from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
-
+from src.services.citation_service import enrich_response_with_citations 
 logger = get_logger()
 ask_router = APIRouter(prefix="/ask", tags=["Ask"])
 
@@ -29,23 +29,14 @@ ask_router = APIRouter(prefix="/ask", tags=["Ask"])
         504: {"model": ErrorResponse, "description": "Timeout error"},
     },
 )
-async def handle_ask(
-    raw_request: Request,
-    request: AskRequest,
-) -> AskResponse:
-    """
-    Submit a query to the Athar Islamic QA system.
-    Delegates to AskService which orchestrates AnswerQueryUseCase.
-    """
+async def handle_ask(raw_request: Request, request: AskRequest) -> AskResponse:
     start_time = time.time()
     trace_id = str(uuid.uuid4())
 
     logger.info("ask.received", trace_id=trace_id, query=request.query[:100])
 
-    # Get application services from app state
     service = raw_request.app.state.ask_service
 
-    # Execute Use Case via Service
     output = await service.process_query(
         query=request.query,
         madhhab=request.madhhab,
@@ -54,26 +45,47 @@ async def handle_ask(
 
     processing_time_ms = int((time.time() - start_time) * 1000)
 
-    # Extract sub_intent and answer_mode from agent metadata
-    agent_meta = output.metadata or {}
+    # نفترض أن output لديه method to_dict أو هو dict بالفعل
+    if hasattr(output, "to_dict"):
+        base = output.to_dict()
+    elif isinstance(output, dict):
+        base = output
+    else:
+        base = {
+            "intent": output.intent,
+            "confidence": output.confidence,
+            "answer": output.answer,
+            "citations": output.citations,
+            "citation_chunks": getattr(output, "citation_chunks", []),
+            "metadata": getattr(output, "metadata", {}) or {},
+            "follow_up_suggestions": getattr(output, "follow_up_suggestions", []),
+            "requires_human_review": getattr(output, "requires_human_review", False),
+        }
+
+    # enrich: answer_clean + citations_structured + footnotes + citation_stats
+    enriched = enrich_response_with_citations(base)
+
+    agent_meta = enriched.get("metadata") or {}
     sub_intent = agent_meta.get("sub_intent")
     answer_mode = agent_meta.get("answer_mode", "answer")
-    requires_human_review = getattr(output, "requires_human_review", False)
+    requires_human_review = bool(enriched.get("requires_human_review", False))
 
-    # Build response from Use Case output
     return AskResponse(
         query_id=trace_id,
-        intent=output.intent,
+        intent=enriched["intent"],
         sub_intent=sub_intent,
-        intent_confidence=output.confidence,
-        answer=output.answer,
+        intent_confidence=enriched.get("confidence", 0.0),
+        answer=enriched["answer"],  # raw (فيه [C1] لو أنت لسه بتحبها)
+        answer_clean=enriched.get("answer_clean"),
         answer_mode=answer_mode,
-        citations=output.citations,
+        citations=enriched.get("citations_structured", enriched.get("citations", [])),
+        citation_chunks=enriched.get("citation_chunks", []),
+        citations_footnotes=enriched.get("citations_footnotes", []),
         metadata={
             **agent_meta,
             "trace_id": trace_id,
         },
-        follow_up_suggestions=agent_meta.get("follow_up_suggestions", []),
+        follow_up_suggestions=enriched.get("follow_up_suggestions", []),
         requires_human_review=requires_human_review,
         trace_id=trace_id,
         processing_time_ms=processing_time_ms,

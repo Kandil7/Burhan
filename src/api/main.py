@@ -71,7 +71,7 @@ def create_app() -> FastAPI:
     # Health + classification: intentionally without api_v1_prefix (public endpoints)
     app.include_router(health_router)
     app.include_router(classify_router)  # /classify
-    app.include_router(fiqh_router)  # /fiqh
+
 
     # V1 API routes
     v1 = settings.api_v1_prefix

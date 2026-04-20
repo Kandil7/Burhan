@@ -17,8 +17,8 @@ from src.config.settings import settings
 
 if TYPE_CHECKING:
     from src.infrastructure.llm_client import LLMClient
-    from src.knowledge.vector_store import VectorStore
-    from src.knowledge.embedding_model import EmbeddingModel
+    from src.indexing.vectorstores.qdrant_store import VectorStore
+    from src.indexing.embeddings.embedding_model import EmbeddingModel
     from src.infrastructure.redis import RedisManager
     from src.infrastructure.database import AsyncDatabaseManager
     from src.agents.registry import AgentRegistry
@@ -119,14 +119,14 @@ def _create_llm_client(api_key: str, model: str) -> "LLMClient":
 
 def _create_vector_store(url: str) -> "VectorStore":
     """Create vector store instance."""
-    from src.knowledge.vector_store import VectorStore
+    from src.indexing.vector_store import VectorStore
 
     return VectorStore()
 
 
 def _create_embedding_model(model_name: str) -> "EmbeddingModel":
     """Create embedding model instance."""
-    from src.knowledge.embedding_model import EmbeddingModel
+    from src.indexing.embeddings.embedding_model import EmbeddingModel
 
     return EmbeddingModel(model_name=model_name)
 
@@ -165,7 +165,7 @@ def _create_embedding_cache(
     ttl: int,
 ):
     """Create embedding cache instance."""
-    from src.knowledge.embedding_cache import EmbeddingCache
+    from src.indexing.embeddings.embedding_cache import EmbeddingCache
 
     return EmbeddingCache(redis_manager=redis_manager, ttl=ttl)
 

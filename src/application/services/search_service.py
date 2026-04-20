@@ -2,14 +2,35 @@
 """Service for handling search operations."""
 
 from typing import Optional, Dict, Any, List
-from src.application.use_cases.run_retrieval import RunRetrievalInput, RunRetrievalOutput
+
+from src.config.constants import CollectionNames
+from src.application.use_cases.run_retrieval import (
+    RunRetrievalInput,
+    RunRetrievalOutput,
+    RunRetrievalUseCase,
+)
+
+# Unified default collections used when caller requests "all"
+DEFAULT_COLLECTIONS: list[str] = [
+    CollectionNames.FIQH,
+    CollectionNames.HADITH,
+    CollectionNames.DUA,
+    CollectionNames.GENERAL,
+    CollectionNames.QURAN_TAFSIR,
+    CollectionNames.AQEEDAH,
+    CollectionNames.SEERAH,
+    CollectionNames.ISLAMIC_HISTORY,
+    CollectionNames.ARABIC_LANGUAGE,
+    CollectionNames.SPIRITUALITY,
+    CollectionNames.USUL_FIQH,
+]
 
 
 class SearchService:
     """Service for processing search queries."""
 
-    def __init__(self):
-        pass
+    def __init__(self, run_retrieval_uc: RunRetrievalUseCase) -> None:
+        self._run_retrieval_uc = run_retrieval_uc
 
     async def search(
         self,
@@ -23,32 +44,38 @@ class SearchService:
 
         Args:
             query: Search query
-            collections: Collections to search (default: all)
+            collections:
+                - None  -> search over DEFAULT_COLLECTIONS ("all")
+                - [..]  -> specific collections
             top_k: Number of results
             filters: Optional filters
 
         Returns:
             RunRetrievalOutput with results
         """
-        # Placeholder - would execute retrieval
+        effective_collections = collections or DEFAULT_COLLECTIONS
+
         input_data = RunRetrievalInput(
             query=query,
-            collections=collections or ["quran", "hadith", "fiqh"],
+            collections=effective_collections,
             top_k=top_k,
             enable_reranking=True,
             enable_expansion=True,
             filters=filters,
         )
 
-        # For now, return placeholder
-        return RunRetrievalOutput(
-            results=[],
-            query_expansions=[query],
-            retrieval_strategy="hybrid",
-            execution_time_ms=0.0,
-            metadata={"note": "Service placeholder"},
-        )
+        # Delegate to RunRetrievalUseCase
+        output = await self._run_retrieval_uc.execute(input_data)
+        return output
 
 
-# Default service instance
-search_service = SearchService()
+# Default service instance - will be initialized properly in the application container
+# DO NOT use this directly - get it from the container after proper initialization
+search_service: "SearchService | None" = None
+
+
+def get_search_service(
+    run_retrieval_uc: RunRetrievalUseCase,
+) -> SearchService:
+    """Factory function to create a properly initialized SearchService instance."""
+    return SearchService(run_retrieval_uc=run_retrieval_uc)

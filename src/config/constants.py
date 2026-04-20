@@ -99,9 +99,9 @@ class LLMConfig:
     CHATBOT_TEMPERATURE: Final[float] = 0.5  # Friendly
 
     # Token limits
-    DEFAULT_MAX_TOKENS: Final[int] = 2048
-    SHORT_MAX_TOKENS: Final[int] = 1024
-    LONG_MAX_TOKENS: Final[int] = 4096
+    DEFAULT_MAX_TOKENS: Final[int] = 4096
+    SHORT_MAX_TOKENS: Final[int] = 2048
+    LONG_MAX_TOKENS: Final[int] = 8192
 
     # Cache settings
     CACHE_ENABLED: Final[bool] = True

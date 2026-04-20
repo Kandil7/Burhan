@@ -59,12 +59,26 @@ class EmbeddingModel:
     # ── Device ────────────────────────────────────────────────────────────────
 
     def _get_device(self) -> str:
-        if torch.cuda.is_available():
-            logger.info("embedding.cuda_available", device=torch.cuda.get_device_name(0))
-            return "cuda"
-        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            logger.info("embedding.mps_available")
-            return "mps"
+        # Allow forcing CPU via environment variable
+        force_cpu = os.environ.get("ATHAR_EMBEDDING_CPU", "").lower()
+        if force_cpu in ("1", "true", "yes"):
+            logger.info("embedding.cpu_forced")
+            return "cpu"
+
+        try:
+            if torch.cuda.is_available():
+                logger.info("embedding.cuda_available", device=torch.cuda.get_device_name(0))
+                return "cuda"
+        except Exception:
+            pass
+
+        try:
+            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+                logger.info("embedding.mps_available")
+                return "mps"
+        except Exception:
+            pass
+
         logger.warning("embedding.cpu_fallback")
         return "cpu"
 
@@ -95,20 +109,24 @@ class EmbeddingModel:
             dimension=self.DIMENSION,
         )
 
+    # ── Load ──────────────────────────────────────────────────────────────────
+
     def _load_model_sync(self) -> None:
         token = os.environ.get("HF_TOKEN") or getattr(settings, "hf_token", None)
 
-        # Use device_map="auto" to handle meta tensor loading properly
-        # This avoids "Cannot copy out of meta tensor" errors
         self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, trust_remote_code=True, token=token)
+
+        # Load directly to CPU first to avoid meta tensor issues
+        # Then use CPU for inference (avoids GPU device issues entirely)
+        # This is more reliable for production environments
         self.model = AutoModel.from_pretrained(
             self.MODEL_NAME,
-            device_map=self.device,
             trust_remote_code=True,
             token=token,
             low_cpu_mem_usage=True,
         )
         self.model.eval()
+        # Keep on CPU - more stable for serverless/containers
 
     # ── Public API ────────────────────────────────────────────────────────────
 
@@ -216,13 +234,15 @@ class EmbeddingModel:
         """Synchronous tokenize + forward pass — runs in executor thread."""
         safe_texts = [t.strip() if t.strip() else "[empty]" for t in texts]
 
+        # Use the device the model is actually on
+        model_device = next(self.model.parameters()).device
         inputs = self.tokenizer(
             safe_texts,
             padding=True,
             truncation=True,
             max_length=self.MAX_LENGTH,
             return_tensors="pt",
-        ).to(self.device)
+        ).to(model_device)
 
         with torch.no_grad():
             outputs = self.model(**inputs)
@@ -232,9 +252,6 @@ class EmbeddingModel:
             pooled = torch.sum(token_embs * mask_expanded, 1)
             pooled /= torch.clamp(mask_expanded.sum(1), min=1e-9)
             normalized = torch.nn.functional.normalize(pooled, p=2, dim=1)
-
-            if self.device in ("cuda", "mps"):
-                normalized = normalized.cpu()
 
         return [emb.float().numpy() for emb in normalized]
 

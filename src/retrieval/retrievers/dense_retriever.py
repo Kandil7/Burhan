@@ -16,7 +16,7 @@ class BaseDenseRetriever(ABC):
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve documents using dense embeddings."""
-        pass
+        raise NotImplementedError
 
 
 class DenseRetriever(BaseDenseRetriever):
@@ -24,9 +24,11 @@ class DenseRetriever(BaseDenseRetriever):
 
     def __init__(
         self,
-        embedding_model: Optional[Any] = None,
-        vector_store: Optional[Any] = None,
+        collection: str,
+        embedding_model: Any,
+        vector_store: Any,
     ):
+        self.collection = collection
         self.embedding_model = embedding_model
         self.vector_store = vector_store
 
@@ -37,17 +39,35 @@ class DenseRetriever(BaseDenseRetriever):
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Retrieve documents using dense embeddings."""
-        # Placeholder - implement actual dense retrieval
-        raise NotImplementedError("Dense retriever not yet implemented")
+        # 1) Embed query
+        query_embedding = await self.embedding_model.encode_query(query)
+
+        # 2) Search in the configured collection
+        results = await self.vector_store.search(
+            collection=self.collection,
+            query_embedding=query_embedding,
+            top_k=top_k,
+            filters=filters,
+        )
+
+        # 3) Ensure collection metadata exists
+        for r in results:
+            meta = r.get("metadata", {}) or {}
+            meta.setdefault("collection", self.collection)
+            r["metadata"] = meta
+
+        return results
 
 
 # Factory function
 def create_dense_retriever(
+    collection: str,
     embedding_model: Any,
     vector_store: Any,
 ) -> DenseRetriever:
-    """Create a dense retriever with the given components."""
+    """Create a dense retriever for a specific collection."""
     return DenseRetriever(
+        collection=collection,
         embedding_model=embedding_model,
         vector_store=vector_store,
     )

@@ -83,12 +83,12 @@ class AgentOutput(BaseModel):
 
     answer: str = Field(description="Agent answer text")
     citations: list[Citation] = Field(default_factory=list)
+    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)  
     metadata: dict = Field(default_factory=dict)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
 
     model_config = {"extra": "allow"}
-
 
 class BaseAgent:
     """Base class for agents (placeholder)."""

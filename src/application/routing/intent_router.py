@@ -1,9 +1,3 @@
-"""
-Intent Router for Athar Islamic QA system.
-
-Routes user queries to appropriate agents based on intent classification.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -16,11 +10,6 @@ class IntentRouter:
     Routes queries to agents based on intent classification.
 
     This is the canonical routing component for the v2 architecture.
-
-    Usage:
-        router = IntentRouter()
-        intent = await router.classify("ما حكم الصيام في رمضان؟")
-        agent = router.route_to_agent(intent)
     """
 
     # Intent to agent mapping
@@ -34,6 +23,7 @@ class IntentRouter:
         Intent.USUL_FIQH: "usul_fiqh",
         Intent.ISLAMIC_HISTORY: "history",
         Intent.ARABIC_LANGUAGE: "language",
+        Intent.ISLAMIC_TAZKIYAH: "tazkiyah",          # ⬅ جديد
         Intent.ISLAMIC_KNOWLEDGE: "general",
         Intent.GREETING: "chatbot",
     }
@@ -48,15 +38,7 @@ class IntentRouter:
 
         Note: This is a simplified implementation. The actual classification
         should use the hybrid classifier from classifier_factory.py.
-
-        Args:
-            query: User query
-
-        Returns:
-            Intent enum value
         """
-        # Simplified keyword-based routing
-        # In production, this would call the classifier
         query_lower = query.lower()
 
         # Check for greeting
@@ -65,32 +47,57 @@ class IntentRouter:
             return Intent.GREETING
 
         # Check for fiqh
-        fiqh_keywords = ["حكم", "حلال", "حرام", "فرض", "فتوى", "فقه"]
+        fiqh_keywords = ["حكم", "حلال", "حرام", "فرض", "فتوى", "فتوه", "فقه"]
         if any(kw in query_lower for kw in fiqh_keywords):
             return Intent.FIQH
 
         # Check for hadith
-        hadith_keywords = ["حديث", "صحيح", "ضعيف", "سنن", "بخاري", "مسلم"]
+        hadith_keywords = ["حديث", "الحديث", "صحيح", "ضعيف", "سنن", "بخاري", "مسلم"]
         if any(kw in query_lower for kw in hadith_keywords):
             return Intent.HADITH
 
         # Check for tafsir
-        tafsir_keywords = ["آية", "تفسير", "قرآن", "سورة"]
+        tafsir_keywords = ["آية", "ايه", "تفسير", "قرآن", "القرآن", "القران", "سورة", "سوره"]
         if any(kw in query_lower for kw in tafsir_keywords):
             return Intent.TAFSIR
 
         # Check for aqeedah
-        aqeedah_keywords = ["توحيد", "عقيدة", "إيمان", "الله"]
+        aqeedah_keywords = ["توحيد", "عقيدة", "عقيده", "إيمان", "ايمان", "الإيمان بالله", "الايمان بالله"]
         if any(kw in query_lower for kw in aqeedah_keywords):
             return Intent.AQEEDAH
 
+        # Check for tazkiyah / spirituality
+        tazkiyah_keywords = [
+            "تزكية",
+            "تزكيه",
+            "تربية إيمانية",
+            "تربيه ايمانية",
+            "السلوك",
+            "السلوك إلى الله",
+            "التصوف",
+            "التصوّف",
+            "الأحوال القلبية",
+            "احوال قلبيه",
+            "مقامات السالكين",
+            "منازل السائرين",
+            "مدارج السالكين",
+            "ابن القيم",
+            "ابن تيمية",
+            "الذوق",
+            "الوجد",
+            "الفناء",
+            "الجمع",
+        ]
+        if any(kw in query_lower for kw in tazkiyah_keywords):
+            return Intent.ISLAMIC_TAZKIYAH
+
         # Check for seerah
-        seerah_keywords = ["سيرة", "نبوية", "رسول", "النبي"]
+        seerah_keywords = ["سيرة", "سيره", "نبوية", "رسول", "النبي", "السيرة النبوية", "السيره النبويه"]
         if any(kw in query_lower for kw in seerah_keywords):
             return Intent.SEERAH
 
         # Check for usul_fiqh
-        usul_keywords = ["أصول", "اجتهاد", "قياس", "استنباط"]
+        usul_keywords = ["أصول الفقه", "اصول الفقه", "أصول", "اجتهاد", "قياس", "استنباط"]
         if any(kw in query_lower for kw in usul_keywords):
             return Intent.USUL_FIQH
 
@@ -100,7 +107,7 @@ class IntentRouter:
             return Intent.ISLAMIC_HISTORY
 
         # Check for language
-        lang_keywords = ["نحو", "صرف", "بلاغة", "إعراب"]
+        lang_keywords = ["نحو", "صرف", "بلاغة", "بلاغه", "إعراب", "اعراب"]
         if any(kw in query_lower for kw in lang_keywords):
             return Intent.ARABIC_LANGUAGE
 
@@ -108,33 +115,16 @@ class IntentRouter:
         return Intent.ISLAMIC_KNOWLEDGE
 
     def route_to_agent(self, intent: Intent) -> str:
-        """
-        Get agent name for intent.
-
-        Args:
-            intent: Classified intent
-
-        Returns:
-            Agent name string
-        """
+        """Get agent name for intent."""
         return self.INTENT_TO_AGENT.get(intent, "general")
 
     async def route(self, query: str) -> tuple[Intent, str]:
-        """
-        Full routing: classify and get agent.
-
-        Args:
-            query: User query
-
-        Returns:
-            Tuple of (Intent, agent_name)
-        """
+        """Full routing: classify and get agent."""
         intent = await self.classify(query)
         agent = self.route_to_agent(intent)
         return intent, agent
 
 
-# Singleton instance
 _router: IntentRouter | None = None
 
 
@@ -144,6 +134,3 @@ def get_intent_router() -> IntentRouter:
     if _router is None:
         _router = IntentRouter()
     return _router
-
-
-__all__ = ["IntentRouter", "get_intent_router"]

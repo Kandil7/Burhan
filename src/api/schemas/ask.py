@@ -171,6 +171,12 @@ class AskResponse(BaseModel):
         examples=[0.92, 0.85],
     )
     answer: str = Field(..., description="Generated answer text")
+
+    answer_clean: str | None = Field(
+        default=None,
+        description="Answer text with human-friendly inline citations instead of [C1] markers",
+    )
+
     answer_mode: str = Field(
         default="answer",
         description="Pipeline decision: answer, clarify, or abstain",
@@ -180,6 +186,18 @@ class AskResponse(BaseModel):
         default_factory=list,
         description="List of citations with structured references",
     )
+
+    
+    citation_chunks: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Full chunks/passages used in the answer (text + metadata)",
+    )
+
+    citations_footnotes: list[str] = Field(
+        default_factory=list,
+        description="Formatted footnotes for display under the answer",
+    )
+
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Processing metadata (agent, time, madhhab, etc.)",
