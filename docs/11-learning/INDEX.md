@@ -138,6 +138,11 @@
 - ✅ [`22_complete_src_reference.md`](22_complete_src_reference.md) - مرجع شامل لـ src/ (الأكثر اكتمالا!)
 - ✅ [`23_detailed_execution_steps.md`](23_detailed_execution_steps.md) - خطوات التنفيذ التفصيلية (الأكثر شاملة!)
 
+### ملفات نظام RAG المفصلة (جديد!) - الأكثر شاملة!
+
+- ✅ [`24_rag_system_detailed_explanation.md`](24_rag_system_detailed_explanation.md) - شرح شامل لنظام RAG (كل الخطوات)
+- ✅ [`25_rag_system_ultra_detailed.md`](25_rag_system_ultra_detailed.md) - شرح كل سطر وكل دالة (الأكثر detail في كل شيء!)
+
 ---
 
 ## 🎓 خطة التعلم المقترحة
