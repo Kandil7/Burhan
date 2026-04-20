@@ -1887,5 +1887,112 @@ The search endpoint uses sophisticated prompts that integrate **all Islamic doma
 
 ---
 
+## 15. Evaluation Framework
+
+### 15.1 Overview
+
+The evaluation framework tests RAG pipeline quality with Arabic Islamic questions and gold standard passages. Built during the Seerah evaluation project.
+
+### 15.2 Files Created
+
+| File | Purpose |
+|------|---------|
+| `rag_eval_seerah.py` | Evaluation script (220 lines) |
+| `rag_eval_seerah.jsonl` | 20 Arabic test questions with gold passages |
+| `rag_eval_results.csv` | Results export |
+| `docs/8-development/evaluatin_plan.md` | Evaluation methodology |
+
+### 15.3 Evaluation Data Format
+
+```jsonl
+{"query": "متى beganت الهجرة النبوية؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "من أمر بجعل الهجرة بداية التقويم؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+```
+
+### 15.4 Metrics
+
+| Metric | Description | Target |
+|--------|-------------|--------|
+| **Hit Rate** | % questions with ≥1 correct citation | > 85% |
+| **Precision** | Ratio of correct citations | > 0.80 |
+| **MRR** | Mean Reciprocal Rank | > 0.80 |
+| **Intent Accuracy** | Correct domain classification | > 90% |
+
+### 15.5 Seerah Evaluation Results (April 2026)
+
+```
+📊 RESULTS SUMMARY - Seerah RAG Evaluation
+============================================================
+Questions Tested: 20
+Hit Rate: 80.0%
+Precision: 0.800
+MRR (Mean Reciprocal Rank): 0.800
+Citations/Question: 0.8
+Intent Accuracy: 90.0%
+Avg Intent Confidence: 0.820
+Avg Processing Time: 12001ms
+```
+
+### 15.6 Key Findings
+
+1. **Retrieval Quality**: When routed correctly to seerah agent, hit rate = **100%**
+2. **Intent Classification**: Critical factor - determines success
+3. **Keyword Priority**: Keywords should always override embedding classification
+4. **Edge Cases**: 4/20 questions still fail (book metadata queries)
+
+### 15.7 Fixes Applied
+
+1. **`src/application/router/hybrid_classifier.py`** - Priority fix:
+   - Changed from: only use keywords if confidence >= 0.85
+   - Changed to: use keywords if ANY match (confidence > 0.0)
+
+2. **`src/domain/intents.py`** - Added SEERAH keywords:
+   - هجرة، مكة، المدينة، بدر، أحد، الآن، الخندق، قشلان، دروس، عبر، زهد
+
+3. **`src/application/router/classifier_factory.py`** - Added keywords:
+   - Same as domain/intents.py for redundancy
+
+### 15.8 Running Evaluation
+
+```bash
+# Start API
+poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8002 --reload
+
+# Run evaluation
+python rag_eval_seerah.py
+
+# Or with custom settings
+python rag_eval_seerah.py --url http://localhost:8000 --k 5 --delay 0.3
+```
+
+---
+
+## 16. Data Files Reference
+
+### 16.1 Mini Dataset v2
+
+| File | Size | Passages |
+|------|------|----------|
+| `data/mini_dataset_v2/seerah_passages.jsonl` | 23.9 MB | 10,000+ |
+| `data/mini_dataset_v2/fiqh_passages.jsonl` | 28.6 MB | 10,000+ |
+| `data/mini_dataset_v2/hadith_passages.jsonl` | 30.2 MB | 10,000+ |
+
+### 16.2 Seerah Passages Format
+
+```json
+{
+  "content": "بِسْمِ اللَّهِ الرَّحِيمِ الرَّحْمَنِ...",
+  "content_type": "page",
+  "book_id": 77,
+  "book_title": "الهجرة النبوية الشريفة دروس وفوائد ولطائف",
+  "category": "السيرة النبوية",
+  "author": "محمد مهدي قشلان",
+  "collection": "seerah_passages",
+  "page_number": 1
+}
+```
+
+---
+
 *Generated from branch `refactor/athar-v2-architecture`*  
 *April 2026*
