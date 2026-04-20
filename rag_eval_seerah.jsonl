@@ -1,0 +1,20 @@
+{"query": "ما الحدث التاريخي الذي تدور حوله الفقرة الأولى؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما النص الذي أورده الكاتب عند دخول النبي المدينة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما وصف الكاتب لأثر الهجرة على التاريخ؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "لماذا اعتنى المسلمون بسيرة النبي؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما الغاية من ذكرى الهجرة اليوم؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "متى بدأت الهجرة النبوية؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "من أمر بجعل الهجرة بداية التقويم؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما اسم المدينة التي هاجر إليها النبي؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما القيم الاجتماعية في الحديث المذكور؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما الشاهد الشعري عن الزهد في الدنيا؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما وصف بيان النبي عند دخوله المدينة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما مكانة النبي بين الخلق؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما العلاقة بين السيرة وحل المشاكل؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما الحديث عن الدنيا والآخرة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "من هو محمد مهدي قشلان؟", "gold_passages": [{"book_id": 77}]}
+{"query": "ما فئة النصوص في المجموعة؟", "gold_passages": [{"book_id": 77}]}
+{"query": "ما اسم الكتاب الأول؟", "gold_passages": [{"book_id": 77}]}
+{"query": "في أي صفحة بدأت عبرة الهجرة الأولى؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
+{"query": "ما العنوان الفرعي للصفحة الثانية؟", "gold_passages": [{"book_id": 77, "page_number": 2}]}
+{"query": "ما الهدف من خطبة المدينة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]}
