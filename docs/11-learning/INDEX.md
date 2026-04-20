@@ -129,6 +129,15 @@
 - ✅ [`17_final_refactoring_report.md`](17_final_refactoring_report.md) - التقرير النهائي
 - ✅ [`TOP_10_FILES_README.md`](TOP_10_FILES_README.md) - README لأهم الملفات
 
+### ملفات التوثيق الشامل (جديد!)
+
+- ✅ [`18_src_modules_complete_guide.md`](18_src_modules_complete_guide.md) - دليل شامل لوحدات src/
+- ✅ [`19_complete_file_index.md`](19_complete_file_index.md) - فهرس كامل للملفات
+- ✅ [`20_src_complete_file_by_file.md`](20_src_complete_file_by_file.md) - كل ملف explained in detail
+- ✅ [`21_rag_system_complete.md`](21_rag_system_complete.md) - نظام RAG الكامل
+- ✅ [`22_complete_src_reference.md`](22_complete_src_reference.md) - مرجع شامل لـ src/ (الأكثر اكتمالا!)
+- ✅ [`23_detailed_execution_steps.md`](23_detailed_execution_steps.md) - خطوات التنفيذ التفصيلية (الأكثر شاملة!)
+
 ---
 
 ## 🎓 خطة التعلم المقترحة
