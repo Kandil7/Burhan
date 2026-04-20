@@ -56,6 +56,7 @@ async def handle_ask(raw_request: Request, request: AskRequest) -> AskResponse:
             "confidence": output.confidence,
             "answer": output.answer,
             "citations": output.citations,
+            "citation_chunks": getattr(output, "citation_chunks", []),
             "metadata": getattr(output, "metadata", {}) or {},
             "follow_up_suggestions": getattr(output, "follow_up_suggestions", []),
             "requires_human_review": getattr(output, "requires_human_review", False),
