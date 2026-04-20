@@ -98,16 +98,18 @@ class EmbeddingModel:
     def _load_model_sync(self) -> None:
         token = os.environ.get("HF_TOKEN") or getattr(settings, "hf_token", None)
 
-        # Use device_map="auto" to handle meta tensor loading properly
-        # This avoids "Cannot copy out of meta tensor" errors
         self.tokenizer = AutoTokenizer.from_pretrained(self.MODEL_NAME, trust_remote_code=True, token=token)
+        
+        # device_map=self.device (e.g. "cuda") is invalid and triggers meta tensor errors
+        # We load to CPU first then move to device, or use device_map="auto"
+        # For this model, explicit .to(device) is safer.
         self.model = AutoModel.from_pretrained(
             self.MODEL_NAME,
-            device_map=self.device,
             trust_remote_code=True,
             token=token,
             low_cpu_mem_usage=True,
         )
+        self.model.to(self.device)
         self.model.eval()
 
     # ── Public API ────────────────────────────────────────────────────────────
