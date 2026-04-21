@@ -27,8 +27,9 @@ from src.application.use_cases.classify_query import (
     classify_query_use_case,
     ClassifyQueryInput,
     ClassifyQueryOutput,
-    QueryIntent,
 )
+
+from src.application.use_cases.classify_schemas import QueryIntent
 
 from src.application.use_cases.run_retrieval import (
     RunRetrievalUseCase,
