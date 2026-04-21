@@ -2,7 +2,7 @@
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
-> **📢 Latest: Legacy Cleanup Complete (April 2026)** - Removed 20+ orphaned files, fixed missing modules, added complete file-by-file documentation. See [docs/11-learning/](docs/11-learning/) for details.
+> **📢 Latest: Production Refactoring Complete (April 2026)** - Removed v1 deprecated code, consolidated classification to single source, fixed Intent imports across all agents, moved RAG prompts to generation layer. See [docs/11-learning/](docs/11-learning/) for details.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
@@ -13,7 +13,18 @@
 
 ---
 
-## 🚀 Latest Update: Legacy Code Cleanup Complete (April 2026)
+## 🚀 Latest Update: Production Refactoring Complete (April 21, 2026)
+
+**April 21, 2026:** Successfully completed **production refactoring** for maintainability:
+
+- ✅ **Removed v1 deprecated code** - Cleaned up `src/knowledge/` module (legacy RAG layer)
+- ✅ **Fixed Intent classification** - Agents now use `Intent` from domain layer (not IntentLabel)
+- ✅ **Consolidated classification** - Single source of truth for keywords in `classifier_factory.py`
+- ✅ **Removed duplicate infrastructure** - Removed duplicate `db_sync.py`, consolidated router/routing
+- ✅ **Moved RAG prompts** - Extracted embedded prompts from search.py to `src/generation/prompts/rag.py`
+- ✅ **Split large files** - Separated `classify_query.py` (326 lines) and `intents.py` (449 lines) into focused modules
+- ✅ **Backward compatibility** - Added `hybrid_classifier.py` as compatibility layer for existing imports
+- ✅ **Verified clean imports** - All layers (agents, retrieval, verification, generation, config, api, domain) reviewed
 
 **April 19, 2026:** Successfully completed **legacy code cleanup**:
 
