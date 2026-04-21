@@ -7,10 +7,9 @@ for backward compatibility with existing code.
 DEPRECATED: Import directly from src.application.router.classifier_factory instead.
 """
 
-# Re-export all from the canonical module
+# Re-export keyword-based classifier from canonical module
 from src.application.router.classifier_factory import (
     KeywordBasedClassifier,
-    EmbeddingClassifier,
     MasterHybridClassifier,
     HybridIntentClassifier,
     ClassifierFactory,
@@ -21,12 +20,12 @@ from src.application.router.classifier_factory import (
     QueryClassifier,
 )
 
-# Utility functions that were in this module
-from src.application.router.classifier_factory import (
-    _detect_language as detect_language_util,
-    _classify_quran_subintent as classify_quran_subintent,
-    _infer_requires_retrieval as infer_requires_retrieval,
-)
+# Import EmbeddingClassifier from its own module
+from src.application.router.embedding_classifier import EmbeddingClassifier
+
+# Language detection utility (define locally for backward compat)
+from src.application.router.classifier_factory import detect_language as detect_language_util
+
 
 __all__ = [
     # Core classes
@@ -41,7 +40,5 @@ __all__ = [
     "normalize_arabic",
     "detect_language",
     "detect_language_util",
-    "classify_quran_subintent",
-    "infer_requires_retrieval",
     "INTENT_KEYWORDS",
 ]
