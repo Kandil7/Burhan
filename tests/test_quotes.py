@@ -1,5 +1,5 @@
 import asyncio
-from src.verifiers.exact_quote import exact_quote_verifier
+from src.verification.checks.exact_quote import exact_quote_verifier
 
 async def main():
     claim = "كما قال تعالى: ﴿لَتَجِدَنَّ أَشَدَّ النَّاسِ عَدَاوَةً لِّلَّذِينَ آمَنُوا اليَهُودَ﴾ وفي السيرة قال الرسول «السلام عليكم»"

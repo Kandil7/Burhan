@@ -7,7 +7,7 @@ Defines the canonical schemas for the verification layer.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 from pydantic import BaseModel, Field
 
@@ -49,26 +49,24 @@ class VerificationCheck(BaseModel):
 class VerificationSuite(BaseModel):
     """Collection of verification checks with fail-fast behavior."""
 
-    checks: list[VerificationCheck] = Field(default_factory=list, description="List of verification checks")
-    fail_fast: bool = Field(default=True, description="Stop on first failure if True")
+    checks: List[VerificationCheck] = Field(
+        default_factory=list, description="List of verification checks"
+    )
+    fail_fast: bool = Field(
+        default=True, description="Stop on first failure if True"
+    )
 
 
 class CheckResult(BaseModel):
     """Result of a single verification check."""
 
     check_name: str = Field(description="Name of the check")
-    status: VerificationStatus = Field(default=VerificationStatus.PASSED, description="Check status")
+    status: VerificationStatus = Field(description="Check status")
     passed: bool = Field(default=True, description="Whether the check passed")
-    message: str | None = Field(default=None, description="Status message")
+    message: Optional[str] = Field(default=None, description="Status message")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Check confidence")
-    details: dict[str, Any] = Field(default_factory=dict, description="Additional details")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-
-    def __init__(self, **data):
-        # Handle backward compatibility: accept passed=True/False for status
-        if "passed" in data and "status" not in data:
-            data["status"] = VerificationStatus.PASSED if data.get("passed", True) else VerificationStatus.FAILED
-        super().__init__(**data)
+    details: Dict[str, Any] = Field(default_factory=dict, description="Additional details")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class VerificationReport(BaseModel):
@@ -78,24 +76,25 @@ class VerificationReport(BaseModel):
     This is the canonical format for verification results.
     """
 
+    query: Optional[str] = Field(default=None, description="Original query")
     is_verified: bool = Field(description="Overall verification status")
     confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Overall confidence")
     status: VerificationStatus = Field(default=VerificationStatus.PASSED, description="Overall status")
-    issues: list[Any] = Field(default_factory=list, description="List of issues found")
-    check_results: dict[str, Any] = Field(default_factory=dict, description="Individual check results as dict")
-    verified_passages: list[dict[str, Any]] = Field(
+    issues: List[Any] = Field(default_factory=list, description="List of issues found")
+    check_results: Dict[str, Any] = Field(default_factory=dict, description="Individual check results as dict")
+    verified_passages: List[Dict[str, Any]] = Field(
         default_factory=list, description="Passages that passed verification"
     )
-    details: dict[str, Any] = Field(default_factory=dict, description="Aggregated details")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    details: Dict[str, Any] = Field(default_factory=dict, description="Aggregated details")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     @classmethod
     def from_passages(
         cls,
-        passages: list[dict],
+        passages: List[dict],
         is_verified: bool = True,
         confidence: float = 1.0,
-        issues: list[Any] | None = None,
+        issues: Optional[List[Any]] = None,
     ) -> VerificationReport:
         return cls(
             is_verified=is_verified,
@@ -105,59 +104,7 @@ class VerificationReport(BaseModel):
             verified_passages=passages,
         )
 
-    @classmethod
-    def from_results(
-        cls,
-        results: list[CheckResult],
-    ) -> VerificationReport:
-        """Create a VerificationReport from a list of CheckResults.
-
-        Args:
-            results: List of check results from verification checks.
-
-        Returns:
-            Aggregated VerificationReport.
-        """
-        if not results:
-            return cls(
-                is_verified=False,
-                confidence=0.0,
-                status=VerificationStatus.ABSTAINED,
-                issues=["No verification checks were performed"],
-            )
-
-        # Aggregate results
-        is_verified = all(r.status == VerificationStatus.PASSED for r in results)
-        avg_confidence = sum(r.confidence for r in results) / len(results) if results else 0.0
-
-        # Collect verified passages from all checks
-        verified_passages: list[dict[str, Any]] = []
-        issues: list[Any] = []
-
-        for r in results:
-            if r.passages:
-                verified_passages.extend(r.passages)
-            if r.issues:
-                issues.extend(r.issues)
-
-        # Determine overall status
-        if any(r.status == VerificationStatus.FAILED for r in results):
-            status = VerificationStatus.FAILED
-        elif any(r.status == VerificationStatus.WARNING for r in results):
-            status = VerificationStatus.WARNING
-        else:
-            status = VerificationStatus.PASSED
-
-        return cls(
-            is_verified=is_verified,
-            confidence=avg_confidence,
-            status=status,
-            issues=issues,
-            check_results={r.check_name: r.model_dump() for r in results},
-            verified_passages=verified_passages,
-        )
-
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format."""
         return {
             "is_verified": self.is_verified,
@@ -186,12 +133,9 @@ class Abstention(BaseModel):
 
     reason: AbstentionReason = Field(description="Reason for abstention")
     message: str = Field(description="Abstention message")
-    fallback_agent: str | None = Field(default=None, description="Suggested fallback")
+    fallback_agent: Optional[str] = Field(default=None, description="Suggested fallback")
     requires_human_review: bool = Field(default=True, description="Requires human review")
 
-
-# Alias for backward compatibility
-VerificationResult = CheckResult
 
 __all__ = [
     "VerificationStatus",
@@ -199,7 +143,6 @@ __all__ = [
     "VerificationCheck",
     "VerificationSuite",
     "CheckResult",
-    "VerificationResult",  # Alias
     "VerificationReport",
     "AbstentionReason",
     "Abstention",

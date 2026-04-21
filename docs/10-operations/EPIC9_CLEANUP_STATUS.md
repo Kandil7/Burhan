@@ -97,7 +97,7 @@ After removing deprecated paths, update these import statements:
 | `from src.knowledge.embedding_cache import EmbeddingCache` | `from src.indexing.embeddings.embedding_cache import EmbeddingCache` |
 | `from src.knowledge.vector_store import VectorStore` | `from src.indexing.vectorstores.qdrant_store import VectorStore` |
 | `from src.knowledge.title_loader import TitleLoader` | `from src.indexing.metadata.title_loader import TitleLoader` |
-| `from src.knowledge.hadith_grader import HadithAuthenticityGrader` | `from src.verifiers.hadith_grade import HadithAuthenticityGrader` |
+| `from src.knowledge.hadith_grader import HadithAuthenticityGrader` | `from src.verification.hadith_grade import HadithAuthenticityGrader` |
 | `from src.core.router import HybridQueryClassifier` | Already migrated to `src/application/router/hybrid_classifier.py` |
 | `from src.application.router import RouterAgent` | `from src.application.router.router_agent import RouterAgent` |
 | `from src.application.hybrid_classifier import HybridIntentClassifier` | `from src.application.router.hybrid_classifier import HybridIntentClassifier` |

@@ -320,7 +320,7 @@ class VerificationReport:
 ### Building a Suite
 
 ```python
-from src.verifiers.suite_builder import build_verification_suite_for
+from src.verification.suite_builder import build_verification_suite_for
 
 # Get Fiqh verification suite
 suite = build_verification_suite_for("fiqh_agent")
@@ -363,7 +363,7 @@ custom_suite = VerificationSuite(
 ```python
 class FiqhCollectionAgent(CollectionAgent):
     async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        from src.verifiers.suite_builder import build_verification_suite_for
+        from src.verification.suite_builder import build_verification_suite_for
         
         suite = build_verification_suite_for("fiqh_agent")
         

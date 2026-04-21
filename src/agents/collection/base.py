@@ -1,13 +1,8 @@
 """
 Collection-Aware RAG Agent Base for Athar Islamic QA system.
 
-This module provides:
-- IntentLabel: Enum for agent-specific intents
-- Pydantic models for agent configuration
-- Abstract CollectionAgent class with full RAG pipeline
-
-Phase 1: Core Abstractions for Multi-Agent Collection-Aware RAG system.
-This is the canonical base class for v2 agents.
+This module provides the canonical base class for all v2 collection agents,
+integrating retrieval, verification, and generation into a unified pipeline.
 """
 
 from __future__ import annotations
@@ -17,12 +12,18 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from enum import Enum
-from typing import Any
+from typing import Any, List, Dict, Optional, Set
 
 from pydantic import BaseModel, Field
 
 from src.agents.base import AgentInput, Citation, strip_cot_leakage
+from src.domain.intents import Intent
+from src.verification import (
+    VerificationReport,
+    VerificationStatus,
+    VerificationSuite,
+    VerificationCheck,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,60 +52,11 @@ class AgentOutput(BaseModel):
     """Standardized output for all agents."""
 
     answer: str = Field(description="Agent answer text")
-    citations: list[Citation] = Field(default_factory=list)
-    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)  
-    metadata: dict = Field(default_factory=dict)
+    citations: List[Citation] = Field(default_factory=list)
+    citation_chunks: List[Dict[str, Any]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
-
-
-class IntentLabel(str, Enum):
-    """
-    Agent-specific intents for Islamic knowledge domains.
-    Each intent maps to a specific collection and retrieval strategy.
-    """
-
-    # Fiqh (Islamic Jurisprudence)
-    FiqhHukm = "fiqh_hukm"
-    FiqhMasaail = "fiqh_masaail"
-
-    # Hadith
-    HadithTakhrij = "hadith_takhrij"
-    HadithSanad = "hadith_sanad"
-    HadithMatn = "hadith_matn"
-
-    # Tafsir (Quran Interpretation)
-    TafsirAyah = "tafsir_ayah"
-    TafsirMaqasid = "tafsir_maqasid"
-
-    # Aqeedah (Islamic Theology)
-    AqeedahTawhid = "aqeedah_tawhid"
-    AqeedahIman = "aqeedah_iman"
-
-    # Seerah (Prophet Biography)
-    SeerahEvent = "seerah_event"
-    SeerahMilad = "seerah_milad"
-
-    # Usul Fiqh (Principles of Jurisprudence)
-    UsulFiqhIjtihad = "usul_fiqh_ijtihad"
-    UsulFiqhQiyas = "usul_fiqh_qiyas"
-
-    # Islamic History
-    IslamicHistoryEvent = "islamic_history_event"
-    IslamicHistoryDynasty = "islamic_history_dynasty"
-
-    # Arabic Language
-    ArabicGrammar = "arabic_grammar"
-    ArabicMorphology = "arabic_morphology"
-    ArabicBalaghah = "arabic_balaghah"
-
-    # Tazkiyah (Spiritual Development)
-    TazkiyahSuluk = "tazkiyah_suluk"
-    TazkiyahAkhlaq = "tazkiyah_akhlaq"
-
-    # General
-    GeneralIslamic = "general_islamic"
-    Unknown = "unknown"
 
 
 class RetrievalStrategy(BaseModel):
@@ -129,28 +81,6 @@ class RetrievalStrategy(BaseModel):
     )
 
 
-class VerificationCheck(BaseModel):
-    """Individual verification check configuration."""
-
-    name: str = Field(description="Check identifier")
-    fail_policy: str = Field(
-        default="abstain",
-        description="Action on failure: abstain/warn/proceed",
-    )
-    enabled: bool = Field(default=True, description="Whether check is active")
-
-
-class VerificationSuite(BaseModel):
-    """Collection of verification checks with fail-fast behavior."""
-
-    checks: list[VerificationCheck] = Field(
-        default_factory=list, description="List of verification checks"
-    )
-    fail_fast: bool = Field(
-        default=True, description="Stop on first failure if True"
-    )
-
-
 class FallbackPolicy(BaseModel):
     """Fallback strategy when primary retrieval fails or is insufficient."""
 
@@ -158,7 +88,7 @@ class FallbackPolicy(BaseModel):
         default="chatbot",
         description="Strategy: chatbot/human_review/clarify",
     )
-    message: str | None = Field(default=None, description="Custom fallback message")
+    message: Optional[str] = Field(default=None, description="Custom fallback message")
 
 
 class CollectionAgentConfig(BaseModel):
@@ -179,52 +109,6 @@ class CollectionAgentConfig(BaseModel):
     )
 
 
-class VerificationReport(BaseModel):
-    """
-    Extended verification report with verified passages.
-    Extends src.verifiers.base.VerificationReport with passage data.
-    """
-
-    is_verified: bool = Field(description="Overall verification status")
-    confidence: float = Field(
-        description="Overall confidence score", ge=0.0, le=1.0
-    )
-    issues: list[Any] = Field(
-        default_factory=list, description="Verification issues"
-    )
-    details: dict[str, Any] = Field(
-        default_factory=dict, description="Detailed results"
-    )
-    verified_passages: list[dict] = Field(
-        default_factory=list, description="Passages that passed verification"
-    )
-
-    @classmethod
-    def from_passages(
-        cls: type["VerificationReport"],
-        passages: list[dict],
-        is_verified: bool = True,
-        confidence: float = 1.0,
-        issues: list[Any] | None = None,
-    ) -> "VerificationReport":
-        return cls(
-            is_verified=is_verified,
-            confidence=confidence,
-            issues=issues or [],
-            details={},
-            verified_passages=passages,
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "is_verified": self.is_verified,
-            "confidence": self.confidence,
-            "issues": self.issues,
-            "details": self.details,
-            "verified_passages_count": len(self.verified_passages),
-        }
-
-
 class CollectionAgent(ABC):
     """
     Abstract base class for collection-aware RAG agents.
@@ -237,32 +121,12 @@ class CollectionAgent(ABC):
     5. run_verification     - Verify candidates
     6. generate_answer      - Generate answer from verified passages
     7. assemble_citations   - Build citation references
-
-    Post-generation checks (in order):
-    a. strict_grounding_violation   - exact_quote_verifier
-    b. source_attribution_violation - source_attribution_verifier
-    c. speculative_answer           - groundedness_judge
-    d. misattributed_quran_text     - detect_misattributed_quran
-    e. missing_requested_evidence   - detect_missing_requested_evidence
-    f. answer_truncated             - _is_answer_truncated
-
-    Auto-healing:
-    - Fetches Quran passages for unresolved sources/quotes
-    - Normalizes verse refs (e.g. "المائدة: 82" → "المائدة:82")
-
-    Retrieval safety:
-    - retrieve_candidates() is bounded by _RETRIEVAL_TIMEOUT_SECONDS (8s)
-    - TimeoutError → retrieval_timeout issue + abstain path
-
-    Subclasses MUST define:
-        - COLLECTION: str (Qdrant collection name)
-        - name: str (agent identifier)
     """
 
     name: str = "collection_agent"
     COLLECTION: str = ""
 
-    def __init__(self, config: CollectionAgentConfig | None = None) -> None:
+    def __init__(self, config: Optional[CollectionAgentConfig] = None) -> None:
         self.config = config or CollectionAgentConfig(
             collection_name=self.COLLECTION,
         )
@@ -271,37 +135,37 @@ class CollectionAgent(ABC):
     def query_intake(self, query: str) -> str: ...
 
     @abstractmethod
-    def classify_intent(self, query: str) -> IntentLabel: ...
+    def classify_intent(self, query: str) -> Intent: ...
 
     @abstractmethod
-    async def retrieve_candidates(self, query: str) -> list[dict]: ...
+    async def retrieve_candidates(self, query: str) -> List[Dict[str, Any]]: ...
 
     @abstractmethod
     async def rerank_candidates(
-        self, query: str, candidates: list[dict]
-    ) -> list[dict]: ...
+        self, query: str, candidates: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]: ...
 
     @abstractmethod
     async def run_verification(
-        self, query: str, candidates: list[dict]
+        self, query: str, candidates: List[Dict[str, Any]]
     ) -> VerificationReport: ...
 
     @abstractmethod
     async def generate_answer(
-        self, query: str, verified_passages: list[dict], language: str
+        self, query: str, verified_passages: List[Dict[str, Any]], language: str
     ) -> str: ...
 
     @abstractmethod
-    def assemble_citations(self, passages: list[dict]) -> list[Citation]: ...
+    def assemble_citations(self, passages: List[Dict[str, Any]]) -> List[Citation]: ...
 
     # ==========================================
     # Shared Helpers
     # ==========================================
 
     @staticmethod
-    def _deduplicate_passages(passages: list[dict]) -> list[dict]:
-        seen: set[int] = set()
-        deduped: list[dict] = []
+    def _deduplicate_passages(passages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        seen: Set[int] = set()
+        deduped: List[Dict[str, Any]] = []
         for p in passages:
             content_hash = hash(p.get("content", "")[:200])
             if content_hash not in seen:
@@ -311,6 +175,14 @@ class CollectionAgent(ABC):
 
     @staticmethod
     def _load_shared_preamble() -> str:
+        try:
+            from src.config import PROMPTS_DIR
+            preamble_path = PROMPTS_DIR / "_shared_preamble.txt"
+            if preamble_path.exists():
+                return preamble_path.read_text(encoding="utf-8").strip()
+        except ImportError:
+            pass
+        
         try:
             with open("prompts/_shared_preamble.txt", encoding="utf-8") as f:
                 return f.read().strip()
@@ -330,14 +202,14 @@ class CollectionAgent(ABC):
     async def run(
         self,
         raw_question: str,
-        meta: dict | None = None,
+        meta: Optional[Dict[str, Any]] = None,
     ) -> AgentOutput:
         """Execute the full RAG pipeline end-to-end."""
         from src.generation.policies.answer_policy import AnswerMode, AnswerPolicy
 
         meta = meta or {}
         language = meta.get("language", "ar")
-        timing: dict[str, Any] = {}
+        timing: Dict[str, Any] = {}
 
         # Step 1: Query intake
         t0 = time.perf_counter()
@@ -350,7 +222,7 @@ class CollectionAgent(ABC):
         timing["classification_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 3: Retrieve candidates (bounded by timeout)
-        retrieval_issues: list[dict] = []
+        retrieval_issues: List[Dict[str, Any]] = []
         t0 = time.perf_counter()
         try:
             candidates = await asyncio.wait_for(
@@ -389,7 +261,7 @@ class CollectionAgent(ABC):
         verification = await self.run_verification(normalized, ranked)
         timing["verification_ms"] = int((time.perf_counter() - t0) * 1000)
 
-        # Attach retrieval issues to verification (before policy gate)
+        # Attach retrieval issues to verification
         verification.issues.extend(retrieval_issues)
 
         # Track filtered evidence
@@ -434,8 +306,8 @@ class CollectionAgent(ABC):
                 answer=abstain_msg,
                 citations=[],
                 metadata={
-                    "intent": intent.value,
-                    "sub_intent": intent.value,
+                    "intent": intent.value if isinstance(intent, Intent) else intent,
+                    "sub_intent": intent.value if isinstance(intent, Intent) else intent,
                     "collection": self.config.collection_name,
                     "answer_mode": "abstain",
                     "retrieved": len(candidates),
@@ -459,7 +331,7 @@ class CollectionAgent(ABC):
                 ),
                 citations=[],
                 metadata={
-                    "intent": intent.value,
+                    "intent": intent.value if isinstance(intent, Intent) else intent,
                     "collection": self.config.collection_name,
                     "answer_mode": "clarify",
                     "retrieved": len(candidates),
@@ -482,13 +354,13 @@ class CollectionAgent(ABC):
         timing["generation_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # ==========================================
-        # Post-generation Checks (lazy imports — avoid circular)
+        # Post-generation Checks (Canonical Paths)
         # ==========================================
-        from src.verifiers.exact_quote import exact_quote_verifier
-        from src.verifiers.groundedness_judge import groundedness_judge
-        from src.verifiers.misattribution import detect_misattributed_quran
-        from src.verifiers.missing_evidence import detect_missing_requested_evidence
-        from src.verifiers.source_attribution import source_attribution_verifier
+        from src.verification.checks.exact_quote import exact_quote_verifier
+        from src.verification.checks.groundedness_judge import groundedness_judge
+        from src.verification.checks.misattribution import detect_misattributed_quran
+        from src.verification.checks.missing_evidence import detect_missing_requested_evidence
+        from src.verification.checks.source_attribution import source_attribution_verifier
 
         # a. Strict Grounding Check
         quote_eval = await exact_quote_verifier.verify(
@@ -542,18 +414,10 @@ class CollectionAgent(ABC):
             verification.confidence = min(verification.confidence, 0.70)
 
         # ==========================================
-        # Auto-Healing for Quran (Source Reference + Text Quote)
+        # Auto-Healing for Quran
         # ==========================================
-        invalid_sources = (
-            source_eval.details.get("invalid_sources", [])
-            if not source_eval.passed
-            else []
-        )
-        failed_quotes = (
-            quote_eval.details.get("failed_quotes", [])
-            if not quote_eval.passed
-            else []
-        )
+        invalid_sources = source_eval.details.get("invalid_sources", []) if not source_eval.passed else []
+        failed_quotes = quote_eval.details.get("failed_quotes", []) if not quote_eval.passed else []
 
         if invalid_sources or failed_quotes:
             from src.infrastructure.database import get_sync_session
@@ -561,133 +425,65 @@ class CollectionAgent(ABC):
             from src.quran.verse_retrieval import VerseRetrievalEngine
 
             def fetch_quran_healing():
-                new_passages: list[dict] = []
+                new_passages: List[Dict[str, Any]] = []
                 rem_sources = list(invalid_sources)
                 rem_quotes = list(failed_quotes)
 
                 with get_sync_session() as session:
                     engine = VerseRetrievalEngine(session)
                     validator = QuotationValidator(session)
-
                     new_loop = asyncio.new_event_loop()
                     try:
                         asyncio.set_event_loop(new_loop)
-
                         for src in invalid_sources:
                             normalized_src = _normalize_source_ref(str(src))
                             try:
-                                v_info = new_loop.run_until_complete(
-                                    engine.lookup(
-                                        normalized_src,
-                                        include_translation=False,
-                                    )
-                                )
-                                verses = (
-                                    v_info
-                                    if isinstance(v_info, list)
-                                    else [v_info]
-                                )
-                                added = False
+                                v_info = new_loop.run_until_complete(engine.lookup(normalized_src))
+                                verses = v_info if isinstance(v_info, list) else [v_info]
                                 for v in verses:
-                                    new_passages.append(
-                                        {
-                                            "id": (
-                                                f"quran_{v['surah_number']}_"
-                                                f"{v['ayah_number']}"
-                                            ),
-                                            "content": v["text_uthmani"],
-                                            "metadata": {
-                                                "book": "القرآن الكريم",
-                                                "source": f"سورة {v.get('surah_name_ar', '')}",
-                                                "chapter": v.get("surah_name_ar", ""),
-                                            },
+                                    new_passages.append({
+                                        "id": f"quran_{v['surah_number']}_{v['ayah_number']}",
+                                        "content": v["text_uthmani"],
+                                        "metadata": {
+                                            "book": "القرآن الكريم",
+                                            "source": f"سورة {v.get('surah_name_ar', '')}",
                                         }
-                                    )
-                                    added = True
-                                if added and src in rem_sources:
+                                    })
+                                if verses and src in rem_sources:
                                     rem_sources.remove(src)
                             except Exception:
-                                logger.warning(
-                                    "quran_healing_lookup_failed for %s (normalized: %s)",
-                                    src,
-                                    normalized_src,
-                                    exc_info=True,
-                                )
-
+                                pass
+                        
                         for q_text in failed_quotes:
                             try:
-                                val_res = new_loop.run_until_complete(
-                                    validator.validate(str(q_text))
-                                )
-                                if (
-                                    val_res.get("is_quran")
-                                    and val_res.get("matched_ayah")
-                                ):
+                                val_res = new_loop.run_until_complete(validator.validate(str(q_text)))
+                                if val_res.get("is_quran") and val_res.get("matched_ayah"):
                                     ayah = val_res["matched_ayah"]
-                                    new_passages.append(
-                                        {
-                                            "id": (
-                                                f"quran_{ayah['surah_number']}_"
-                                                f"{ayah['ayah_number']}"
-                                            ),
-                                            "content": ayah["text_uthmani"],
-                                            "metadata": {
-                                                "book": "القرآن الكريم",
-                                                "source": f"سورة {ayah.get('surah_name_ar', ayah.get('surah_name_en', ''))}",
-                                                "chapter": ayah.get(
-                                                    "surah_name_ar",
-                                                    ayah.get("surah_name_en", ""),
-                                                ),
-                                            },
-                                        }
-                                    )
+                                    new_passages.append({
+                                        "id": f"quran_{ayah['surah_number']}_{ayah['ayah_number']}",
+                                        "content": ayah["text_uthmani"],
+                                        "metadata": {"book": "القرآن الكريم"}
+                                    })
                                     if q_text in rem_quotes:
                                         rem_quotes.remove(q_text)
                             except Exception:
-                                logger.warning(
-                                    "quran_healing_validate_failed for %s",
-                                    q_text,
-                                    exc_info=True,
-                                )
+                                pass
                     finally:
                         new_loop.close()
-
                 return new_passages, rem_sources, rem_quotes
 
             try:
-                t0 = time.perf_counter()
-                new_passages, rem_sources, rem_quotes = (
-                    await asyncio.to_thread(fetch_quran_healing)
-                )
-                timing["healing_ms"] = int((time.perf_counter() - t0) * 1000)
-
-                if new_passages:
-                    existing_texts = {
-                        p.get("content", "")
-                        for p in verification.verified_passages
-                    }
-                    added_new = False
-                    for np in new_passages:
-                        if np["content"] not in existing_texts:
+                new_ps, rs, rq = await asyncio.to_thread(fetch_quran_healing)
+                if new_ps:
+                    existing = {p.get("content", "") for p in verification.verified_passages}
+                    for np in new_ps:
+                        if np["content"] not in existing:
                             verification.verified_passages.append(np)
-                            existing_texts.add(np["content"])
-                            added_new = True
-
-                    if added_new:
-                        if not rem_sources:
-                            verification.issues = [
-                                i for i in verification.issues
-                                if i.get("type") != "source_attribution_violation"
-                            ]
-                        if not rem_quotes:
-                            verification.issues = [
-                                i for i in verification.issues
-                                if i.get("type") != "strict_grounding_violation"
-                            ]
+                            existing.add(np["content"])
             except Exception:
                 logger.warning("quran_healing_error", exc_info=True)
 
-        # Step 8: Assemble citations (needed before misattribution check)
+        # Final Citation Assembly
         citations = self.assemble_citations(verification.verified_passages)
 
         # d. Misattributed Quran Check
@@ -697,137 +493,36 @@ class CollectionAgent(ABC):
             exact_quote_verifier=exact_quote_verifier,
         )
         if misattributed:
-            verification.issues.append(
-                {
-                    "type": "misattributed_quran_text",
-                    "message": (
-                        "Answer contains Quranic text attributed to "
-                        "non-Quran source."
-                    ),
-                    "details": {"segments": misattributed},
-                }
-            )
+            verification.issues.append({"type": "misattributed_quran_text", "segments": misattributed})
             verification.confidence = min(verification.confidence, 0.80)
 
-        # e. Missing Requested Evidence Check
-        missing_ev = detect_missing_requested_evidence(
-            query=raw_question,  # raw — patterns match pre-normalized Arabic
-            answer=answer,
-        )
+        # e. Missing Requested Evidence
+        missing_ev = detect_missing_requested_evidence(query=raw_question, answer=answer)
         if missing_ev:
-            verification.issues.append(
-                {
-                    "type": "missing_requested_evidence",
-                    "message": (
-                        "Answer does not satisfy explicit evidence "
-                        "request in query."
-                    ),
-                    "details": {"violations": missing_ev},
-                }
-            )
+            verification.issues.append({"type": "missing_requested_evidence", "violations": missing_ev})
             verification.confidence = min(verification.confidence, 0.85)
 
-        # f. Truncation Check
-        if _is_answer_truncated(answer):
-            verification.issues.append(
-                {
-                    "type": "answer_truncated",
-                    "message": (
-                        "Generated answer appears to be cut mid-sentence "
-                        "(max_tokens likely reached)."
-                    ),
-                }
-            )
-            verification.confidence = min(verification.confidence, 0.75)
-
-        # ==========================================
         # Build output metadata
-        # ==========================================
-        output_meta: dict[str, Any] = {
-            "intent": intent.value,
-            "sub_intent": intent.value,
+        output_meta: Dict[str, Any] = {
+            "intent": intent.value if isinstance(intent, Intent) else intent,
             "collection": self.config.collection_name,
             "answer_mode": "answer",
-            "retrieved": len(candidates),
-            "verified": len(verification.verified_passages),
             "is_verified": verification.is_verified,
             "verification_confidence": verification.confidence,
             "verification_issues": verification.issues,
             "timing": timing,
         }
 
-        # Routing hints for orchestrator (consumed by multi-agent layer)
-        if missing_ev:
-            output_meta["needs_quran_evidence"] = any(
-                v["type"] == "missing_quran_evidence" for v in missing_ev
-            )
-            output_meta["needs_hadith_evidence"] = any(
-                v["type"] == "missing_hadith_evidence" for v in missing_ev
-            )
-
-        
-        # Build citation_chunks from verified_passages
-        citation_chunks: list[dict[str, Any]] = []
+        # Build citation_chunks
+        citation_chunks: List[Dict[str, Any]] = []
         for p in verification.verified_passages:
-            # p متوقع dict
             md = p.get("metadata", {}) or {}
-
-            citation_chunks.append(
-                {
-                    "chunk_id": str(p.get("id", "")),  # لو عندك id من Qdrant، وإلا سيبه فاضي
-                    "source_id": str(md.get("book_id", "")),
-                    "collection": md.get("collection") or self.config.collection_name,
-                    "book_id": md.get("book_id"),
-                    "page_number": md.get("page_number"),
-                    "section_title": md.get("section_title"),
-                    "text": p.get("content") or p.get("text", ""),
-                    "metadata": {
-                        "author": md.get("author"),
-                        "category": md.get("category"),
-                        "content_type": md.get("content_type"),
-                        "raw_metadata": md,
-                    },
-                }
-            )
-        logger.debug(
-            "collection_agent.citation_chunks_built",
-            chunk_count=len(citation_chunks),
-        )
-        # ==========================================
-        # Determine requires_human_review
-        # ==========================================
-        requires_human_review = (
-            len(verification.verified_passages) == 0
-            or not verification.is_verified
-        )
-
-        # Seerah + source attribution → always escalate
-        has_source_violation = any(
-            isinstance(issue, dict)
-            and issue.get("type") == "source_attribution_violation"
-            for issue in verification.issues
-        )
-        if has_source_violation and intent in {
-            IntentLabel.SeerahEvent,
-            IntentLabel.SeerahMilad,
-        }:
-            requires_human_review = True
-
-        # Misattributed Quran → always escalate
-        if any(
-            isinstance(issue, dict)
-            and issue.get("type") == "misattributed_quran_text"
-            for issue in verification.issues
-        ):
-            requires_human_review = True
-
-        # Truncated answer → always escalate
-        if any(
-            isinstance(issue, dict)
-            and issue.get("type") == "answer_truncated"
-            for issue in verification.issues
-        ):
-            requires_human_review = True
+            citation_chunks.append({
+                "chunk_id": str(p.get("id", "")),
+                "source_id": str(md.get("book_id", "")),
+                "text": p.get("content") or p.get("text", ""),
+                "metadata": md,
+            })
 
         return AgentOutput(
             answer=answer,
@@ -835,11 +530,8 @@ class CollectionAgent(ABC):
             citation_chunks=citation_chunks,
             metadata=output_meta,
             confidence=verification.confidence,
-            requires_human_review=requires_human_review,
+            requires_human_review=not verification.is_verified or verification.confidence < 0.7,
         )
 
     def __repr__(self) -> str:
-        return (
-            f"<CollectionAgent: {self.name}, "
-            f"collection={self.config.collection_name}>"
-        )
+        return f"<CollectionAgent: {self.name}, collection={self.config.collection_name}>"

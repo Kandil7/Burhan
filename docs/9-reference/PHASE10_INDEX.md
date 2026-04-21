@@ -168,7 +168,7 @@ print(f"Dense weight: {strategy.dense_weight}")
 ### 3. Using Verification Suite
 
 ```python
-from src.verifiers.suite_builder import build_verification_suite_for
+from src.verification.suite_builder import build_verification_suite_for
 
 suite = build_verification_suite_for("fiqh_agent")
 print(f"Checks: {[c.name for c in suite.checks]}")

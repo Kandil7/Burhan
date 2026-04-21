@@ -444,7 +444,7 @@ from src.verification.trace import (
 | `school_consistency.py` | Madhhab consistency |
 | `groundedness_judge.py` | Grounding check |
 
-**Usage Note**: All collection agents import from `src.verifiers/`.
+**Usage Note**: All collection agents import from `src.verification/`.
 
 ---
 

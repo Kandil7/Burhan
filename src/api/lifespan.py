@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
 
     # ── 1. Verification Suite ─────────────────────────────────────────────────
-    from src.verifiers.suite_builder import register_all_checks
+    from src.verification.suite_builder import register_all_checks
 
     register_all_checks()
 

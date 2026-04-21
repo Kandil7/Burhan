@@ -10,7 +10,6 @@ from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationCheck,
     VerificationReport,
@@ -32,7 +31,6 @@ __all__ = [
     # Base classes
     "CollectionAgent",
     "CollectionAgentConfig",
-    "IntentLabel",
     "RetrievalStrategy",
     "VerificationSuite",
     "VerificationCheck",

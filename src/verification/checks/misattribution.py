@@ -24,7 +24,7 @@ import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.verifiers.exact_quote import ExactQuoteVerifier
+    from src.verification.checks.exact_quote import ExactQuoteVerifier
 
 logger = logging.getLogger(__name__)
 

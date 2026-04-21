@@ -2,15 +2,19 @@
 """Builds and runs verification suites for different agents."""
 
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Type
 
-from src.agents.collection.base import (
+from src.verification.schemas import (
     VerificationCheck,
     VerificationSuite,
     VerificationReport,
+    VerificationStatus,
+    CheckResult,
 )
 
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Fiqh Agent Verification Suite
@@ -156,7 +160,7 @@ def register_all_checks() -> None:
     """Register all available verification checks."""
     # 1. High-Integrity Domain Checks (Quote Verification)
     try:
-        from src.verifiers.fiqh_checks import QuoteValidator, EvidenceSufficiency
+        from src.verification.checks.fiqh_checks import QuoteValidator, EvidenceSufficiency
 
         register_check("quote_validator", QuoteValidator)
         register_check("evidence_sufficiency", EvidenceSufficiency)
@@ -165,7 +169,7 @@ def register_all_checks() -> None:
 
     # 2. Hadith Grading
     try:
-        from src.verifiers.hadith_grade import HadithGradeVerifier
+        from src.verification.checks.hadith_grade import HadithGradeVerifier
 
         # Register both aliases to support hadith.py and HADITH_VERIFICATION_SUITE
         register_check("hadith_grade", HadithGradeVerifier)
@@ -175,7 +179,7 @@ def register_all_checks() -> None:
 
     # 3. Temporal Consistency
     try:
-        from src.verifiers.temporal_consistency import TemporalConsistencyVerifier
+        from src.verification.checks.temporal_consistency import TemporalConsistencyVerifier
 
         register_check("temporal_consistency", TemporalConsistencyVerifier)
     except ImportError:
@@ -183,7 +187,7 @@ def register_all_checks() -> None:
 
     # 4. Global/Generic Checks (can override or supplement)
     try:
-        from src.verifiers.exact_quote import ExactQuoteVerifier
+        from src.verification.checks.exact_quote import ExactQuoteVerifier
 
         # Only register if not already registered by domain checks
         if "quote_validator" not in CHECK_IMPLEMENTATIONS:
@@ -192,7 +196,7 @@ def register_all_checks() -> None:
         pass
 
     try:
-        from src.verifiers.source_attribution import SourceAttributionVerifier
+        from src.verification.checks.source_attribution import SourceAttributionVerifier
 
         if "source_attributor" not in CHECK_IMPLEMENTATIONS:
             register_check("source_attributor", SourceAttributionVerifier)
@@ -200,7 +204,7 @@ def register_all_checks() -> None:
         pass
 
     try:
-        from src.verifiers.contradiction import ContradictionVerifier
+        from src.verification.checks.contradiction import ContradictionVerifier
 
         if "contradiction_detector" not in CHECK_IMPLEMENTATIONS:
             register_check("contradiction_detector", ContradictionVerifier)
@@ -208,7 +212,7 @@ def register_all_checks() -> None:
         pass
 
     try:
-        from src.verifiers.evidence_sufficiency import EvidenceSufficiencyVerifier
+        from src.verification.checks.evidence_sufficiency import EvidenceSufficiencyVerifier
 
         if "evidence_sufficiency" not in CHECK_IMPLEMENTATIONS:
             register_check("evidence_sufficiency", EvidenceSufficiencyVerifier)
@@ -226,7 +230,7 @@ def register_check(name: str, check_class: type) -> None:
     CHECK_IMPLEMENTATIONS[name] = check_class
 
 
-def get_check_implementation(name: str) -> type | None:
+def get_check_implementation(name: str) -> Optional[type]:
     """Get a check implementation by name.
 
     Args:
@@ -265,11 +269,6 @@ def build_verification_suite_for(agent_name: str) -> VerificationSuite:
 
     Returns:
         VerificationSuite configured for the agent
-
-    Examples:
-        >>> suite = build_verification_suite_for('fiqh_agent')
-        >>> len(suite.checks)
-        4
     """
     # Look up the suite in the mapping
     suite = AGENT_SUITE_MAP.get(agent_name)
@@ -290,7 +289,7 @@ def run_verification_suite(
     initial_count = len(candidates)
     verified_passages: list[dict] = list(candidates)
     all_issues: list[str] = []
-    check_results: Dict[str, Any] = {}
+    check_results: Dict[str, CheckResult] = {}
 
     for check in suite.checks:
         if not check.enabled:
@@ -301,7 +300,7 @@ def run_verification_suite(
 
         if check_class is None:
             # Stub: treat as passed if no implementation
-            result = _run_stub_check(check.name, query, verified_passages)
+            result = _run_stub_result(check.name, query, verified_passages)
         else:
             # Run the actual check
             result = _run_check(check_class, check.name, query, verified_passages)
@@ -309,27 +308,29 @@ def run_verification_suite(
         # Record results
         check_results[check.name] = result
 
-        if not result["passed"]:
-            issue = f"Check '{check.name}' failed: {result.get('message', 'Unknown error')}"
+        if not result.passed:
+            issue = f"Check '{check.name}' failed: {result.message or 'Unknown error'}"
             all_issues.append(issue)
 
             # Handle fail_policy
             if check.fail_policy == "abstain":
                 return VerificationReport(
+                    query=query,
                     is_verified=False,
                     confidence=0.0,
+                    status=VerificationStatus.ABSTAINED,
                     issues=all_issues,
-                    details=check_results,
+                    check_results=check_results,
                     verified_passages=[],
                 )
             elif check.fail_policy == "warn":
                 pass
 
         # If fail_fast and check failed, stop processing
-        if suite.fail_fast and not result["passed"]:
+        if suite.fail_fast and not result.passed:
             break
 
-    # Final Count Logic: If one check filtered out passages, verified_passages would be smaller
+    # Final Count Logic
     final_count = len(verified_passages)
 
     # Calculate overall verification status
@@ -342,51 +343,45 @@ def run_verification_suite(
     if all_issues:
         confidence -= len(all_issues) * 0.2
 
-    # Penalize for lost evidence (if count dropped, someone didn't pass)
+    # Penalize for lost evidence
     if initial_count > 0 and final_count < initial_count:
         drop_ratio = (initial_count - final_count) / initial_count
         confidence -= drop_ratio * 0.3
         all_issues.append(f"Evidence reduced from {initial_count} to {final_count} during verification.")
 
     return VerificationReport(
+        query=query,
         is_verified=is_verified,
         confidence=max(0.0, round(confidence, 3)),
+        status=VerificationStatus.PASSED if is_verified else VerificationStatus.FAILED,
         issues=all_issues,
-        details=check_results,
+        check_results=check_results,
         verified_passages=verified_passages,
     )
 
 
-def _run_stub_check(
+def _run_stub_result(
     check_name: str,
     query: str,
     passages: list[dict],
-) -> Dict[str, Any]:
-    """Run a stub check when no implementation exists.
-
-    Args:
-        check_name: Name of the check
-        query: Query string
-        passages: List of passage dictionaries
-
-    Returns:
-        Dict with check results
-    """
-    # Basic stub: pass if there are passages
+) -> CheckResult:
+    """Run a stub check when no implementation exists."""
     if passages:
-        return {
-            "passed": True,
-            "confidence": 0.8,
-            "message": f"Stub check '{check_name}' passed",
-            "check_name": check_name,
-        }
+        return CheckResult(
+            check_name=check_name,
+            status=VerificationStatus.PASSED,
+            passed=True,
+            confidence=0.8,
+            message=f"Stub check '{check_name}' passed",
+        )
     else:
-        return {
-            "passed": False,
-            "confidence": 0.0,
-            "message": f"Stub check '{check_name}' failed: no passages",
-            "check_name": check_name,
-        }
+        return CheckResult(
+            check_name=check_name,
+            status=VerificationStatus.FAILED,
+            passed=False,
+            confidence=0.0,
+            message=f"Stub check '{check_name}' failed: no passages",
+        )
 
 
 def _run_check(
@@ -394,18 +389,8 @@ def _run_check(
     check_name: str,
     query: str,
     passages: list[dict],
-) -> Dict[str, Any]:
-    """Run an actual check implementation.
-
-    Args:
-        check_class: Check class implementation
-        check_name: Name of the check
-        query: Query string
-        passages: List of passage dictionaries
-
-    Returns:
-        Dict with check results
-    """
+) -> CheckResult:
+    """Run an actual check implementation."""
     try:
         # Instantiate the check
         checker = check_class()
@@ -417,29 +402,19 @@ def _run_check(
                 context={"query": query, "passages": passages},
             )
         )
-
-        return {
-            "passed": result.passed,
-            "confidence": result.confidence,
-            "message": result.message,
-            "details": result.details,
-            "check_name": check_name,
-        }
+        return result
     except Exception as e:
-        return {
-            "passed": False,
-            "confidence": 0.0,
-            "message": f"Check '{check_name}' error: {str(e)}",
-            "check_name": check_name,
-        }
+        return CheckResult(
+            check_name=check_name,
+            status=VerificationStatus.FAILED,
+            passed=False,
+            confidence=0.0,
+            message=f"Check '{check_name}' error: {str(e)}",
+        )
 
 
 def _run_coroutine_sync(coro):
-    """
-    Run an async coroutine from sync code safely.
-
-    If already inside an event loop, run coroutine in a dedicated thread.
-    """
+    """Safely run async coroutine from sync code."""
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -450,33 +425,15 @@ def _run_coroutine_sync(coro):
         return future.result()
 
 
-# =============================================================================
-# Convenience Functions
-# =============================================================================
-
-
 def create_suite_for_agent(
     agent_name: str,
     checks: List[VerificationCheck],
     fail_fast: bool = True,
 ) -> VerificationSuite:
-    """Create a custom verification suite for an agent.
-
-    Args:
-        agent_name: Name of the agent
-        checks: List of verification checks
-        fail_fast: Whether to stop on first failure
-
-    Returns:
-        Custom VerificationSuite
-    """
+    """Create a custom verification suite for an agent."""
     return VerificationSuite(checks=checks, fail_fast=fail_fast)
 
 
 def list_available_suites() -> List[str]:
-    """List all available verification suite names.
-
-    Returns:
-        List of suite names
-    """
+    """List all available verification suite names."""
     return list(AGENT_SUITE_MAP.keys())

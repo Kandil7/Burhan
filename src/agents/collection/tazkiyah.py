@@ -12,10 +12,10 @@ from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationReport,
 )
+from src.domain.intents import Intent
 
 
 def _normalize_arabic(text: str) -> str:
@@ -52,7 +52,8 @@ class TazkiyahCollectionAgent(CollectionAgent):
         llm_client=None,
     ) -> None:
         if config is None:
-            from src.verifiers.suite_builder import build_verification_suite_for
+            from src.verification.suite_builder import build_verification_suite_for
+
             config = CollectionAgentConfig(
                 collection_name=self.COLLECTION,
                 strategy=self.DEFAULT_STRATEGY,
@@ -70,14 +71,15 @@ class TazkiyahCollectionAgent(CollectionAgent):
     def query_intake(self, query: str) -> str:
         return _normalize_arabic(query)
 
-    def classify_intent(self, query: str) -> IntentLabel:
+    def classify_intent(self, query: str) -> Intent:
         if any(k in query for k in ["أخلاق", "خُلُق", "ادب"]):
-            return IntentLabel.TazkiyahAkhlaq
-        return IntentLabel.TazkiyahSuluk
+            return Intent.ISLAMIC_TAZKIYAH
+        return Intent.ISLAMIC_TAZKIYAH
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         if not self.vector_store or getattr(self, "embedding_model", None) is None:
             import logging
+
             logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")
             return []
         top_k = self.strategy.top_k if self.strategy else 10
@@ -94,6 +96,7 @@ class TazkiyahCollectionAgent(CollectionAgent):
             ]
         except Exception as e:
             import logging
+
             logging.getLogger(self.__class__.__name__).error(f"Retrieval failed: {e}")
             return []
 
@@ -129,6 +132,7 @@ class TazkiyahCollectionAgent(CollectionAgent):
                 return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
+
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
                 pass
         return formatted
