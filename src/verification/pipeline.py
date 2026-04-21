@@ -2,8 +2,12 @@
 """Pipeline for running multiple verifiers."""
 
 from typing import List, Optional, Dict, Any
-from .base import BaseVerifier, VerificationResult, VerificationReport, VerifierType
+from .schemas import CheckResult, VerificationReport, VerificationStatus, VerifierType
+from .base import BaseVerifier
 from .policies import VerificationPolicy, VerificationLevel
+
+# Alias for backward compatibility
+VerificationResult = CheckResult
 
 
 class VerifierPipeline:
@@ -149,14 +153,14 @@ def create_verification_pipeline(
     Returns:
         Configured VerifierPipeline
     """
-    from .exact_quote import exact_quote_verifier
-    from .hadith_grade import hadith_grade_verifier
-    from .source_attribution import source_attribution_verifier
-    from .evidence_sufficiency import evidence_sufficiency_verifier
-    from .contradiction import contradiction_verifier
-    from .school_consistency import school_consistency_verifier
-    from .temporal_consistency import temporal_consistency_verifier
-    from .groundedness_judge import groundedness_judge
+    from .checks.exact_quote import exact_quote_verifier
+    from .checks.hadith_grade import hadith_grade_verifier
+    from .checks.source_attribution import source_attribution_verifier
+    from .checks.evidence_sufficiency import evidence_sufficiency_verifier
+    from .checks.contradiction import contradiction_verifier
+    from .checks.school_consistency import school_consistency_verifier
+    from .checks.temporal_consistency import temporal_consistency_verifier
+    from .checks.groundedness_judge import groundedness_judge
 
     pipeline = VerifierPipeline(policy=VerificationPolicy(level=level))
 
