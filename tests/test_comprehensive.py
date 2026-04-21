@@ -169,7 +169,7 @@ class TestChatbotAgent:
     @pytest.mark.asyncio
     async def test_greeting_response(self):
         """Test greeting responses."""
-        from src.agents.chatbot_agent import ChatbotAgent
+        from src.agents.chatbot_agent import ChatbotAgent  # Keep - this is v1 but used in tests
         from src.agents.base import AgentInput
 
         agent = ChatbotAgent()
@@ -184,7 +184,7 @@ class TestChatbotAgent:
     @pytest.mark.asyncio
     async def test_english_greeting(self):
         """Test English greeting."""
-        from src.agents.chatbot_agent import ChatbotAgent
+        from src.agents.chatbot_agent import ChatbotAgent  # Keep - this is v1 but used in tests
         from src.agents.base import AgentInput
 
         agent = ChatbotAgent()
@@ -198,7 +198,7 @@ class TestChatbotAgent:
     @pytest.mark.asyncio
     async def test_thank_you_response(self):
         """Test thank you response."""
-        from src.agents.chatbot_agent import ChatbotAgent
+        from src.agents.chatbot_agent import ChatbotAgent  # Keep - this is v1 but used in tests
         from src.agents.base import AgentInput
 
         agent = ChatbotAgent()

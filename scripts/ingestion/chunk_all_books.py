@@ -62,6 +62,7 @@ logger = get_script_logger("chunk-all-books")
 
 # ── Checkpoint Management ────────────────────────────────────────────────
 
+
 def load_checkpoint() -> dict[str, Any]:
     """Load checkpoint file with already-processed book IDs."""
     if CHECKPOINT_FILE.exists():
@@ -79,6 +80,7 @@ def save_checkpoint(checkpoint: dict[str, Any]) -> None:
 
 
 # ── Metadata Loading ─────────────────────────────────────────────────────
+
 
 def load_books_metadata() -> tuple[list[dict], dict[int, dict]]:
     """
@@ -99,6 +101,7 @@ def load_books_metadata() -> tuple[list[dict], dict[int, dict]]:
 
 # ── Chunking Pipeline ────────────────────────────────────────────────────
 
+
 def chunk_book_file(
     book_entry: dict[str, Any],
     chunker: Any,
@@ -113,7 +116,7 @@ def chunk_book_file(
     Returns:
         Tuple of (chunks_as_dicts, file_size_bytes).
     """
-    from src.knowledge.hierarchical_chunker import BookMetadata
+    from src.indexing.chunking.hierarchical_chunker import BookMetadata
 
     book_id = book_entry["id"]
     file_name = book_entry.get("file")
@@ -179,8 +182,7 @@ def run_chunking(
         checkpoint = load_checkpoint()
         processed_ids = set(checkpoint.get("processed_books", []))
         books_to_process = [b for b in books_to_process if b["id"] not in processed_ids]
-        logger.info(f"Resuming: {len(processed_ids)} books already processed, "
-                     f"{len(books_to_process)} remaining")
+        logger.info(f"Resuming: {len(processed_ids)} books already processed, {len(books_to_process)} remaining")
 
     # Apply limit
     if limit > 0:
@@ -195,7 +197,8 @@ def run_chunking(
     ensure_dir(OUTPUT_FILE.parent)
 
     # Initialize chunker
-    from src.knowledge.hierarchical_chunker import HierarchicalChunker
+    from src.indexing.chunking.hierarchical_chunker import HierarchicalChunker
+
     chunker = HierarchicalChunker()
 
     # Statistics
@@ -245,7 +248,9 @@ def run_chunking(
                     # Category stats
                     if category not in stats["category_stats"]:
                         stats["category_stats"][category] = {
-                            "books": 0, "chunks": 0, "bytes": 0,
+                            "books": 0,
+                            "chunks": 0,
+                            "bytes": 0,
                         }
                     stats["category_stats"][category]["books"] += 1
                     stats["category_stats"][category]["chunks"] += len(chunks)
@@ -254,9 +259,7 @@ def run_chunking(
                     # Chunk type stats
                     for chunk in chunks:
                         ct = chunk.get("chunk_type", "unknown")
-                        stats["chunk_type_stats"][ct] = (
-                            stats["chunk_type_stats"].get(ct, 0) + 1
-                        )
+                        stats["chunk_type_stats"][ct] = stats["chunk_type_stats"].get(ct, 0) + 1
 
                         # Size distribution
                         cl = chunk.get("content_length", 0)
@@ -301,12 +304,8 @@ def run_chunking(
     elapsed = time.time() - start_time
     stats["elapsed_seconds"] = elapsed
     stats["elapsed_human"] = format_duration(elapsed)
-    stats["books_per_second"] = (
-        stats["books_processed"] / elapsed if elapsed > 0 else 0
-    )
-    stats["avg_chunks_per_book"] = (
-        stats["total_chunks"] / max(stats["books_processed"], 1)
-    )
+    stats["books_per_second"] = stats["books_processed"] / elapsed if elapsed > 0 else 0
+    stats["avg_chunks_per_book"] = stats["total_chunks"] / max(stats["books_processed"], 1)
 
     # Save stats
     with open(STATS_FILE, "w", encoding="utf-8") as f:
@@ -316,6 +315,7 @@ def run_chunking(
 
 
 # ── Report ───────────────────────────────────────────────────────────────
+
 
 def print_report(stats: dict[str, Any]) -> None:
     """Print a formatted statistics report."""
@@ -332,9 +332,7 @@ def print_report(stats: dict[str, Any]) -> None:
     print(f"  Speed:              {stats.get('books_per_second', 0):.1f} books/sec")
 
     print(f"\n  Chunk type distribution:")
-    for ct, count in sorted(
-        stats.get("chunk_type_stats", {}).items(), key=lambda x: -x[1]
-    )[:10]:
+    for ct, count in sorted(stats.get("chunk_type_stats", {}).items(), key=lambda x: -x[1])[:10]:
         print(f"    {ct:20s}: {count:>8,}")
 
     print(f"\n  Chunk size distribution:")
@@ -363,25 +361,34 @@ def print_report(stats: dict[str, Any]) -> None:
 
 # ── CLI ──────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Batch chunk all Shamela books using hierarchical chunking",
     )
     parser.add_argument(
-        "--resume", action="store_true", default=True,
+        "--resume",
+        action="store_true",
+        default=True,
         help="Resume from checkpoint (default: True)",
     )
     parser.add_argument(
-        "--no-resume", action="store_true",
+        "--no-resume",
+        action="store_true",
         help="Start fresh, ignore checkpoint",
     )
     parser.add_argument(
-        "--limit", type=int, default=0,
+        "--limit",
+        type=int,
+        default=0,
         help="Maximum number of books to process (0 = all)",
     )
     parser.add_argument(
-        "--book-id", type=int, nargs="*", default=None,
+        "--book-id",
+        type=int,
+        nargs="*",
+        default=None,
         help="Process specific book IDs only",
     )
     args = parser.parse_args()

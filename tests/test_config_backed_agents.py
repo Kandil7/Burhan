@@ -5,15 +5,16 @@ Tests the complete flow from config loading to routing to orchestration.
 """
 
 import pytest
-from src.config import get_config_manager, AgentConfigManager
-from src.config.loader import load_agent_config, get_all_agent_configs
-from src.application.router.config_router import ConfigRouter, get_config_router
+
+from src.agents.collection import RetrievalStrategy
+from src.application.router.config_router import ConfigRouter
 from src.application.router.orchestration import (
     OrchestrationPattern,
     create_orchestration_plan,
     route_via_decision_tree,
 )
-from src.agents.collection_agent import RetrievalStrategy
+from src.config import get_config_manager
+from src.config.loader import get_all_agent_configs, load_agent_config
 
 
 class TestConfigLoader:

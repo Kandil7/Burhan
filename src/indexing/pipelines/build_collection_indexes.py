@@ -4,11 +4,10 @@ Build Collection Indexes Pipeline.
 Indexes Islamic text collections into vector stores.
 Handles document loading, chunking, embedding generation, and upserting.
 
-TODO:
-- Implement collection indexing pipeline
-- Add support for different collection types (fiqh, hadith, tafsir)
-- Add progress tracking and batching
-- Integrate with data processing pipeline
+NOTE: This is a placeholder module. For actual indexing, use:
+- src/indexing/embeddings/embedding_model.py for embeddings
+- src/indexing/vectorstores/qdrant_store.py for vector storage
+- scripts/data/embed_*.py scripts for batch indexing
 
 Example usage (when implemented):
     from src.indexing.pipelines.build_collection_indexes import build_collection_indexes
@@ -87,7 +86,7 @@ class CollectionIndexer:
         """
         Index multiple collections.
 
-        TODO: Implement full indexing pipeline
+        NOTE: This is a placeholder. Use scripts/data/embed_*.py for actual indexing.
 
         Args:
             collections: List of collection names to index

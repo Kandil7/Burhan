@@ -54,8 +54,8 @@ from scripts.utils import (
 # Ensure src modules are importable
 add_project_root_to_path()
 
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.indexing.vectorstores.qdrant_store import VectorStore
 
 logger = setup_script_logger("seed-mvp-data")
 
@@ -168,14 +168,10 @@ def extract_chunks_from_book(
         content = re.sub(r"\[Footnotes\].*$", "", content, flags=re.DOTALL)
 
         # Split into paragraphs
-        paragraphs = [
-            p.strip() for p in content.split("\n\n") if len(p.strip()) > min_chunk_size
-        ]
+        paragraphs = [p.strip() for p in content.split("\n\n") if len(p.strip()) > min_chunk_size]
 
         if not paragraphs:
-            paragraphs = [
-                p.strip() for p in content.split("\n") if len(p.strip()) > min_chunk_size
-            ]
+            paragraphs = [p.strip() for p in content.split("\n") if len(p.strip()) > min_chunk_size]
 
         chunks: list[str] = []
         selected = random.sample(paragraphs, min(num_chunks, len(paragraphs)))
@@ -259,9 +255,7 @@ async def seed_collection(
 
     # Ensure collection exists
     try:
-        await vector_store.ensure_collection(
-            collection_name, dimension=embedding_model.DIMENSION
-        )
+        await vector_store.ensure_collection(collection_name, dimension=embedding_model.DIMENSION)
     except Exception as e:
         logger.warning("collection_create_warning", collection=collection_name, error=str(e))
 
@@ -271,9 +265,7 @@ async def seed_collection(
     # Embed in batches with progress bar
     total_upserted = 0
 
-    with ProgressBar(
-        total=len(documents), desc=f"Embedding {collection_name}", unit="docs"
-    ) as bar:
+    with ProgressBar(total=len(documents), desc=f"Embedding {collection_name}", unit="docs") as bar:
         for i in range(0, len(documents), batch_size):
             batch = documents[i : i + batch_size]
             texts = [d["content"] for d in batch]
@@ -339,20 +331,22 @@ def build_hadith_docs(target: int) -> list[dict]:
 
             content = " | ".join(content_parts)[:3000]
 
-            docs.append({
-                "chunk_index": i,
-                "content": content,
-                "metadata": {
-                    "type": "hadith",
-                    "book": book,
-                    "num_hadith": row.get("Num_hadith", ""),
-                    "matn": matn[:2000],
-                    "sanad": sanad[:1000],
-                    "sanad_length": row.get("Sanad_Length", ""),
-                    "dataset": "sanadset_368k",
-                    "language": "ar",
-                },
-            })
+            docs.append(
+                {
+                    "chunk_index": i,
+                    "content": content,
+                    "metadata": {
+                        "type": "hadith",
+                        "book": book,
+                        "num_hadith": row.get("Num_hadith", ""),
+                        "matn": matn[:2000],
+                        "sanad": sanad[:1000],
+                        "sanad_length": row.get("Sanad_Length", ""),
+                        "dataset": "sanadset_368k",
+                        "language": "ar",
+                    },
+                }
+            )
 
     return docs
 
@@ -369,15 +363,17 @@ def build_quran_docs(target: int) -> list[dict]:
 
     try:
         import os
+
         db_url = os.environ.get("DATABASE_URL", "postgresql://athar:athar_password@localhost:5432/athar_db")
         # Parse the URL for psycopg2 connection
         from urllib.parse import urlparse
+
         parsed = urlparse(db_url)
         db_conn = psycopg2.connect(
             host=parsed.hostname or "localhost",
             database=parsed.path.lstrip("/") or "athar_db",
             user=parsed.username or "athar",
-            password=parsed.password or "athar_password"
+            password=parsed.password or "athar_password",
         )
         cur = db_conn.cursor()
 
@@ -400,18 +396,20 @@ def build_quran_docs(target: int) -> list[dict]:
             if row[4]:
                 content += f"\nTranslation: {row[4]}"
 
-            docs.append({
-                "chunk_index": i,
-                "content": content[:3000],
-                "metadata": {
-                    "type": "quran_ayah",
-                    "surah_name_en": row[1],
-                    "surah_name_ar": row[0],
-                    "ayah_number": row[2],
-                    "translation": row[4] or "",
-                    "language": "ar",
-                },
-            })
+            docs.append(
+                {
+                    "chunk_index": i,
+                    "content": content[:3000],
+                    "metadata": {
+                        "type": "quran_ayah",
+                        "surah_name_en": row[1],
+                        "surah_name_ar": row[0],
+                        "ayah_number": row[2],
+                        "translation": row[4] or "",
+                        "language": "ar",
+                    },
+                }
+            )
 
         cur.close()
         db_conn.close()
@@ -463,17 +461,19 @@ def build_book_docs(
                 if len(docs) >= target:
                     break
 
-                docs.append({
-                    "chunk_index": len(docs),
-                    "content": chunk[:2000],
-                    "metadata": {
-                        "type": doc_type,
-                        "book": book_name,
-                        "book_id": book_id,
-                        "category": category,
-                        "language": "ar",
-                    },
-                })
+                docs.append(
+                    {
+                        "chunk_index": len(docs),
+                        "content": chunk[:2000],
+                        "metadata": {
+                            "type": doc_type,
+                            "book": book_name,
+                            "book_id": book_id,
+                            "category": category,
+                            "language": "ar",
+                        },
+                    }
+                )
 
     return docs
 
@@ -584,9 +584,7 @@ Examples:
   python scripts/data/seed_mvp_data.py --limit 50
         """,
     )
-    parser.add_argument(
-        "--collections", nargs="+", default=None, help="Collections to seed (default: all)"
-    )
+    parser.add_argument("--collections", nargs="+", default=None, help="Collections to seed (default: all)")
     parser.add_argument("--limit", type=int, default=None, help="Limit docs per collection")
     parser.add_argument("--batch-size", type=int, default=32, help="Embedding batch size")
     args = parser.parse_args()

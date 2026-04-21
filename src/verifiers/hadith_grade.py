@@ -77,18 +77,6 @@ class HadithGradeVerifier(BaseVerifier):
         self._esnad_dir = esnad_dir
         self._original_grader = None
 
-        # Try to load the original hadith grader
-        self._load_original_grader()
-
-    def _load_original_grader(self):
-        """Load the original HadithAuthenticityGrader if available."""
-        try:
-            from src.knowledge.hadith_grader import HadithAuthenticityGrader
-
-            self._original_grader = HadithAuthenticityGrader(esnad_dir=self._esnad_dir)
-        except ImportError:
-            pass
-
     async def verify(
         self,
         claim: str,

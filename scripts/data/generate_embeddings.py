@@ -47,8 +47,8 @@ from scripts.utils import (
 
 add_project_root_to_path()
 
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.indexing.vectorstores.qdrant_store import VectorStore
 from src.config.logging_config import setup_logging
 
 setup_logging()
@@ -177,9 +177,7 @@ def load_documents(collection: str, limit: Optional[int] = None) -> list[dict]:
             logger.info("loading_all_chunks", path=str(all_chunks_file))
             with open(all_chunks_file, "r", encoding="utf-8") as f:
                 all_chunks = json.load(f)
-                documents = [
-                    c for c in all_chunks if c.get("metadata", {}).get("type") == "islamic_book"
-                ]
+                documents = [c for c in all_chunks if c.get("metadata", {}).get("type") == "islamic_book"]
                 logger.info("filtered_chunks", total=len(all_chunks), fiqh=len(documents))
 
     elif collection == "hadith_passages":
@@ -364,12 +362,8 @@ Examples:
         default="all",
         help="Collection to embed (default: all)",
     )
-    parser.add_argument(
-        "--limit", type=int, default=None, help="Limit number of documents to process"
-    )
-    parser.add_argument(
-        "--batch-size", type=int, default=32, help="Batch size for embedding generation"
-    )
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of documents to process")
+    parser.add_argument("--batch-size", type=int, default=32, help="Batch size for embedding generation")
 
     args = parser.parse_args()
 
@@ -385,9 +379,7 @@ Examples:
     import asyncio
 
     try:
-        stats = asyncio.run(
-            generate_embeddings(args.collection, args.limit, args.batch_size)
-        )
+        stats = asyncio.run(generate_embeddings(args.collection, args.limit, args.batch_size))
 
         # Print summary
         print(f"\n{'=' * 70}")

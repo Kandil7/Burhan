@@ -8,20 +8,20 @@ Tests:
 - Pydantic models work as expected
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-from src.agents.collection_agent import (
+import pytest
+
+from src.agents.base import Citation
+from src.agents.collection import (
     CollectionAgent,
     CollectionAgentConfig,
+    FallbackPolicy,
     IntentLabel,
     RetrievalStrategy,
     VerificationCheck,
-    VerificationSuite,
-    FallbackPolicy,
     VerificationReport,
+    VerificationSuite,
 )
-from src.agents.base import Citation
 
 
 class TestIntentLabel:

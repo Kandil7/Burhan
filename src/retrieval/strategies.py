@@ -5,7 +5,7 @@ Defines collection-aware retrieval strategies for each agent in the Multi-Agent 
 Each agent has optimized dense/sparse weights, top_k, reranking, and score thresholds.
 """
 
-from src.agents.collection_agent import RetrievalStrategy
+from src.agents.collection import RetrievalStrategy
 
 # Default strategy for unknown agents
 DEFAULT_STRATEGY = RetrievalStrategy(

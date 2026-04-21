@@ -56,8 +56,8 @@ from scripts.utils import (
 
 add_project_root_to_path()
 
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.indexing.vectorstores.qdrant_store import VectorStore
 
 logger = setup_script_logger("embed-sanadset")
 

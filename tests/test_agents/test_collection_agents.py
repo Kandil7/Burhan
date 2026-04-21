@@ -18,25 +18,22 @@ Each agent tests:
 - Full pipeline execution
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-from src.agents.collection_agent import (
-    CollectionAgentConfig,
-    IntentLabel,
-    RetrievalStrategy,
-    VerificationSuite,
-)
+import pytest
 
 # Import all collection agents
-from src.agents.hadith_collection_agent import HadithCollectionAgent
-from src.agents.tafsir_collection_agent import TafsirCollectionAgent
-from src.agents.aqeedah_collection_agent import AqeedahCollectionAgent
-from src.agents.seerah_collection_agent import SeerahCollectionAgent
-from src.agents.usul_fiqh_collection_agent import UsulFiqhCollectionAgent
-from src.agents.history_collection_agent import HistoryCollectionAgent
-from src.agents.language_collection_agent import LanguageCollectionAgent
-
+from src.agents.collection import (
+    AqeedahCollectionAgent,
+    CollectionAgentConfig,
+    HadithCollectionAgent,
+    HistoryCollectionAgent,
+    IntentLabel,
+    LanguageCollectionAgent,
+    RetrievalStrategy,
+    SeerahCollectionAgent,
+    TafsirCollectionAgent,
+    UsulFiqhCollectionAgent,
+)
 
 # =============================================================================
 # HadithCollectionAgent Tests
