@@ -1,4 +1,4 @@
-﻿# PowerShell Test Script for All Athar API Endpoints
+﻿# PowerShell Test Script for All Burhan API Endpoints
 
 $baseUrl = "http://localhost:8000"
 $testResults = @()
@@ -77,7 +77,7 @@ function Test-Endpoint {
 Write-Host @"
 
 ╔══════════════════════════════════════════════════════════╗
-║   🕌 ATHAR ISLAMIC QA SYSTEM - COMPREHENSIVE API TEST   ║
+║   🕌 Burhan ISLAMIC QA SYSTEM - COMPREHENSIVE API TEST   ║
 ╚══════════════════════════════════════════════════════════╝
 
 Testing against: $baseUrl

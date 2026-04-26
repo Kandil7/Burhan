@@ -1,12 +1,12 @@
-# Ingest Athar Pipeline
-"""Ingest data from Athar datasets into the vector store."""
+# Ingest Burhan Pipeline
+"""Ingest data from Burhan datasets into the vector store."""
 
 from typing import List, Optional, Dict, Any
 import asyncio
 
 
-class AtharIngestPipeline:
-    """Pipeline for ingesting Athar dataset content."""
+class BurhanIngestPipeline:
+    """Pipeline for ingesting Burhan dataset content."""
 
     def __init__(self, vector_store: Any = None, embedding_model: Any = None):
         self.vector_store = vector_store
@@ -19,7 +19,7 @@ class AtharIngestPipeline:
         batch_size: int = 100,
     ) -> Dict[str, Any]:
         """
-        Ingest data from Athar source.
+        Ingest data from Burhan source.
 
         Args:
             source_path: Path to the source data
@@ -44,4 +44,4 @@ class AtharIngestPipeline:
 
 
 # Default pipeline instance
-ingest_pipeline = AtharIngestPipeline()
+ingest_pipeline = BurhanIngestPipeline()

@@ -1,8 +1,8 @@
-# Athar v2 Architecture Migration
+# Burhan v2 Architecture Migration
 
 ## Overview
 
-This document describes the migration from the legacy Athar architecture to the v2 architecture.
+This document describes the migration from the legacy Burhan architecture to the v2 architecture.
 
 ## What Changed
 

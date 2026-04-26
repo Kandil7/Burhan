@@ -1,4 +1,4 @@
-نعم، هذا بالضبط هو الاستخدام الصحيح للنص داخل Athar: اجعل **ARCHITECTURE.md** وثيقة التصميم المرجعية، و**REFRACTOR_PLAN.md** وثيقة التنفيذ، ثم استخرج منها مباشرة `agents/base.py` وملفات `config/agents/*.yaml` وملفات `prompts/*.txt` و`RouterAgent`/orchestrator skeleton. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
+نعم، هذا بالضبط هو الاستخدام الصحيح للنص داخل Burhan: اجعل **ARCHITECTURE.md** وثيقة التصميم المرجعية، و**REFRACTOR_PLAN.md** وثيقة التنفيذ، ثم استخرج منها مباشرة `agents/base.py` وملفات `config/agents/*.yaml` وملفات `prompts/*.txt` و`RouterAgent`/orchestrator skeleton. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
 ## كيف تقسّم الشغل
 
@@ -39,7 +39,7 @@
 ابدأ بهذا الشكل:
 
 ```text
-athar/
+Burhan/
   docs/
     ARCHITECTURE.md
     REFRACTOR_PLAN.md
@@ -780,7 +780,7 @@ def load_agent_config(path: str, system_prompt: str) -> CollectionAgentConfig:
 - prompts لاثنين + preamble
 - seed ملف `ARCHITECTURE.md` في البيئة. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
-الخطوة المنطقية التالية عندك في Athar:
+الخطوة المنطقية التالية عندك في Burhan:
 
 1. إنشاء `FiqhAgent` فعلي:
    - يحمل config من `fiqh.yaml`
@@ -790,7 +790,7 @@ def load_agent_config(path: str, system_prompt: str) -> CollectionAgentConfig:
 2. ربطه بـ FastAPI endpoint:
    - `POST /v1/fiqh/answer` يأخذ question ويرجع output JSON بالـ schema المذكورة في التصميم. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
-ممتاز — مجلد `prompts/` في Athar الأفضل أن يكون **مقسوم إلى preamble مشترك + ملف مستقل لكل Agent**، لأن هذا يجعل التعديل والتجريب أسهل بكثير من دفن الـ prompts داخل الكود. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
+ممتاز — مجلد `prompts/` في Burhan الأفضل أن يكون **مقسوم إلى preamble مشترك + ملف مستقل لكل Agent**، لأن هذا يجعل التعديل والتجريب أسهل بكثير من دفن الـ prompts داخل الكود. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 
 ## الهيكل المقترح
 
@@ -1119,35 +1119,35 @@ system_prompt = load_prompt("fiqh_agent.txt")
 
 ثم بعد نجاح أول 2–3 agents، أضف Tafsir وAqeedah وباقي الملفات. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 
-رابط **smolagents** مهم جدًا لك هنا، لأنه مناسب جدًا كطبقة orchestration خفيفة لـ Athar بدل frameworks أثقل، خصوصًا إذا أردت بناء **multi-agent Islamic RAG** مع وكلاء متخصصين وأدوات retrieval/verification قابلة للنداء. [huggingface](https://huggingface.co/docs/smolagents/index)
+رابط **smolagents** مهم جدًا لك هنا، لأنه مناسب جدًا كطبقة orchestration خفيفة لـ Burhan بدل frameworks أثقل، خصوصًا إذا أردت بناء **multi-agent Islamic RAG** مع وكلاء متخصصين وأدوات retrieval/verification قابلة للنداء. [huggingface](https://huggingface.co/docs/smolagents/index)
 
 ## ما هو smolagents
 
 `smolagents` هي مكتبة Python مفتوحة المصدر من Hugging Face لتسهيل بناء agents بعدد قليل من الأسطر، وتدعم نوعين رئيسيين: **CodeAgent** الذي يكتب أفعاله في Python code، و**ToolCallingAgent** الذي يعمل بأسلوب tool-calling المعتاد. [github](https://github.com/huggingface/smolagents/blob/main/docs/source/en/reference/agents.md)
 المكتبة تركز على composability، وتدعم دمج الأدوات والوكلاء الآخرين، كما تدعم تشغيل الكود في بيئات sandboxed عند الحاجة، ولها أمثلة رسمية على multi-agent orchestration. [huggingface](https://huggingface.co/docs/smolagents/en/examples/multiagents)
 
-## لماذا قد تناسب Athar
+## لماذا قد تناسب Burhan
 
-Athar عنده بنية طبيعية جدًا لوكلاء متخصصين: FiqhAgent, HadithAgent, TafsirAgent, RouterAgent، مع أدوات retrieval والتحقق، وهذا يتماشى مباشرة مع فكرة smolagents في توزيع المهمة على عدة agents متعاونة. [huggingface](https://huggingface.co/learn/agents-course/unit2/smolagents/multi_agent_systems)
+Burhan عنده بنية طبيعية جدًا لوكلاء متخصصين: FiqhAgent, HadithAgent, TafsirAgent, RouterAgent، مع أدوات retrieval والتحقق، وهذا يتماشى مباشرة مع فكرة smolagents في توزيع المهمة على عدة agents متعاونة. [huggingface](https://huggingface.co/learn/agents-course/unit2/smolagents/multi_agent_systems)
 كذلك Qdrant لديه تكامل موثّق مع smolagents، ويعرضه كطريقة لوكلاء يكتبون Python code لاستدعاء الأدوات وأوركسترة وكلاء آخرين، وهذا يجعل دمج retrieval layer عندك منطقيًا جدًا. [qdrant](https://qdrant.tech/documentation/frameworks/smolagents/)
 
-## أين تستخدمه في Athar
+## أين تستخدمه في Burhan
 
 أفضل استخدام لـ smolagents عندك ليس داخل **core retrieval** نفسه، بل في **طبقة orchestration فوقه**. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 بمعنى:
 
-- دع `agents/base.py` و`FiqhAgent/HadithAgent` يحتفظون بمنطق Athar domain-specific.
+- دع `agents/base.py` و`FiqhAgent/HadithAgent` يحتفظون بمنطق Burhan domain-specific.
 - واجعل smolagents يدير:
   - Router orchestration
   - استدعاء الوكلاء كأدوات
   - parallel/sequential workflows
   - Composer agent أو primary agent tool-calling flow. [huggingface](https://huggingface.co/docs/smolagents/en/examples/multiagents)
 
-## mapping عملي من Athar إلى smolagents
+## mapping عملي من Burhan إلى smolagents
 
 يمكنك التفكير فيها هكذا:
 
-| في Athar | في smolagents |
+| في Burhan | في smolagents |
 |---|---|
 | `FiqhAgent` | Tool أو managed agent |
 | `HadithAgent` | Tool أو managed agent |
@@ -1171,7 +1171,7 @@ Athar عنده بنية طبيعية جدًا لوكلاء متخصصين: FiqhA
 ```text
 User Question
    ↓
-AtharRouterAgent (smolagents CodeAgent)
+BurhanRouterAgent (smolagents CodeAgent)
    ↓
 decides plan:
 - call search_fiqh_tool
@@ -1179,7 +1179,7 @@ decides plan:
 - call verify_quotes_tool
 - maybe call compose_answer_tool
    ↓
-Athar domain services
+Burhan domain services
 - Fiqh service
 - Hadith service
 - Tafsir service
@@ -1189,7 +1189,7 @@ Athar domain services
 Final answer
 ```
 
-في هذا التصميم، smolagents لا يستبدل Athar، بل يصبح **طبقة تنسيق ذكية** فوق services نظيفة ومحددة. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
+في هذا التصميم، smolagents لا يستبدل Burhan، بل يصبح **طبقة تنسيق ذكية** فوق services نظيفة ومحددة. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
 ## مثال أولي جدًا
 
@@ -1210,7 +1210,7 @@ def search_hadith(question: str) -> str:
 
 @tool
 def verify_evidence(context: str) -> str:
-    """Run Athar verification checks on retrieved evidence."""
+    """Run Burhan verification checks on retrieved evidence."""
     ...
 
 model = LiteLLMModel(model_id="openai/gpt-4o-mini")  # example only
@@ -1224,31 +1224,31 @@ agent = CodeAgent(
 result = agent.run("ما حكم رفع اليدين في الصلاة وما الأحاديث الواردة فيه؟")
 ```
 
-هذا ليس كود إنتاجي بعد، لكنه يوضح كيف تجعل أدوات Athar الحالية قابلة للاستهلاك من agent orchestrator. [huggingface](https://huggingface.co/docs/smolagents/en/examples/multiagents)
+هذا ليس كود إنتاجي بعد، لكنه يوضح كيف تجعل أدوات Burhan الحالية قابلة للاستهلاك من agent orchestrator. [huggingface](https://huggingface.co/docs/smolagents/en/examples/multiagents)
 
 ## أين تنتبه قبل اعتماده
 
 هناك 3 نقاط مهمة:
 
-- **لا تجعل smolagents هو مكان منطقك الشرعي.** المنطق الشرعي يجب أن يبقى داخل Athar services نفسها، وليس داخل prompts agent عامة. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
+- **لا تجعل smolagents هو مكان منطقك الشرعي.** المنطق الشرعي يجب أن يبقى داخل Burhan services نفسها، وليس داخل prompts agent عامة. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 - **التحقق Verification يجب أن يبقى deterministic قدر الإمكان.** استخدم tools ثابتة لـ quote checking, source attribution, grade checking بدل تركها بالكامل للـ agent. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 - **ابدأ صغيرًا.** طبّقه أولًا على Fiqh + Hadith فقط، ثم وسّع إذا رأيت أن orchestration فعلاً يعطي فائدة مقارنة بـ custom router بسيط. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
 ## هل أنصحك به الآن؟
 
 نعم، لكن **كطبقة orchestration فقط**، وليس كأساس كامل للمشروع. [huggingface](https://huggingface.co/docs/smolagents/index)
-إذا مشروع Athar عندك ما زال في مرحلة تثبيت `CollectionAgent` وconfigs وQdrant setup، فالأولوية الأولى تبقى:
+إذا مشروع Burhan عندك ما زال في مرحلة تثبيت `CollectionAgent` وconfigs وQdrant setup، فالأولوية الأولى تبقى:
 1. base abstractions
 2. retrieval layer
 3. verification layer
 4. prompts/configs  
 ثم بعدها تضيف smolagents كغلاف orchestration أعلى. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
-Athar + smolagents Skeleton
-هذا skeleton يوضح كيف تستخدم smolagents كطبقة orchestration فوق خدمات Athar المتخصصة، بدل أن تستبدل منطق النظام الأساسي.
+Burhan + smolagents Skeleton
+هذا skeleton يوضح كيف تستخدم smolagents كطبقة orchestration فوق خدمات Burhan المتخصصة، بدل أن تستبدل منطق النظام الأساسي.
 
 المكونات
-app/tools.py: أدوات smolagents التي تستدعي خدمات Athar.
+app/tools.py: أدوات smolagents التي تستدعي خدمات Burhan.
 
 app/services.py: خدمات domain بسيطة (Fiqh/Hadith/Verification/Composer).
 
@@ -1257,21 +1257,21 @@ app/router_agent.py: مثال CodeAgent رئيسي.
 prompts/router_system.txt: توجيه الوكيل الرئيسي.
 
 الفكرة
-منطق Athar الشرعي وretrieval/verification يبقى داخل services.
+منطق Burhan الشرعي وretrieval/verification يبقى داخل services.
 
 smolagents يستخدم فقط للتخطيط، استدعاء الأدوات، وتجميع ال
 
-جهزت لك **skeleton عملي لـ Athar + smolagents** يوضح كيف تجعل smolagents طبقة orchestration فوق خدمات Athar بدل أن يستبدل منطق النظام نفسه. [huggingface](https://huggingface.co/docs/smolagents/index)
+جهزت لك **skeleton عملي لـ Burhan + smolagents** يوضح كيف تجعل smolagents طبقة orchestration فوق خدمات Burhan بدل أن يستبدل منطق النظام نفسه. [huggingface](https://huggingface.co/docs/smolagents/index)
 
 ## ماذا يحتوي
 
 - `router_agent.py`: وكيل رئيسي مبني على `CodeAgent` مع أدوات الفقه والحديث والتحقق والتركيب النهائي. [huggingface](https://huggingface.co/docs/smolagents/en/examples/multiagents)
-- `tools.py`: تعريف أدوات smolagents التي تستدعي خدمات Athar الداخلية بدل وضع المنطق الشرعي داخل الـ agent نفسه. [huggingface](https://huggingface.co/docs/smolagents/index)
+- `tools.py`: تعريف أدوات smolagents التي تستدعي خدمات Burhan الداخلية بدل وضع المنطق الشرعي داخل الـ agent نفسه. [huggingface](https://huggingface.co/docs/smolagents/index)
 - `services.py`: خدمات domain بسيطة كمثال لـ Fiqh/Hadith/Verification/Composer قابلة للاستبدال لاحقًا بـ Qdrant وLLM الحقيقيين. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 - `router_system.txt`: prompt منظم للـ RouterAgent يفرض عدم الإجابة قبل التحقق واستدعاء الأدوات المناسبة فقط. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
-- `README.md`: شرح سريع لفكرة الدمج بين Athar وsmolagents.
+- `README.md`: شرح سريع لفكرة الدمج بين Burhan وsmolagents.
 
-## كيف تستخدمه في Athar
+## كيف تستخدمه في Burhan
 
 الفكرة الصحيحة هي أن تبقي:
 - retrieval
@@ -1279,8 +1279,8 @@ smolagents يستخدم فقط للتخطيط، استدعاء الأدوات، 
 - citation normalization
 - domain logic الشرعي
 
-داخل خدمات Athar نفسها، ثم تجعل smolagents يدير فقط **التخطيط، اختيار الأدوات، وتجميع المسار**. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
-هذا ينسجم مع المعمارية التي عندك: RouterAgent + specialized agents + verification suite + composer، ويطابق أنماط sequential/parallel/hierarchical المذكورة في وثيقة Athar. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
+داخل خدمات Burhan نفسها، ثم تجعل smolagents يدير فقط **التخطيط، اختيار الأدوات، وتجميع المسار**. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
+هذا ينسجم مع المعمارية التي عندك: RouterAgent + specialized agents + verification suite + composer، ويطابق أنماط sequential/parallel/hierarchical المذكورة في وثيقة Burhan. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 
 ## الخطوة التالية
 
@@ -1288,7 +1288,7 @@ smolagents يستخدم فقط للتخطيط، استدعاء الأدوات، 
 
 1. استبدل `search_fiqh_service` و`search_hadith_service` باتصال حقيقي مع Qdrant hybrid retrieval. [qdrant](https://qdrant.tech/documentation/tutorials-search-engineering/reranking-hybrid-search/)
 2. اربط `verify_evidence_service` بـ quote/source/grade checks الفعلية الموجودة في تصميمك. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
-3. اجعل `compose_answer_service` يبني JSON schema مطابق لـ Athar output schema بدل النص البسيط الحالي. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
+3. اجعل `compose_answer_service` يبني JSON schema مطابق لـ Burhan output schema بدل النص البسيط الحالي. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 4. أضف لاحقًا أدوات أخرى مثل:
    - `search_tafsir`
    - `search_aqeedah`
@@ -1296,7 +1296,7 @@ smolagents يستخدم فقط للتخطيط، استدعاء الأدوات، 
    - `normalize_citations`. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 
 
-سأقترح لك الآن شكل قريب من الإنتاج، مبني على اللي عندك أصلًا في Athar، بدون ما أُغرِقك بكود طويل جدًا في رسالة واحدة. أركز على الـ wiring بين الطبقات:
+سأقترح لك الآن شكل قريب من الإنتاج، مبني على اللي عندك أصلًا في Burhan، بدون ما أُغرِقك بكود طويل جدًا في رسالة واحدة. أركز على الـ wiring بين الطبقات:
 
 - services (Fiqh/Hadith/Verification)
 - tools (smolagents)
@@ -1304,7 +1304,7 @@ smolagents يستخدم فقط للتخطيط، استدعاء الأدوات، 
 
 وتربطهم بنفس الـ configs/prompts اللي صممناها.
 
-## 1) fiqh_service.py (يستهلك Athar FiqhAgent الحقيقي)
+## 1) fiqh_service.py (يستهلك Burhan FiqhAgent الحقيقي)
 
 ```python
 # app/fiqh_service.py
@@ -1321,7 +1321,7 @@ from app.prompts_loader import load_prompt
 
 class FiqhAgent(CollectionAgent):
     # هنا تنفّذ query_intake / classify_intent / retrieve_candidates / ...
-    # يمكنك تركها TODO واستخدام نسخة Athar الفعلية
+    # يمكنك تركها TODO واستخدام نسخة Burhan الفعلية
     async def query_intake(self, question: str, meta: Dict[str, Any] | None = None) -> Dict[str, Any]:
         return {"question": question, "meta": meta or {}}
 
@@ -1581,13 +1581,13 @@ except Exception:
 
 @tool
 async def search_fiqh(question: str) -> Dict[str, Any]:
-    """ابحث في مجموعة الفقه وأعد نتيجة Athar FiqhAgent الكاملة."""
+    """ابحث في مجموعة الفقه وأعد نتيجة Burhan FiqhAgent الكاملة."""
     return await search_fiqh_service(question)
 
 
 @tool
 async def search_hadith(question: str) -> Dict[str, Any]:
-    """ابحث في مجموعة الحديث وأعد نتيجة Athar HadithAgent الكاملة."""
+    """ابحث في مجموعة الحديث وأعد نتيجة Burhan HadithAgent الكاملة."""
     return await search_hadith_service(question)
 
 
@@ -1595,7 +1595,7 @@ async def search_hadith(question: str) -> Dict[str, Any]:
 async def verify_evidence(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     تحقّق من الأدلة المسترجعة من أكثر من وكيل قبل التوليد النهائي.
-    يجب أن تكون النتائج بصيغة Athar standard evidence schema.
+    يجب أن تكون النتائج بصيغة Burhan standard evidence schema.
     """
     # يمكن لاحقًا التفريق بين domains هنا
     return await verify_evidence_service(results)
@@ -1610,7 +1610,7 @@ def compose_answer(question: str, verified_payload: Dict[str, Any]) -> Dict[str,
     return compose_answer_service(question, verified_payload)
 ```
 
-لاحظ أن الأدوات الآن تعمل على schema Athar وليس dummy snippet/citation فقط. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
+لاحظ أن الأدوات الآن تعمل على schema Burhan وليس dummy snippet/citation فقط. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
 
 ## 6) router_agent.py (CodeAgent رئيسي)
 
@@ -1660,10 +1660,10 @@ def build_router_agent(model_id: str = "openai/gpt-4o-mini"):
 
 بهذا الشكل:
 
-- منطق Athar الأساسي يبقى في `FiqhAgent/HadithAgent` كما صممته في المستندين. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
+- منطق Burhan الأساسي يبقى في `FiqhAgent/HadithAgent` كما صممته في المستندين. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 - smolagents يتحول إلى **مُعامل orchestration** خفيف فقط يختار الأدوات وينسق بينها، بدون لمس القواعد الشرعية أو الـ retrieval/verification logic الداخلي. [huggingface](https://huggingface.co/docs/smolagents/index)
 
-كملت لك نسخة **production‑ish skeleton** فيها فصل أوضح بين services وtools وrouter، بحيث تصبح أقرب لدمجها داخل Athar مباشرة. [huggingface](https://huggingface.co/docs/smolagents/index)
+كملت لك نسخة **production‑ish skeleton** فيها فصل أوضح بين services وtools وrouter، بحيث تصبح أقرب لدمجها داخل Burhan مباشرة. [huggingface](https://huggingface.co/docs/smolagents/index)
 
 ## ماذا أضفت
 
@@ -1685,7 +1685,7 @@ def build_router_agent(model_id: str = "openai/gpt-4o-mini"):
 - reranking
 - verification suite الفعلية. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
-بمعنى آخر، smolagents هنا لا يصبح “العقل الشرعي”، بل مجرد **orchestrator** يستدعي خدمات Athar الحقيقية، وهذا هو الاستخدام الآمن والأنظف معماريًا. [qdrant](https://qdrant.tech/documentation/frameworks/smolagents/)
+بمعنى آخر، smolagents هنا لا يصبح “العقل الشرعي”، بل مجرد **orchestrator** يستدعي خدمات Burhan الحقيقية، وهذا هو الاستخدام الآمن والأنظف معماريًا. [qdrant](https://qdrant.tech/documentation/frameworks/smolagents/)
 
 # Example requests
 
@@ -1752,7 +1752,7 @@ def build_router_agent(model_id: str = "openai/gpt-4o-mini"):
    - rerank
    - verification
    - answer generation. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/eb489275-50c4-4c8b-a1b2-b4b368deb493/paste.txt)
-# Athar FastAPI Next Step
+# Burhan FastAPI Next Step
 
 هذه الحزمة تكمل skeleton السابق وتضيف:
 - `main.py`
@@ -1764,7 +1764,7 @@ def build_router_agent(model_id: str = "openai/gpt-4o-mini"):
 - `schemas.py`
 - عينات config/prompts
 
-الغرض منها: تقريب Athar من نسخة محلية قابلة للتشغيل والربط لاحقًا مع الخدمات الفعلية.
+الغرض منها: تقريب Burhan من نسخة محلية قابلة للتشغيل والربط لاحقًا مع الخدمات الفعلية.
 ## أهم ما تبنيه بعد ذلك
 
 الأولوية التالية عندك ليست Agents جديدة، بل **تقوية الطبقات الحالية**:

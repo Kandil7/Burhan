@@ -1,4 +1,4 @@
-# Athar Retrieval Strategies
+# Burhan Retrieval Strategies
 
 ## Overview
 

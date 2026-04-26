@@ -1,5 +1,5 @@
 """
-Inheritance Calculator for Athar Islamic QA system.
+Inheritance Calculator for Burhan Islamic QA system.
 
 Deterministic calculator for Islamic inheritance distribution (fara'id) based on
 Quranic verses and prophetic traditions. Implements fixed shares (furood),

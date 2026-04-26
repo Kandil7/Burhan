@@ -1,8 +1,8 @@
-# 🕌 Athar RAG System - Complete Step-by-Step Walkthrough
+# 🕌 Burhan RAG System - Complete Step-by-Step Walkthrough
 
 ## Every Single Step Explained in Detail
 
-This document provides an exhaustive explanation of how a query flows through the entire Athar RAG system - from the moment a user submits a question until they receive an answer with citations.
+This document provides an exhaustive explanation of how a query flows through the entire Burhan RAG system - from the moment a user submits a question until they receive an answer with citations.
 
 ---
 
@@ -23,7 +23,7 @@ Let's go through each step in detail.
 
 ```python
 app = FastAPI(
-    title="Athar Islamic QA API",
+    title="Burhan Islamic QA API",
     version="0.5.0",
 )
 

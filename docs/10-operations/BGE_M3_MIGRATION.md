@@ -22,7 +22,7 @@
 | **Quality (Arabic)** | ~85% accuracy | **~95% accuracy** | 🏆 BGE-M3 |
 | **License** | Open | **MIT** | Tie |
 
-### Key Advantages for Athar
+### Key Advantages for Burhan
 
 1. **✅ Superior Arabic Understanding** - Native 100+ language model
 2. **✅ Hybrid Retrieval** - Dense + Sparse in single pass (better than manual BM25)
@@ -62,7 +62,7 @@ python scripts/test_bge_m3.py --dry-run
 
 Expected output:
 ```
-🕌 ATHAR - TEST BGE-M3 EMBEDDING MODEL
+🕌 Burhan - TEST BGE-M3 EMBEDDING MODEL
 ======================================================================
   Model:           BAAI/bge-m3
   Test queries:    12

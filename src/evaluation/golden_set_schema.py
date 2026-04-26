@@ -1,5 +1,5 @@
 """
-Golden Set Schema for Athar Evaluation Framework.
+Golden Set Schema for Burhan Evaluation Framework.
 
 Defines the structure of test items used for evaluating agent performance
 on Islamic scholarly questions, particularly in Fiqh domain.

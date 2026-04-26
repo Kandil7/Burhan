@@ -1,6 +1,6 @@
 # Config-Backed Agent System Documentation
 
-This document describes the declarative configuration system for the Multi-Agent Collection-Aware RAG system in Athar.
+This document describes the declarative configuration system for the Multi-Agent Collection-Aware RAG system in Burhan.
 
 ## Overview
 
@@ -14,7 +14,7 @@ The config-backed agent system allows you to define agent behavior declaratively
 ## Directory Structure
 
 ```
-athar/
+Burhan/
 ├── config/
 │   └── agents/           # Agent configuration files
 │       ├── fiqh.yaml

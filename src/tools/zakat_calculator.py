@@ -1,5 +1,5 @@
 """
-Zakat Calculator for Athar Islamic QA system.
+Zakat Calculator for Burhan Islamic QA system.
 
 Deterministic calculator for Zakat calculations based on Islamic jurisprudence rules.
 Supports multiple asset types, madhhab differences, and specialized rates for

@@ -1,12 +1,12 @@
 .PHONY: help install install-dev dev test lint format clean docker-up docker-down db-migrate db-migrate-create run
 
 # ============================================
-# ATHAR - Poetry-based commands
+# Burhan - Poetry-based commands
 # Phase 9: Enhanced with new commands
 # ============================================
 
 help:
-	@echo "Athar - Islamic QA System"
+	@echo "Burhan - Islamic QA System"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make install-dev    Install dependencies with dev tools"
@@ -99,7 +99,7 @@ docker-logs:
 	docker compose -f docker/docker-compose.dev.yml logs -f
 
 docker-build:
-	docker build -f docker/Dockerfile.api -t athar-api:latest .
+	docker build -f docker/Dockerfile.api -t Burhan-api:latest .
 
 # ============================================
 # Database

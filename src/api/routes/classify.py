@@ -1,5 +1,5 @@
 """
-Classify endpoint for Athar Islamic QA system.
+Classify endpoint for Burhan Islamic QA system.
 
 Thin transport layer for intent classification.
 """
@@ -16,7 +16,7 @@ from src.api.schemas.classify import ClassifyRequest, ClassifyResponse
 from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 
-logger = get_logger("athar.api.classify")
+logger = get_logger("Burhan.api.classify")
 
 classify_router = APIRouter(prefix="", tags=["Classify"])
 

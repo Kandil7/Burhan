@@ -1,8 +1,8 @@
-# 📚 أهم 10 ملفات في Athar - شرح سطر بسطر
+# 📚 أهم 10 ملفات في Burhan - شرح سطر بسطر
 
 ## 🕌 مقدمة
 
-هذا الدليل يشرح **أهم 10 ملفات** في مشروع Athar **سطر بسطر** بالتفصيل الكامل.
+هذا الدليل يشرح **أهم 10 ملفات** في مشروع Burhan **سطر بسطر** بالتفصيل الكامل.
 
 ### الترتيب المقترح
 
@@ -106,7 +106,7 @@ class Settings(BaseSettings):
     # ==========================================
     # Application
     # ==========================================
-    app_name: str = "Athar"
+    app_name: str = "Burhan"
     app_env: str = "development"
     debug: bool = False
     secret_key: str = "change-this-in-production-please-use-random-string"
@@ -117,7 +117,7 @@ class Settings(BaseSettings):
 
 | المتغير | النوع | القيمة الافتراضية | ماذا يفعل |
 |---------|-------|-------------------|------------|
-| `app_name` | str | "Athar" | اسم التطبيق |
+| `app_name` | str | "Burhan" | اسم التطبيق |
 | `app_env` | str | "development" | البيئة (development/production) |
 | `debug` | bool | False | وضع التصحيح |
 | `secret_key` | str | "change-this..." | مفتاح التشفير |
@@ -140,7 +140,7 @@ class Settings(BaseSettings):
     # ==========================================
     # Database (PostgreSQL 16)
     # ==========================================
-    database_url: str = "postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db"
+    database_url: str = "postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db"
     database_pool_size: int = 10
     database_max_overflow: int = 20
 ```
@@ -161,7 +161,7 @@ class Settings(BaseSettings):
 ```
 postgresql+asyncpg://user:password@host:port/database
                       ↓    ↓       ↓    ↓     ↓
-                   athar  athar_password  localhost  5432  athar_db
+                   Burhan  Burhan_password  localhost  5432  Burhan_db
 ```
 
 **لماذا مهم**: بدون هذا الرابط، لا يمكن الاتصال بقاعدة البيانات.
@@ -185,7 +185,7 @@ postgresql+asyncpg://user:password@host:port/database
 | `redis_url` | redis://localhost:6379/0 | رابط Redis |
 | `redis_max_connections` | 50 | الحد الأقصى للاتصالات |
 
-**ما يستخدم Redis في Athar**:
+**ما يستخدم Redis في Burhan**:
 1. **Embedding cache**: حفظ المتجهات المولدة
 2. **Rate limiting**: تتبع عدد الطلبات
 3. **Session storage**: حفظ جلسات المستخدمين
@@ -512,7 +512,7 @@ from typing import Optional
 
 class Intent(str, Enum):
     """
-    Supported query intents for Athar Islamic QA system.
+    Supported query intents for Burhan Islamic QA system.
 
     Based on Fanar-Sadiq hybrid query classifier with 15 primary intents.
     """

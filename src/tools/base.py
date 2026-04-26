@@ -1,5 +1,5 @@
 """
-Base Tool abstraction for Athar Islamic QA system.
+Base Tool abstraction for Burhan Islamic QA system.
 
 All tools (Zakat, Inheritance, Prayer Times, Hijri, Dua) inherit from BaseTool
 and implement the execute() method with standardized input/output.

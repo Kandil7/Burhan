@@ -1,5 +1,5 @@
 """
-Evaluation Metrics for Athar RAG System.
+Evaluation Metrics for Burhan RAG System.
 
 Provides metrics for measuring retrieval quality, answer accuracy,
 citation correctness, Ikhtilaf coverage, and abstention behavior.

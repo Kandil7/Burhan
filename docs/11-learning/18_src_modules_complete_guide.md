@@ -1,4 +1,4 @@
-# 🕌 Athar Source Code Complete Guide
+# 🕌 Burhan Source Code Complete Guide
 
 ## Complete Module-by-Module Documentation
 
@@ -164,7 +164,7 @@ FastAPI application and routes - the HTTP interface.
 **Key Code**:
 ```python
 app = FastAPI(
-    title="Athar Islamic QA API",
+    title="Burhan Islamic QA API",
     version="0.5.0",
     docs_url="/docs"
 )
@@ -312,7 +312,7 @@ Core system components: registry, exceptions, router, citation.
 | File | Purpose |
 |------|---------|
 | `registry.py` | Agent registry - manages all agents |
-| `exceptions.py` | Custom exceptions (AtharError, ConfigurationError) |
+| `exceptions.py` | Custom exceptions (BurhanError, ConfigurationError) |
 | `router.py` | Legacy query router |
 | `citation.py` | Citation normalization |
 
@@ -444,7 +444,7 @@ from src.verification.trace import (
 | `school_consistency.py` | Madhhab consistency |
 | `groundedness_judge.py` | Grounding check |
 
-**Usage Note**: All collection agents import from `src.verifiers/`.
+**Usage Note**: All collection agents import from `src.verification/`.
 
 ---
 

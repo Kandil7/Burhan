@@ -1,5 +1,5 @@
 """
-Embedding-based Intent Classifier for Athar Islamic QA system.
+Embedding-based Intent Classifier for Burhan Islamic QA system.
 
 Phase 5 Upgrade: Uses BGE-M3 embeddings to find semantic similarity
 between the user query and intent 'anchors' (descriptions).

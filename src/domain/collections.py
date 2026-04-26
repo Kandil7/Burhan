@@ -1,11 +1,11 @@
 # Collections Domain Module
-"""Domain model for Athar collections."""
+"""Domain model for Burhan collections."""
 
 from typing import List, Optional
 
 
 class Collection:
-    """Represents an Athar collection."""
+    """Represents an Burhan collection."""
 
     def __init__(
         self,

@@ -1,5 +1,5 @@
 """
-Base types for Athar agents.
+Base types for Burhan agents.
 
 This module provides core types that were expected to be migrated from v1
 but were never implemented. Re-exports from canonical locations.

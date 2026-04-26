@@ -1,5 +1,5 @@
 """
-API Versioning for Athar Islamic QA System.
+API Versioning for Burhan Islamic QA System.
 
 Supports URL-based API versioning (e.g., /api/v1/, /api/v2/)
 Phase 10: Added API versioning support.

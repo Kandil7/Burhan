@@ -1,4 +1,4 @@
-# 🕌 Athar - Islamic QA System
+# 🕌 Burhan - Islamic QA System
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
@@ -18,7 +18,7 @@
 
 ## 📋 Overview
 
-**Athar** is an Islamic QA system that answers religious questions with verified sources and proper citations. Built on the **Fanar-Sadiq** multi-agent architecture, it combines intent classification, RAG pipelines, and deterministic calculators to provide accurate, grounded answers to Islamic religious questions.
+**Burhan** is an Islamic QA system that answers religious questions with verified sources and proper citations. Built on the **Fanar-Sadiq** multi-agent architecture, it combines intent classification, RAG pipelines, and deterministic calculators to provide accurate, grounded answers to Islamic religious questions.
 
 ### Key Features
 
@@ -138,8 +138,8 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # Install dependencies
 poetry install --with dev
@@ -181,7 +181,7 @@ python -m uvicorn ...     # Run on custom port (e.g., 8002)
 ## 📁 Project Structure
 
 ```
-K:\business\projects_v2\Athar\
+K:\business\projects_v2\Burhan\
 ├── src/                          # Python backend (FastAPI)
 │   ├── config/                   # Configuration
 │   │   ├── settings.py           # Environment settings (Pydantic)
@@ -373,7 +373,7 @@ All data is derived from **ElShamela Library** — the largest comprehensive dig
 
 ### HuggingFace Dataset
 
-- **Repository:** [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- **Repository:** [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 - **Size:** 42.6 GB (10 collections)
 - **Format:** JSONL with rich metadata (book_id, author, chapter, page, etc.)
 - **Status:** ✅ Fully uploaded and verified
@@ -520,7 +520,7 @@ SECRET_KEY=your-secret-key
 API_V1_PREFIX=/api/v1
 
 # Database (PostgreSQL 16)
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 DATABASE_POOL_SIZE=10
 
 # Redis
@@ -546,7 +546,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8000
 ```
 
   ┃                                                                                                                                                                                                     
-  ┃  $ cd "K:/business/projects_v2/Athar" && wc -l data/processed/lucene_pages/collections/*.jsonl                                                                                                      
+  ┃  $ cd "K:/business/projects_v2/Burhan" && wc -l data/processed/lucene_pages/collections/*.jsonl                                                                                                      
   ┃                                                                                                                                                                                                     
   ┃  738003 data/processed/lucene_pages/collections/aqeedah_passages.jsonl
   ┃      1015311 data/processed/lucene_pages/collections/arabic_language_passages.jsonl
@@ -620,10 +620,10 @@ test(router): Add intent classification tests
 
 ## 🔗 Key Resources
 
-- **Repository:** https://github.com/Kandil7/Athar
-- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **Repository:** https://github.com/Kandil7/Burhan
+- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
 - **Documentation:** `docs/` directory (14 subdirectories, 60+ files)
-- **Issues:** https://github.com/Kandil7/Athar/issues
+- **Issues:** https://github.com/Kandil7/Burhan/issues
 - **Mini-Dataset:** `data/mini_dataset/` (1.7 MB, GitHub-friendly)
 - **Architecture Paper:** `docs/Fanar-Sadiq A Multi-Agent Architecture for Grounded Islamic QA.pdf`
 
@@ -683,12 +683,12 @@ MIT License - see LICENSE file for details.
 
 **Built with ❤️ for the Muslim community**
 
-[🕌](#) Athar Islamic QA System • Based on Fanar-Sadiq Architecture
+[🕌](#) Burhan Islamic QA System • Based on Fanar-Sadiq Architecture
 
 **Data Source:** [ElShamela Library](https://shamela.ws/) (المكتبة الشاملة) • 8,425 books • 3,146 scholars
 
 **11.3M+ documents processed • 10 collections built • Hybrid Intent Classifier active**
 
-[Documentation](docs/README.md) • [API Docs](http://localhost:8000/docs) • [Issues](https://github.com/Kandil7/Athar/issues)
+[Documentation](docs/README.md) • [API Docs](http://localhost:8000/docs) • [Issues](https://github.com/Kandil7/Burhan/issues)
 
 </div>

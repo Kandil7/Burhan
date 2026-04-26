@@ -1,4 +1,4 @@
-# Production Readiness Checklist - Athar Islamic QA System
+# Production Readiness Checklist - Burhan Islamic QA System
 
 ## ✅ Completed (Production Ready)
 
@@ -103,8 +103,8 @@ python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8002
 ### Production Deployment
 ```bash
 # 1. Clone repository
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # 2. Configure environment
 cp .env.example .env
@@ -175,7 +175,7 @@ curl http://localhost:8000/health
 
 **Issue: Database connection errors**
 - Check PostgreSQL status: `docker compose -f docker/docker-compose.prod.yml exec postgres pg_isready`
-- View connection count: `docker compose -f docker/docker-compose.prod.yml exec postgres psql -U athar -c "SELECT count(*) FROM pg_stat_activity;"`
+- View connection count: `docker compose -f docker/docker-compose.prod.yml exec postgres psql -U Burhan -c "SELECT count(*) FROM pg_stat_activity;"`
 - Increase pool size: Update `DATABASE_POOL_SIZE` in `.env`
 
 ---

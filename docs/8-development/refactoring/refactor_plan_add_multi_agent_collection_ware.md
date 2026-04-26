@@ -1,8 +1,8 @@
-# Athar Refactor & Implementation Plan
+# Burhan Refactor & Implementation Plan
 
 هذا الملف يحوّل وثيقة  
-**“Athar CollectionAgent Architecture and Multi-Agent RAG Design”**  
-إلى خطة تنفيذ عملية داخل مشروع Athar، مع مراحل واضحة، ملفات مقترحة، و‑checklists.[file:138]
+**“Burhan CollectionAgent Architecture and Multi-Agent RAG Design”**  
+إلى خطة تنفيذ عملية داخل مشروع Burhan، مع مراحل واضحة، ملفات مقترحة، و‑checklists.[file:138]
 
 الهدف: الانتقال من RAG تقليدي إلى **Multi‑Agent RAG** مبني على:
 
@@ -48,7 +48,7 @@
 > يمكن تكييف الأسماء مع الوضع الحالي للريبو، المهم الـ boundaries.
 
 ```text
-athar/
+Burhan/
   app/
     api/
       v1/
@@ -86,7 +86,7 @@ athar/
     fiqh_prompt.txt
     hadith_prompt.txt
   scripts/
-    ingest_athar_to_qdrant.py
+    ingest_Burhan_to_qdrant.py
     build_metadata.py
     rebuild_collections.py
   tests/
@@ -313,7 +313,7 @@ athar/
     - era buckets: sahabah, tabiin, classical, medieval, contemporary.[file:138]
     - سياسة missing madhhab (unknown + inferred flag).[file:138]
 - [ ] `build_metadata.py`:
-  - القراءة من Athar‑Datasets
+  - القراءة من Burhan‑Datasets
   - إنتاج JSONL/Parquet enriched جاهز لـ ingestion.
 
 **Acceptance Criteria**
@@ -329,7 +329,7 @@ athar/
 **Files**
 
 - `qdrant_setup/collections.py`
-- `scripts/ingest_athar_to_qdrant.py`
+- `scripts/ingest_Burhan_to_qdrant.py`
 
 **Tasks**
 
@@ -345,7 +345,7 @@ athar/
     def recreate_all_collections(client):
         ...
     ```
-- [ ] `ingest_athar_to_qdrant.py`:
+- [ ] `ingest_Burhan_to_qdrant.py`:
   - تحميل enriched data
   - call `recreate_all_collections`
   - upsert points (dense vector + bm25 sparse + payload).[file:138]
@@ -463,4 +463,4 @@ athar/
 - التركيز الآن على:
   - Fiqh‑first correctness.
   - Digital Isnad (verification قبل generation).
-  - Hybrid retrieval مضبوط فوق Athar‑Datasets.[file:138]
+  - Hybrid retrieval مضبوط فوق Burhan‑Datasets.[file:138]

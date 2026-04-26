@@ -1,5 +1,5 @@
 """
-Structured logging for Athar Islamic QA system.
+Structured logging for Burhan Islamic QA system.
 
 Provides a configured logger with structured output for production use.
 """
@@ -11,7 +11,7 @@ import sys
 from typing import Optional
 
 
-def get_logger(name: str = "athar", level: Optional[int] = None) -> logging.Logger:
+def get_logger(name: str = "Burhan", level: Optional[int] = None) -> logging.Logger:
     """
     Return a configured logger.
 

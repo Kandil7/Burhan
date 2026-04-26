@@ -1,30 +1,33 @@
-from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
-import time
 import asyncio
+import logging
+import time
+from dataclasses import dataclass
+from typing import Any
 
-from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
+from src.indexing.embeddings.embedding_model import EmbeddingModel
 from src.indexing.vectorstores.qdrant_store import VectorStore
-from src.indexing.embeddings.embedding_model import EmbeddingModel  # أو المسار الفعلي
+from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class RunRetrievalInput:
     query: str
-    collections: List[str]
+    collections: list[str]
     top_k: int = 10
     enable_reranking: bool = True
     enable_expansion: bool = True
-    filters: Optional[Dict[str, Any]] = None
+    filters: dict[str, Any] | None = None
 
 
 @dataclass
 class RunRetrievalOutput:
-    results: List[Dict[str, Any]]
-    query_expansions: Optional[List[str]] = None
+    results: list[dict[str, Any]]
+    query_expansions: list[str] | None = None
     retrieval_strategy: str = ""
     execution_time_ms: float = 0.0
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class RunRetrievalUseCase:
@@ -44,7 +47,7 @@ class RunRetrievalUseCase:
         # 2) (optional) expansions – حالياً بس نرجّع الـ query نفسه
         query_expansions = [input.query] if input.enable_expansion else None
 
-        all_results: List[Dict[str, Any]] = []        
+        all_results: list[dict[str, Any]] = []
 
         # 3) Run hybrid search على كل collection مطلوبة (بالتوازي)
         tasks = []
@@ -61,13 +64,13 @@ class RunRetrievalUseCase:
             )
             collections_order.append(coll)
 
-        all_results: List[Dict[str, Any]] = []
+        all_results: list[dict[str, Any]] = []
 
         if tasks:
             results_per_collection = await asyncio.gather(*tasks, return_exceptions=True)
-            for coll, res in zip(collections_order, results_per_collection):
+            for coll, res in zip(collections_order, results_per_collection, strict=False):
                 if isinstance(res, Exception):
-                    # TODO: log warning with coll and error
+                    logger.warning(f"Retrieval failed for collection={coll}: {res}")
                     continue
                 for r in res:
                     meta = r.get("metadata", {}) or {}

@@ -1,4 +1,4 @@
-# 🕌 Athar Islamic QA System - Complete Documentation
+# 🕌 Burhan Islamic QA System - Complete Documentation
 
 **Version:** 3.0  
 **Last Updated:** April 15, 2026  
@@ -25,9 +25,9 @@
 
 ## Executive Summary
 
-### What is Athar?
+### What is Burhan?
 
-Athar is a production-ready, multi-agent Islamic QA system that answers religious questions with verified sources from Quran, Hadith, and Fiqh. Built on the Fanar-Sadiq architecture, it combines intent classification, RAG pipelines, and deterministic calculators.
+Burhan is a production-ready, multi-agent Islamic QA system that answers religious questions with verified sources from Quran, Hadith, and Fiqh. Built on the Fanar-Sadiq architecture, it combines intent classification, RAG pipelines, and deterministic calculators.
 
 ### Key Metrics (Updated: Phase 8)
 
@@ -427,8 +427,8 @@ python scripts/import_to_qdrant.py
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # 2. Install Python dependencies
 poetry install --with dev
@@ -469,7 +469,7 @@ SECRET_KEY=your-secret-key
 API_V1_PREFIX=/api/v1
 
 # Database
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -494,7 +494,7 @@ HF_TOKEN=your-huggingface-token
 ### Project Structure
 
 ```
-Athar/
+Burhan/
 ├── src/                          # Python backend
 │   ├── config/                   # Configuration
 │   │   ├── settings.py           # Environment settings
@@ -558,7 +558,7 @@ Athar/
 ├── data/
 │   ├── mini_dataset/             # GitHub-friendly (1.7 MB)
 │   ├── processed/                # Extracted/chunked data
-│   └── athar-datasets-v2/        # Upload-ready datasets
+│   └── Burhan-datasets-v2/        # Upload-ready datasets
 │
 ├── datasets/                     # Full datasets (excluded from Git)
 │   ├── system_book_datasets/     # Shamela databases (14.4 GB)
@@ -732,7 +732,7 @@ docker compose -f docker/docker-compose.prod.yml up -d
 
 1. Prepare datasets: `python scripts/prepare_datasets_for_upload_v2.py`
 2. Upload via Colab notebook
-3. Repository: `https://huggingface.co/datasets/Kandil7/Athar-Datasets`
+3. Repository: `https://huggingface.co/datasets/Kandil7/Burhan-Datasets`
 
 ---
 
@@ -859,6 +859,6 @@ MIT License - see LICENSE file for details.
 
 **Built with ❤️ for the Muslim community**
 
-[🕌](#) Athar Islamic QA System • Based on Fanar-Sadiq Architecture
+[🕌](#) Burhan Islamic QA System • Based on Fanar-Sadiq Architecture
 
 **19 commits • 120+ files • 14,200+ lines of code • 6 complete phases**

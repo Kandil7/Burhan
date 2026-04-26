@@ -2,7 +2,7 @@
 
 ## شرح كل نقطة نهاية بالتفصيل
 
-هذا الدليل يشرح كل نقاط النهاية (Endpoints) في نظام Athar.
+هذا الدليل يشرح كل نقاط النهاية (Endpoints) في نظام Burhan.
 
 ---
 
@@ -25,7 +25,7 @@
 ### 1.1 نظرة عامة
 
 ```
-Athar API
+Burhan API
 ├── /ask                    ← سؤال وجواب (main)
 ├── /search                 ← بحث في الوثائق
 ├── /classify              ← تصنيف النية
@@ -38,7 +38,7 @@ Athar API
 
 ```
 Development: http://localhost:8000
-Production: https://api.athar.islamic.ai
+Production: https://api.Burhan.islamic.ai
 ```
 
 ---
@@ -379,7 +379,7 @@ GET /
 
 ```json
 {
-    "message": "Athar API",
+    "message": "Burhan API",
     "version": "0.5.0",
     "docs": "/docs",
     "redoc": "/redoc"

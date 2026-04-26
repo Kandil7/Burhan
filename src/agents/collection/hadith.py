@@ -21,11 +21,11 @@ from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationReport,
 )
 from src.agents.base import strip_cot_leakage
+from src.domain.intents import Intent
 
 # =============================================================================
 # Arabic Text Normalization
@@ -87,7 +87,8 @@ class HadithCollectionAgent(CollectionAgent):
         llm_client=None,
     ) -> None:
         if config is None:
-            from src.verifiers.suite_builder import build_verification_suite_for
+            from src.verification.suite_builder import build_verification_suite_for
+
             config = CollectionAgentConfig(
                 collection_name=self.COLLECTION,
                 strategy=self.DEFAULT_STRATEGY,
@@ -106,23 +107,24 @@ class HadithCollectionAgent(CollectionAgent):
         """Normalize and prepare query for retrieval."""
         return _normalize_arabic(query)
 
-    def classify_intent(self, query: str) -> IntentLabel:
-        """Classify query to Hadith-specific intent."""
+    def classify_intent(self, query: str) -> Intent:
+        """Classify query to Hadith intent."""
         for keyword in _TAKHRIJ_KEYWORDS:
             if keyword in query:
-                return IntentLabel.HadithTakhrij
+                return Intent.HADITH
         for keyword in _SANAD_KEYWORDS:
             if keyword in query:
-                return IntentLabel.HadithSanad
+                return Intent.HADITH
         for keyword in _MATN_KEYWORDS:
             if keyword in query:
-                return IntentLabel.HadithMatn
-        return IntentLabel.HadithTakhrij
+                return Intent.HADITH
+        return Intent.HADITH
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         """Retrieve candidate passages from Hadith collection."""
         if not self.vector_store or getattr(self, "embedding_model", None) is None:
             import logging
+
             logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")
             return []
 
@@ -146,6 +148,7 @@ class HadithCollectionAgent(CollectionAgent):
             ]
         except Exception as e:
             import logging
+
             logging.getLogger(self.__class__.__name__).error(f"Retrieval failed: {e}")
             return []
 
@@ -160,7 +163,7 @@ class HadithCollectionAgent(CollectionAgent):
 
     async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
         """Verify candidates with hadith-specific checks."""
-        from src.verifiers.suite_builder import run_verification_suite
+        from src.verification.suite_builder import run_verification_suite
 
         suite = self.config.verification_suite if self.config else None
 
@@ -197,6 +200,7 @@ class HadithCollectionAgent(CollectionAgent):
                 return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
+
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
                 pass
 

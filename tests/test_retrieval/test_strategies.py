@@ -5,12 +5,13 @@ Tests the retrieval matrix, strategy retrieval, and collection mapping functions
 """
 
 import pytest
-from src.agents.collection_agent import RetrievalStrategy
+
+from src.agents.collection import RetrievalStrategy
 from src.retrieval.strategies import (
-    retrieval_matrix,
-    get_strategy_for_agent,
-    get_collection_for_agent,
     DEFAULT_STRATEGY,
+    get_collection_for_agent,
+    get_strategy_for_agent,
+    retrieval_matrix,
 )
 
 

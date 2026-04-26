@@ -5,7 +5,7 @@ Simple launcher script to start the API server with verbose logging.
 import subprocess
 import os
 
-os.chdir(r"K:\business\projects_v2\Athar")
+os.chdir(r"K:\business\projects_v2\Burhan")
 
 # Set debug logging
 env = os.environ.copy()

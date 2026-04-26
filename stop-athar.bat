@@ -1,18 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
 REM ═══════════════════════════════════════════════════════════════════════
-REM 🕌  ATHAR - Stop All Services
+REM 🕌  Burhan - Stop All Services
 REM ═══════════════════════════════════════════════════════════════════════
 REM
 REM This script stops all Docker services (PostgreSQL, Qdrant, Redis).
 REM Data is preserved - volumes are NOT deleted.
 REM
-REM Usage: Double-click or run: stop-athar.bat
+REM Usage: Double-click or run: stop-Burhan.bat
 REM ═══════════════════════════════════════════════════════════════════════
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
-echo 🛑  ATHAR - Stopping All Services
+echo 🛑  Burhan - Stopping All Services
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
@@ -33,7 +33,7 @@ echo.
 if !ERRORLEVEL! equ 0 (
     echo ✅ All services stopped successfully
     echo.
-    echo Data is preserved. To start again: start-athar.bat
+    echo Data is preserved. To start again: start-Burhan.bat
 ) else (
     echo ⚠️  Some services may not have stopped cleanly
     echo    Check with: docker compose -f docker/docker-compose.dev.yml ps

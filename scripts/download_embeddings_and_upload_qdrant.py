@@ -59,7 +59,7 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-HF_REPO = "Kandil7/Athar-Embeddings"
+HF_REPO = "Kandil7/Burhan-Embeddings"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
@@ -471,7 +471,7 @@ def main():
             return
 
     print("\n" + "═" * 70)
-    print("🕌  ATHAR - Download Embeddings & Upload to Qdrant (Smart Sync)")
+    print("🕌  Burhan - Download Embeddings & Upload to Qdrant (Smart Sync)")
     print("═" * 70)
     print(f"  HF Repo: {HF_REPO}")
     print(f"  Qdrant: {QDRANT_URL}")

@@ -1,5 +1,5 @@
 # Enrichment Module
-"""Metadata enrichment pipeline for Athar RAG system.
+"""Metadata enrichment pipeline for Burhan RAG system.
 
 Phase 3.1: Collection-Aware RAG enrichment pipeline.
 Enrichs raw passages with author, era, and category information.
@@ -113,14 +113,14 @@ MADHHAB_AFFILIATIONS: Dict[str, Dict[str, str]] = {
 
 # Known aqeedah schools
 AQEEDAH_SCHOOLS: Dict[str, str] = {
-    "imam_bukhari": "athari",
-    "imam_muslim": "athari",
-    "imam_ibn_qayyim": "athari",
+    "imam_bukhari": "Burhani",
+    "imam_muslim": "Burhani",
+    "imam_ibn_qayyim": "Burhani",
     "imam_al-ghazali": "ashari",
-    "imam_abu_hanifa": "athari",
-    "imam_malik": "athari",
+    "imam_abu_hanifa": "Burhani",
+    "imam_malik": "Burhani",
     "imam_al-shafi": "ashari",
-    "imam_ahmad": "athari",
+    "imam_ahmad": "Burhani",
 }
 
 
@@ -275,7 +275,7 @@ def build_metadata_csv(
     """
     Build enriched metadata CSV from input dataset.
 
-    Reads passages from Athar-Datasets (JSON/JSONL), applies enrichment,
+    Reads passages from Burhan-Datasets (JSON/JSONL), applies enrichment,
     and outputs enriched JSONL ready for Qdrant vector DB.
 
     Args:

@@ -1,6 +1,6 @@
-# 🌿 Git Branch Strategy for Athar
+# 🌿 Git Branch Strategy for Burhan
 
-Comprehensive branching strategy for systematic development of the Athar Islamic QA system.
+Comprehensive branching strategy for systematic development of the Burhan Islamic QA system.
 
 ---
 

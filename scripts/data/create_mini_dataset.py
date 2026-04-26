@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Create Mini-Dataset for Athar Islamic QA System MVP.
+Create Mini-Dataset for Burhan Islamic QA System MVP.
 
 Extracts representative samples from full datasets to create a
 GitHub-friendly mini-dataset (<50 MB) that demonstrates all features.
@@ -29,7 +29,7 @@ Output:
     ├── book_selections.json                (metadata)
     └── README.md                           (documentation)
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import csv
@@ -452,9 +452,9 @@ def create_readme(stats: dict[str, dict], total_docs: int, total_size_mb: float)
         size = coll_stats.get("size_mb", 0)
         rows.append(f"| {coll_name} | {docs} | {size:.1f} MB |")
 
-    return f"""# Athar Mini-Dataset for MVP
+    return f"""# Burhan Mini-Dataset for MVP
 
-This mini-dataset contains representative samples from the full Athar datasets,
+This mini-dataset contains representative samples from the full Burhan datasets,
 optimized for GitHub (<50 MB) while demonstrating all system features.
 
 ## Dataset Overview
@@ -531,7 +531,7 @@ def main(output_dir: Optional[str] = None) -> None:
     ensure_dir(target_dir)
 
     print(f"\n{'=' * 70}")
-    print("  ATHAR MINI-DATASET CREATOR")
+    print("  Burhan MINI-DATASET CREATOR")
     print(f"{'=' * 70}")
     print(f"  Output: {target_dir}")
     print(f"  Books:  {BOOKS_DIR}")
@@ -604,7 +604,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Create mini-dataset for Athar MVP",
+        description="Create mini-dataset for Burhan MVP",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Example: python scripts/data/create_mini_dataset.py --output data/my_mini",
     )

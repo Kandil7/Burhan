@@ -1,5 +1,5 @@
 """
-BAAI/bge-m3 Embedding Model Wrapper for Athar Islamic QA system.
+BAAI/bge-m3 Embedding Model Wrapper for Burhan Islamic QA system.
 
 Phase 6 Refactoring:
 - Fixed missing await on _split_by_cache (root cause of index OOB error)
@@ -60,7 +60,7 @@ class EmbeddingModel:
 
     def _get_device(self) -> str:
         # Allow forcing CPU via environment variable
-        force_cpu = os.environ.get("ATHAR_EMBEDDING_CPU", "").lower()
+        force_cpu = os.environ.get("Burhan_EMBEDDING_CPU", "").lower()
         if force_cpu in ("1", "true", "yes"):
             logger.info("embedding.cpu_forced")
             return "cpu"

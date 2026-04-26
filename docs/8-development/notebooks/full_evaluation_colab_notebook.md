@@ -1,13 +1,13 @@
-# 📓 دفتر_notes: بناء مجموعة تقييم RAG متكاملة لنظام Athar
+# 📓 دفتر_notes: بناء مجموعة تقييم RAG متكاملة لنظام Burhan
 
 ## 🎯 الغرض من هذا الدفتر
 
-يُنشئ هذا الدفتر مجموعة تقييم شاملة لنظام RAG الخاص بـAthar، وهي مجموعة بيانات مُصمَّمة خصيصًا لاختبار قدرة نظام الاسترجاع على استرجاع المقاطع الصحيحة والإجابة من النصوص الأصلية.
+يُنشئ هذا الدفتر مجموعة تقييم شاملة لنظام RAG الخاص بـBurhan، وهي مجموعة بيانات مُصمَّمة خصيصًا لاختبار قدرة نظام الاسترجاع على استرجاع المقاطع الصحيحة والإجابة من النصوص الأصلية.
 
 يغطي هذا الدفتر الخطوات التالية:
 
 1. إعداد بيئة Google Colab وتثبيت المتطلبات الأساسية
-2. تحميل مجموعة بيانات Athar من Hugging Face
+2. تحميل مجموعة بيانات Burhan من Hugging Face
 3. تنظيف النصوص ومعالجتها بشكل موحد
 4. إعداد نموذج اللغات الكبير (LLM) من Hugging Face
 5. تصميم قوالب الأوامر المتخصصة لتوليد الأسئلة
@@ -87,19 +87,19 @@ print(f"✓ تم تسجيل الدخول بنجاح كمستخدم: {HF_USERNAME
 
 ---
 
-## 📂 القسم الثاني: تحميل مجموعة بيانات Athar
+## 📂 القسم الثاني: تحميل مجموعة بيانات Burhan
 
 يدعم هذا الدفتر تحميل مجموعتين من البيانات:
 
-### الخيار 1.2.1: تحميل Athar Mini Dataset (مُوصى به للتجارب الأولى)
+### الخيار 1.2.1: تحميل Burhan Mini Dataset (مُوصى به للتجارب الأولى)
 
 ```python
 # ══════════════════════════════════════════════════════════════════════════════
-# تحميل مجموعة بيانات Athar-Mini-Dataset-v2 (خفيفة ومثالية للتجارب)
+# تحميل مجموعة بيانات Burhan-Mini-Dataset-v2 (خفيفة ومثالية للتجارب)
 # ══════════════════════════════════════════════════════════════════════════════
 
 # تحميل المجموعة من Hugging Face
-mini_ds = load_dataset("Kandil7/Athar-Mini-Dataset-v2", split="train")
+mini_ds = load_dataset("Kandil7/Burhan-Mini-Dataset-v2", split="train")
 
 # عرض بعض المعلومات الأساسية
 print(f"╔════════════════════════════════════════════════════════════════════╗")
@@ -113,7 +113,7 @@ print(f"\n• عينة من السجل الأول:")
 print(json.dumps(mini_ds[0], ensure_ascii=False, indent=2))
 ```
 
-### الخيار 1.2.2: تحميل Athar Full Dataset (للاستخدام الإنتاجي)
+### الخيار 1.2.2: تحميل Burhan Full Dataset (للاستخدام الإنتاجي)
 
 ```python
 # ⚠️ ══════════════════════════════════════════════════════════════════════
@@ -121,7 +121,7 @@ print(json.dumps(mini_ds[0], ensure_ascii=False, indent=2))
 #   (تحتوي على ملايين السطور)
 # ══════════════════════════════════════════════════════════════════════
 
-# full_ds = load_dataset("Kandil7/Athar-Datasets", split="train")
+# full_ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
 # len(full_ds), full_ds[0]
 ```
 
@@ -474,7 +474,7 @@ for i, q in enumerate(test_questions, 1):
 
 # قائمة الحدود لكل مجموعة (يمكن تعديلها حسب الاحتياجات)
 MAX_PER_COLLECTION = {
-    # المجموعات الرئيسية في Athar Mini
+    # المجموعات الرئيسية في Burhan Mini
     "seerah_passages": 1000,      # السيرة النبوية
     "fiqh_passages": 500,         # الفقه
     "aqeedah_passages": 500,       # العقيدة
@@ -587,7 +587,7 @@ def build_eval_with_hf_llm(
 
 ```python
 # ══════════════════════════════════════════════════════════════════════════════
-# تشغيل البناء على Athar Mini Dataset
+# تشغيل البناء على Burhan Mini Dataset
 # ══════════════════════════════════════════════════════════════════════════════
 
 # حدود كل مجموعة (يُنصح بالبدء بأرقام صغيرة للاختبار)
@@ -624,7 +624,7 @@ eval_records_mini_hf, counts_mini = build_eval_with_hf_llm(
 os.makedirs("output", exist_ok=True)
 
 # مسار الملف
-eval_mini_path = "output/Athar-RAG-Eval-HFLLM-Mini-v1.jsonl"
+eval_mini_path = "output/Burhan-RAG-Eval-HFLLM-Mini-v1.jsonl"
 
 # حفظ السجلات
 with open(eval_mini_path, "w", encoding="utf-8") as f:
@@ -659,7 +659,7 @@ print(f"• الأعمدة: {eval_mini_ds.column_names}")
 # ══════════════════════════════════════════════════════════════════════════════
 
 # اسم مستودع البيانات
-EVAL_REPO_NAME = f"{HF_USERNAME}/Athar-RAG-Eval-HFLLM-Mini-v1"
+EVAL_REPO_NAME = f"{HF_USERNAME}/Burhan-RAG-Eval-HFLLM-Mini-v1"
 
 # الرفع
 eval_mini_ds.push_to_hub(EVAL_REPO_NAME, token=HF_TOKEN)
@@ -686,7 +686,7 @@ splits = {coll: Dataset.from_list(recs) for coll, recs in by_coll.items()}
 eval_dd = DatasetDict(splits)
 
 # اسم المستودع الجديد
-EVAL_REPO_NAME_MULTI = f"{HF_USERNAME}/Athar-RAG-Eval-HFLLM-Mini-ByCollection-v1"
+EVAL_REPO_NAME_MULTI = f"{HF_USERNAME}/Burhan-RAG-Eval-HFLLM-Mini-ByCollection-v1"
 
 # الرفع
 eval_dd.push_to_hub(EVAL_REPO_NAME_MULTI, token=HF_TOKEN)
@@ -771,11 +771,11 @@ except Exception as e:
 
 ```python
 # ═════════════════=============================================================
-# التوسع إلى Athar-Datasets الكاملة
+# التوسع إلى Burhan-Datasets الكاملة
 # ══════════════════════════════════════════════════════════════════════════════
 
 # 1. تحميل المجموعة الكاملة
-# full_ds = load_dataset("Kandil7/Athar-Datasets", split="train")
+# full_ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
 # print(f"• Full dataset size: {len(full_ds)} rows")
 
 # 2. تطبيق التنظيف
@@ -794,7 +794,7 @@ except Exception as e:
 # )
 
 # 4. حفظ ورفع
-# eval_full_path = "output/Athar-RAG-Eval-HFLLM-Full-v1.jsonl"
+# eval_full_path = "output/Burhan-RAG-Eval-HFLLM-Full-v1.jsonl"
 # ...
 ```
 
@@ -808,9 +808,9 @@ except Exception as e:
 # ══════════════════════════════════════════════════════════════════════════════
 
 # للخيارات المختلفة:
-# - Kandil7/Athar-RAG-Eval-HFLLM-Full-v1
-# - Kandir7/Athar-RAG-Eval-HF-Llama-3.1-8B-v1
-# - Kandil7/Athar-RAG-Eval-GPT4-v1 (للاستخدام مع OpenAI API)
+# - Kandil7/Burhan-RAG-Eval-HFLLM-Full-v1
+# - Kandir7/Burhan-RAG-Eval-HF-Llama-3.1-8B-v1
+# - Kandil7/Burhan-RAG-Eval-GPT4-v1 (للاستخدام مع OpenAI API)
 ```
 
 ---
@@ -828,7 +828,7 @@ except Exception as e:
 
 ## 🔗 الموارد الإضافية
 
-- **مجموعة بيانات Athar**: [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- **مجموعة بيانات Burhan**: [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 - **نموذج Qwen2.5**: [Qwen/Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)
 - **مستندات Hugging Face Datasets**: [Hugging Face Docs](https://huggingface.co/docs/datasets)
 
@@ -1402,7 +1402,7 @@ if eval_records_mini_hf:
 
 def export_eval_dataset(
     eval_records: list, 
-    base_path: str = "output/Athar-RAG-Eval",
+    base_path: str = "output/Burhan-RAG-Eval",
     formats: list = None
 ):
     """
@@ -1467,7 +1467,7 @@ def export_eval_dataset(
 if eval_records_mini_hf:
     export_results = export_eval_dataset(
         eval_records_mini_hf,
-        base_path="output/Athar-RAG-Eval-HFLLM-Mini-v1",
+        base_path="output/Burhan-RAG-Eval-HFLLM-Mini-v1",
         formats=["jsonl", "json", "parquet"]
     )
     
@@ -1516,7 +1516,7 @@ if eval_records_mini_hf:
 # !pip install -q datasets huggingface_hub transformers accelerate tqdm
 
 # 2. تحميل البيانات
-# mini_ds = load_dataset("Kandil7/Athar-Mini-Dataset-v2", split="train")
+# mini_ds = load_dataset("Kandil7/Burhan-Mini-Dataset-v2", split="train")
 # mini_ds_clean = mini_ds.map(clean_row, num_proc=4)
 
 # 3. تحميل النموذج (Qwen2.5)
@@ -1527,14 +1527,14 @@ if eval_records_mini_hf:
 # eval_records, counts = build_eval_with_hf_llm(mini_ds_clean, MAX_PER_COLLECTION_TEST)
 
 # 5. حفظ ورفع
-# eval_mini_ds.push_to_hub(f"{HF_USERNAME}/Athar-RAG-Eval-Mini-v1")
+# eval_mini_ds.push_to_hub(f"{HF_USERNAME}/Burhan-RAG-Eval-Mini-v1")
 ```
 
 ---
 
 ## 🔗 الموارد الإضافية
 
-- **مجموعة بيانات Athar**: [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- **مجموعة بيانات Burhan**: [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 - **نموذج Qwen2.5**: [Qwen/Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)
 - **مستندات Hugging Face**: [Hugging Face Docs](https://huggingface.co/docs/datasets)
 - **مستندات Transformers**: [Transformers Docs](https://huggingface.co/docs/transformers)

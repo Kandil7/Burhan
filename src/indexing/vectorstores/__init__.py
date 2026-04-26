@@ -1,4 +1,4 @@
-"""Vectorstores module for Athar Islamic QA system."""
+"""Vectorstores module for Burhan Islamic QA system."""
 
 from src.indexing.vectorstores.base import VectorStoreBase, VectorStoreBaseError
 from src.indexing.vectorstores.qdrant_store import VectorStore, VectorStoreError

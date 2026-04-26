@@ -1,12 +1,12 @@
-# AGENTS.md - Agentic Coding Guidelines for Athar
+# AGENTS.md - Agentic Coding Guidelines for Burhan
 
-This file provides guidelines and commands for agentic coding agents working on the Athar Islamic QA system.
+This file provides guidelines and commands for agentic coding agents working on the Burhan Islamic QA system.
 
 ---
 
 ## Project Overview
 
-Athar is a multi-agent Islamic QA system with ~200+ Python files, built on FastAPI with:
+Burhan is a multi-agent Islamic QA system with ~200+ Python files, built on FastAPI with:
 - **Config-backed agents**: YAML configs in `config/agents/`, prompts in `prompts/`
 - **v2 Architecture**: Collection agents in `src/agents/collection/`
 - **Retrieval layer**: `src/retrieval/` (hybrid, BM25, dense)
@@ -142,7 +142,7 @@ class AgentConfig(BaseModel):
 
 ```python
 # Use custom exceptions for domain errors
-from src.core.exceptions import AtharError, ConfigurationError
+from src.core.exceptions import BurhanError, ConfigurationError
 
 # Raise with context
 raise ConfigurationError(
@@ -152,7 +152,7 @@ raise ConfigurationError(
 # Handle gracefully
 try:
     result = await agent.execute(input)
-except AtharError as e:
+except BurhanError as e:
     logger.warning(f"Agent failed: {e}")
     return fallback_response()
 ```

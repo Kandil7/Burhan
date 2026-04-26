@@ -1,0 +1,5 @@
+Query: صلاة -> normalized: صلاه
+Keywords: ['صلاه', 'صلاه', 'صوم', 'صيام', 'زكاه', 'زكاه', 'حج', 'عمره']
+Matches: ['صلاه', 'صلاه']
+Match count: 2
+SUCCESS: Keyword matched!

@@ -127,7 +127,7 @@ class HybridQueryClassifier:
 ### الأسطر 71-140: LLM Classifier Prompt
 
 ```python
-    LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Athar.
+    LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Burhan.
 
 Your task is to classify the user's query into exactly ONE intent from the list below.
 

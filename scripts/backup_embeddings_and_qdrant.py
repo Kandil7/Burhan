@@ -46,7 +46,7 @@ EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 BACKUP_DIR = PROJECT_ROOT / "data" / "processed" / "hf_backup"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [
@@ -142,7 +142,7 @@ def backup_embeddings():
         return False
 
     # Create README for embeddings
-    readme_content = f"""# 🕌 Athar Embeddings
+    readme_content = f"""# 🕌 Burhan Embeddings
 
 **5.7M document embeddings from 10 Islamic text collections**
 

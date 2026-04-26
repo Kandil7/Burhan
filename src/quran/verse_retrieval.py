@@ -1,5 +1,5 @@
 """
-Verse Retrieval Engine for Athar Islamic QA system.
+Verse Retrieval Engine for Burhan Islamic QA system.
 
 This module provides a class for retrieving verses from the database based on a given query.
 

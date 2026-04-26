@@ -1,5 +1,5 @@
 """
-Quran API endpoints for Athar Islamic QA system.
+Quran API endpoints for Burhan Islamic QA system.
 
 Provides endpoints for:
 - Listing surahs
@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from src.config.logging_config import get_logger
 from src.data.models.quran import Ayah, Surah
-from src.infrastructure.db_sync import get_sync_session
+from src.infrastructure.database import get_sync_session
 from src.quran.nl2sql import NL2SQLEngine, NL2SQLQueryError
 from src.quran.quotation_validator import QuotationValidator
 from src.quran.tafsir_retrieval import TafsirNotFoundError, TafsirRetrievalEngine
@@ -218,9 +218,7 @@ async def get_ayah(surah: int, ayah: int, db_session=Depends(get_sync_session)):
         verse = await engine.lookup(f"{surah}:{ayah}", include_translation=True)
         return AyahResponse(**verse)
     except VerseNotFoundError as e:
-        raise HTTPException(
-            status_code=404, detail=f"Verse {surah}:{ayah} not found"
-        ) from e
+        raise HTTPException(status_code=404, detail=f"Verse {surah}:{ayah} not found") from e
 
 
 # ==========================================
@@ -310,9 +308,7 @@ async def get_tafsir(surah: int, ayah: int, source: str | None = None, db_sessio
         result = await engine.get_tafsir(f"{surah}:{ayah}", source=source)
         return TafsirResponse(**result)
     except TafsirNotFoundError as e:
-        raise HTTPException(
-            status_code=404, detail=f"Tafsir not found for {surah}:{ayah}"
-        ) from e
+        raise HTTPException(status_code=404, detail=f"Tafsir not found for {surah}:{ayah}") from e
 
 
 @router.get("/tafsir-sources", response_model=list[dict])

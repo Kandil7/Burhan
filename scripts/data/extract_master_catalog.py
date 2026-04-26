@@ -377,7 +377,7 @@ def print_summary(catalog: Dict[str, Any], category_mapping: Dict[str, Any]):
 def main():
     """Main extraction function."""
     print("="*70)
-    print("🕌 ATHAR - EXTRACT MASTER CATALOG")
+    print("🕌 Burhan - EXTRACT MASTER CATALOG")
     print("="*70)
     
     # Step 1: Extract master catalog

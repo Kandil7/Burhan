@@ -21,8 +21,8 @@ The API is ready to route queries while we wait for the embedding pipeline.
 
 ### Status: ✅ COMPLETE
 
-**Repository:** [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)  
-**URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets  
+**Repository:** [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)  
+**URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets  
 **Size:** 42.6 GB (10 collections)
 
 ### Upload Progress
@@ -143,7 +143,7 @@ The API is ready to route queries while we wait for the embedding pipeline.
 
 ```bash
 # Verify uploads
-poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
+poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Datasets
 ```
 
 ### Check Colab Progress

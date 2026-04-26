@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete Athar Islamic QA System - Working Query Handler
+Complete Burhan Islamic QA System - Working Query Handler
 
 Bypasses orchestrator issues by directly using components.
 """
@@ -13,7 +13,7 @@ from src.infrastructure.llm_client import get_llm_client
 
 async def test_full_pipeline():
     """Test the full query pipeline."""
-    print("=== Athar Full Pipeline Test ===\n")
+    print("=== Burhan Full Pipeline Test ===\n")
     
     # Initialize LLM
     llm_client = await get_llm_client()

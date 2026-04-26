@@ -47,7 +47,7 @@ src/
 ├── indexing/              ← خط البيانات
 │   ├── __init__.py
 │   ├── pipelines/
-│   │   ├── ingest_athar.py    ← الاست ingestion الرئيسي
+│   │   ├── ingest_Burhan.py    ← الاست ingestion الرئيسي
 │   │   ├── build_catalog_indexes.py
 │   │   ├── build_seerah_chunks_camel.py
 │   │   ├── analyze_chunks.py
@@ -68,7 +68,7 @@ src/
 ### 3.1 الوصف
 
 ```python
-# src/indexing/pipelines/ingest_athar.py
+# src/indexing/pipelines/ingest_Burhan.py
 
 class IngestAthropipeline:
     """خط است ingestion."""

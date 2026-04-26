@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "athar"
+name = "Burhan"
 version = "0.1.0"
 description = "Islamic QA System - Multi-Agent Architecture based on Fanar-Sadiq"
-authors = ["Athar Team <team@athar.islamic>"]
+authors = ["Burhan Team <team@Burhan.islamic>"]
 readme = "README.md"
 packages = [{include = "src", from = "."}]
 include = ["tests/"]
@@ -57,7 +57,7 @@ langchain = "^0.1.0"
 langchain-openai = "^0.1.0"
 
 [tool.poetry.scripts]
-athar = "src.api.main:app"
+Burhan = "src.api.main:app"
 
 [build-system]
 requires = ["poetry-core"]

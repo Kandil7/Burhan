@@ -14,10 +14,10 @@ from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationReport,
 )
+from src.domain.intents import Intent
 
 _ALEF_PATTERN = re.compile(r"[إأآا]")
 _YA_PATTERN = re.compile(r"[ىئ]")
@@ -62,7 +62,8 @@ class TafsirCollectionAgent(CollectionAgent):
         llm_client=None,
     ) -> None:
         if config is None:
-            from src.verifiers.suite_builder import build_verification_suite_for
+            from src.verification.suite_builder import build_verification_suite_for
+
             config = CollectionAgentConfig(
                 collection_name=self.COLLECTION,
                 strategy=self.DEFAULT_STRATEGY,
@@ -80,18 +81,19 @@ class TafsirCollectionAgent(CollectionAgent):
     def query_intake(self, query: str) -> str:
         return _normalize_arabic(query)
 
-    def classify_intent(self, query: str) -> IntentLabel:
+    def classify_intent(self, query: str) -> Intent:
         for keyword in _TAFSIR_MAQSAD_KEYWORDS:
             if keyword in query:
-                return IntentLabel.TafsirMaqasid
+                return Intent.TAFSIR
         for keyword in _TAFSIR_AYAH_KEYWORDS:
             if keyword in query:
-                return IntentLabel.TafsirAyah
-        return IntentLabel.TafsirAyah
+                return Intent.TAFSIR
+        return Intent.TAFSIR
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         if not self.vector_store or getattr(self, "embedding_model", None) is None:
             import logging
+
             logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")
             return []
         top_k = self.strategy.top_k if self.strategy else 12
@@ -108,6 +110,7 @@ class TafsirCollectionAgent(CollectionAgent):
             ]
         except Exception as e:
             import logging
+
             logging.getLogger(self.__class__.__name__).error(f"Retrieval failed: {e}")
             return []
 
@@ -120,7 +123,7 @@ class TafsirCollectionAgent(CollectionAgent):
         return filtered[:top_k]
 
     async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        from src.verifiers.suite_builder import run_verification_suite
+        from src.verification.suite_builder import run_verification_suite
 
         suite = self.config.verification_suite if self.config else None
         if suite:
@@ -148,6 +151,7 @@ class TafsirCollectionAgent(CollectionAgent):
                 return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
+
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
                 pass
         return formatted

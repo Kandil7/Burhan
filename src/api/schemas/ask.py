@@ -15,7 +15,7 @@ class AskRequest(BaseModel):
     """
     Request model for POST /api/v1/ask endpoint.
 
-    Main entry point for all user queries to the Athar system.
+    Main entry point for all user queries to the Burhan system.
     """
 
     query: str = Field(

@@ -1,8 +1,8 @@
-# Athar CollectionAgent Architecture and Multi-Agent RAG Design
+# Burhan CollectionAgent Architecture and Multi-Agent RAG Design
 
 ## Executive Summary
 
-This document specifies a reusable `CollectionAgent` architecture for Athar, an Islamic multi-agent RAG system built on the Athar-Datasets. It defines a shared lifecycle, retrieval strategies, verification suites, prompts, metadata enrichment, routing, Qdrant configuration, orchestration patterns, evaluation framework, and deployment considerations, aligned with usul al-fiqh principles (الرجوع إلى الأدلة، بيان الخلاف، التوقف عند الجهل).[^1][^2][^3][^4][^5]
+This document specifies a reusable `CollectionAgent` architecture for Burhan, an Islamic multi-agent RAG system built on the Burhan-Datasets. It defines a shared lifecycle, retrieval strategies, verification suites, prompts, metadata enrichment, routing, Qdrant configuration, orchestration patterns, evaluation framework, and deployment considerations, aligned with usul al-fiqh principles (الرجوع إلى الأدلة، بيان الخلاف، التوقف عند الجهل).[^1][^2][^3][^4][^5]
 
 The design assumes Python + FastAPI backend, Qdrant hybrid dense/BM25 retrieval, and an Arabic-capable LLM such as Qwen2.5-72B, with domain-specific Arabic embeddings (AraBERT/CAMeLBERT or newer Arabic embedding models) for similarity search.[^6][^7][^8][^9]
 
@@ -12,7 +12,7 @@ The design assumes Python + FastAPI backend, Qdrant hybrid dense/BM25 retrieval,
 
 ### 1.1 Concept and Responsibilities
 
-A `CollectionAgent` represents a domain-specialized retrieval-and-generation pipeline bound to a single Athar collection (e.g., fiqh_passages, hadith_passages). It encapsulates:
+A `CollectionAgent` represents a domain-specialized retrieval-and-generation pipeline bound to a single Burhan collection (e.g., fiqh_passages, hadith_passages). It encapsulates:
 
 - Configuration: `collection_name`, `retrieval_strategy`, `verification_suite`, `prompt_template`, `fallback_policy`.
 - Lifecycle: query intake → intent classification (intra-collection) → retrieval → reranking → verification → generation → citation assembly.
@@ -208,7 +208,7 @@ class CollectionAgent(ABC):
 
 ## 2. Retrieval Strategy Matrix
 
-Hybrid search in Qdrant combines dense semantic vectors with BM25-like sparse vectors using the Universal Query API; results can be fused via RRF and then reranked by a cross-encoder. For Athar, each agent configures its own weights, filters, and thresholds.[^13][^7][^6][^12]
+Hybrid search in Qdrant combines dense semantic vectors with BM25-like sparse vectors using the Universal Query API; results can be fused via RRF and then reranked by a cross-encoder. For Burhan, each agent configures its own weights, filters, and thresholds.[^13][^7][^6][^12]
 
 ### 2.1 Strategy Table
 
@@ -349,7 +349,7 @@ Generic schema:
 
 1. **quote_validator**
    - Input: retrieved passages + extracted candidate quotes (e.g., Quran ayat, hadith matn).
-   - Logic: ensure that any quoted text in the answer is an exact substring of a canonical text in the corpus (for Qur’an/Hadith/athar).[^4]
+   - Logic: ensure that any quoted text in the answer is an exact substring of a canonical text in the corpus (for Qur’an/Hadith/Burhan).[^4]
    - Output: list of validated spans with references.
    - Fail policy: `abstain` (better to abstain than misquote revealed texts).
 
@@ -566,7 +566,7 @@ All agents share a preamble appended or prepended to their domain-specific syste
 
 ### 5.1 Join Logic
 
-Each passage in Athar collections contains fields such as `book_id`, `content`, `author`, `page_number`, etc., while master catalogs provide richer metadata across books and authors. During indexing:[^2][^1]
+Each passage in Burhan collections contains fields such as `book_id`, `content`, `author`, `page_number`, etc., while master catalogs provide richer metadata across books and authors. During indexing:[^2][^1]
 
 1. Load `master_catalog.json` keyed by `book_id`, including `book_title`, `author_id`, categories, edition data.
 2. Load `author_catalog.json` keyed by `author_id` with `author_name`, `death_year`, `madhhab`, `aqeedah_school`, region.
@@ -614,11 +614,11 @@ payload_schema_example = {
         "author_name": "...",
         "author_death_year": 1234,
         "madhhab": "hanbali",          # or "shafii", "hanafi", "maliki", "zahiri", "unknown"
-        "aqeedah_school": "athari",     # or "ashari", "maturidi", etc.
+        "aqeedah_school": "Burhani",     # or "ashari", "maturidi", etc.
         "era": "classical",             # sahabah / tabiin / classical / medieval / contemporary
         "category_main": "fiqh",        # from category_mapping
         "category_sub": "fiqh_ibadah",  # fine-grained
-        "collection": "fiqh_passages",  # name of Athar collection
+        "collection": "fiqh_passages",  # name of Burhan collection
         "page_number": 45,
         "section_title": "...",
         "hierarchy": "كتاب الصلاة > باب شروط الصلاة",
@@ -709,7 +709,7 @@ router:
 
 ## 7. Qdrant Collection Configuration
 
-Qdrant supports hybrid dense/sparse vectors with named vector fields and BM25-based sparse vectors in each collection. Athar should create one Qdrant collection per dataset collection (fiqh_passages, hadith_passages, etc.).[^6][^17]
+Qdrant supports hybrid dense/sparse vectors with named vector fields and BM25-based sparse vectors in each collection. Burhan should create one Qdrant collection per dataset collection (fiqh_passages, hadith_passages, etc.).[^6][^17]
 
 ### 7.1 Base Template
 
@@ -797,7 +797,7 @@ for name, hnsw_conf in collections_config.items():
 
 ## 8. Cross-Agent Orchestration Patterns
 
-Complex questions often require multiple agents cooperatively. Athar’s orchestration graph can be modeled in LangGraph or a similar framework, following standard multi-stage retrieval + reranking practices but specialized for Islamic domains.[^18][^12]
+Complex questions often require multiple agents cooperatively. Burhan’s orchestration graph can be modeled in LangGraph or a similar framework, following standard multi-stage retrieval + reranking practices but specialized for Islamic domains.[^18][^12]
 
 ### 8.1 Pattern A: Sequential (Fiqh → Usul → Hadith)
 
@@ -842,7 +842,7 @@ Flow:
 When multiple agents produce overlapping or conflicting evidence:
 
 - Group content by domain and by madhhab/aqeedah_school.
-- Use usuli notions of tarjih: consider source strength (Qur’an > sahih mutawatir hadith > ahad hadith > athar > qiyas), chain reliability, and scholar authority.[^4]
+- Use usuli notions of tarjih: consider source strength (Qur’an > sahih mutawatir hadith > ahad hadith > Burhan > qiyas), chain reliability, and scholar authority.[^4]
 - Clearly mark disputed points and avoid claiming ijma unless sources explicitly state it.
 - For citations, maintain per-agent citation lists and deduplicate; provide combined references in each paragraph but tag them with origin (e.g., "في الفقه" vs "في الحديث").
 
@@ -908,7 +908,7 @@ Human scholars should review test items to ensure alignment with authentic metho
 Arabic-specific embedding models such as AraBERT, CAMeLBERT, or more recent Arabic general-purpose embeddings provide better semantic similarity in Arabic than generic multilingual models. For large-scale retrieval in Islamic text:[^8][^9][^19]
 
 - Use an Arabic sentence or document embedding model fine-tuned on ISLAM/Qur’an/Hadith text if available (e.g., from recent Arabic embedding research).[^9][^20]
-- If such a model is not yet available, start with AraBERT/CAMeLBERT-based sentence embeddings and refine using contrastive learning on Athar pairs (similar vs dissimilar passages).[^19][^8]
+- If such a model is not yet available, start with AraBERT/CAMeLBERT-based sentence embeddings and refine using contrastive learning on Burhan pairs (similar vs dissimilar passages).[^19][^8]
 
 ### 10.2 CPU-Optimized Inference
 
@@ -921,7 +921,7 @@ Given CPU-based servers:
 
 ### 10.3 Chunking Strategy per Collection
 
-Different Athar collections benefit from specialized chunking:
+Different Burhan collections benefit from specialized chunking:
 
 - **fiqh_passages, usul_fiqh**: semantic chunks by mas’alah or section (approx. 200–400 tokens) to align with issue-based reasoning.
 - **hadith_passages**: per hadith (matn + core sharh excerpt) as one chunk; avoid splitting matn across chunks.
@@ -948,7 +948,7 @@ This ordering balances user demand with complexity: hadith and tafsir require st
 
 ### 10.5 Memory Management for Large Collections
 
-Athar’s largest collections (hadith ≈ 11 GB, general_islamic ≈ 6.5 GB) require attention to storage, indexing, and query-time RAM usage:
+Burhan’s largest collections (hadith ≈ 11 GB, general_islamic ≈ 6.5 GB) require attention to storage, indexing, and query-time RAM usage:
 
 - Enable `on_disk_payload=True` and quantization to reduce memory.[^16][^6]
 - Consider sharding large collections by era or compiler (e.g., sahih, sunan, musnad) if Qdrant cluster mode is available.
@@ -987,9 +987,9 @@ graph LR
 
 ## References
 
-1. [Kandil7/Athar-Datasets - Hugging Face](https://huggingface.co/datasets/Kandil7/Athar-Datasets) - We're on a journey to advance and democratize artificial intelligence through open source and open s...
+1. [Kandil7/Burhan-Datasets - Hugging Face](https://huggingface.co/datasets/Kandil7/Burhan-Datasets) - We're on a journey to advance and democratize artificial intelligence through open source and open s...
 
-2. [Kandil7/Athar-Datasets at main - Hugging Face](https://huggingface.co/datasets/Kandil7/Athar-Datasets/tree/main) - Datasets: · Kandil7. /. Athar-Datasets. like 4. Tasks: Question Answering · Text Generation · Text R...
+2. [Kandil7/Burhan-Datasets at main - Hugging Face](https://huggingface.co/datasets/Kandil7/Burhan-Datasets/tree/main) - Datasets: · Kandil7. /. Burhan-Datasets. like 4. Tasks: Question Answering · Text Generation · Text R...
 
 3. [منهجية البحث في أصول الفقه Methodology of Research in Usul al-Fiqh](https://asjp.cerist.dz/en/article/244278) - This is elucidated within the general framework of "Research Methodology in Usul al-Fiqh," presented...
 

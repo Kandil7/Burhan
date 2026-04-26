@@ -1,5 +1,5 @@
 """
-Language Detection Utility for Athar Islamic QA system.
+Language Detection Utility for Burhan Islamic QA system.
 
 Detects if text is Arabic or English based on Unicode character analysis.
 Extracted from duplicate code in HybridQueryClassifier and ChatbotAgent.

@@ -2,7 +2,7 @@
 Collection Agents - Canonical v2 Agents.
 
 This package contains the config-backed CollectionAgent implementations.
-These are the canonical agents for Athar v2 architecture.
+These are the canonical agents for Burhan v2 architecture.
 """
 
 from src.agents.collection.aqeedah import AqeedahCollectionAgent
@@ -10,7 +10,6 @@ from src.agents.collection.base import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationCheck,
     VerificationReport,
@@ -32,7 +31,6 @@ __all__ = [
     # Base classes
     "CollectionAgent",
     "CollectionAgentConfig",
-    "IntentLabel",
     "RetrievalStrategy",
     "VerificationSuite",
     "VerificationCheck",

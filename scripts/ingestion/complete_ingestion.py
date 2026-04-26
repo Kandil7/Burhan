@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete Data Ingestion Pipeline for Athar Islamic QA System.
+Complete Data Ingestion Pipeline for Burhan Islamic QA System.
 
 Processes:
 1. Extracted Islamic books with metadata (categories, authors)
@@ -356,7 +356,7 @@ def main():
     parser.add_argument("--hadith", type=int, default=1000, help="Number of hadith to process")
     args = parser.parse_args()
     
-    print_header("🕌 ATHAR ISLAMIC QA SYSTEM - COMPLETE DATA INGESTION")
+    print_header("🕌 Burhan ISLAMIC QA SYSTEM - COMPLETE DATA INGESTION")
     
     print(f"\n{Colors.BOLD}This script will:{Colors.ENDC}")
     print(f"  1. Process {args.books} Islamic books with metadata")

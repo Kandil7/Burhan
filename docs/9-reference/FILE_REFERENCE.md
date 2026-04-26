@@ -1,4 +1,4 @@
-# Athar Project - Complete File Reference
+# Burhan Project - Complete File Reference
 
 **Last Updated:** April 7, 2026
 
@@ -7,7 +7,7 @@
 ## 📁 Complete File Tree
 
 ```
-K:\business\projects_v2\Athar\
+K:\business\projects_v2\Burhan\
 │
 ├── README.md                                    # Project overview (main)
 ├── QWEN.md                                      # AI assistant context

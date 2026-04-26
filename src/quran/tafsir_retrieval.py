@@ -1,5 +1,5 @@
 """
-Tafsir Retrieval Engine for Athar Islamic QA system.
+Tafsir Retrieval Engine for Burhan Islamic QA system.
 
 Fixes:
   - get_tafsir: handles list[dict] return from verse_engine.lookup()

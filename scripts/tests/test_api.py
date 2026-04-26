@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick API Test for Athar Islamic QA System.
+Quick API Test for Burhan Islamic QA System.
 
 Minimal smoke test to verify the API is running and responding:
 - Health check
@@ -10,7 +10,7 @@ Usage:
     python scripts/tests/test_api.py
     python scripts/tests/test_api.py --port 8002
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -89,7 +89,7 @@ def test_query(base_url: str) -> bool:
 
 def main():
     """Run quick API tests."""
-    parser = argparse.ArgumentParser(description="Quick API test for Athar")
+    parser = argparse.ArgumentParser(description="Quick API test for Burhan")
     parser.add_argument("--port", type=int, default=8000, help="API port (default: 8000)")
     parser.add_argument("--url", type=str, default="", help="Full API URL")
     args = parser.parse_args()
@@ -97,7 +97,7 @@ def main():
     base_url = args.url.rstrip("/") if args.url else f"http://localhost:{args.port}"
 
     print("=" * 60)
-    print("ATHAR API TEST")
+    print("Burhan API TEST")
     print(f"Target: {base_url}")
     print("=" * 60 + "\n")
 

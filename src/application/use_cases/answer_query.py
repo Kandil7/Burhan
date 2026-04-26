@@ -1,5 +1,5 @@
 """
-Answer Query Use Case for Athar Islamic QA system.
+Answer Query Use Case for Burhan Islamic QA system.
 
 Orchestrates the full query answering flow:
 1. Intent classification & routing

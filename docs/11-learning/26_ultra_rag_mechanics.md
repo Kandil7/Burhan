@@ -1,12 +1,12 @@
 # 🚀 Master Class: "ULTRA" RAG System Mechanics
 
 ## 🕌 Introduction
-This document is the ultimate technical deep-dive into the RAG (Retrieval-Augmented Generation) system of Athar. It explains the "Why" and "How" behind the algorithms that make this system one of the most advanced Islamic QA architectures today.
+This document is the ultimate technical deep-dive into the RAG (Retrieval-Augmented Generation) system of Burhan. It explains the "Why" and "How" behind the algorithms that make this system one of the most advanced Islamic QA architectures today.
 
 ---
 
 ## 🧠 1. The Multi-Tier Semantic Core (BGE-M3)
-Athar uses the **BGE-M3** (Multilingual, Multi-functional, Multi-granularity) model.
+Burhan uses the **BGE-M3** (Multilingual, Multi-functional, Multi-granularity) model.
 
 **Why this model?**
 - **8192 token window**: Allows us to embed entire pages or long fatwas without truncation.
@@ -16,7 +16,7 @@ Athar uses the **BGE-M3** (Multilingual, Multi-functional, Multi-granularity) mo
 ---
 
 ## 🔍 2. The Hybrid Search Algorithm
-Athar does not rely on vector similarity alone. It uses **Hybrid Retrieval**.
+Burhan does not rely on vector similarity alone. It uses **Hybrid Retrieval**.
 
 ### Components:
 1.  **Dense Retrieval (Vector)**: Uses Cosine Similarity to find "Meaning".
@@ -77,4 +77,4 @@ Queries are routed using a **Hybrid Intent Classifier** (Phase 8).
 
 ---
 
-**Congratulations!** You have completed the comprehensive learning path for the Athar Islamic QA System.
+**Congratulations!** You have completed the comprehensive learning path for the Burhan Islamic QA System.

@@ -1,5 +1,5 @@
 """
-Dua Retrieval Tool for Athar Islamic QA system.
+Dua Retrieval Tool for Burhan Islamic QA system.
 
 Retrieves verified duas and adhkar from authenticated sources (Hisn al-Muslim).
 No LLM generation - returns exact text with translations and references.

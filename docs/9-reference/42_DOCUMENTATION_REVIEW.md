@@ -1,12 +1,12 @@
-# 📚 Athar Islamic QA System - Complete Documentation Review
+# 📚 Burhan Islamic QA System - Complete Documentation Review
 
-This document provides a comprehensive review of all documentation files in the Athar project, explaining what each document contains and how they relate to each other.
+This document provides a comprehensive review of all documentation files in the Burhan project, explaining what each document contains and how they relate to each other.
 
 ---
 
 ## 📁 Documentation Overview
 
-The Athar project contains **23 documentation files** organized into the following categories:
+The Burhan project contains **23 documentation files** organized into the following categories:
 
 | Category | Files | Purpose |
 |----------|-------|---------|
@@ -481,4 +481,4 @@ This documentation is automatically maintained through:
 
 ---
 
-*This review document provides a map to navigate all 23 documentation files in the Athar project.*
+*This review document provides a map to navigate all 23 documentation files in the Burhan project.*

@@ -1,6 +1,6 @@
-# 🕌 Athar Mini-Dataset for MVP
+# 🕌 Burhan Mini-Dataset for MVP
 
-This mini-dataset contains representative samples from the full Athar datasets,
+This mini-dataset contains representative samples from the full Burhan datasets,
 optimized for GitHub (<50 MB) while demonstrating all system features.
 
 ---
@@ -79,7 +79,7 @@ with open('data/mini_dataset/fiqh_passages.jsonl', 'r', encoding='utf-8') as f:
 print(f"Loaded {len(documents)} documents")
 ```
 
-### Embed with Athar
+### Embed with Burhan
 
 ```bash
 # This mini-dataset can be embedded using the existing pipeline
@@ -135,7 +135,7 @@ This is a **sample** for MVP/demo purposes. Full datasets are available separate
 
 ### HuggingFace Repository
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
 - **Size:** 42.6 GB (all 10 collections)
 - **Status:** ✅ Fully uploaded
 

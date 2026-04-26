@@ -1,4 +1,4 @@
-# 🕌 Athar Data-Driven Multi-Agent Architecture
+# 🕌 Burhan Data-Driven Multi-Agent Architecture
 
 **Based on complete analysis of 8,425 books (17.16 GB), 650K hadith, 41 categories**
 

@@ -1,6 +1,6 @@
-# Athar v2 Architecture — Complete Implementation Report
+# Burhan v2 Architecture — Complete Implementation Report
 
-**Branch:** `refactor/athar-v2-architecture`  
+**Branch:** `refactor/Burhan-v2-architecture`  
 **Date:** April 2026  
 **Status:** ✅ Major refactoring complete
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-This branch represents the most significant architectural transformation of the Athar Islamic QA system. The v2 architecture introduces **collection-aware RAG agents**, a **verification-first pipeline**, **YAML-backed configuration**, and a comprehensive **multi-domain agent system** covering 11 Islamic knowledge domains.
+This branch represents the most significant architectural transformation of the Burhan Islamic QA system. The v2 architecture introduces **collection-aware RAG agents**, a **verification-first pipeline**, **YAML-backed configuration**, and a comprehensive **multi-domain agent system** covering 11 Islamic knowledge domains.
 
 - **377 files changed**
 - **+192,212 lines added**
@@ -40,7 +40,7 @@ This branch represents the most significant architectural transformation of the 
 
 ### 1.1 The v2 Architecture Vision
 
-The v2 architecture transforms Athar from a monolithic RAG system into a **multi-agent, collection-aware Islamic QA platform**. Each domain (Fiqh, Hadith, Tafsir, etc.) now has its own specialized agent with:
+The v2 architecture transforms Burhan from a monolithic RAG system into a **multi-agent, collection-aware Islamic QA platform**. Each domain (Fiqh, Hadith, Tafsir, etc.) now has its own specialized agent with:
 
 1. **Domain-specific intent classification** — Arabic keyword-based routing to FiqhHukm vs FiqhMasaail, HadithTakhrij vs HadithSanad, etc.
 2. **Customized retrieval strategy** — Different alpha weights (dense/sparse), top-k, and score thresholds per domain
@@ -137,7 +137,7 @@ User Query
 ### 1.3 Directory Structure
 
 ```
-refactor/athar-v2-architecture/
+refactor/Burhan-v2-architecture/
 │
 ├── src/
 │   ├── agents/
@@ -1599,7 +1599,7 @@ class CitationChunk(BaseModel):
 
 ## Conclusion
 
-The v2 architecture represents a comprehensive transformation of the Athar Islamic QA system into a **production-grade, multi-agent platform**. Key achievements:
+The v2 architecture represents a comprehensive transformation of the Burhan Islamic QA system into a **production-grade, multi-agent platform**. Key achievements:
 
 1. ✅ **11 domain-specific collection agents** with custom retrieval, verification, and generation
 2. ✅ **14+ verification checks** ensuring answer quality and grounding
@@ -1618,7 +1618,7 @@ The system is now ready for production deployment with proper monitoring, scalin
 
 ### 13.1 Endpoint Architecture Overview
 
-Athar exposes two primary API routers:
+Burhan exposes two primary API routers:
 
 | Router | Prefix | Purpose |
 |--------|--------|---------|
@@ -1994,5 +1994,5 @@ python rag_eval_seerah.py --url http://localhost:8000 --k 5 --delay 0.3
 
 ---
 
-*Generated from branch `refactor/athar-v2-architecture`*  
+*Generated from branch `refactor/Burhan-v2-architecture`*  
 *April 2026*

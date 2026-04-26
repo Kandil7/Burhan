@@ -1,5 +1,5 @@
 # =============================================================================
-# Athar Islamic QA System - CI/CD Workflow
+# Burhan Islamic QA System - CI/CD Workflow
 # =============================================================================
 # GitHub Actions for automated testing and deployment
 # =============================================================================
@@ -61,9 +61,9 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: athar
+          POSTGRES_USER: Burhan
           POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: athar_db
+          POSTGRES_DB: Burhan_db
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -100,7 +100,7 @@ jobs:
           
       - name: Set environment variables
         run: |
-          echo "DATABASE_URL=postgresql+asyncpg://athar:test_password@localhost:5432/athar_db" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql+asyncpg://Burhan:test_password@localhost:5432/Burhan_db" >> $GITHUB_ENV
           echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
           echo "APP_ENV=test" >> $GITHUB_ENV
           echo "LOG_LEVEL=ERROR" >> $GITHUB_ENV
@@ -109,7 +109,7 @@ jobs:
         run: |
           poetry run pytest tests/ -v --cov=src --cov-report=term-missing
         env:
-          DATABASE_URL: postgresql+asyncpg://athar:test_password@localhost:5432/athar_db
+          DATABASE_URL: postgresql+asyncpg://Burhan:test_password@localhost:5432/Burhan_db
           REDIS_URL: redis://localhost:6379/0
           
       - name: Upload coverage
@@ -180,13 +180,13 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.api
-          tags: athar-api:latest
+          tags: Burhan-api:latest
           load: true
           caches-from: type=gha
           
       - name: Test Docker image
         run: |
-          docker run --rm athar-api:latest python -c "from src.config.settings import settings; print('✓ Docker build OK')"
+          docker run --rm Burhan-api:latest python -c "from src.config.settings import settings; print('✓ Docker build OK')"
 
   # ---------------------------------------------------------------------------
   # Deploy to Staging (Manual)
@@ -207,8 +207,8 @@ jobs:
           
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/athar-api api=athar-api:${{ github.sha }} -n athar-staging
-          kubectl rollout status deployment/athar-api -n athar-staging --timeout=300s
+          kubectl set image deployment/Burhan-api api=Burhan-api:${{ github.sha }} -n Burhan-staging
+          kubectl rollout status deployment/Burhan-api -n Burhan-staging --timeout=300s
         continue-on-error: true
 
   # ---------------------------------------------------------------------------
@@ -221,7 +221,7 @@ jobs:
     if: |
       github.event_name == 'push' && 
       startsWith(github.ref, 'refs/tags/v') &&
-      github.repository == 'owner/athar'
+      github.repository == 'owner/Burhan'
     environment: production
     
     steps:
@@ -233,8 +233,8 @@ jobs:
           
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/athar-api api=athar-api:${{ github.sha }} -n athar-production
-          kubectl rollout status deployment/athar-api -n athar-production --timeout=300s
+          kubectl set image deployment/Burhan-api api=Burhan-api:${{ github.sha }} -n Burhan-production
+          kubectl rollout status deployment/Burhan-api -n Burhan-production --timeout=300s
         continue-on-error: true
 
   # ---------------------------------------------------------------------------

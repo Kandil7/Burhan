@@ -1,5 +1,5 @@
 """
-API request schemas for Athar Islamic QA system.
+API request schemas for Burhan Islamic QA system.
 
 Pydantic models for request validation and documentation.
 """
@@ -11,7 +11,7 @@ class QueryRequest(BaseModel):
     """
     Request model for POST /api/v1/query endpoint.
 
-    Main entry point for all user queries to the Athar system.
+    Main entry point for all user queries to the Burhan system.
     """
 
     query: str = Field(

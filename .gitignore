@@ -60,7 +60,7 @@ docker/qdrant_storage/
 data/raw/*.json
 data/embeddings/
 data/seed/
-data/athar-datasets/
+data/Burhan-datasets/
 data/processed_v1/
 data/processed/hf_embeddings/
 *.npy
@@ -138,3 +138,6 @@ aux
 # docs/
 =0.34.0
 data/mini_dataset_v2/combined.jsonl
+GEMINI.md
+CLAUDE.md
+.claude/settings.local.json

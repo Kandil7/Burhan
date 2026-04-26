@@ -8,7 +8,7 @@ from src.agents.collection.base import (
     VerificationSuite,
     VerificationReport,
 )
-from src.verifiers.suite_builder import (
+from src.verification.suite_builder import (
     build_verification_suite_for,
     run_verification_suite,
     FIQH_VERIFICATION_SUITE,

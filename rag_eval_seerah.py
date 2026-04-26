@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RAG Evaluation Script for Seerah Passages
-Tests the 20 questions against the Athar API and calculates metrics.
+Tests the 20 questions against the Burhan API and calculates metrics.
 
 Usage:
     python rag_eval_seerah.py                    # Run against localhost:8002
@@ -26,7 +26,7 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-# Default API endpoint
+# Default API endpoint - correct v1 path
 API_URL = "http://localhost:8002/api/v1/ask"
 HEADERS = {"accept": "application/json", "Content-Type": "application/json"}
 
@@ -79,45 +79,35 @@ def extract_retrieved_ids(response: Dict) -> set:
 
     citations = response.get("citations", [])
     for c in citations:
-        # Method 1: Try to get from metadata (most detailed)
-        metadata = c.get("metadata", {})
-        book_id = metadata.get("book_id")
-        page_number = metadata.get("page_number")
+        if not isinstance(c, dict):
+            continue
 
-        if book_id:
-            if page_number:
-                retrieved.add((str(book_id), str(page_number)))
+        # Try different field names the API actually uses
+        # source_id first (most common)
+        source_id = c.get("source_id", "")
+
+        # page or page_number
+        page = c.get("page") or c.get("page_number") or c.get("page", "")
+
+        # Collection/category for seerah
+        collection = c.get("collection", "")
+
+        if source_id:
+            if page:
+                retrieved.add((str(source_id), str(page)))
             else:
-                retrieved.add((str(book_id), None))
+                retrieved.add((str(source_id), None))
 
-        # Method 2: Check top-level fields when metadata is empty
-        if not book_id:
-            # category at top level
-            cat = c.get("category", "")
-            if cat:
-                categories.add(cat)
-
-            # Collection at top level
-            col = c.get("collection", "")
-            if col:
-                categories.add(col)
-
-            # source_id - might be numeric that maps to a book
-            source_id = c.get("source_id", "")
-            if source_id and source_id.isdigit():
-                # It's a numeric ID, check for category match later
-                pass
-
-        # Also collect category for matching
+        # Collect category for matching
         if c.get("category"):
             categories.add(c["category"])
-        if c.get("collection"):
-            categories.add(c["collection"])
+        if collection:
+            categories.add(collection)
 
-    # If we have Seerah category but no book_id matches, add category as fallback
-    has_seerah_category = any("سيرة" in cat or "seerah" in cat.lower() for cat in categories)
-    if has_seerah_category and not retrieved:
-        retrieved.add(("seerah_category", None))
+    # Also check source_id directly in citation
+    for c in citations:
+        if isinstance(c, dict) and c.get("source_id"):
+            retrieved.add(str(c.get("source_id")))
 
     return retrieved
 

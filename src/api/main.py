@@ -1,5 +1,5 @@
 """
-Main FastAPI application for Athar Islamic QA system.
+Main FastAPI application for Burhan Islamic QA system.
 
 Epic 7: Simplified API layer with thin transport routes.
 """
@@ -93,12 +93,12 @@ def create_app() -> FastAPI:
             "classify_endpoint": "/classify",
         }
 
-    logger.info(f"Athar API v{settings.app_version} created (debug={settings.debug})")
+    logger.info(f"Burhan API v{settings.app_version} created (debug={settings.debug})")
     return app
 
 
 _API_DESCRIPTION = """
-# Athar Islamic QA System
+# Burhan Islamic QA System
 
 Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
 

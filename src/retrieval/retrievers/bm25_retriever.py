@@ -1,5 +1,5 @@
 """
-BM25 Retrieval for Athar Islamic QA System.
+BM25 Retrieval for Burhan Islamic QA System.
 
 Pure Python BM25 implementation for keyword-based retrieval.
 Can be used standalone or combined with semantic search.

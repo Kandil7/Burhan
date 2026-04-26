@@ -1,4 +1,4 @@
-الهيكل ده **قوي جدًا بالفعل**، وفيه معظم اللبنات الصحيحة لبناء Athar كنظام Islamic RAG إنتاجي: فصل طبقات، agents، hybrid search، tools، quran module، وتهيئة لـ DI والاختبارات. [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
+الهيكل ده **قوي جدًا بالفعل**، وفيه معظم اللبنات الصحيحة لبناء Burhan كنظام Islamic RAG إنتاجي: فصل طبقات، agents، hybrid search، tools، quran module، وتهيئة لـ DI والاختبارات. [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
 لكن لو هدفك فعلًا “أفضل Islamic RAG”، فالمطلوب الآن ليس إعادة بناء كل شيء من الصفر، بل **تقليل التداخل، إغلاق الفجوات المعمارية، وتحويل الهيكل من good backend إلى trustworthy agentic Islamic QA system**. [qdrant](https://qdrant.tech/articles/hybrid-search/)
 
 ## تقييمي السريع
@@ -55,15 +55,15 @@
 
 ### agents أقل من collections
 
-Athar-Datasets عنده collections أكثر تنوعًا من عدد الـ agents الحاليين؛ عندك حاليًا `fiqh`, `hadith`, `seerah`, `general_islamic`, وربما chatbot، لكن ما زال ينقصك تمثيل صريح لـ:
+Burhan-Datasets عنده collections أكثر تنوعًا من عدد الـ agents الحاليين؛ عندك حاليًا `fiqh`, `hadith`, `seerah`, `general_islamic`, وربما chatbot، لكن ما زال ينقصك تمثيل صريح لـ:
 - `aqeedah`
 - `tafsir`
 - `usul_fiqh`
 - `spirituality`
 - `history`
-- `language` [query] [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- `language` [query] [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
-هذا ليس خطأ الآن لو أنت تعمل بمرحلة Fiqh-first، لكنه يجب أن يكون **قرارًا معلنًا** في المعمارية، لا فجوة غير مقصودة. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+هذا ليس خطأ الآن لو أنت تعمل بمرحلة Fiqh-first، لكنه يجب أن يكون **قرارًا معلنًا** في المعمارية، لا فجوة غير مقصودة. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 ## أهم التحسينات المقترحة
 
@@ -148,16 +148,16 @@ src/
 - `GeneralIslamicAgent` → `general_islamic`
 - `HistoryAgent` → `islamic_history_passages`
 - `LanguageAgent` → `arabic_language_passages`
-- `TazkiyahAgent` → `spirituality_passages` [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- `TazkiyahAgent` → `spirituality_passages` [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
-من غير هذا الربط، سيصبح النظام “agent-named” فقط لكن ليس collection-aware فعلًا. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+من غير هذا الربط، سيصبح النظام “agent-named” فقط لكن ليس collection-aware فعلًا. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 ## تعديل هيكلي مقترح على مشروعك الحالي
 
 أنا لو سأعدّل شجرتك الحالية بدون تكسير كبير، سأحوّلها إلى هذا:
 
 ```text
-Athar/
+Burhan/
 ├── src/
 │   ├── api/
 │   ├── application/
@@ -235,7 +235,7 @@ Athar/
 - NL2SQL للقرآن لو عندك structured Quran DB
 - prayer/hijri utilities
 
-بهذا تمنع نفسك من التوسع المبكر وتحافظ على سرعة التنفيذ. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+بهذا تمنع نفسك من التوسع المبكر وتحافظ على سرعة التنفيذ. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 ## حكم نهائي على الهيكل
 
@@ -245,15 +245,15 @@ Athar/
 - إزالة ازدواجية `router/registry`
 - فصل retrieval/indexing/ranking
 - إنشاء `verifiers/` مستقلة
-- توثيق mapping واضح بين agents وAthar collections. [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
+- توثيق mapping واضح بين agents وBurhan collections. [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
 
 
 ## Refactored tree v2
 
-هذه نسخة v2 مقترحة تحافظ على روح مشروعك الحالي، لكن تنظّف المسؤوليات وتجهّز Athar للتوسع agentic بشكل أفضل.[query] [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
+هذه نسخة v2 مقترحة تحافظ على روح مشروعك الحالي، لكن تنظّف المسؤوليات وتجهّز Burhan للتوسع agentic بشكل أفضل.[query] [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
 
 ```text
-Athar/
+Burhan/
 ├── src/
 │   ├── api/                              # HTTP transport only
 │   │   ├── main.py
@@ -360,7 +360,7 @@ Athar/
 │   │
 │   ├── indexing/                         # ingestion + index building
 │   │   ├── pipelines/
-│   │   │   ├── ingest_athar.py
+│   │   │   ├── ingest_Burhan.py
 │   │   │   ├── build_collection_indexes.py
 │   │   │   ├── build_catalog_indexes.py
 │   │   │   └── sync_metadata.py
@@ -478,7 +478,7 @@ Athar/
 │   └── conftest.py
 │
 ├── scripts/
-│   ├── ingest_athar.py
+│   ├── ingest_Burhan.py
 │   ├── build_indexes.py
 │   ├── backfill_metadata.py
 │   ├── run_eval.py
@@ -620,7 +620,7 @@ Athar/
 - `fiqh_passages` ↔ `FiqhAgent`
 - `hadith_passages` ↔ `HadithAgent`
 - `quran_tafsir` ↔ `TafsirAgent`
-- ... [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- ... [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 ### Commit 10
 **feat: add missing domain agents as stubs**
@@ -631,9 +631,9 @@ Athar/
 - `history_agent.py`
 - `language_agent.py`
 - `tazkiyah_agent.py`
-- `usul_fiqh_agent.py` [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+- `usul_fiqh_agent.py` [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
-حتى لو كانت مجرد wrappers حول `BaseRAGAgent` في البداية، فهذا يجعل architecture collection-aware بشكل رسمي. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+حتى لو كانت مجرد wrappers حول `BaseRAGAgent` في البداية، فهذا يجعل architecture collection-aware بشكل رسمي. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 ## Phase 6: تنظيف الـ API
 
@@ -732,7 +732,7 @@ Athar/
 انسخ هذا كما هو في GitHub Project أو Issues:
 
 ```md
-# Athar v2 Refactor Checklist
+# Burhan v2 Refactor Checklist
 
 ## Epic 1: Establish target architecture
 - [ ] Create new top-level modules under `src/`: `retrieval/`, `indexing/`, `verifiers/`

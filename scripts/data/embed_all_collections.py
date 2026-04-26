@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production-Ready Embedding Pipeline for Athar Islamic QA System.
+Production-Ready Embedding Pipeline for Burhan Islamic QA System.
 
 Generates embeddings for all Islamic knowledge collections with:
 - Chunk categorization & routing (fiqh, hadith, general, duas)
@@ -23,7 +23,7 @@ Usage:
     python scripts/embed_all_collections.py --collection hadith_passages --limit 1000
     python scripts/embed_all_collections.py --collection all --no-resume
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -45,8 +45,8 @@ from tqdm import tqdm
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.indexing.vectorstores.qdrant_store import VectorStore
 from src.config.logging_config import setup_logging, get_logger
 
 setup_logging()
@@ -74,28 +74,99 @@ COLLECTIONS = ["fiqh_passages", "hadith_passages", "general_islamic", "duas_adhk
 
 # ── Category Routing ────────────────────────────────────────────────
 # Chunks whose metadata.category matches any of these go to fiqh_passages
-FIQH_CATEGORIES = frozenset({
-    "فقه", "فقه شافعي", "فقه حنفي", "فقه مالكي", "فقه حنبلي",
-    "أحكام", "صلاة", "زكاة", "صيام", "حج", "نكاح", "طلاق",
-    "مواريث", "بيوع", "حدود", "جهاد", "أطعمة", "ذبائح",
-    "الفقه العام", "الفقه", "أصول الفقه", "فرائض", "قضاء",
-    "فتاوى", "رقاق", "آداب", "أذكار", "دعاء", "ذكر",
-})
+FIQH_CATEGORIES = frozenset(
+    {
+        "فقه",
+        "فقه شافعي",
+        "فقه حنفي",
+        "فقه مالكي",
+        "فقه حنبلي",
+        "أحكام",
+        "صلاة",
+        "زكاة",
+        "صيام",
+        "حج",
+        "نكاح",
+        "طلاق",
+        "مواريث",
+        "بيوع",
+        "حدود",
+        "جهاد",
+        "أطعمة",
+        "ذبائح",
+        "الفقه العام",
+        "الفقه",
+        "أصول الفقه",
+        "فرائض",
+        "قضاء",
+        "فتاوى",
+        "رقاق",
+        "آداب",
+        "أذكار",
+        "دعاء",
+        "ذكر",
+    }
+)
 
 # Chunks whose metadata.category matches any of these go to general_islamic
-GENERAL_CATEGORIES = frozenset({
-    "تاريخ", "سيرة", "عقيدة", "توحيد", "تفسير", "علوم الحديث",
-    "كتب عامة", "التاريخ", "التفسير", "العقيدة", "السيرة",
-    "علوم القرآن", "الحديث", "مصطلح الحديث", "الجرح والتعديل",
-    "الطب", "الفضائل", "المغازي", "الأنبياء", "الصحابة",
-    "التراجم", "الطبقات", "البلدان", "الجغرافيا", "النحو",
-    "الصرف", "البلاغة", "العروض", "اللغة", "كتب اللغة",
-    "الأدب", "الشعر", "الخطب", "الرقائق", "الزهد",
-    "الأدب الجاهلي", "الأدب الإسلامي", "مواعظ", "سلوك",
-    "تصوف", "أخلاق", "فرق ومذاهب", "ردود", "مقارنات",
-    "فكر إسلامي", "حضارة", "تراجم", "معاجم", "قواميس",
-    "موسوعات", "مناهج", "تربية", "دعوة", "إعلام",
-})
+GENERAL_CATEGORIES = frozenset(
+    {
+        "تاريخ",
+        "سيرة",
+        "عقيدة",
+        "توحيد",
+        "تفسير",
+        "علوم الحديث",
+        "كتب عامة",
+        "التاريخ",
+        "التفسير",
+        "العقيدة",
+        "السيرة",
+        "علوم القرآن",
+        "الحديث",
+        "مصطلح الحديث",
+        "الجرح والتعديل",
+        "الطب",
+        "الفضائل",
+        "المغازي",
+        "الأنبياء",
+        "الصحابة",
+        "التراجم",
+        "الطبقات",
+        "البلدان",
+        "الجغرافيا",
+        "النحو",
+        "الصرف",
+        "البلاغة",
+        "العروض",
+        "اللغة",
+        "كتب اللغة",
+        "الأدب",
+        "الشعر",
+        "الخطب",
+        "الرقائق",
+        "الزهد",
+        "الأدب الجاهلي",
+        "الأدب الإسلامي",
+        "مواعظ",
+        "سلوك",
+        "تصوف",
+        "أخلاق",
+        "فرق ومذاهب",
+        "ردود",
+        "مقارنات",
+        "فكر إسلامي",
+        "حضارة",
+        "تراجم",
+        "معاجم",
+        "قواميس",
+        "موسوعات",
+        "مناهج",
+        "تربية",
+        "دعوة",
+        "إعلام",
+    }
+)
 
 # Maximum retries for a failed batch
 MAX_RETRIES = 3
@@ -104,6 +175,7 @@ RETRY_BACKOFF = [5, 15, 30]
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
+
 
 def ensure_dirs() -> None:
     """Create required directories if they don't exist."""
@@ -184,6 +256,7 @@ def dedup_key(chunk: dict) -> str:
 
 
 # ── Data Loading ────────────────────────────────────────────────────
+
 
 def load_fiqh_chunks(limit: Optional[int] = None) -> list[dict]:
     """
@@ -336,6 +409,7 @@ COLLECTION_LOADERS = {
 
 # ── Embedding Pipeline ──────────────────────────────────────────────
 
+
 class EmbeddingPipeline:
     """
     Production embedding pipeline with:
@@ -413,13 +487,21 @@ class EmbeddingPipeline:
 
         if not chunks:
             logger.warning("pipeline.no_chunks", collection=collection)
-            return {"collection": collection, "embedded": 0, "skipped": 0, "errors": 0,
-                    "elapsed_seconds": 0, "chunks_per_second": 0}
+            return {
+                "collection": collection,
+                "embedded": 0,
+                "skipped": 0,
+                "errors": 0,
+                "elapsed_seconds": 0,
+                "chunks_per_second": 0,
+            }
 
         # ── Step 2: Load checkpoint & deduplicate ───────────────────
-        checkpoint = load_checkpoint(collection) if self.resume else {
-            "processed_keys": [], "last_batch_end": 0, "total_processed": 0
-        }
+        checkpoint = (
+            load_checkpoint(collection)
+            if self.resume
+            else {"processed_keys": [], "last_batch_end": 0, "total_processed": 0}
+        )
         processed_set = set(checkpoint.get("processed_keys", []))
 
         to_process = []
@@ -441,8 +523,14 @@ class EmbeddingPipeline:
 
         if not to_process:
             logger.info("pipeline.all_processed", collection=collection)
-            return {"collection": collection, "embedded": 0, "skipped": skipped_count, "errors": 0,
-                    "elapsed_seconds": round(time.time() - start_time, 2), "chunks_per_second": 0}
+            return {
+                "collection": collection,
+                "embedded": 0,
+                "skipped": skipped_count,
+                "errors": 0,
+                "elapsed_seconds": round(time.time() - start_time, 2),
+                "chunks_per_second": 0,
+            }
 
         # ── Step 3: Process in batches ──────────────────────────────
         total_batches = (len(to_process) + self.batch_size - 1) // self.batch_size
@@ -494,11 +582,13 @@ class EmbeddingPipeline:
                     success = True
 
                     # Update progress bar
-                    pbar.set_postfix({
-                        "emb": embedded_count,
-                        "err": error_count,
-                        "skip": skipped_count,
-                    })
+                    pbar.set_postfix(
+                        {
+                            "emb": embedded_count,
+                            "err": error_count,
+                            "skip": skipped_count,
+                        }
+                    )
 
                 except Exception as e:
                     retries += 1
@@ -531,21 +621,27 @@ class EmbeddingPipeline:
 
             # ── Periodic checkpoint (every 10 batches) ──────────────
             if batch_num - last_checkpoint_batch >= 9:
-                save_checkpoint(collection, {
-                    "processed_keys": list(processed_set),
-                    "last_batch_end": batch_end,
-                    "total_processed": embedded_count + skipped_count,
-                    "batch_size": self.batch_size,
-                })
+                save_checkpoint(
+                    collection,
+                    {
+                        "processed_keys": list(processed_set),
+                        "last_batch_end": batch_end,
+                        "total_processed": embedded_count + skipped_count,
+                        "batch_size": self.batch_size,
+                    },
+                )
                 last_checkpoint_batch = batch_num
 
         # ── Step 4: Final checkpoint ────────────────────────────────
-        save_checkpoint(collection, {
-            "processed_keys": list(processed_set),
-            "last_batch_end": len(to_process),
-            "total_processed": embedded_count + skipped_count,
-            "batch_size": self.batch_size,
-        })
+        save_checkpoint(
+            collection,
+            {
+                "processed_keys": list(processed_set),
+                "last_batch_end": len(to_process),
+                "total_processed": embedded_count + skipped_count,
+                "batch_size": self.batch_size,
+            },
+        )
 
         elapsed = time.time() - start_time
         stats = {
@@ -564,6 +660,7 @@ class EmbeddingPipeline:
 
 
 # ── Main Entry Point ────────────────────────────────────────────────
+
 
 async def run_pipeline(
     collection: str,
@@ -601,7 +698,7 @@ async def run_pipeline(
         print(f"  Skipped:    {stats['skipped']}")
         print(f"  Errors:     {stats['errors']}")
         print(f"  Time:       {stats['elapsed_seconds']:.1f}s")
-        if stats['embedded'] > 0:
+        if stats["embedded"] > 0:
             print(f"  Speed:      {stats['chunks_per_second']:.1f} chunks/s")
         print(f"{'=' * 60}")
 
@@ -645,7 +742,7 @@ async def run_pipeline(
 def main():
     """CLI entry point with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Athar Islamic QA - Production Embedding Pipeline",
+        description="Burhan Islamic QA - Production Embedding Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -697,12 +794,14 @@ Examples:
     resume = args.resume and not args.no_resume
 
     try:
-        asyncio.run(run_pipeline(
-            collection=args.collection,
-            batch_size=args.batch_size,
-            limit=args.limit,
-            resume=resume,
-        ))
+        asyncio.run(
+            run_pipeline(
+                collection=args.collection,
+                batch_size=args.batch_size,
+                limit=args.limit,
+                resume=resume,
+            )
+        )
     except KeyboardInterrupt:
         print("\n\n  Interrupted by user. Checkpoint saved.")
         print("  Resume with: python scripts/embed_all_collections.py --resume")

@@ -1,5 +1,5 @@
 """
-Utility classes and functions for Athar Islamic QA system.
+Utility classes and functions for Burhan Islamic QA system.
 
 Shared utilities used across multiple modules.
 """

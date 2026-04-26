@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Data Ingestion and Application Runner for Athar Islamic QA System.
+Comprehensive Data Ingestion and Application Runner for Burhan Islamic QA System.
 
 This script:
 1. Starts all Docker services
@@ -130,7 +130,7 @@ def start_services():
     
     # Check PostgreSQL
     success, _ = run_command(
-        "docker exec athar-postgres pg_isready -U athar",
+        "docker exec Burhan-postgres pg_isready -U Burhan",
         capture_output=True
     )
     if success:
@@ -140,7 +140,7 @@ def start_services():
     
     # Check Redis
     success, _ = run_command(
-        "docker exec athar-redis redis-cli ping",
+        "docker exec Burhan-redis redis-cli ping",
         capture_output=True
     )
     if success:
@@ -177,7 +177,7 @@ def run_migrations():
     for sql_file in sorted(sql_files):
         print_step(f"Running migration: {sql_file.name}")
         success, output = run_command(
-            f"docker exec -i athar-postgres psql -U athar -d athar_db < {sql_file}",
+            f"docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < {sql_file}",
             capture_output=True
         )
         
@@ -495,7 +495,7 @@ def test_api():
 
 def main():
     """Main execution function."""
-    print_header("🕌 ATHAR ISLAMIC QA SYSTEM - DATA INGESTION & RUN")
+    print_header("🕌 Burhan ISLAMIC QA SYSTEM - DATA INGESTION & RUN")
     
     print(f"{Colors.BOLD}This script will:{Colors.ENDC}")
     print("  1. Check Docker installation")

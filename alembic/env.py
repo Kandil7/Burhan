@@ -1,4 +1,4 @@
-"""Alembic environment configuration for Athar Islamic QA System."""
+"""Alembic environment configuration for Burhan Islamic QA System."""
 
 import asyncio
 from logging.config import fileConfig

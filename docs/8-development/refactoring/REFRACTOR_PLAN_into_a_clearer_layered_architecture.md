@@ -1,8 +1,8 @@
-# Athar Refactor Plan (v2)
+# Burhan Refactor Plan (v2)
 
-This document defines a clean, low-risk refactor path for the Athar backend into a clearer layered architecture suitable for FastAPI, hybrid retrieval, agentic orchestration, and explicit verification.[cite:80][cite:81][cite:83]
+This document defines a clean, low-risk refactor path for the Burhan backend into a clearer layered architecture suitable for FastAPI, hybrid retrieval, agentic orchestration, and explicit verification.[cite:80][cite:81][cite:83]
 
-The current Athar structure already contains strong building blocks such as FastAPI routes, specialized agents, hybrid search, reranking, deterministic tools, and Quran-specific validation, but several responsibilities are still too tightly grouped, especially around routing, retrieval, indexing, and verification.[cite:80][cite:82]
+The current Burhan structure already contains strong building blocks such as FastAPI routes, specialized agents, hybrid search, reranking, deterministic tools, and Quran-specific validation, but several responsibilities are still too tightly grouped, especially around routing, retrieval, indexing, and verification.[cite:80][cite:82]
 
 ## Refactor goals
 
@@ -11,13 +11,13 @@ The refactor aims to achieve five concrete goals:[cite:80][cite:82]
 - Separate HTTP transport from orchestration logic and domain behavior.[cite:80][cite:84]
 - Split retrieval, indexing, and ranking into explicit modules rather than keeping them inside a broad `knowledge/` package.[cite:81][cite:83]
 - Introduce a dedicated verification framework for grounded Islamic QA behavior, including exact quotation, source attribution, contradiction detection, and evidence sufficiency checks.[cite:24][cite:102]
-- Make agents explicitly collection-aware so Athar-Datasets collections map to clear retrieval and verification policies.[cite:3]
+- Make agents explicitly collection-aware so Burhan-Datasets collections map to clear retrieval and verification policies.[cite:3]
 - Keep migration incremental, testable, and backward-compatible until the final cleanup phase.[cite:89][cite:99]
 
 ## Target v2 tree
 
 ```text
-Athar/
+Burhan/
 ├── src/
 │   ├── api/
 │   │   ├── main.py
@@ -124,7 +124,7 @@ Athar/
 │   │
 │   ├── indexing/
 │   │   ├── pipelines/
-│   │   │   ├── ingest_athar.py
+│   │   │   ├── ingest_Burhan.py
 │   │   │   ├── build_collection_indexes.py
 │   │   │   ├── build_catalog_indexes.py
 │   │   │   └── sync_metadata.py
@@ -438,7 +438,7 @@ The refactor is successful when the codebase achieves the following state:[cite:
 
 - Routing responsibility exists in one clear place.
 - Retrieval, indexing, ranking, and verification are independent and testable.
-- Agents are explicitly linked to Athar collections and collection policies.[cite:3]
+- Agents are explicitly linked to Burhan collections and collection policies.[cite:3]
 - Exact quotation and evidence validation are reusable across Quran, hadith, and other grounded flows.[cite:24][cite:102]
 - Legacy wrappers can be safely removed without breaking tests.
 - New contributors can understand module boundaries without guessing.

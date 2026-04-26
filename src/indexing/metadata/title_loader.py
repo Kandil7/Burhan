@@ -1,5 +1,5 @@
 """
-Title Loader for Athar Islamic QA system.
+Title Loader for Burhan Islamic QA system.
 
 Loads per-book title files from lucene_pages/titles/ directory.
 Each title file contains chapter/section titles for a specific book.

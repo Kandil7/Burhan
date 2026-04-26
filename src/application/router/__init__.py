@@ -1,23 +1,19 @@
-# Application Router Module
 """
-Router module for query routing and classification.
+Application Router Module - Consolidated.
 
-This module includes:
+This module provides:
 - RouterAgent: Main routing agent
-- Multi-agent orchestration: For complex queries requiring multiple agents
-- Various classifiers: Hybrid, Keyword-based, LLM-based
+- Multi-agent orchestration
+- Intent classification (Hybrid, Keyword, Embedding)
+- Risk policy for content moderation
+
+This is the CANONICAL router module - use this for all routing needs.
 """
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from src.application.router.router_agent import RouterAgent
-    from src.application.router.hybrid_classifier import HybridIntentClassifier
-    from src.application.router.classifier_factory import ClassifierFactory
-    from src.application.router.risk_policy import RiskPolicy
-
-# Re-export from local modules for backwards compatibility
+# Re-export core components
 from src.application.router.router_agent import (
     RouterAgent,
     router_agent,
@@ -26,7 +22,22 @@ from src.application.router.router_agent import (
     SimpleRoutingDecision,
 )
 
-# Re-export from orchestration module
+# Re-export classification
+from src.application.router.classifier_factory import (
+    KeywordBasedClassifier,
+    MasterHybridClassifier,
+    HybridIntentClassifier,
+    ClassifierFactory,
+    INTENT_KEYWORDS,
+    classifier_factory,
+    QueryClassifier,
+)
+from src.domain.intents import normalize_arabic, detect_language
+
+# Re-export embedding classifier
+from src.application.router.embedding_classifier import EmbeddingClassifier
+
+# Re-export orchestration
 from src.application.router.orchestration import (
     OrchestrationPattern,
     AgentTask,
@@ -39,64 +50,31 @@ from src.application.router.orchestration import (
     LOW_CONFIDENCE_THRESHOLD,
 )
 
-# Re-export from multi_agent module
+# Re-export multi-agent
 from src.application.router.multi_agent import (
     MultiAgentRouter,
     create_multi_agent_router,
 )
 
+# Re-export risk policy
+from src.application.router.risk_policy import (
+    RiskPolicy,
+    risk_policy,
+    RiskLevel,
+    RiskAssessment,
+    SENSITIVE_PATTERNS,
+)
 
-# These are lazy-loaded to avoid circular imports
-def __getattr__(name):
-    if name == "HybridIntentClassifier":
-        from src.application.router.hybrid_classifier import HybridIntentClassifier
+# Re-export intent router (canonical)
+from src.application.routing.intent_router import (
+    IntentRouter,
+    get_intent_router,
+    INTENT_TO_AGENT,
+)
 
-        return HybridIntentClassifier
-    if name == "ClassifierFactory":
-        from src.application.router.classifier_factory import ClassifierFactory
-
-        return ClassifierFactory
-    if name == "classifier_factory":
-        from src.application.router.classifier_factory import classifier_factory
-
-        return classifier_factory
-    if name == "build_classifier":
-        from src.application.classifier_factory import build_classifier
-
-        return build_classifier
-    if name == "QueryClassifier":
-        from src.application.router.classifier_factory import QueryClassifier
-
-        return QueryClassifier
-    if name == "KeywordBasedClassifier":
-        from src.application.router.classifier_factory import KeywordBasedClassifier
-
-        return KeywordBasedClassifier
-    if name == "LLMBasedClassifier":
-        from src.application.router.classifier_factory import LLMBasedClassifier
-
-        return LLMBasedClassifier
-    if name == "RiskPolicy":
-        from src.application.router.risk_policy import RiskPolicy
-
-        return RiskPolicy
-    if name == "risk_policy":
-        from src.application.router.risk_policy import risk_policy
-
-        return risk_policy
-    if name == "RiskLevel":
-        from src.application.router.risk_policy import RiskLevel
-
-        return RiskLevel
-    if name == "RiskAssessment":
-        from src.application.router.risk_policy import RiskAssessment
-
-        return RiskAssessment
-    if name == "SENSITIVE_PATTERNS":
-        from src.application.router.risk_policy import SENSITIVE_PATTERNS
-
-        return SENSITIVE_PATTERNS
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# Re-export planner and executor
+from src.application.routing.planner import QueryPlan, QueryPlanner
+from src.application.routing.executor import ExecutionResult, AgentExecutor
 
 
 __all__ = [
@@ -106,6 +84,21 @@ __all__ = [
     "get_router_agent",
     "init_router_agent",
     "SimpleRoutingDecision",
+    # Classification
+    "QueryClassifier",
+    "KeywordBasedClassifier",
+    "EmbeddingClassifier",
+    "MasterHybridClassifier",
+    "HybridIntentClassifier",
+    "ClassifierFactory",
+    "classifier_factory",
+    "normalize_arabic",
+    "detect_language",
+    "INTENT_KEYWORDS",
+    # Intent routing
+    "IntentRouter",
+    "get_intent_router",
+    "INTENT_TO_AGENT",
     # Orchestration
     "OrchestrationPattern",
     "AgentTask",
@@ -116,20 +109,26 @@ __all__ = [
     "PRIMARY_THRESHOLD",
     "SECONDARY_THRESHOLD",
     "LOW_CONFIDENCE_THRESHOLD",
-    # Multi-agent router
+    # Multi-agent
     "MultiAgentRouter",
     "create_multi_agent_router",
-    # Lazy-loaded exports
-    "HybridIntentClassifier",
-    "ClassifierFactory",
-    "classifier_factory",
-    "build_classifier",
-    "QueryClassifier",
-    "KeywordBasedClassifier",
-    "LLMBasedClassifier",
+    # Risk policy
     "RiskPolicy",
     "risk_policy",
     "RiskLevel",
     "RiskAssessment",
     "SENSITIVE_PATTERNS",
+    # Planning & execution
+    "QueryPlan",
+    "QueryPlanner",
+    "ExecutionResult",
+    "AgentExecutor",
 ]
+
+
+# Build classifier function - for app initialization
+def build_classifier(embedding_model=None):
+    """Build the default classifier (hybrid with optional embedding)."""
+    from src.application.classifier_factory import build_classifier as _build
+
+    return _build(embedding_model)

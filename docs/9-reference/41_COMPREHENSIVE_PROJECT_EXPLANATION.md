@@ -1,26 +1,26 @@
-# Comprehensive Athar Islamic QA System Documentation
+# Comprehensive Burhan Islamic QA System Documentation
 
-This document provides an exhaustive explanation of the Athar Islamic Question-Answering system, covering every file, every component, the complete architecture, and detailed instructions for building and running the project from scratch.
+This document provides an exhaustive explanation of the Burhan Islamic Question-Answering system, covering every file, every component, the complete architecture, and detailed instructions for building and running the project from scratch.
 
 ---
 
 ## 1. Project Overview and Purpose
 
-### 1.1 What is Athar?
+### 1.1 What is Burhan?
 
-Athar (Arabic: أثر, meaning "Legacy" or "Trace") is a comprehensive Islamic Question-Answering system built on the Fanar-Sadiq multi-agent architecture. The system is designed to answer Islamic questions with verified sources and proper citations, drawing from the Quran, Hadith, and classical Islamic scholarly texts. The project represents a sophisticated integration of traditional Islamic knowledge with modern artificial intelligence technologies, implementing a hybrid approach that combines deterministic rule-based calculations with neural language model capabilities.
+Burhan (Arabic: أثر, meaning "Legacy" or "Trace") is a comprehensive Islamic Question-Answering system built on the Fanar-Sadiq multi-agent architecture. The system is designed to answer Islamic questions with verified sources and proper citations, drawing from the Quran, Hadith, and classical Islamic scholarly texts. The project represents a sophisticated integration of traditional Islamic knowledge with modern artificial intelligence technologies, implementing a hybrid approach that combines deterministic rule-based calculations with neural language model capabilities.
 
 The system achieves remarkable accuracy through its three-tier intent classification mechanism, which first uses keyword matching for obvious queries, then leverages large language models for nuanced classification, and finally falls back to embedding-based semantic similarity when needed. This architecture ensures that users receive accurate, grounded responses whether they ask in Arabic or English, and regardless of whether their query is simple or complex.
 
-Athar supports nine distinct intent categories spanning Islamic jurisprudence (fiqh), Quranic inquiries, general Islamic knowledge, greetings and salutations, Zakat calculations, inheritance distribution calculations, supplications (dua), Hijri calendar conversions, and prayer times calculations. Each category is handled by specialized components that either utilize deterministic algorithms for mathematical calculations or retrieve relevant information from knowledge bases for question-answering tasks.
+Burhan supports nine distinct intent categories spanning Islamic jurisprudence (fiqh), Quranic inquiries, general Islamic knowledge, greetings and salutations, Zakat calculations, inheritance distribution calculations, supplications (dua), Hijri calendar conversions, and prayer times calculations. Each category is handled by specialized components that either utilize deterministic algorithms for mathematical calculations or retrieve relevant information from knowledge bases for question-answering tasks.
 
 ### 1.2 Core Objectives
 
-The primary objectives of the Athar project center on making Islamic knowledge accessible, accurate, and verifiable. Unlike general AI chatbots that may produce hallucinated content, Athar grounds every answer in verified sources, providing proper citations that users can trace back to original texts. This grounding ensures that the system serves as a reliable educational tool rather than merely a conversational interface.
+The primary objectives of the Burhan project center on making Islamic knowledge accessible, accurate, and verifiable. Unlike general AI chatbots that may produce hallucinated content, Burhan grounds every answer in verified sources, providing proper citations that users can trace back to original texts. This grounding ensures that the system serves as a reliable educational tool rather than merely a conversational interface.
 
 The system also aims to preserve and democratize access to traditional Islamic scholarship. By implementing classical calculation methods for Zakat and inheritance, the project ensures that users can perform important religious calculations according to established jurisprudential rules without requiring specialized scholarly knowledge. The inclusion of madhhab (Islamic school of jurisprudence) awareness allows users to receive answers appropriate to their specific legal tradition.
 
-Furthermore, Athar demonstrates a practical implementation of the Fanar-Sadiq research architecture, proving that multi-agent systems can effectively handle specialized domain question-answering. The project serves as both a functional application and a reference implementation for researchers and developers interested in building similar knowledge-based AI systems.
+Furthermore, Burhan demonstrates a practical implementation of the Fanar-Sadiq research architecture, proving that multi-agent systems can effectively handle specialized domain question-answering. The project serves as both a functional application and a reference implementation for researchers and developers interested in building similar knowledge-based AI systems.
 
 ---
 
@@ -28,7 +28,7 @@ Furthermore, Athar demonstrates a practical implementation of the Fanar-Sadiq re
 
 ### 2.1 Backend Technologies
 
-The backend of Athar is built entirely in Python 3.12, leveraging the async capabilities introduced in modern Python to handle high-concurrency workloads efficiently. FastAPI serves as the web framework, chosen for its native async support, automatic OpenAPI documentation generation, and excellent performance characteristics. The framework handles HTTP request processing, route dispatching, and middleware management, providing the foundation for all API endpoints.
+The backend of Burhan is built entirely in Python 3.12, leveraging the async capabilities introduced in modern Python to handle high-concurrency workloads efficiently. FastAPI serves as the web framework, chosen for its native async support, automatic OpenAPI documentation generation, and excellent performance characteristics. The framework handles HTTP request processing, route dispatching, and middleware management, providing the foundation for all API endpoints.
 
 For database operations, the project uses SQLAlchemy 2.0 with asyncpg for PostgreSQL interaction, enabling non-blocking database operations that scale well under load. The async approach is critical for maintaining responsiveness when the system processes multiple concurrent queries, each potentially requiring database lookups for intent classification, citation retrieval, or knowledge base queries. PostgreSQL 16 serves as the primary relational database, storing structured data including Quranic verses, user query logs, and application configuration.
 
@@ -54,7 +54,7 @@ Docker and Docker Compose provide containerization, enabling consistent deployme
 
 ### 3.1 System Architecture Overview
 
-The Athar system follows a layered architecture pattern that separates concerns and enables independent evolution of each component. At the highest level, the architecture consists of five main layers: the user interface layer, the API gateway layer, the orchestration layer, the domain layer, and the knowledge layer. Each layer communicates only with adjacent layers, creating clear boundaries that simplify debugging and future development.
+The Burhan system follows a layered architecture pattern that separates concerns and enables independent evolution of each component. At the highest level, the architecture consists of five main layers: the user interface layer, the API gateway layer, the orchestration layer, the domain layer, and the knowledge layer. Each layer communicates only with adjacent layers, creating clear boundaries that simplify debugging and future development.
 
 The user interface layer encompasses both the Next.js web application and the Swagger UI automatically generated by FastAPI. The web application provides a chat-based interface where users can type questions and receive formatted answers with citations. The Swagger documentation serves developers and API consumers who prefer direct HTTP interaction over the graphical interface.
 
@@ -235,8 +235,8 @@ Begin by ensuring Python 3.12 or higher is installed on the system. Verify the v
 Clone the repository to the local workspace using Git:
 
 ```
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 ```
 
 ### 5.2 Python Environment Configuration
@@ -270,7 +270,7 @@ copy .env.example .env
 Edit the .env file providing required values:
 
 ```
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 REDIS_URL=redis://localhost:6379/0
 QDRANT_URL=http://localhost:6333
 OPENAI_API_KEY=sk-your-openai-key-here
@@ -432,4 +432,4 @@ Write tests before implementation following TDD principles. Include edge cases a
 
 ## 8. Conclusion
 
-The Athar Islamic QA System represents a comprehensive implementation of multi-agent architecture for specialized domain question-answering. The system successfully combines deterministic rule-based calculators with AI-powered retrieval and generation, providing accurate, grounded responses to Islamic questions. With its clean architecture, comprehensive test coverage, and extensive documentation, the project serves as both a functional application and a reference implementation for building similar knowledge-based AI systems.
+The Burhan Islamic QA System represents a comprehensive implementation of multi-agent architecture for specialized domain question-answering. The system successfully combines deterministic rule-based calculators with AI-powered retrieval and generation, providing accurate, grounded responses to Islamic questions. With its clean architecture, comprehensive test coverage, and extensive documentation, the project serves as both a functional application and a reference implementation for building similar knowledge-based AI systems.

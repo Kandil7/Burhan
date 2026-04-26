@@ -2,7 +2,7 @@
 """
 Import script for azkar-db from https://github.com/osamayy/azkar-db
 
-Downloads azkar database and converts to Athar's dua format.
+Downloads azkar database and converts to Burhan's dua format.
 
 Usage:
     python scripts/import_azkar_db.py
@@ -16,7 +16,7 @@ AZKAR_DB_URL = "https://github.com/osamayy/azkar-db/raw/refs/heads/main/azkar.js
 OUTPUT_PATH = Path(__file__).parent.parent / "data" / "seed" / "azkar_imported.json"
 
 def import_azkar():
-    """Import azkar-db and convert to Athar format."""
+    """Import azkar-db and convert to Burhan format."""
     print("📥 Downloading azkar-db...")
     
     try:
@@ -26,8 +26,8 @@ def import_azkar():
         
         print(f"✅ Downloaded {len(azkar_data)} azkar entries")
         
-        # Convert to Athar format
-        athar_duas = []
+        # Convert to Burhan format
+        Burhan_duas = []
         for i, zikr in enumerate(azkar_data, 1):
             dua = {
                 "id": i,
@@ -44,26 +44,26 @@ def import_azkar():
                 "virtues": zikr.get("description", ""),
                 "search_keywords": zikr.get("search", "")
             }
-            athar_duas.append(dua)
+            Burhan_duas.append(dua)
         
         # Save converted data
         with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
-            json.dump(athar_duas, f, ensure_ascii=False, indent=2)
+            json.dump(Burhan_duas, f, ensure_ascii=False, indent=2)
         
         print(f"✅ Converted and saved to {OUTPUT_PATH}")
-        print(f"📊 Total entries: {len(athar_duas)}")
+        print(f"📊 Total entries: {len(Burhan_duas)}")
         
         # Show sample
         print("\n📝 Sample Entry:")
         print("-" * 60)
-        if athar_duas:
-            sample = athar_duas[0]
+        if Burhan_duas:
+            sample = Burhan_duas[0]
             print(f"Category: {sample['category']}")
             print(f"Arabic: {sample['arabic_text'][:80]}...")
             print(f"Repeat: {sample['repeat_count']}")
             print(f"Reference: {sample['reference']}")
         
-        return len(athar_duas)
+        return len(Burhan_duas)
         
     except Exception as e:
         print(f"❌ Error: {e}")

@@ -1,4 +1,4 @@
-"""Indexing layer for Athar Islamic QA system.
+"""Indexing layer for Burhan Islamic QA system.
 
 This module contains indexing-related components:
 - embeddings: Embedding model and cache

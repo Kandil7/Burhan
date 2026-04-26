@@ -1,4 +1,4 @@
-# ⚡ Athar Quick Reference Card
+# ⚡ Burhan Quick Reference Card
 
 ## 🚀 Most Common Commands
 

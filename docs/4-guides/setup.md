@@ -1,4 +1,4 @@
-# 🚀 Athar Islamic QA System - COMPLETE SETUP GUIDE
+# 🚀 Burhan Islamic QA System - COMPLETE SETUP GUIDE
 
 ## ✅ DATA INGESTION COMPLETE!
 
@@ -28,7 +28,7 @@
 
 All processed data is saved in:
 ```
-K:\business\projects_v2\Athar\data\processed\
+K:\business\projects_v2\Burhan\data\processed\
 ├── islamic_books_chunks.json    (127.08 MB)
 ├── hadith_chunks.json           (0.96 MB)
 └── all_chunks.json              (128.03 MB - Combined)
@@ -41,9 +41,9 @@ K:\business\projects_v2\Athar\data\processed\
 ### ✅ Running Services
 
 ```
-athar-postgres  ✓ healthy (port 5432)
-athar-redis     ✓ healthy (port 6379)
-athar-qdrant    ✓ healthy (port 6333)
+Burhan-postgres  ✓ healthy (port 5432)
+Burhan-redis     ✓ healthy (port 6379)
+Burhan-qdrant    ✓ healthy (port 6333)
 ```
 
 ### ✅ Database Status
@@ -61,7 +61,7 @@ athar-qdrant    ✓ healthy (port 6333)
 ### Step 1: Verify Services Are Running
 
 ```bash
-cd K:\business\projects_v2\Athar
+cd K:\business\projects_v2\Burhan
 
 # Check Docker services
 docker compose -f docker/docker-compose.dev.yml ps

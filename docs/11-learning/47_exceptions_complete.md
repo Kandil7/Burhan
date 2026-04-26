@@ -6,12 +6,12 @@
 
 ## 1. Base Exceptions
 
-### 1.1 AtharError
+### 1.1 BurhanError
 
 ```python
 # src/core/exceptions.py
 
-class AtharError(Exception):
+class BurhanError(Exception):
     """الخطأ الأساسي."""
     
     def __init__(self, message: str, details: dict = None):
@@ -23,7 +23,7 @@ class AtharError(Exception):
 ### 1.2 ConfigurationError
 
 ```python
-class ConfigurationError(AtharError):
+class ConfigurationError(BurhanError):
     """خطأ التكوين."""
     pass
 ```
@@ -31,7 +31,7 @@ class ConfigurationError(AtharError):
 ### 1.3 RetrievalError
 
 ```python
-class RetrievalError(AtharError):
+class RetrievalError(BurhanError):
     """خطأ الاسترجاع."""
     pass
 ```
@@ -39,7 +39,7 @@ class RetrievalError(AtharError):
 ### 1.4 VerificationError
 
 ```python
-class VerificationError(AtharError):
+class VerificationError(BurhanError):
     """خطأ التحقق."""
     pass
 ```
@@ -47,7 +47,7 @@ class VerificationError(AtharError):
 ### 1.5 GenerationError
 
 ```python
-class GenerationError(AtharError):
+class GenerationError(BurhanError):
     """خطأ التوليد."""
     pass
 ```

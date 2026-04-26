@@ -2,7 +2,7 @@
 
 ## 🕌 مقدمة
 
-هذا الملف يشرح **رحلة تشغيل مشروع Athar** من البداية (عندما تكتب الأمر) للنهاية (عندما ترى الإجابة).
+هذا الملف يشرح **رحلة تشغيل مشروع Burhan** من البداية (عندما تكتب الأمر) للنهاية (عندما ترى الإجابة).
 
 ---
 
@@ -13,7 +13,7 @@
 ### 1️⃣ بنية المشروع
 
 ```
-Athar/
+Burhan/
 │
 ├── src/                          ← الكود الأساسي
 │   ├── api/                      ← واجهة البرمجة (FastAPI)
@@ -95,7 +95,7 @@ git --version
 # ==========================================
 # Application
 # ==========================================
-APP_NAME=Athar
+APP_NAME=Burhan
 APP_ENV=development          ← بيئة التطوير (ليس production)
 DEBUG=true                   ← وضع التصحيح مفعل
 SECRET_KEY=change-this-in-production
@@ -103,7 +103,7 @@ SECRET_KEY=change-this-in-production
 # ==========================================
 # Database (PostgreSQL 16)
 # ==========================================
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 #            نوع القاعدة        مستخدم   كلمة مرور       host     port   اسم القاعدة
 DATABASE_POOL_SIZE=10          ← عدد الاتصالات في الـ pool
 
@@ -167,7 +167,7 @@ install-dev:
 
 ```toml
 [tool.poetry]
-name = "athar"
+name = "Burhan"
 version = "0.5.0"
 description = "Islamic QA System"
 
@@ -206,7 +206,7 @@ transformers = "^4.46"       ← نماذج HuggingFace
 $ poetry install --with dev
 
 # الخطوة 1: ينشئ بيئة افتراضية
-# ~/.cache/pypoetry/virtualenvs/athar-xxxxx-py3.12/
+# ~/.cache/pypoetry/virtualenvs/Burhan-xxxxx-py3.12/
 
 # الخطوة 2: يقرأ poetry.lock
 # ملف يحتوي كل التبعيات مع إصداراتها الدقيقة
@@ -242,7 +242,7 @@ $ poetry install --with dev
 # ✓ Installed fastapi-0.115.0
 # ✓ Installed uvicorn-0.32.0
 # ...
-# ✓ Installing the current project: athar@0.5.0
+# ✓ Installing the current project: Burhan@0.5.0
 ```
 
 ---
@@ -295,16 +295,16 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: athar_db         ← اسم قاعدة البيانات
-      POSTGRES_USER: athar          ← اسم المستخدم
-      POSTGRES_PASSWORD: athar_password  ← كلمة المرور
+      POSTGRES_DB: Burhan_db         ← اسم قاعدة البيانات
+      POSTGRES_USER: Burhan          ← اسم المستخدم
+      POSTGRES_PASSWORD: Burhan_password  ← كلمة المرور
     ports:
       - "5432:5432"                 ← يعرض المنفذ 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data  ← حفظ البيانات
       - ./docker/init-db:/docker-entrypoint-initdb.d  ← سكريبتات التهيئة
     networks:
-      - athar-network
+      - Burhan-network
 
   # ==========================================
   # Qdrant (قاعدة المتجهات)
@@ -317,7 +317,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage  ← حفظ البيانات
     networks:
-      - athar-network
+      - Burhan-network
 
   # ==========================================
   # Redis 7 (التخزين المؤقت)
@@ -329,10 +329,10 @@ services:
     volumes:
       - redis_data:/data            ← حفظ البيانات
     networks:
-      - athar-network
+      - Burhan-network
 
   # ==========================================
-  # FastAPI API (تطبيق Athar)
+  # FastAPI API (تطبيق Burhan)
   # ==========================================
   api:
     build:
@@ -341,7 +341,7 @@ services:
     ports:
       - "8000:8000"                 ← يعرض المنفذ 8000
     environment:
-      - DATABASE_URL=postgresql+asyncpg://athar:athar_password@postgres:5432/athar_db
+      - DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@postgres:5432/Burhan_db
       - REDIS_URL=redis://redis:6379/0
       - QDRANT_URL=http://qdrant:6333
     depends_on:
@@ -349,7 +349,7 @@ services:
       - redis                       ← ينتظر Redis
       - qdrant                      ← ينتظر Qdrant
     networks:
-      - athar-network
+      - Burhan-network
 
   # ==========================================
   # Next.js Frontend (اختياري)
@@ -363,7 +363,7 @@ services:
     depends_on:
       - api                         ← ينتظر API
     networks:
-      - athar-network
+      - Burhan-network
     profiles:
       - frontend                    ← لا يشغل إلا إذا طلبته
 
@@ -373,7 +373,7 @@ volumes:
   redis_data:
 
 networks:
-  athar-network:
+  Burhan-network:
     driver: bridge                  ← شبكة افتراضية
 ```
 
@@ -384,7 +384,7 @@ networks:
 ```bash
 $ docker compose -f docker/docker-compose.dev.yml up -d
 
-# الخطوة 1: ينشئ شبكة athar-network
+# الخطوة 1: ينشئ شبكة Burhan-network
 # لماذا؟ حتى تستطيع الخدمات التواصل مع بعضها
 # كل الخدمات على نفس الشبكة → تستطيع استخدام أسماء الخدمات كـ hostnames
 
@@ -396,8 +396,8 @@ $ docker compose -f docker/docker-compose.dev.yml up -d
 
 # الخطوة 3: يشغل PostgreSQL
 # └── يحمل صورة postgres:16-alpine
-# └── ينشئ قاعدة بيانات athar_db
-# └── ينشئ مستخدم athar
+# └── ينشئ قاعدة بيانات Burhan_db
+# └── ينشئ مستخدم Burhan
 # └── يعرض المنفذ 5432 على localhost
 # └── ينفذ سكريبتات التهيئة من docker/init-db/
 
@@ -417,7 +417,7 @@ $ docker compose -f docker/docker-compose.dev.yml up -d
 # └── يعرض المنفذ 8000
 
 # الخطوة 7: يطبع النتيجة
-# ✔ Network athar-network Created
+# ✔ Network Burhan-network Created
 # ✔ Volume postgres_data Created
 # ✔ Volume qdrant_data Created
 # ✔ Volume redis_data Created
@@ -512,7 +512,7 @@ $ poetry run alembic upgrade head
 
 # الخطوة 1: يقرأ alembic.ini
 # └── يحدد رابط قاعدة البيانات
-#     sqlalchemy.url = postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+#     sqlalchemy.url = postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 
 # الخطوة 2: يتصل بـ PostgreSQL
 # └── يحاول الاتصال
@@ -634,7 +634,7 @@ $ poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
 # الخطوة 1: Uvicorn ينشئ عملية Python
 # └── يحدد مسار Python من البيئة الافتراضية
-#     ~/.cache/pypoetry/virtualenvs/athar-xxxxx-py3.12/bin/python
+#     ~/.cache/pypoetry/virtualenvs/Burhan-xxxxx-py3.12/bin/python
 
 # الخطوة 2: يستورد src.api.main
 # └── يضيف src/ إلى Python path
@@ -710,7 +710,7 @@ def create_app() -> FastAPI:
     
     # الخطوة 1: ينشئ FastAPI application
     app = FastAPI(
-        title=settings.app_name,              # "Athar"
+        title=settings.app_name,              # "Burhan"
         description="Multi-agent Islamic QA system...",
         version="0.5.0",
         docs_url="/docs",                     # Swagger UI
@@ -809,12 +809,12 @@ async def lifespan(app: FastAPI):
     
     logger.info(
         "app.startup",
-        app_name=settings.app_name,        # "Athar"
+        app_name=settings.app_name,        # "Burhan"
         version="0.5.0",
         environment=settings.app_env,      # "development"
     )
     # ← يطبع:
-    #   2024-04-14 10:30:00 [info     ] app.startup app_name=Athar version=0.5.0 environment=development
+    #   2024-04-14 10:30:00 [info     ] app.startup app_name=Burhan version=0.5.0 environment=development
 
     yield  # ← يسمح للتطبيق بالعمل
     # ← من هنا، التطبيق جاهز لاستقبال الطلبات
@@ -829,7 +829,7 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 INFO:     Started reloader process [12345] using WatchFiles
 INFO:     Started server process [12346]
 INFO:     Waiting for application startup.
-2024-04-14 10:30:00 [info     ] app.startup app_name=Athar version=0.5.0 environment=development
+2024-04-14 10:30:00 [info     ] app.startup app_name=Burhan version=0.5.0 environment=development
 INFO:     Application startup complete.
 ```
 

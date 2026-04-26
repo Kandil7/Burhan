@@ -1,5 +1,5 @@
 """
-Retrieval Schemas for Athar Islamic QA system.
+Retrieval Schemas for Burhan Islamic QA system.
 
 This module defines the canonical data schemas for the retrieval layer.
 These are used across retrieval, verification, and generation components.

@@ -1,5 +1,5 @@
 """
-Application-level models for Athar Islamic QA system.
+Application-level models for Burhan Islamic QA system.
 
 This module contains:
 - RoutingDecision: Application-level result wrapping ClassificationResult with routing info

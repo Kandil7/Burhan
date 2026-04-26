@@ -9,16 +9,16 @@ Tests:
 - Full pipeline execution
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.agents.collection_agent import (
+import pytest
+
+from src.agents.collection import (
     CollectionAgentConfig,
     IntentLabel,
     RetrievalStrategy,
-    VerificationSuite,
 )
-from src.agents.fiqh_collection_agent import (
+from src.agents.collection.fiqh import (
     FiqhCollectionAgent,
     _normalize_arabic,
 )

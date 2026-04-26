@@ -1,5 +1,5 @@
 """
-Regression test suite for Epic 8 - Athar query routing and intent classification.
+Regression test suite for Epic 8 - Burhan query routing and intent classification.
 
 This module provides golden test cases for verifying that query routing,
 intent classification, agent selection, and response mode decisions

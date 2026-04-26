@@ -10,7 +10,7 @@ from typing import List, Dict, Any
 
 # Configuration
 LUCENE_VERSION = "9.12.0"
-BASE_DIR = Path(r"K:\business\projects_v2\Athar")
+BASE_DIR = Path(r"K:\business\projects_v2\Burhan")
 DATASETS_DIR = BASE_DIR / "datasets" / "system_book_datasets"
 STORE_DIR = DATASETS_DIR / "store"
 LUCENE_JARS_DIR = BASE_DIR / "lib" / "lucene"

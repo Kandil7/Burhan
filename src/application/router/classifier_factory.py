@@ -1,14 +1,38 @@
-# Classifier Factory Module
 """
-High-Precision Keyword-Based Classifier for Athar.
-Uses robust Arabic normalization and tiered matching.
+Intent Classification Module for Burhan Islamic QA System.
+
+This module provides the canonical intent classification system:
+1. KeywordBasedClassifier - Fast keyword matching for clear signals
+2. MasterHybridClassifier - Combines keyword + embedding tiers
+3. ClassifierFactory - Factory for creating classifiers
+
+All classification code should use these implementations.
+
+Note: EmbeddingClassifier is in src/application/router/embedding_classifier.py
 """
 
-import re
-from typing import Optional, Dict, Any, List
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
+
+from src.application.interfaces import IntentClassifier
+from src.config.logging_config import get_logger
+from src.domain.intents import (
+    Intent,
+    INTENT_DESCRIPTIONS,
+    KEYWORD_PATTERNS as INTENT_KEYWORDS,
+    normalize_arabic,
+    detect_language,
+)
 from src.domain.models import ClassificationResult
-from src.domain.intents import Intent, QuranSubIntent
+
+logger = get_logger()
+
+
+# ============================================================================
+# Query Classifier Abstract Base Class
+# ============================================================================
 
 
 class QueryClassifier(ABC):
@@ -20,156 +44,30 @@ class QueryClassifier(ABC):
         pass
 
 
-def _normalize_arabic(text: str) -> str:
-    """Robust Arabic text normalization for keyword matching."""
-    if not text:
-        return ""
-    # Strip diacritics
-    text = re.sub(r"[\u064B-\u065F\u0670]", "", text)
-    # Unify Alef variants
-    text = re.sub(r"[إأآٱ]", "ا", text)
-    # Unify Ta-Marbuta and Ya (careful: might over-match, but better for keywords)
-    text = text.replace("ة", "ه").replace("ى", "ي")
-    # Collapse whitespace
-    text = re.sub(r"\s+", " ", text).strip()
-    return text.lower()
+# ============================================================================
+# Keyword-Based Classifier
+# ============================================================================
 
 
 class KeywordBasedClassifier(QueryClassifier):
     """
-    Enhanced Keyword-based query classifier with robust normalization.
+    High-precision keyword-based query classifier.
+
+    Uses robust Arabic normalization and match counting for classification.
     """
 
-    def __init__(self):
-        # Priority mapping: More specific/unique terms first
-        # We pre-normalize keywords for performance
-        self.keywords: Dict[Intent, List[str]] = {
-            Intent.FIQH: [
-                "حكم",
-                "يجوز",
-                "حلال",
-                "حرام",
-                "فتوى",
-                "واجب",
-                "سنة",
-                "مستحب",
-                "مكروه",
-                "صلاة",
-                "صوم",
-                "زكاة",
-                "حج",
-                "طهارة",
-                "وضوء",
-                "جنابة",
-                "عمرة",
-                "طلاق",
-                "نكاح",
-                "بيع",
-                "ربا",
-                "معاملات",
-                "عبادات",
-                "فقه",
-            ],
-            Intent.HADITH: [
-                "حديث",
-                "رواه",
-                "اخرجه",
-                "اسناد",
-                "سند",
-                "متن",
-                "صحيح",
-                "ضعيف",
-                "حسن",
-                "بخاري",
-                "مسلم",
-                "ترمذي",
-                "نسائي",
-                "ابن ماجه",
-                "ابو داود",
-            ],
-            Intent.TAFSIR: [
-                "تفسير",
-                "معنى",
-                "بيان",
-                "تاويل",
-                "ابن كثير",
-                "جلالين",
-                "قرطبي",
-                "طبري",
-                "تفسير الايه",
-                "شرح الايه",
-            ],
-            Intent.QURAN: ["آية", "سورة", "قرآن", "مصحف", "تلاوة", "تجويد"],
-            Intent.AQEEDAH: [
-                "عقيدة",
-                "توحيد",
-                "ايمان",
-                "شرك",
-                "كفر",
-                "نفاق",
-                "اسماء الله",
-                "صفات الله",
-                "يوم الاخر",
-                "ملائكة",
-                "قدر",
-                "قضاء",
-            ],
-            Intent.SEERAH: [
-                "سيرة",
-                "غزوة",
-                "هجرة",
-                "هجره",
-                "صحابة",
-                "خلفاء",
-                "نبوية",
-                "مكة",
-                "المدينة",
-                "المدينه",
-                "بدر",
-                "أحد",
-                "الخندق",
-                "فتح مكة",
-                "تبوك",
-                "المتخلفين",
-                "النبي",
-                "الرسول",
-                "محمد",
-                "صلى الله عليه وسلم",
-                "السيرة النبوية",
-                "الهجرة النبوية",
-                "غزوه",
-                "قشلان",
-                "دروس",
-                "عبر",
-                "زهد",
-                "مدينة",
-                "النبوية",
-                "القديم",
-                "الحديث",
-                "حياة",
-                "سيرة نبوية",
-                "الكتاب",
-                "المجموعة",
-                "الصفحة",
-                "الفقرة",
-                "العنوان",
-                "القسم",
-                "الدرس",
-                "العبرة",
-                "المشكلة",
-                "المشاكل",
-                "الحل",
-            ],
-            Intent.USUL_FIQH: ["اصول الفقه", "استنباط", "قياس", "اجماع", "اجتهاد", "قاعدة فقهية"],
-            Intent.ISLAMIC_HISTORY: ["تاريخ", "دولة", "خلافة", "فتح", "معركة", "حضارة", "اموي", "عباسي", "عثماني"],
-            Intent.ARABIC_LANGUAGE: ["نحو", "صرف", "بلاغة", "اعراب", "كلمة", "معنى كلمة", "لغة", "عربي"],
-            Intent.GREETING: ["سلام", "السلام", "مرحبا", "أهلا"],
-            Intent.ZAKAT: ["حساب الزكاة", "زكاة المال", "نصاب"],
-            Intent.INHERITANCE: ["ميراث", "فرائض", "تقسيم", "ورثة"],
-        }
+    def __init__(self, keywords: Optional[Dict[Intent, List[str]]] = None):
+        """
+        Initialize the classifier with keywords.
 
-        # Pre-normalize everything in the registry
-        self._norm_keywords = {intent: [_normalize_arabic(kw) for kw in kws] for intent, kws in self.keywords.items()}
+        Args:
+            keywords: Optional custom keywords dict. Uses INTENT_KEYWORDS if not provided.
+        """
+        self.keywords = keywords or INTENT_KEYWORDS
+        # Pre-normalize keywords for performance
+        self._norm_keywords: Dict[Intent, List[str]] = {
+            intent: [normalize_arabic(kw) for kw in kws] for intent, kws in self.keywords.items()
+        }
 
     async def classify(self, query: str) -> ClassificationResult:
         """Classify based on keyword density and priority."""
@@ -183,22 +81,16 @@ class KeywordBasedClassifier(QueryClassifier):
                 method="keyword",
             )
 
-        norm_query = _normalize_arabic(query)
+        norm_query = normalize_arabic(query)
 
         # Count matches per intent
         matches: Dict[Intent, int] = {}
         for intent, patterns in self._norm_keywords.items():
-            count = 0
-            for p in patterns:
-                # Use word boundaries or check if contained
-                # For Arabic, simple 'in' is often best due to suffixes
-                if p in norm_query:
-                    count += 1
+            count = sum(1 for p in patterns if p in norm_query)
             if count > 0:
                 matches[intent] = count
 
         if not matches:
-            # RETURN ZERO CONFIDENCE so MasterHybrid switches to Tier 2 (Embedding)
             return ClassificationResult(
                 intent=Intent.ISLAMIC_KNOWLEDGE,
                 confidence=0.0,
@@ -210,38 +102,124 @@ class KeywordBasedClassifier(QueryClassifier):
 
         # Pick highest match count
         best_intent = max(matches, key=matches.get)
-
-        # Boost confidence based on match count
-        # 1 match = 0.7, 2 matches = 0.85, 3+ = 0.95
         count = matches[best_intent]
+
+        # Confidence based on match count
         confidence = 0.7 if count == 1 else (0.85 if count == 2 else 0.95)
 
         return ClassificationResult(
             intent=best_intent,
             confidence=confidence,
-            language="ar",
+            language=detect_language(query),
             reasoning=f"Matched {count} keywords for {best_intent.value}.",
             requires_retrieval=True,
             method="keyword",
         )
 
 
+# ============================================================================
+# Hybrid Classifier
+# ============================================================================
+
+
+class MasterHybridClassifier(IntentClassifier):
+    """
+    Consolidated Hybrid Classifier combining Keyword and Semantic tiers.
+
+    Tier 1: Keyword fast-path (always runs first)
+    Tier 2: Embedding fallback (when no keywords matched)
+    """
+
+    def __init__(self, embedding_model: Any = None, low_conf_threshold: float = 0.65) -> None:
+        self._low_conf = low_conf_threshold
+        self._keyword_classifier = KeywordBasedClassifier()
+        self._embedding_classifier = None
+        if embedding_model:
+            from src.application.router.embedding_classifier import EmbeddingClassifier
+
+            self._embedding_classifier = EmbeddingClassifier(embedding_model)
+
+    async def classify(self, query: str) -> ClassificationResult:
+        """Run classification tiers in order."""
+        logger.info("hybrid_classifier.classify_start", query=query[:50])
+
+        if not query or not query.strip():
+            return await self._keyword_classifier.classify("")
+
+        # Tier 1: Keyword Fast-Path
+        kw_result = await self._keyword_classifier.classify(query)
+        logger.debug("hybrid_classifier.keyword_result", intent=kw_result.intent.value, confidence=kw_result.confidence)
+
+        # If keyword match exists, use it
+        if kw_result.confidence > 0.0:
+            logger.info("hybrid_classifier.keyword_win", intent=kw_result.intent.value)
+            return kw_result
+
+        # Tier 2: Embedding Fallback
+        if self._embedding_classifier:
+            try:
+                emb_result = await self._embedding_classifier.classify(query)
+                logger.info(
+                    "hybrid_classifier.embedding_result",
+                    intent=emb_result.intent.value,
+                    confidence=emb_result.confidence,
+                )
+                return emb_result
+            except Exception as e:
+                logger.error("hybrid_classifier.embedding_failed", error=str(e))
+
+        # Fallback
+        logger.info("hybrid_classifier.fallback_to_default")
+        return kw_result
+
+    async def close(self) -> None:
+        """Clean up resources."""
+        if self._embedding_classifier:
+            await self._embedding_classifier.close()
+
+
+# ============================================================================
+# Classifier Factory
+# ============================================================================
+
+
 class ClassifierFactory:
     """Factory for creating query classifiers."""
 
     @staticmethod
-    def create(
-        classifier_type: str = "keyword",
-        **kwargs,
-    ) -> QueryClassifier:
-        """Create a classifier instance."""
+    def create_keyword() -> KeywordBasedClassifier:
+        """Create a keyword-based classifier."""
         return KeywordBasedClassifier()
 
     @staticmethod
-    def create_default() -> QueryClassifier:
-        """Create the default classifier."""
+    def create_hybrid(embedding_model: Any = None) -> MasterHybridClassifier:
+        """Create a hybrid classifier with optional embedding support."""
+        return MasterHybridClassifier(embedding_model=embedding_model)
+
+    @staticmethod
+    def create_default() -> KeywordBasedClassifier:
+        """Create the default classifier (keyword-based)."""
         return KeywordBasedClassifier()
 
 
 # Default factory instance
 classifier_factory = ClassifierFactory()
+
+# Backward compatibility aliases
+HybridIntentClassifier = MasterHybridClassifier
+
+
+__all__ = [
+    # Core classes
+    "QueryClassifier",
+    "KeywordBasedClassifier",
+    "MasterHybridClassifier",
+    "HybridIntentClassifier",
+    "ClassifierFactory",
+    # Utilities
+    "normalize_arabic",
+    "detect_language",
+    "INTENT_KEYWORDS",
+    # Backward compatibility
+    "classifier_factory",
+]

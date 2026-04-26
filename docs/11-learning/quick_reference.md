@@ -1,6 +1,6 @@
-# ⚡ ملخص سريع - Athar Islamic QA System
+# ⚡ ملخص سريع - Burhan Islamic QA System
 
-## 🕌 ما هو Athar؟
+## 🕌 ما هو Burhan؟
 
 نظام إجابة على الأسئلة الإسلامية يستخدم:
 - **13 وكيل متخصص** (Agents) ← v2: 10 وكلاء CollectionAgent
@@ -328,7 +328,7 @@ curl -X POST http://localhost:8000/api/v1/query \
 - [docs/11-learning/README.md](docs/11-learning/README.md) - دليل التوجيه
 - [docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md) - المرحلة 7
 - [notebooks/COLAB_GPU_EMBEDDING_GUIDE.md](notebooks/COLAB_GPU_EMBEDDING_GUIDE.md) - تشغيل التضمين
-- [https://huggingface.co/datasets/Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets) - البيانات
+- [https://huggingface.co/datasets/Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets) - البيانات
 
 ---
 

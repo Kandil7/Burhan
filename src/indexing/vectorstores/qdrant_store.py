@@ -1,5 +1,5 @@
 """
-Qdrant Vector Store Integration for Athar Islamic QA system.
+Qdrant Vector Store Integration for Burhan Islamic QA system.
 
 Provides:
 - Collection management (fiqh, hadith, tafsir, general, duas)

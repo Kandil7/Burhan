@@ -1,5 +1,5 @@
 """
-Answer Policy Module for Athar Islamic QA system.
+Answer Policy Module for Burhan Islamic QA system.
 
 Determines the final response mode (answer, clarify, abstain) 
 based on confidence and verification status.

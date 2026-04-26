@@ -1,5 +1,5 @@
 """
-Evaluation Framework for Athar RAG System.
+Evaluation Framework for Burhan RAG System.
 
 This module provides evaluation capabilities for measuring agent performance
 on Islamic scholarly questions using golden sets of test cases.

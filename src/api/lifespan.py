@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
 
     # ── 1. Verification Suite ─────────────────────────────────────────────────
-    from src.verifiers.suite_builder import register_all_checks
+    from src.verification.suite_builder import register_all_checks
 
     register_all_checks()
 
@@ -62,9 +62,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     from src.application.router import RouterAgent
     from src.application.classifier_factory import build_classifier
 
-    # Build Router - use build_classifier for robust intent detection
-    # Inject embedding_model to enable Phase 5 semantic routing
-    classifier = build_classifier(embedding_model=app.state.embedding_model)
+    # Build Router - use keyword-only classifier for fast-path routing
+    classifier = build_classifier(embedding_model=None)
+    logger.info(
+        f"Built classifier: {type(classifier).__name__}, keyword: {type(classifier._keyword_classifier).__name__}"
+    )
     router = RouterAgent(classifier=classifier)
     app.state.router = router
 

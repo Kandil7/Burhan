@@ -1,4 +1,4 @@
-# 🔍 مراجعة معمارية شاملة لمشروع Athar - Refactoring Report
+# 🔍 مراجعة معمارية شاملة لمشروع Burhan - Refactoring Report
 
 ## 📋 معلومات المراجعة
 

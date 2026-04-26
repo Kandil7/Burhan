@@ -1,7 +1,7 @@
 # 🚀 ULTRA Deep Dive: RAG System Algorithmic Breakdown
 
 ## 🕌 Introduction
-This document represents the absolute pinnacle of technical documentation for the Athar system. It breaks down the mathematical and logical flows of the Retrieval-Augmented Generation system at an "Under-the-Hood" level.
+This document represents the absolute pinnacle of technical documentation for the Burhan system. It breaks down the mathematical and logical flows of the Retrieval-Augmented Generation system at an "Under-the-Hood" level.
 
 ---
 
@@ -32,7 +32,7 @@ $$\text{RRFscore}(d \in D) = \sum_{r \in L} \frac{1}{k + \text{rank}(r, d)}$$
 ---
 
 ## 🧪 3. The Retrieval Facet Engine (src/retrieval/filters/)
-Athar implements **Boolean-Vector Hybrid Filtering**.
+Burhan implements **Boolean-Vector Hybrid Filtering**.
 
 ### Execution Flow:
 1.  **Metadata Extraction**: User query is scanned for "Author" (e.g., "Ibn Taymiyyah") or "Book".
@@ -45,7 +45,7 @@ Athar implements **Boolean-Vector Hybrid Filtering**.
 ---
 
 ## 🛠️ 4. The Self-Healing Citation Engine (src/agents/collection/base.py)
-When the LLM generates an answer, it often "hallucinates" a citation format even if the document was missing. Athar's base agent has a **Validation & Repair Loop**.
+When the LLM generates an answer, it often "hallucinates" a citation format even if the document was missing. Burhan's base agent has a **Validation & Repair Loop**.
 
 ### The Logic:
 1.  **Regex Scan**: Identify all `[CX]` markers in the generated text.

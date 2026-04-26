@@ -1,4 +1,4 @@
-# Athar API - Collection Endpoints
+# Burhan API - Collection Endpoints
 
 ## Overview
 

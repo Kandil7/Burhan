@@ -1,7 +1,7 @@
 # 📖 Master Class: Infrastructure & Knowledge Facades
 
 ## 🕌 Introduction
-This document explores how Athar connects to the "Outside World" (Infrastructure) and how it organizes its internal data access patterns (Knowledge Facades). This layer is critical for performance, caching, and reliability.
+This document explores how Burhan connects to the "Outside World" (Infrastructure) and how it organizes its internal data access patterns (Knowledge Facades). This layer is critical for performance, caching, and reliability.
 
 ---
 

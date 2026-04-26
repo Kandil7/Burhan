@@ -1,8 +1,8 @@
-# 📚 فهرس دليل التوجيه - Athar Islamic QA System
+# 📚 فهرس دليل التوجيه - Burhan Islamic QA System
 
 ## 🕌 مرحباً بك في دليل التوجيه الشامل
 
-هذا الدليل مصمم لمهندسي الذكاء الاصطناعي والمطورين الذين يريدون فهم مشروع **Athar** بعمق.
+هذا الدليل مصمم لمهندسي الذكاء الاصطناعي والمطورين الذين يريدون فهم مشروع **Burhan** بعمق.
 
 ---
 
@@ -39,7 +39,7 @@
 **الملف:** [`01_project_overview.md`](01_project_overview.md)
 
 **ماذا ستتعلم:**
-- ما هو مشروع Athar؟
+- ما هو مشروع Burhan؟
 - خريطة المشروع عالية المستوى
 - أهم 10 ملفات يجب فهمها أولاً
 - كيف تقرأ المشروع بالترتيب الصحيح
@@ -212,7 +212,7 @@ Augment (أضف): أضف الوثائق إلى الـ prompt
 Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 ```
 
-**في Athar**: كل الوكلاء (Fiqh, Hadith, General) يستخدمون RAG
+**في Burhan**: كل الوكلاء (Fiqh, Hadith, General) يستخدمون RAG
 
 ---
 
@@ -223,7 +223,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - نصوص متشابهة = متجهات متشابهة
 - يمكننا حساب التشابه بين النصوص
 
-**في Athar**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
+**في Burhan**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
 
 ---
 
@@ -234,7 +234,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - بحث سريع جداً (ملايين المتجهات في ميلي ثواني)
 - يدعم البحث الدلالي (semantic search)
 
-**في Athar**: Qdrant (10 مجموعات، 5.7 مليون متجه)
+**في Burhan**: Qdrant (10 مجموعات، 5.7 مليون متجه)
 
 ---
 
@@ -245,7 +245,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - يوجه السؤال للوكيل الصحيح
 - يحسن دقة الإجابة
 
-**في Athar**: 
+**في Burhan**: 
 - **v2**: ConfigRouter مبني على DOMAIN_KEYWORDS
 - **Phase 8**: Hybrid (keyword → Jaccard → confidence gating)
 - **16 نوع نية** مع 10 مستويات أولوية
@@ -261,7 +261,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - سهولة التغيير بدون تعديل الكود
 - تكوين مختلف لكل مجال
 
-**في Athar v2**:
+**في Burhan v2**:
 - 10 ملفات YAML في `config/agents/`
 - 11 ملف prompts في `prompts/`
 - `AgentConfigManager` يحمّل التكوين
@@ -276,7 +276,7 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - BM25: يتطابق مع الكلمات
 - الجمع = نتائج أفضل
 
-**في Athar**: Reciprocal Rank Fusion (k=60)
+**في Burhan**: Reciprocal Rank Fusion (k=60)
 
 ---
 
@@ -375,8 +375,8 @@ docker --version
 ### التثبيت
 ```bash
 # استنساخ المستودع
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # تثبيت التبعيات
 make install-dev
@@ -466,7 +466,7 @@ python -c "from src.application.routing import IntentRouter; print('Routing OK!'
 
 ## 🎯 الخلاصة
 
-هذا الدليل صُمم ليأخذك من **مبتدئ** إلى **فاهم بعمق** لمشروع Athar.
+هذا الدليل صُمم ليأخذك من **مبتدئ** إلى **فاهم بعمق** لمشروع Burhan.
 
 كل جزء يبني على سابقه. لا تقفز. طبق التمارين. اسأل الأسئلة.
 
@@ -501,4 +501,4 @@ python -c "from src.application.routing import IntentRouter; print('Routing OK!'
 **مُعد الدليل:** AI Mentor System  
 **التاريخ:** أبريل 2026  
 **الإصدار:** 3.0  
-**المشروع:** Athar Islamic QA System v2.0 (v2 Migration Complete)
+**المشروع:** Burhan Islamic QA System v2.0 (v2 Migration Complete)

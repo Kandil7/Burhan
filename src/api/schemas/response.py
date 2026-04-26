@@ -1,5 +1,5 @@
 """
-API response schemas for Athar Islamic QA system.
+API response schemas for Burhan Islamic QA system.
 
 Pydantic models for response structure and documentation.
 """

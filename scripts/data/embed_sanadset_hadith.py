@@ -26,7 +26,7 @@ Usage:
     # Start from scratch (ignore checkpoint)
     python scripts/data/embed_sanadset_hadith.py --no-resume
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -56,8 +56,8 @@ from scripts.utils import (
 
 add_project_root_to_path()
 
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
+from src.indexing.embeddings.embedding_model import EmbeddingModel
+from src.indexing.vectorstores.qdrant_store import VectorStore
 
 logger = setup_script_logger("embed-sanadset")
 
@@ -379,7 +379,7 @@ Examples:
     args = parser.parse_args()
 
     print(f"\n{'=' * 70}")
-    print("  ATHAR SANADSET HADITH EMBEDDING PIPELINE")
+    print("  Burhan SANADSET HADITH EMBEDDING PIPELINE")
     print(f"{'=' * 70}")
     print(f"  CSV:      {SANADSET_CSV}")
     print(f"  Batch:    {args.batch_size}")

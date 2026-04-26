@@ -1,5 +1,5 @@
 """
-Environment validation for Athar Islamic QA System.
+Environment validation for Burhan Islamic QA System.
 
 Validates required environment variables and dependencies on startup.
 Phase 9: Added comprehensive environment validation.

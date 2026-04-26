@@ -18,7 +18,7 @@ class OutputFormat(str, Enum):
 class CitationFormat(str, Enum):
     """Citation format types."""
 
-    ATHAR = "athar"
+    Burhan = "Burhan"
     APA = "apa"
     CHICAGO = "chicago"
     FOOTNOTE = "footnote"
@@ -29,7 +29,7 @@ class FormattingPolicyConfig:
     """Configuration for formatting policy."""
 
     output_format: OutputFormat = OutputFormat.MARKDOWN
-    citation_format: CitationFormat = CitationFormat.ATHAR
+    citation_format: CitationFormat = CitationFormat.Burhan
     include_arabic: bool = True
     include_transliteration: bool = True
     max_citations: int = 10

@@ -1,5 +1,5 @@
 """
-Ask Service for Athar Islamic QA system.
+Ask Service for Burhan Islamic QA system.
 
 Orchestration service for the ask/query endpoint.
 Bridges the API transport layer and the AnswerQueryUseCase.

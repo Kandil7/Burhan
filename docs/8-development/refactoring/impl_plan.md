@@ -1,8 +1,8 @@
-بناءً على ما بنيته فعلاً في Athar حتى الآن, و ما تعلمناه من Fanar-Sadiq ، هنا الـ **Full Implementation Plan** الكامل والمرتّب: [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
+بناءً على ما بنيته فعلاً في Burhan حتى الآن, و ما تعلمناه من Fanar-Sadiq ، هنا الـ **Full Implementation Plan** الكامل والمرتّب: [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
 
 ***
 
-## Athar — Full Implementation Plan
+## Burhan — Full Implementation Plan
 
 ### الحالة الراهنة (ما تم بالفعل)
 
@@ -142,7 +142,7 @@ Temperature = 0.1, max_tokens = 4500
 
 ## Phase 5 — Response Assembler
 
-هذا المكون **غائب** في Athar الحالي وهو حاسم: [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
+هذا المكون **غائب** في Burhan الحالي وهو حاسم: [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
 
 ```python
 class ResponseAssembler:
@@ -187,7 +187,7 @@ class ResponseAssembler:
 
 | Dataset | النوع | الاستخدام |
 |---|---|---|
-| Athar-Mini-Dataset-v2 | Q&A pairs | End-to-end accuracy |
+| Burhan-Mini-Dataset-v2 | Q&A pairs | End-to-end accuracy |
 | QIAS 2025 | MCQ Inheritance | Inheritance Calculator |
 | PalmX 2025 (Islamic subtask) | MCQ | General Knowledge |
 | IslamTrust | MCQ | Alignment |

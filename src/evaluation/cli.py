@@ -1,5 +1,5 @@
 """
-Evaluation CLI for Athar RAG System.
+Evaluation CLI for Burhan RAG System.
 
 Provides command-line interface to run evaluations on golden sets.
 """
@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from src.evaluation.golden_set_schema import GoldenSetItem, load_golden_set, get_fiqh_golden_set
+from src.evaluation.golden_set_schema import get_fiqh_golden_set, load_golden_set
 from src.evaluation.metrics import run_evaluation
 
 
@@ -26,31 +26,26 @@ def load_agent(agent_name: str):
     Returns:
         Agent instance.
     """
-    from src.agents.registry import AgentRegistry
+    # Import from v2 collection agents
+    from src.agents.collection import (
+        AqeedahCollectionAgent,
+        FiqhCollectionAgent,
+        HadithCollectionAgent,
+        TafsirCollectionAgent,
+    )
 
-    registry = AgentRegistry()
-    agent = registry.get_agent(agent_name)
+    agent_map = {
+        "fiqh": FiqhCollectionAgent,
+        "hadith": HadithCollectionAgent,
+        "tafsir": TafsirCollectionAgent,
+        "aqeedah": AqeedahCollectionAgent,
+    }
 
-    if agent is None:
-        # Fallback: try to import directly
-        if agent_name == "fiqh":
-            from src.agents.fiqh_agent import FiqhAgent
+    agent_class = agent_map.get(agent_name)
+    if agent_class:
+        return agent_class()
 
-            return FiqhAgent()
-        elif agent_name == "aqeedah":
-            from src.agents.aqeedah_agent import AqeedahAgent
-
-            return AqeedahAgent()
-        elif agent_name == "tafsir":
-            from src.agents.tafsir_agent import TafsirAgent
-
-            return TafsirAgent()
-        elif agent_name == "hadith":
-            from src.agents.hadith_agent import HadithAgent
-
-            return HadithAgent()
-
-    return agent
+    return None
 
 
 async def run_cli(args):
@@ -101,7 +96,7 @@ async def run_cli(args):
 def main():
     """Main entry point for CLI."""
     parser = argparse.ArgumentParser(
-        description="Run evaluation on Athar RAG system golden sets",
+        description="Run evaluation on Burhan RAG system golden sets",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

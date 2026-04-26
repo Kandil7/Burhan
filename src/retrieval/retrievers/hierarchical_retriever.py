@@ -1,5 +1,5 @@
 """
-Hierarchical Retriever for Athar Islamic QA system.
+Hierarchical Retriever for Burhan Islamic QA system.
 
 Implements multi-level retrieval for Islamic texts:
 1. Book level - Find relevant books

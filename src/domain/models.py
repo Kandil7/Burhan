@@ -1,5 +1,5 @@
 """
-Domain value objects for Athar Islamic QA system.
+Domain value objects for Burhan Islamic QA system.
 
 This module contains:
 - ClassificationResult: Pure domain value object produced by the intent classifier

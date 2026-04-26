@@ -1,5 +1,5 @@
 """
-Intent Classifier Factory for Athar Islamic QA System.
+Intent Classifier Factory for Burhan Islamic QA System.
 
 Returns the correct IntentClassifier implementation based on settings.
 Coordinates between Keyword, Hybrid (Master), and LLM-based classifiers.
@@ -11,7 +11,9 @@ import logging
 from typing import TYPE_CHECKING, Optional, Any
 
 from src.application.interfaces import IntentClassifier
-from src.application.router.hybrid_classifier import MasterHybridClassifier
+
+# Import directly from canonical module to avoid circular import with hybrid_classifier.py
+from src.application.router.classifier_factory import MasterHybridClassifier
 from src.domain.models import ClassificationResult
 
 logger = logging.getLogger(__name__)
@@ -21,11 +23,13 @@ logger = logging.getLogger(__name__)
 # Fallback Chain Classifier
 # ============================================================================
 
+
 class FallbackChainClassifier(IntentClassifier):
     """
     Tries primary classifier first, falls back to secondary on any error.
     Useful for LLM -> Hybrid fallback patterns.
     """
+
     def __init__(self, primary: IntentClassifier, fallback: IntentClassifier):
         self._primary = primary
         self._fallback = fallback
@@ -48,22 +52,22 @@ class FallbackChainClassifier(IntentClassifier):
 # Build Classifier Factory Function
 # ============================================================================
 
+
 def build_classifier(embedding_model: Any = None) -> IntentClassifier:
     """
     Constructs and returns an IntentClassifier based on application settings.
-    
+
     Args:
         embedding_model: Optional BGE-M3 model for semantic classification.
     """
     from src.config.settings import settings
-    
+
     backend = settings.classifier_backend
     logger.info(f"Building classifier with backend: {backend}, embedding_model_present: {embedding_model is not None}")
 
     # 1. Base Master Hybrid Classifier (Keyword + Semantic) - Always available
     master_hybrid = MasterHybridClassifier(
-        embedding_model=embedding_model,
-        low_conf_threshold=settings.low_conf_threshold
+        embedding_model=embedding_model, low_conf_threshold=settings.low_conf_threshold
     )
 
     if backend == "hybrid":
@@ -81,15 +85,12 @@ def build_classifier(embedding_model: Any = None) -> IntentClassifier:
                 model=settings.openai_model,
                 temperature=settings.classifier_llm_temperature,
                 max_tokens=settings.classifier_llm_max_tokens,
-                raise_on_error=(backend == "chain")
+                raise_on_error=(backend == "chain"),
             )
 
             if backend == "chain":
-                return FallbackChainClassifier(
-                    primary=llm_classifier,
-                    fallback=master_hybrid
-                )
-            
+                return FallbackChainClassifier(primary=llm_classifier, fallback=master_hybrid)
+
             return llm_classifier
 
         except (ImportError, ValueError) as e:
@@ -98,5 +99,6 @@ def build_classifier(embedding_model: Any = None) -> IntentClassifier:
 
     # Default fallback
     return master_hybrid
+
 
 __all__ = ["build_classifier", "FallbackChainClassifier"]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Athar CLI - Command-line interface for managing the application.
+Burhan CLI - Command-line interface for managing the application.
 
 Provides convenient commands for:
 - Setup and installation
@@ -20,7 +20,7 @@ Usage:
     python scripts/cli.py db migrate
     python scripts/cli.py help
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import json
@@ -108,7 +108,7 @@ def run_command(cmd: str, capture: bool = False, cwd: Optional[Path] = None) -> 
 
 def cmd_setup() -> bool:
     """Full initial setup."""
-    print_header("🚀 Athar - Complete Setup")
+    print_header("🚀 Burhan - Complete Setup")
 
     # Check Python
     print_step("Checking Python...")
@@ -135,7 +135,7 @@ def cmd_setup() -> bool:
     # Run migrations
     print_step("Running migrations...")
     run_command(
-        "docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql"
+        "docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql"
     )
     print_success("Migrations complete")
 
@@ -145,7 +145,7 @@ def cmd_setup() -> bool:
 
 def cmd_start(api_only: bool = False) -> None:
     """Start application."""
-    print_header("🚀 Starting Athar")
+    print_header("🚀 Starting Burhan")
 
     # Check Docker
     print_step("Checking Docker services...")
@@ -160,14 +160,14 @@ def cmd_start(api_only: bool = False) -> None:
     print_step("Starting Backend API...")
     print_warning("API will start in a new window")
     run_command(
-        'start "Athar API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"'
+        'start "Burhan API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"'
     )
     time.sleep(3)
     print_success("API starting on port 8000")
 
     if not api_only:
         print_step("Starting Frontend...")
-        run_command('cd frontend && start "Athar Frontend" cmd /k "npm run dev" && cd ..')
+        run_command('cd frontend && start "Burhan Frontend" cmd /k "npm run dev" && cd ..')
         time.sleep(3)
         print_success("Frontend starting on port 3000")
 
@@ -204,7 +204,7 @@ def cmd_test() -> None:
 
 def cmd_status() -> None:
     """Check service status."""
-    print_header("📊 Athar Status")
+    print_header("📊 Burhan Status")
 
     print("Docker Services:")
     success, output = run_command(
@@ -256,7 +256,7 @@ def cmd_db_migrate() -> None:
         if migration_path.exists():
             print_step(f"Running {migration_path.name}...")
             run_command(
-                f"docker exec -i athar-postgres psql -U athar -d athar_db < {migration_path}"
+                f"docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < {migration_path}"
             )
             print_success(f"{migration_path.name} complete")
         else:
@@ -266,7 +266,7 @@ def cmd_db_migrate() -> None:
 def cmd_db_shell() -> None:
     """Open database shell."""
     print_header("🗄️  PostgreSQL Shell")
-    run_command("docker exec -it athar-postgres psql -U athar -d athar_db")
+    run_command("docker exec -it Burhan-postgres psql -U Burhan -d Burhan_db")
 
 
 def cmd_data_status() -> None:
@@ -315,7 +315,7 @@ def cmd_quick_test() -> None:
 def print_help() -> None:
     """Print help message."""
     print("""
-Athar CLI - Command-line interface
+Burhan CLI - Command-line interface
 
 Usage:
     python scripts/cli.py <command> [options]

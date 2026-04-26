@@ -1,5 +1,5 @@
 """
-Request ID Middleware for Athar Islamic QA system.
+Request ID Middleware for Burhan Islamic QA system.
 
 Adds unique request ID to each request for tracing.
 """

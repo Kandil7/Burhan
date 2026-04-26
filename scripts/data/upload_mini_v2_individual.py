@@ -12,7 +12,7 @@ load_dotenv()
 from huggingface_hub import HfApi, create_repo
 
 # Configuration
-DATASET_NAME = "Athar-Mini-Dataset-v2"
+DATASET_NAME = "Burhan-Mini-Dataset-v2"
 REPO_ID = f"Kandil7/{DATASET_NAME}"
 DATASET_DIR = Path("data/mini_dataset_v2")
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")

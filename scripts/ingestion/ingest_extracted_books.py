@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Extracted Books Ingestion Script for Athar Islamic QA system.
+Extracted Books Ingestion Script for Burhan Islamic QA system.
 
 Processes thousands of Islamic books from datasets/data/extracted_books/
 and prepares them for RAG pipeline ingestion.

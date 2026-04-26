@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     
     # API Settings
     api_v1_prefix: str = "/api/v1"
-    api_title: str = "Athar Islamic QA API"
+    api_title: str = "Burhan Islamic QA API"
     api_version: str = "0.5.0"
     
     # Qdrant Settings
@@ -99,7 +99,7 @@ class ConfigManager:
 
 # API
 API_VERSION = "0.5.0"
-API_TITLE = "Athar Islamic QA API"
+API_TITLE = "Burhan Islamic QA API"
 
 # Default values
 DEFAULT_TOP_K = 10

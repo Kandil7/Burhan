@@ -1,6 +1,6 @@
-# Athar Documentation Index
+# Burhan Documentation Index
 
-**Complete documentation for the Athar Islamic QA System**  
+**Complete documentation for the Burhan Islamic QA System**  
 **Last Updated:** April 15, 2026
 
 ---
@@ -107,8 +107,8 @@ The new classifier provides:
 
 ## External Resources
 
-- **GitHub:** https://github.com/Kandil7/Athar
-- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Athar-Datasets (42.6 GB)
+- **GitHub:** https://github.com/Kandil7/Burhan
+- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets (42.6 GB)
 - **Fanar-Sadiq Paper:** [PDF](Fanar-Sadiq%20A%20Multi-Agent%20Architecture%20for%20Grounded%20Islamic%20QA.pdf)
 - **Groq API:** https://console.groq.com
 - **Qdrant:** https://qdrant.tech

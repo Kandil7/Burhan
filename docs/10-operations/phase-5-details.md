@@ -1,4 +1,4 @@
-# Phase 5 Improvements Summary - Athar Islamic QA System
+# Phase 5 Improvements Summary - Burhan Islamic QA System
 
 ## Overview
 

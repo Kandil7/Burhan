@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Endpoint Test Suite for Athar Islamic QA System.
+Comprehensive Endpoint Test Suite for Burhan Islamic QA System.
 
 Tests ALL endpoints with detailed response validation including:
 - Health & readiness checks
@@ -16,7 +16,7 @@ Usage:
     python scripts/tests/test_all_endpoints_detailed.py --url http://localhost:8000
     python scripts/tests/test_all_endpoints_detailed.py --verbose
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -218,7 +218,7 @@ def run_all_tests(base_url: str, verbose: bool = False) -> list[TestResult]:
     results.append(run_test(
         "2. GET /", f"{base_url}/",
         checks={
-            "name": lambda d: d.get("name") == "Athar",
+            "name": lambda d: d.get("name") == "Burhan",
             "version": lambda d: d.get("version", "N/A"),
             "has_query_endpoint": lambda d: "/api/v1/query" in d.get("query_endpoint", ""),
         },
@@ -426,7 +426,7 @@ def run_all_tests(base_url: str, verbose: bool = False) -> list[TestResult]:
 def main():
     """Run comprehensive endpoint tests."""
     parser = argparse.ArgumentParser(
-        description="Comprehensive endpoint test for Athar API",
+        description="Comprehensive endpoint test for Burhan API",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -443,7 +443,7 @@ Examples:
     base_url = args.url.rstrip("/") if args.url else f"http://localhost:{args.port}"
 
     print(f"\n{Colors.BOLD}{Colors.BLUE}{'=' * 70}")
-    print(f"  ATHAR ISLAMIC QA - COMPREHENSIVE ENDPOINT TEST")
+    print(f"  Burhan ISLAMIC QA - COMPREHENSIVE ENDPOINT TEST")
     print(f"{'=' * 70}{Colors.END}")
     print(f"  Target: {base_url}")
     print(f"{'=' * 70}\n")

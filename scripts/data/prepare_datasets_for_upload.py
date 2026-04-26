@@ -9,7 +9,7 @@ Usage:
     python scripts/prepare_datasets_for_upload.py
 
 Output:
-    data/athar-datasets/
+    data/Burhan-datasets/
     ├── README.md                           # Dataset documentation
     ├── dataset_info.json                   # Dataset metadata
     ├── extracted_books/
@@ -31,7 +31,7 @@ from pathlib import Path
 
 # Configuration
 DATASETS_DIR = Path("datasets")
-OUTPUT_DIR = Path("data/athar-datasets")
+OUTPUT_DIR = Path("data/Burhan-datasets")
 MAX_FILE_SIZE = 4 * 1024**3  # 4 GB (safe under 5 GB git-lfs limit)
 CHUNK_SIZE = 500 * 1024**2  # 500 MB per archive chunk
 
@@ -118,11 +118,11 @@ def prepare_metadata():
     print("\n📋 Preparing metadata...")
     
     metadata = {
-        "name": "Athar Islamic QA System Datasets",
+        "name": "Burhan Islamic QA System Datasets",
         "description": "Comprehensive Islamic scholarly texts for QA system",
         "version": "1.0.0",
         "license": "MIT",
-        "homepage": "https://github.com/Kandil7/Athar",
+        "homepage": "https://github.com/Kandil7/Burhan",
         "sources": {
             "shamela_library": {
                 "description": "8,425 Islamic books from Shamela",
@@ -150,7 +150,7 @@ def prepare_metadata():
             "duas_adhkar": {"description": "Supplications & remembrance", "estimated_docs": 1000},
         },
         "usage": {
-            "citation": "@misc{athar2026, title={Athar Islamic QA System Datasets}, author={Athar Team}, year={2026}}",
+            "citation": "@misc{Burhan2026, title={Burhan Islamic QA System Datasets}, author={Burhan Team}, year={2026}}",
             "acknowledgment": "Data sourced from Shamela Library and Sanadset Hadith Dataset",
         }
     }
@@ -161,7 +161,7 @@ def prepare_metadata():
 def main():
     """Main preparation function."""
     print("="*70)
-    print("🕌 ATHAR - PREPARE DATASETS FOR UPLOAD")
+    print("🕌 Burhan - PREPARE DATASETS FOR UPLOAD")
     print("="*70)
     
     # Create output directory
@@ -252,9 +252,9 @@ def main():
             print(f"   ✅ Copied {meta_file}")
     
     # 4. Create README
-    readme_content = f"""# 🕌 Athar Islamic QA System - Datasets
+    readme_content = f"""# 🕌 Burhan Islamic QA System - Datasets
 
-Comprehensive Islamic scholarly texts for the Athar QA system.
+Comprehensive Islamic scholarly texts for the Burhan QA system.
 
 ## Dataset Overview
 
@@ -282,7 +282,7 @@ import tarfile
 
 # Download and extract
 download_path = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="extracted_books/part01.tar.gz"
 )
 
@@ -299,7 +299,7 @@ login()  # Authenticate
 
 # Download chunk
 path = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="extracted_books/part01.tar.gz"
 )
 ```
@@ -319,11 +319,11 @@ path = hf_hub_download(
 ## Citation
 
 ```
-@misc{{athar2026,
-  title={{Athar Islamic QA System Datasets}},
-  author={{Athar Team}},
+@misc{{Burhan2026,
+  title={{Burhan Islamic QA System Datasets}},
+  author={{Burhan Team}},
   year={{2026}},
-  url={{https://huggingface.co/datasets/Kandil7/Athar-Datasets}}
+  url={{https://huggingface.co/datasets/Kandil7/Burhan-Datasets}}
 }}
 ```
 

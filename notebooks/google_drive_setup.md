@@ -1,6 +1,6 @@
-# 📂 Google Drive Setup Guide for Athar
+# 📂 Google Drive Setup Guide for Burhan
 
-Complete guide for setting up Google Drive with Google Colab for the Athar Islamic QA System.
+Complete guide for setting up Google Drive with Google Colab for the Burhan Islamic QA System.
 
 ---
 
@@ -21,7 +21,7 @@ Google Drive serves as the storage layer for Colab notebooks, enabling:
 ```
 Google Drive/
 └── MyDrive/
-    └── Athar/
+    └── Burhan/
         ├── datasets/                    # Input data (upload once)
         │   ├── extracted_books/         # 8,425 Shamela books (17.16 GB)
         │   ├── Sanadset*/               # 650K hadith (1.43 GB)
@@ -62,15 +62,15 @@ Google Drive/
    - Install and sign in
    - Select "Stream files" (saves disk space)
 
-2. **Create Athar Folder**
+2. **Create Burhan Folder**
    - Open Google Drive (G: drive on Windows)
-   - Create folder: `MyDrive/Athar/`
+   - Create folder: `MyDrive/Burhan/`
    - Create subfolders: `datasets/`, `output/`, `notebooks/`
 
 3. **Copy Datasets**
-   - Copy `datasets/data/extracted_books/` → `G:/MyDrive/Athar/datasets/extracted_books/`
-   - Copy `datasets/Sanadset*/` → `G:/MyDrive/Athar/datasets/Sanadset*/`
-   - Copy `datasets/data/metadata/` → `G:/MyDrive/Athar/datasets/metadata/`
+   - Copy `datasets/data/extracted_books/` → `G:/MyDrive/Burhan/datasets/extracted_books/`
+   - Copy `datasets/Sanadset*/` → `G:/MyDrive/Burhan/datasets/Sanadset*/`
+   - Copy `datasets/data/metadata/` → `G:/MyDrive/Burhan/datasets/metadata/`
 
 4. **Wait for Sync**
    - Check sync status in system tray
@@ -94,7 +94,7 @@ Google Drive/
 **Steps:**
 
 1. Go to https://drive.google.com
-2. Navigate to `MyDrive/Athar/datasets/`
+2. Navigate to `MyDrive/Burhan/datasets/`
 3. Click **New → Folder Upload**
 4. Select folder to upload
 5. Wait for upload to complete
@@ -132,7 +132,7 @@ Google Drive/
    ```python
    from google.colab import drive
    drive.mount('/content/drive')
-   !cp /content/file.txt /content/drive/MyDrive/Athar/
+   !cp /content/file.txt /content/drive/MyDrive/Burhan/
    ```
 
 **Pros:**
@@ -160,9 +160,9 @@ drive.mount('/content/drive', force_remount=True)
 ```python
 import os
 
-ATHAR_DIR = "/content/drive/MyDrive/Athar"
-print(f"Athar directory exists: {os.path.exists(ATHAR_DIR)}")
-print(f"Contents: {os.listdir(ATHAR_DIR)}")
+Burhan_DIR = "/content/drive/MyDrive/Burhan"
+print(f"Burhan directory exists: {os.path.exists(Burhan_DIR)}")
+print(f"Contents: {os.listdir(Burhan_DIR)}")
 ```
 
 ### Step 3: Set Paths
@@ -171,12 +171,12 @@ print(f"Contents: {os.listdir(ATHAR_DIR)}")
 from pathlib import Path
 
 # Input paths
-DATASETS_DIR = Path("/content/drive/MyDrive/Athar/datasets")
+DATASETS_DIR = Path("/content/drive/MyDrive/Burhan/datasets")
 BOOKS_DIR = DATASETS_DIR / "extracted_books"
 METADATA_DIR = DATASETS_DIR / "metadata"
 
 # Output paths
-OUTPUT_DIR = Path("/content/drive/MyDrive/Athar/output")
+OUTPUT_DIR = Path("/content/drive/MyDrive/Burhan/output")
 EMBEDDINGS_DIR = OUTPUT_DIR / "embeddings"
 CHUNKED_DIR = OUTPUT_DIR / "chunked_data"
 
@@ -228,7 +228,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
 ### Team Collaboration
 
 1. **Shared Drive** (Google Workspace)
-   - Create shared "Athar" drive
+   - Create shared "Burhan" drive
    - Grant access to team members
    - Everyone sees same files
 
@@ -244,7 +244,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
 ### Google Drive Free Tier
 
 - **Storage:** 15 GB (shared across Google services)
-- **Athar Needs:** ~19 GB (datasets) + outputs
+- **Burhan Needs:** ~19 GB (datasets) + outputs
 - **Solution:** Upgrade or use selective upload
 
 ### Upgrade Options
@@ -256,7 +256,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
 | 200 GB | 200 GB | $3/month |
 | 2 TB | 2 TB | $10/month |
 
-**Recommendation:** 100 GB plan ($2/month) for Athar
+**Recommendation:** 100 GB plan ($2/month) for Burhan
 
 ### Reduce Storage Usage
 
@@ -273,7 +273,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
    ```python
    # Delete old embeddings
    import shutil
-   shutil.rmtree("/content/drive/MyDrive/Athar/output/embeddings")
+   shutil.rmtree("/content/drive/MyDrive/Burhan/output/embeddings")
    ```
 
 ---
@@ -283,13 +283,13 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
 ### From Colab
 
 1. In left sidebar, click **Files**
-2. Navigate to `/content/drive/MyDrive/Athar/output/`
+2. Navigate to `/content/drive/MyDrive/Burhan/output/`
 3. Right-click file → **Download**
 
 ### From Google Drive
 
 1. Go to https://drive.google.com
-2. Navigate to `MyDrive/Athar/output/`
+2. Navigate to `MyDrive/Burhan/output/`
 3. Select files/folders
 4. Click **Download** (zip for folders)
 
@@ -303,7 +303,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
 rclone config
 
 # Download embeddings
-rclone copy gdrive:"MyDrive/Athar/output/embeddings" ./embeddings/
+rclone copy gdrive:"MyDrive/Burhan/output/embeddings" ./embeddings/
 ```
 
 ---
@@ -327,7 +327,7 @@ rclone copy gdrive:"MyDrive/Athar/output/embeddings" ./embeddings/
 
 ### Sharing with Team
 
-1. Right-click `Athar/` folder
+1. Right-click `Burhan/` folder
 2. Click **Share**
 3. Add team member emails
 4. Set permission: **Editor**
@@ -338,7 +338,7 @@ rclone copy gdrive:"MyDrive/Athar/output/embeddings" ./embeddings/
 ## 🚀 Quick Start Checklist
 
 - [ ] Create Google Drive account (or use existing)
-- [ ] Create `MyDrive/Athar/` folder
+- [ ] Create `MyDrive/Burhan/` folder
 - [ ] Create subfolders: `datasets/`, `output/`, `notebooks/`
 - [ ] Upload `extracted_books/` (~17 GB)
 - [ ] Upload `Sanadset*/` (~1.4 GB)
