@@ -1,0 +1,6 @@
+Query: 'صلاة' -> confidence: 0.7, reason: Matched 1 keywords for fiqh
+Query: 'ما حكم الصلاة؟' -> confidence: 0.85, reason: Matched 2 keywords for fiqh
+Query: 'زكاة' -> confidence: 0.7, reason: Matched 1 keywords for fiqh
+Query: 'حج' -> confidence: 0.7, reason: Matched 1 keywords for fiqh
+Query: 'غزوة بدر' -> confidence: 0.0, reason: No keywords matched
+Query: 'هجرة' -> confidence: 0.0, reason: No keywords matched

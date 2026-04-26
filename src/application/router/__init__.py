@@ -28,12 +28,11 @@ from src.application.router.classifier_factory import (
     MasterHybridClassifier,
     HybridIntentClassifier,
     ClassifierFactory,
-    normalize_arabic,
-    detect_language,
     INTENT_KEYWORDS,
     classifier_factory,
     QueryClassifier,
 )
+from src.domain.intents import normalize_arabic, detect_language
 
 # Re-export embedding classifier
 from src.application.router.embedding_classifier import EmbeddingClassifier

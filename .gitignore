@@ -139,3 +139,5 @@ aux
 =0.34.0
 data/mini_dataset_v2/combined.jsonl
 GEMINI.md
+CLAUDE.md
+.claude/settings.local.json
