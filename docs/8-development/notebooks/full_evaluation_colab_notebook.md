@@ -121,7 +121,7 @@ print(json.dumps(mini_ds[0], ensure_ascii=False, indent=2))
 #   (تحتوي على ملايين السطور)
 # ══════════════════════════════════════════════════════════════════════
 
-# full_ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
+# full_ds = load_dataset("Kandil7/Athar-Datasets", split="train")
 # len(full_ds), full_ds[0]
 ```
 
@@ -771,11 +771,11 @@ except Exception as e:
 
 ```python
 # ═════════════════=============================================================
-# التوسع إلى Burhan-Datasets الكاملة
+# التوسع إلى Athar-Datasets الكاملة
 # ══════════════════════════════════════════════════════════════════════════════
 
 # 1. تحميل المجموعة الكاملة
-# full_ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
+# full_ds = load_dataset("Kandil7/Athar-Datasets", split="train")
 # print(f"• Full dataset size: {len(full_ds)} rows")
 
 # 2. تطبيق التنظيف
@@ -828,7 +828,7 @@ except Exception as e:
 
 ## 🔗 الموارد الإضافية
 
-- **مجموعة بيانات Burhan**: [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- **مجموعة بيانات Burhan**: [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 - **نموذج Qwen2.5**: [Qwen/Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)
 - **مستندات Hugging Face Datasets**: [Hugging Face Docs](https://huggingface.co/docs/datasets)
 
@@ -1534,7 +1534,7 @@ if eval_records_mini_hf:
 
 ## 🔗 الموارد الإضافية
 
-- **مجموعة بيانات Burhan**: [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- **مجموعة بيانات Burhan**: [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 - **نموذج Qwen2.5**: [Qwen/Qwen2.5-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct)
 - **مستندات Hugging Face**: [Hugging Face Docs](https://huggingface.co/docs/datasets)
 - **مستندات Transformers**: [Transformers Docs](https://huggingface.co/docs/transformers)

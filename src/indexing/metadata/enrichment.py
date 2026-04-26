@@ -275,7 +275,7 @@ def build_metadata_csv(
     """
     Build enriched metadata CSV from input dataset.
 
-    Reads passages from Burhan-Datasets (JSON/JSONL), applies enrichment,
+    Reads passages from Athar-Datasets (JSON/JSONL), applies enrichment,
     and outputs enriched JSONL ready for Qdrant vector DB.
 
     Args:

@@ -16,7 +16,7 @@ This guide walks you through embedding 5.7M documents from 10 collections using 
 5. ✅ ~8 hours of Colab time
 
 ### Data Location Options:
-- **Option A:** Download from HuggingFace (Kandil7/Burhan-Datasets)
+- **Option A:** Download from HuggingFace (Kandil7/Athar-Datasets)
 - **Option B:** Upload from local machine (42.6 GB)
 - **Option C:** Use Google Drive (upload first, then Colab)
 
@@ -69,7 +69,7 @@ from huggingface_hub import snapshot_download
 
 # Download all collections
 snapshot_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     local_dir="/content/Burhan-collections",
     repo_type="dataset"
 )

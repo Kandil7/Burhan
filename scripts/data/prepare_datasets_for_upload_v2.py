@@ -479,7 +479,7 @@ Comprehensive Islamic scholarly texts with hierarchical chunking for optimal RAG
   title={{Burhan Islamic QA System Datasets}},
   author={{Burhan Team}},
   year={{2026}},
-  url={{https://huggingface.co/datasets/Kandil7/Burhan-Datasets}},
+  url={{https://huggingface.co/datasets/Kandil7/Athar-Datasets}},
   version={{2.0}}
 }}
 ```

@@ -46,11 +46,11 @@ pip install huggingface_hub[cli]
 huggingface-cli login
 
 # Create repo
-huggingface-cli repo create Kandil7/Burhan-Datasets --type dataset
+huggingface-cli repo create Kandil7/Athar-Datasets --type dataset
 
 # Clone
-git clone https://huggingface.co/datasets/Kandil7/Burhan-Datasets
-cd Burhan-Datasets
+git clone https://huggingface.co/datasets/Kandil7/Athar-Datasets
+cd Athar-Datasets
 
 # Copy files
 cp -r ../data/Burhan-datasets/* .

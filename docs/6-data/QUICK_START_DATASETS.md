@@ -125,8 +125,8 @@ git add .
 git commit -m "Upload Burhan datasets v2"
 
 # Create repo and push
-huggingface-cli repo create Kandil7/Burhan-Datasets-v2 --type dataset
-git remote add origin https://huggingface.co/datasets/Kandil7/Burhan-Datasets-v2
+huggingface-cli repo create Kandil7/Athar-Datasets-v2 --type dataset
+git remote add origin https://huggingface.co/datasets/Kandil7/Athar-Datasets-v2
 git push
 ```
 
@@ -140,7 +140,7 @@ import json
 
 # Download a collection
 path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets-v2",
+    repo_id="Kandil7/Athar-Datasets-v2",
     filename="hierarchical_chunks/fiqh_passages.jsonl",
     repo_type="dataset"
 )

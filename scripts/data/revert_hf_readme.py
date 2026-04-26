@@ -12,7 +12,7 @@ load_dotenv()
 from huggingface_hub import HfApi
 
 # Configuration
-REPO_ID = "Kandil7/Burhan-Datasets"
+REPO_ID = "Kandil7/Athar-Datasets"
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
 
 # Original README content (full 15.7M dataset)
@@ -242,7 +242,7 @@ Prophet Muhammad's ﷺ biography and related studies.
 ## 📁 File Structure
 
 ```
-Burhan-Datasets/
+Athar-Datasets/
 ├── collections/
 │   ├── fiqh_passages.jsonl.gz        # 7.0 GB compressed
 │   ├── hadith_passages.jsonl.gz       # 11.0 GB compressed
@@ -273,7 +273,7 @@ import json
 
 # Download a collection
 filepath = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     filename="collections/fiqh_passages.jsonl.gz",
     repo_type="dataset"
 )
@@ -293,13 +293,13 @@ print(f"Loaded {len(passages):,} passages")
 ```python
 # Load metadata
 master_catalog = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     filename="metadata/master_catalog.json",
     repo_type="dataset"
 )
 
 author_catalog = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     filename="metadata/author_catalog.json",
     repo_type="dataset"
 )
@@ -476,7 +476,7 @@ If you use this dataset in your research, please cite:
   title={Burhan: A Multi-Agent Architecture for Grounded Islamic QA},
   author={Kandil, [Author Name]},
   year={2026},
-  url={https://huggingface.co/datasets/Kandil7/Burhan-Datasets},
+  url={https://huggingface.co/datasets/Kandil7/Athar-Datasets},
   note={Based on the Fanar-Sadiq architecture}
 }
 ```

@@ -135,7 +135,7 @@ This is a **sample** for MVP/demo purposes. Full datasets are available separate
 
 ### HuggingFace Repository
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Size:** 42.6 GB (all 10 collections)
 - **Status:** ✅ Fully uploaded
 

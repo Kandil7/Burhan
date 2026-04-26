@@ -33,7 +33,7 @@ The goal is to provide a production-grade, Arabic-centric framework that unifies
 
 ## 1. System Overview: Digital Isnad at Scale
 
-Burhan operates on top of Burhan-Datasets (15.7M+ passages from 8,400+ primary sources) to implement a "Digital Isnad" framework: every answer must be grounded in traceable, historically verified texts. The system is designed to: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
+Burhan operates on top of Athar-Datasets (15.7M+ passages from 8,400+ primary sources) to implement a "Digital Isnad" framework: every answer must be grounded in traceable, historically verified texts. The system is designed to: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 
 - Support Arabic-first queries and responses across classical and modern registers. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 - Enforce epistemic integrity for religious knowledge (fatawa, hadith, tafsir, aqeedah).

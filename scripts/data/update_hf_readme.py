@@ -12,7 +12,7 @@ load_dotenv()
 from huggingface_hub import HfApi
 
 # Configuration
-REPO_ID = "Kandil7/Burhan-Datasets"
+REPO_ID = "Kandil7/Athar-Datasets"
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
 
 # New README content
@@ -179,10 +179,10 @@ Each passage contains the following fields:
 from datasets import load_dataset
 
 # Load the full dataset (all collections)
-ds = load_dataset("Kandil7/Burhan-Datasets")
+ds = load_dataset("Kandil7/Athar-Datasets")
 
 # Load a specific collection
-ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
+ds = load_dataset("Kandil7/Athar-Datasets", split="train")
 
 # Access specific collection
 for row in ds:
@@ -209,7 +209,7 @@ print(f"Loaded {len(passages):,} fiqh passages")
 from datasets import load_dataset
 
 # Stream data without downloading
-ds = load_dataset("Kandil7/Burhan-Datasets", split="train", streaming=True)
+ds = load_dataset("Kandil7/Athar-Datasets", split="train", streaming=True)
 
 for i, passage in enumerate(ds):
     if i >= 5:
@@ -257,7 +257,7 @@ for idx in top_idx:
 ```python
 from datasets import load_dataset
 
-ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
+ds = load_dataset("Kandil7/Athar-Datasets", split="train")
 
 # Get only hadith passages
 hadith_only = ds.filter(lambda x: x['collection'] == 'hadith_passages')
@@ -274,7 +274,7 @@ print(f"Aqeedah passages: {len(aqeedah_only):,}")
 from datasets import load_dataset
 from collections import Counter
 
-ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
+ds = load_dataset("Kandil7/Athar-Datasets", split="train")
 
 # Count authors per collection
 author_counts = Counter()
@@ -311,7 +311,7 @@ for coll, count in author_counts.most_common():
 
 The complete Burhan dataset with 15.7M passages from 8,425 books:
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Size:** ~4.3 GB compressed
 - **Passages:** 15,700,000+
 
@@ -319,7 +319,7 @@ The complete Burhan dataset with 15.7M passages from 8,425 books:
 
 A balanced subset for development and testing:
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Size:** ~235 MB
 - **Passages:** 100,000 (10K per collection)
 
@@ -352,7 +352,7 @@ If you use this dataset, please cite:
   title={Burhan Islamic QA Datasets (Mini Dataset v2)},
   author={Kandil, Ahmed},
   year={2026},
-  url={https://huggingface.co/datasets/Kandil7/Burhan-Datasets},
+  url={https://huggingface.co/datasets/Kandil7/Athar-Datasets},
   note={100K passages from 10 Islamic collections}
 }
 ```
@@ -376,7 +376,7 @@ If you use this dataset, please cite:
 ## 📁 File Structure
 
 ```
-Kandil7/Burhan-Datasets/
+Kandil7/Athar-Datasets/
 ├── aqeedah_passages.jsonl           # 10,000 passages
 ├── arabic_language_passages.jsonl    # 10,000 passages
 ├── fiqh_passages.jsonl               # 10,000 passages

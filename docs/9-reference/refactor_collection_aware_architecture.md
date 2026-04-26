@@ -55,15 +55,15 @@
 
 ### agents أقل من collections
 
-Burhan-Datasets عنده collections أكثر تنوعًا من عدد الـ agents الحاليين؛ عندك حاليًا `fiqh`, `hadith`, `seerah`, `general_islamic`, وربما chatbot، لكن ما زال ينقصك تمثيل صريح لـ:
+Athar-Datasets عنده collections أكثر تنوعًا من عدد الـ agents الحاليين؛ عندك حاليًا `fiqh`, `hadith`, `seerah`, `general_islamic`, وربما chatbot، لكن ما زال ينقصك تمثيل صريح لـ:
 - `aqeedah`
 - `tafsir`
 - `usul_fiqh`
 - `spirituality`
 - `history`
-- `language` [query] [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- `language` [query] [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
-هذا ليس خطأ الآن لو أنت تعمل بمرحلة Fiqh-first، لكنه يجب أن يكون **قرارًا معلنًا** في المعمارية، لا فجوة غير مقصودة. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+هذا ليس خطأ الآن لو أنت تعمل بمرحلة Fiqh-first، لكنه يجب أن يكون **قرارًا معلنًا** في المعمارية، لا فجوة غير مقصودة. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 ## أهم التحسينات المقترحة
 
@@ -148,9 +148,9 @@ src/
 - `GeneralIslamicAgent` → `general_islamic`
 - `HistoryAgent` → `islamic_history_passages`
 - `LanguageAgent` → `arabic_language_passages`
-- `TazkiyahAgent` → `spirituality_passages` [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- `TazkiyahAgent` → `spirituality_passages` [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
-من غير هذا الربط، سيصبح النظام “agent-named” فقط لكن ليس collection-aware فعلًا. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+من غير هذا الربط، سيصبح النظام “agent-named” فقط لكن ليس collection-aware فعلًا. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 ## تعديل هيكلي مقترح على مشروعك الحالي
 
@@ -235,7 +235,7 @@ Burhan/
 - NL2SQL للقرآن لو عندك structured Quran DB
 - prayer/hijri utilities
 
-بهذا تمنع نفسك من التوسع المبكر وتحافظ على سرعة التنفيذ. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+بهذا تمنع نفسك من التوسع المبكر وتحافظ على سرعة التنفيذ. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 ## حكم نهائي على الهيكل
 
@@ -620,7 +620,7 @@ Burhan/
 - `fiqh_passages` ↔ `FiqhAgent`
 - `hadith_passages` ↔ `HadithAgent`
 - `quran_tafsir` ↔ `TafsirAgent`
-- ... [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- ... [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 ### Commit 10
 **feat: add missing domain agents as stubs**
@@ -631,9 +631,9 @@ Burhan/
 - `history_agent.py`
 - `language_agent.py`
 - `tazkiyah_agent.py`
-- `usul_fiqh_agent.py` [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- `usul_fiqh_agent.py` [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
-حتى لو كانت مجرد wrappers حول `BaseRAGAgent` في البداية، فهذا يجعل architecture collection-aware بشكل رسمي. [huggingface](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+حتى لو كانت مجرد wrappers حول `BaseRAGAgent` في البداية، فهذا يجعل architecture collection-aware بشكل رسمي. [huggingface](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 ## Phase 6: تنظيف الـ API
 

@@ -11,7 +11,7 @@ The refactor aims to achieve five concrete goals:[cite:80][cite:82]
 - Separate HTTP transport from orchestration logic and domain behavior.[cite:80][cite:84]
 - Split retrieval, indexing, and ranking into explicit modules rather than keeping them inside a broad `knowledge/` package.[cite:81][cite:83]
 - Introduce a dedicated verification framework for grounded Islamic QA behavior, including exact quotation, source attribution, contradiction detection, and evidence sufficiency checks.[cite:24][cite:102]
-- Make agents explicitly collection-aware so Burhan-Datasets collections map to clear retrieval and verification policies.[cite:3]
+- Make agents explicitly collection-aware so Athar-Datasets collections map to clear retrieval and verification policies.[cite:3]
 - Keep migration incremental, testable, and backward-compatible until the final cleanup phase.[cite:89][cite:99]
 
 ## Target v2 tree

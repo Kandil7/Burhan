@@ -373,7 +373,7 @@ All data is derived from **ElShamela Library** — the largest comprehensive dig
 
 ### HuggingFace Dataset
 
-- **Repository:** [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+- **Repository:** [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 - **Size:** 42.6 GB (10 collections)
 - **Format:** JSONL with rich metadata (book_id, author, chapter, page, etc.)
 - **Status:** ✅ Fully uploaded and verified
@@ -621,7 +621,7 @@ test(router): Add intent classification tests
 ## 🔗 Key Resources
 
 - **Repository:** https://github.com/Kandil7/Burhan
-- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+- **HuggingFace Dataset:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Documentation:** `docs/` directory (14 subdirectories, 60+ files)
 - **Issues:** https://github.com/Kandil7/Burhan/issues
 - **Mini-Dataset:** `data/mini_dataset/` (1.7 MB, GitHub-friendly)

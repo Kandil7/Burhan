@@ -732,7 +732,7 @@ docker compose -f docker/docker-compose.prod.yml up -d
 
 1. Prepare datasets: `python scripts/prepare_datasets_for_upload_v2.py`
 2. Upload via Colab notebook
-3. Repository: `https://huggingface.co/datasets/Kandil7/Burhan-Datasets`
+3. Repository: `https://huggingface.co/datasets/Kandil7/Athar-Datasets`
 
 ---
 

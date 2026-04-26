@@ -282,7 +282,7 @@ import tarfile
 
 # Download and extract
 download_path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     filename="extracted_books/part01.tar.gz"
 )
 
@@ -299,7 +299,7 @@ login()  # Authenticate
 
 # Download chunk
 path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
+    repo_id="Kandil7/Athar-Datasets",
     filename="extracted_books/part01.tar.gz"
 )
 ```
@@ -323,7 +323,7 @@ path = hf_hub_download(
   title={{Burhan Islamic QA System Datasets}},
   author={{Burhan Team}},
   year={{2026}},
-  url={{https://huggingface.co/datasets/Kandil7/Burhan-Datasets}}
+  url={{https://huggingface.co/datasets/Kandil7/Athar-Datasets}}
 }}
 ```
 

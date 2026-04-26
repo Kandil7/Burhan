@@ -393,7 +393,7 @@ All data is derived from **ElShamela Library** (المكتبة الشاملة) �
 
 Burhan maintains two comprehensive datasets on HuggingFace for the Islamic knowledge community:
 
-#### 1. [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
+#### 1. [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
 
 > **Raw Islamic Texts** - The complete processed dataset from ElShamela Library
 
@@ -449,10 +449,10 @@ Burhan maintains two comprehensive datasets on HuggingFace for the Islamic knowl
 from datasets import load_dataset
 
 # Load full dataset
-dataset = load_dataset("Kandil7/Burhan-Datasets", split="train")
+dataset = load_dataset("Kandil7/Athar-Datasets", split="train")
 
 # Load specific collection
-dataset = load_dataset("Kandil7/Burhan-Datasets", 
+dataset = load_dataset("Kandil7/Athar-Datasets", 
                       split="train",
                       filters=[("collection", "fiqh_passages")])
 ```
@@ -510,7 +510,7 @@ embeddings = model.encode(["نص عربي للبحث"], normalize_embeddings=Tru
 
 ### Dataset Comparison
 
-| Feature | Burhan-Datasets | Burhan-Embeddings |
+| Feature | Athar-Datasets | Burhan-Embeddings |
 |---------|----------------|-------------------|
 | **Type** | Raw text | Vector embeddings |
 | **Size** | ~45 GB | ~5-10 GB |
@@ -552,7 +552,7 @@ ElShamela Library (8,425 books)
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 4: HuggingFace Upload (Burhan-Datasets)           │
+│  Stage 4: HuggingFace Upload (Athar-Datasets)           │
 │  • Upload as JSONL                                       │
 │  • 15.8M documents                                      │
 └─────────────────────────────────────────────────────────────┘
@@ -575,7 +575,7 @@ ElShamela Library (8,425 books)
 | **Lucene Extraction** | 11,316,717 | 16.49 GB | ✅ Complete |
 | **Merge & Enrichment** | 5,717,177 | ~61 GB | ✅ Complete |
 | **Hierarchical Chunking** | 10 files | ~88 GB | ✅ Complete |
-| **Burhan-Datasets** | 15.8M | ~45 GB | ✅ Complete |
+| **Athar-Datasets** | 15.8M | ~45 GB | ✅ Complete |
 | **Burhan-Embeddings** | 2.64M | ~8 GB | ✅ Complete |
 | **Qdrant Import** | 10 collections | - | ✅ Complete |
 

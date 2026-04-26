@@ -65,7 +65,7 @@ print("✅ All imports OK")
 login()   # paste your HF token when prompted
 
 # ── Repos ──────────────────────────────────────────────
-HF_BASE  = "Kandil7/Burhan-Datasets"
+HF_BASE  = "Kandil7/Athar-Datasets"
 HF_MINI  = "Kandil7/Burhan-Mini-Dataset-v2"
 HF_HUB   = "Kandil7/Burhan-RAG-Hub"
 

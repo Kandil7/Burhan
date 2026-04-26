@@ -59,7 +59,7 @@ The data has been uploaded to HuggingFace:
 
 ```bash
 # Verify uploads
-poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Datasets
+poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 ```
 
 **Status:** ✅ All 10 collections uploaded (42.6 GB total)
@@ -133,7 +133,7 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Dataset
 ### Upload Progress ✅ COMPLETE
 
 ```
-Repository: Kandil7/Burhan-Datasets
+Repository: Kandil7/Athar-Datasets
 Status: Complete ✅
 
 Collections uploaded:
@@ -287,7 +287,7 @@ login(token="hf_YOUR_TOKEN_HERE")
 
 ## Resources
 
-- **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+- **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
 - **Colab:** https://colab.research.google.com
 - **BGE-m3 Model:** https://huggingface.co/BAAI/bge-m3
 - **Burhan GitHub:** https://github.com/Kandil7/Burhan

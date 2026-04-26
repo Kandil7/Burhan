@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document specifies a reusable `CollectionAgent` architecture for Burhan, an Islamic multi-agent RAG system built on the Burhan-Datasets. It defines a shared lifecycle, retrieval strategies, verification suites, prompts, metadata enrichment, routing, Qdrant configuration, orchestration patterns, evaluation framework, and deployment considerations, aligned with usul al-fiqh principles (الرجوع إلى الأدلة، بيان الخلاف، التوقف عند الجهل).[^1][^2][^3][^4][^5]
+This document specifies a reusable `CollectionAgent` architecture for Burhan, an Islamic multi-agent RAG system built on the Athar-Datasets. It defines a shared lifecycle, retrieval strategies, verification suites, prompts, metadata enrichment, routing, Qdrant configuration, orchestration patterns, evaluation framework, and deployment considerations, aligned with usul al-fiqh principles (الرجوع إلى الأدلة، بيان الخلاف، التوقف عند الجهل).[^1][^2][^3][^4][^5]
 
 The design assumes Python + FastAPI backend, Qdrant hybrid dense/BM25 retrieval, and an Arabic-capable LLM such as Qwen2.5-72B, with domain-specific Arabic embeddings (AraBERT/CAMeLBERT or newer Arabic embedding models) for similarity search.[^6][^7][^8][^9]
 
@@ -987,9 +987,9 @@ graph LR
 
 ## References
 
-1. [Kandil7/Burhan-Datasets - Hugging Face](https://huggingface.co/datasets/Kandil7/Burhan-Datasets) - We're on a journey to advance and democratize artificial intelligence through open source and open s...
+1. [Kandil7/Athar-Datasets - Hugging Face](https://huggingface.co/datasets/Kandil7/Athar-Datasets) - We're on a journey to advance and democratize artificial intelligence through open source and open s...
 
-2. [Kandil7/Burhan-Datasets at main - Hugging Face](https://huggingface.co/datasets/Kandil7/Burhan-Datasets/tree/main) - Datasets: · Kandil7. /. Burhan-Datasets. like 4. Tasks: Question Answering · Text Generation · Text R...
+2. [Kandil7/Athar-Datasets at main - Hugging Face](https://huggingface.co/datasets/Kandil7/Athar-Datasets/tree/main) - Datasets: · Kandil7. /. Athar-Datasets. like 4. Tasks: Question Answering · Text Generation · Text R...
 
 3. [منهجية البحث في أصول الفقه Methodology of Research in Usul al-Fiqh](https://asjp.cerist.dz/en/article/244278) - This is elucidated within the general framework of "Research Methodology in Usul al-Fiqh," presented...
 

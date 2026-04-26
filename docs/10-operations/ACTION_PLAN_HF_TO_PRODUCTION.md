@@ -1,7 +1,7 @@
 # 🚀 Burhan - Complete Action Plan: From Upload to Production
 
 **Created:** April 8, 2026  
-**HF Repo:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets  
+**HF Repo:** https://huggingface.co/datasets/Kandil7/Athar-Datasets  
 **Status:** Ready for upload + embedding + deployment
 
 ---

@@ -328,7 +328,7 @@ curl -X POST http://localhost:8000/api/v1/query \
 - [docs/11-learning/README.md](docs/11-learning/README.md) - دليل التوجيه
 - [docs/10-operations/LUCENE_MERGE_COMPLETE.md](docs/10-operations/LUCENE_MERGE_COMPLETE.md) - المرحلة 7
 - [notebooks/COLAB_GPU_EMBEDDING_GUIDE.md](notebooks/COLAB_GPU_EMBEDDING_GUIDE.md) - تشغيل التضمين
-- [https://huggingface.co/datasets/Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets) - البيانات
+- [https://huggingface.co/datasets/Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets) - البيانات
 
 ---
 
