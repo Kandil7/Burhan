@@ -28,7 +28,7 @@ HF_TOKEN = userdata.get("HF_TOKEN")
 login(token=HF_TOKEN)
 
 HF_USERNAME        = "Kandil7"
-HF_DATASET_REPO    = f"{HF_USERNAME}/Athar-RAG-Hub"
+HF_DATASET_REPO    = f"{HF_USERNAME}/Burhan-RAG-Hub"
 INPUT_JSON         = "/content/seerah_passages.json"
 CATALOG_JSON       = "/content/master_catalog.json"
 LLM_MODEL_ID       = "Qwen/Qwen3-4B-Instruct-2507"

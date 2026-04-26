@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ==========================================
     # Application
     # ==========================================
-    app_name: str = "Athar"
+    app_name: str = "Burhan"
     app_env: str = "development"
     debug: bool = False
     secret_key: str = "change-this-in-production-please-use-random-string"
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # ==========================================
     # Database (PostgreSQL 16)
     # ==========================================
-    database_url: str = "postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db"
+    database_url: str = "postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db"
     database_pool_size: int = 10
     database_max_overflow: int = 20
 

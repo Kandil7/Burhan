@@ -1,5 +1,5 @@
 """
-Security middleware for Athar Islamic QA System.
+Security middleware for Burhan Islamic QA System.
 
 Provides:
 - API Key authentication

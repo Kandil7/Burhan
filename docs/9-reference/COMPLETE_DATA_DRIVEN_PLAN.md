@@ -1,4 +1,4 @@
-# 🕌 Athar - Complete Data-Driven Multi-Agent RAG System
+# 🕌 Burhan - Complete Data-Driven Multi-Agent RAG System
 
 **Date:** April 6, 2026  
 **Version:** 0.5.0 (Full Category Mapping)  

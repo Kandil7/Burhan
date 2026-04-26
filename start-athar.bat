@@ -1,6 +1,6 @@
 @echo off
 REM ═══════════════════════════════════════════════════════════════════════
-REM 🕌  ATHAR - Start Everything Automatically
+REM 🕌  Burhan - Start Everything Automatically
 REM ═══════════════════════════════════════════════════════════════════════
 REM
 REM This script:
@@ -10,12 +10,12 @@ REM 3. Waits for services to be healthy
 REM 4. Runs database migrations
 REM 5. Starts API server on port 8002
 REM
-REM Usage: Double-click or run: start-athar.bat
+REM Usage: Double-click or run: start-Burhan.bat
 REM ═══════════════════════════════════════════════════════════════════════
 
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
-echo 🕌  ATHAR - Islamic QA System
+echo 🕌  Burhan - Islamic QA System
 echo ═══════════════════════════════════════════════════════════════════════
 echo.
 
@@ -83,7 +83,7 @@ REM Start API server
 echo [5/5] Starting API server on port 8002...
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
-echo 🚀  ATHAR is starting!
+echo 🚀  Burhan is starting!
 echo.
 echo 📖 API Docs: http://localhost:8002/docs
 echo 💚 Health:    http://localhost:8002/health

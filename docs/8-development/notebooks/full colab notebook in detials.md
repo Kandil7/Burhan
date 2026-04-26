@@ -6,7 +6,7 @@
 
 ***
 
-# 📓 Athar RAG — Full Colab Notebook
+# 📓 Burhan RAG — Full Colab Notebook
 
 
 ***
@@ -65,9 +65,9 @@ print("✅ All imports OK")
 login()   # paste your HF token when prompted
 
 # ── Repos ──────────────────────────────────────────────
-HF_BASE  = "Kandil7/Athar-Datasets"
-HF_MINI  = "Kandil7/Athar-Mini-Dataset-v2"
-HF_HUB   = "Kandil7/Athar-RAG-Hub"
+HF_BASE  = "Kandil7/Burhan-Datasets"
+HF_MINI  = "Kandil7/Burhan-Mini-Dataset-v2"
+HF_HUB   = "Kandil7/Burhan-RAG-Hub"
 
 # ── Models ─────────────────────────────────────────────
 EMBED_MODEL = "BAAI/bge-m3"
@@ -121,7 +121,7 @@ print("✅ Constants set")
 # Cell 03 – HF-only persistent storage (no Drive needed)
 HF_TOKEN = os.environ.get("HF_TOKEN") or None
 api      = HfApi(token=HF_TOKEN)
-TMP_DIR  = Path("/tmp/athar"); TMP_DIR.mkdir(exist_ok=True)
+TMP_DIR  = Path("/tmp/Burhan"); TMP_DIR.mkdir(exist_ok=True)
 _buffers: dict[str, list] = {}
 
 def _hf_path(fn): return f"streaming/{fn}"
@@ -1511,5 +1511,5 @@ for q in test_questions:
 
 <div align="center">⁂</div>
 
-[^1]: chat-Search-Athar-Dataset.txt.md
+[^1]: chat-Search-Burhan-Dataset.txt.md
 

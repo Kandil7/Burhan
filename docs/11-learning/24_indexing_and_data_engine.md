@@ -1,7 +1,7 @@
 # 📖 Master Class: The Indexing & Data Engine
 
 ## 🕌 Introduction
-This document explains the "Heart of Knowledge" in Athar: the Indexing Pipeline and the Data Models. This engine transforms 8,000+ raw books into a high-performance vector search system.
+This document explains the "Heart of Knowledge" in Burhan: the Indexing Pipeline and the Data Models. This engine transforms 8,000+ raw books into a high-performance vector search system.
 
 ---
 

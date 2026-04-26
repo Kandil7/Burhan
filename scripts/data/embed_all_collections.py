@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Production-Ready Embedding Pipeline for Athar Islamic QA System.
+Production-Ready Embedding Pipeline for Burhan Islamic QA System.
 
 Generates embeddings for all Islamic knowledge collections with:
 - Chunk categorization & routing (fiqh, hadith, general, duas)
@@ -23,7 +23,7 @@ Usage:
     python scripts/embed_all_collections.py --collection hadith_passages --limit 1000
     python scripts/embed_all_collections.py --collection all --no-resume
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -742,7 +742,7 @@ async def run_pipeline(
 def main():
     """CLI entry point with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Athar Islamic QA - Production Embedding Pipeline",
+        description="Burhan Islamic QA - Production Embedding Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

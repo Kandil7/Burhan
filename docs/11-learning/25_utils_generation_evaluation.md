@@ -1,7 +1,7 @@
 # 📖 Master Class: Utilities, Generation, & Evaluation
 
 ## 🕌 Introduction
-This document covers the "Support Ecosystem" of Athar. While agents and retrieval handle the heavy lifting, these modules ensure the system remains maintainable, the responses are beautiful, and the quality is scientifically verified.
+This document covers the "Support Ecosystem" of Burhan. While agents and retrieval handle the heavy lifting, these modules ensure the system remains maintainable, the responses are beautiful, and the quality is scientifically verified.
 
 ---
 
@@ -26,7 +26,7 @@ This document covers the "Support Ecosystem" of Athar. While agents and retrieva
 ### 1. `src/generation/composers/citation_composer.py`
 **Purpose**: Injecting scholarly references into the answer.
 **Deep Logic**:
-- Implements different styles: `athar` (standard), `apa`, and `footnote`.
+- Implements different styles: `Burhan` (standard), `apa`, and `footnote`.
 - **Deduplication**: If multiple passages come from the same book and page, it merges them into a single citation to reduce visual clutter for the user.
 
 ### 2. `src/generation/policies/answer_policy.py`

@@ -12,7 +12,7 @@ load_dotenv()
 from huggingface_hub import HfApi
 
 # Configuration
-REPO_ID = "Kandil7/Athar-Datasets"
+REPO_ID = "Kandil7/Burhan-Datasets"
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
 
 # Original README content (full 15.7M dataset)
@@ -26,7 +26,7 @@ task_categories:
 - text-generation
 - text-retrieval
 - fill-mask
-pretty_name: Athar Islamic QA Datasets
+pretty_name: Burhan Islamic QA Datasets
 tags:
 - islamic-studies
 - quran
@@ -76,7 +76,7 @@ dataset_info:
   dataset_size: 42600000000
 ---
 
-# 🕌 Athar Islamic QA Datasets
+# 🕌 Burhan Islamic QA Datasets
 
 > **15.7M passages from 8,425 classical Islamic books spanning 1,400 years of scholarship**
 
@@ -199,7 +199,7 @@ Islamic creed and theology from various theological schools.
 
 | Feature | Details |
 |---------|---------|
-| Schools | Ash'ari, Maturidi, Athari |
+| Schools | Ash'ari, Maturidi, Burhani |
 | Topics | Tawhid, Attributes of Allah, Prophethood, Afterlife |
 | Time Period | 200-1300 AH |
 
@@ -242,7 +242,7 @@ Prophet Muhammad's ﷺ biography and related studies.
 ## 📁 File Structure
 
 ```
-Athar-Datasets/
+Burhan-Datasets/
 ├── collections/
 │   ├── fiqh_passages.jsonl.gz        # 7.0 GB compressed
 │   ├── hadith_passages.jsonl.gz       # 11.0 GB compressed
@@ -273,7 +273,7 @@ import json
 
 # Download a collection
 filepath = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="collections/fiqh_passages.jsonl.gz",
     repo_type="dataset"
 )
@@ -293,13 +293,13 @@ print(f"Loaded {len(passages):,} passages")
 ```python
 # Load metadata
 master_catalog = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="metadata/master_catalog.json",
     repo_type="dataset"
 )
 
 author_catalog = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="metadata/author_catalog.json",
     repo_type="dataset"
 )
@@ -326,7 +326,7 @@ query = "ما حكم صلاة الجماعة؟"
 query_embedding = model.encode(query)
 
 # Search in collection (requires vector DB like Qdrant)
-# See: https://github.com/Kandil7/Athar
+# See: https://github.com/Kandil7/Burhan
 ```
 
 ### Example 2: Faceted Search
@@ -350,7 +350,7 @@ bukhari_hadith = [
 
 ```python
 # Build a RAG pipeline
-from Athar import FiqhAgent
+from Burhan import FiqhAgent
 
 agent = FiqhAgent()
 result = await agent.execute(
@@ -460,7 +460,7 @@ This dataset is derived from **ElShamela Library** (المكتبة الشامل�
 
 ## 🤝 Related Projects
 
-- **[Athar](https://github.com/Kandil7/Athar)** — The parent project: A production-ready Islamic QA system using these datasets
+- **[Burhan](https://github.com/Kandil7/Burhan)** — The parent project: A production-ready Islamic QA system using these datasets
 - **[Fanar-Sadiq Architecture](docs/Fanar-Sadiq%20A%20Multi-Agent%20Architecture%20for%20Grounded%20Islamic%20QA.pdf)** — Research paper that inspired this system
 - **[Quran.com](https://quran.com)** — Quran text reference
 - **[Sunnah.com](https://sunnah.com)** — Hadith collections reference
@@ -472,11 +472,11 @@ This dataset is derived from **ElShamela Library** (المكتبة الشامل�
 If you use this dataset in your research, please cite:
 
 ```bibtex
-@misc{athar-datasets-2026,
-  title={Athar: A Multi-Agent Architecture for Grounded Islamic QA},
+@misc{Burhan-datasets-2026,
+  title={Burhan: A Multi-Agent Architecture for Grounded Islamic QA},
   author={Kandil, [Author Name]},
   year={2026},
-  url={https://huggingface.co/datasets/Kandil7/Athar-Datasets},
+  url={https://huggingface.co/datasets/Kandil7/Burhan-Datasets},
   note={Based on the Fanar-Sadiq architecture}
 }
 ```
@@ -499,8 +499,8 @@ If you use this dataset in your research, please cite:
 
 ## 📞 Contact & Support
 
-- **GitHub:** https://github.com/Kandil7/Athar
-- **Issues:** https://github.com/Kandil7/Athar/issues
+- **GitHub:** https://github.com/Kandil7/Burhan
+- **Issues:** https://github.com/Kandil7/Burhan/issues
 - **HuggingFace:** https://huggingface.co/Kandil7
 
 ---
@@ -509,7 +509,7 @@ If you use this dataset in your research, please cite:
 
 **Built with ❤️ for the Muslim community**
 
-🕌 Athar Islamic QA Datasets • 5.7M passages • 8,425 books • 1,400 years of scholarship
+🕌 Burhan Islamic QA Datasets • 5.7M passages • 8,425 books • 1,400 years of scholarship
 
 </div>
 """

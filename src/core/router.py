@@ -1,5 +1,5 @@
 """
-Hybrid Intent Classifier for Athar Islamic QA system.
+Hybrid Intent Classifier for Burhan Islamic QA system.
 
 Implements a three-tier classification approach:
 1. Keyword matching (fast path for clear signals)
@@ -40,7 +40,7 @@ class RouterResult(BaseModel):
 
 class HybridQueryClassifier:
     """
-    LLM-based intent classifier for Athar Islamic QA system.
+    LLM-based intent classifier for Burhan Islamic QA system.
 
     This classifier ONLY uses LLM for classification.
     No keyword matching, no embedding fallback - just pure LLM classification.
@@ -51,7 +51,7 @@ class HybridQueryClassifier:
         # RouterResult(intent=Intent.ZAKAT, confidence=0.92, method="llm")
     """
 
-    LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Athar.
+    LLM_CLASSIFIER_PROMPT = """You are an expert intent classifier for an Islamic QA system called Burhan.
 
 Your task is to classify the user's query into exactly ONE intent from the list below.
 

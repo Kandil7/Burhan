@@ -1,5 +1,5 @@
 """
-Lazy Singleton Pattern for Athar Islamic QA system.
+Lazy Singleton Pattern for Burhan Islamic QA system.
 
 Thread-safe lazy initialization singleton to eliminate boilerplate code.
 Replaces the repeated global+lock+getter pattern across the codebase.

@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM ============================================================
-REM Athar Islamic QA System - Build System
+REM Burhan Islamic QA System - Build System
 REM ============================================================
 REM Usage: build.bat [command] [options]
 REM
@@ -66,7 +66,7 @@ goto :eof
 :menu
 cls
 echo ============================================================
-echo            🕌 Athar Islamic QA System
+echo            🕌 Burhan Islamic QA System
 echo ============================================================
 echo.
 echo  Quick Actions:
@@ -117,7 +117,7 @@ goto menu
 :setup
 echo.
 echo ============================================================
-echo 🚀 Athar - Complete Setup
+echo 🚀 Burhan - Complete Setup
 echo ============================================================
 echo.
 
@@ -158,7 +158,7 @@ timeout /t 10 >nul
 echo.
 
 echo [4/5] Running database migrations...
-docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql >nul 2>&1
+docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql >nul 2>&1
 echo [✓] Migrations complete
 echo.
 
@@ -178,7 +178,7 @@ goto :eof
 :start
 echo.
 echo ============================================================
-echo 🚀 Starting Athar Application
+echo 🚀 Starting Burhan Application
 echo ============================================================
 echo.
 
@@ -187,7 +187,7 @@ call :check_docker
 echo.
 
 echo [2/3] Starting Backend API on port 8002...
-start "Athar API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
+start "Burhan API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
 timeout /t 5 >nul
 echo [✓] API starting on port 8002
 echo.
@@ -195,7 +195,7 @@ echo.
 echo [3/3] Starting Frontend...
 if exist "frontend\package.json" (
     cd frontend
-    start "Athar Frontend" cmd /k "npm run dev"
+    start "Burhan Frontend" cmd /k "npm run dev"
     cd ..
     timeout /t 5 >nul
     echo [✓] Frontend starting on port 3000
@@ -223,7 +223,7 @@ goto :eof
 :start_api
 echo.
 echo Starting Backend API only on port 8002...
-start "Athar API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
+start "Burhan API" cmd /k "poetry run uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8002"
 timeout /t 3 >nul
 start http://localhost:8002/docs
 goto :eof
@@ -233,7 +233,7 @@ echo.
 echo Starting Frontend only...
 if exist "frontend\package.json" (
     cd frontend
-    start "Athar Frontend" cmd /k "npm run dev"
+    start "Burhan Frontend" cmd /k "npm run dev"
     cd ..
 ) else (
     echo [!] Frontend not found at frontend\ directory
@@ -289,7 +289,7 @@ goto :eof
 :status
 echo.
 echo ============================================================
-echo 📊 Athar Service Status
+echo 📊 Burhan Service Status
 echo ============================================================
 echo.
 
@@ -298,7 +298,7 @@ docker compose -f docker/docker-compose.dev.yml ps
 echo.
 
 echo Database:
-docker exec athar-postgres psql -U athar -d athar_db -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public';" 2>nul
+docker exec Burhan-postgres psql -U Burhan -d Burhan_db -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public';" 2>nul
 echo.
 
 call build.bat data:status
@@ -430,12 +430,12 @@ echo 🗄️  Running Database Migrations
 echo.
 
 if exist "migrations\001_initial_schema.sql" (
-    docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql
+    docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql
     echo [✓] Migration 001 complete
 )
 
 if exist "migrations\versions\002_quran_translations_tafsir.sql" (
-    docker exec -i athar-postgres psql -U athar -d athar_db < migrations\versions\002_quran_translations_tafsir.sql
+    docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations\versions\002_quran_translations_tafsir.sql
     echo [✓] Migration 002 complete
 )
 echo.
@@ -446,7 +446,7 @@ goto :eof
 echo.
 echo 🗄️  Opening PostgreSQL Shell
 echo.
-docker exec -it athar-postgres psql -U athar -d athar_db
+docker exec -it Burhan-postgres psql -U Burhan -d Burhan_db
 goto :eof
 
 :db_backup
@@ -457,8 +457,8 @@ echo.
 set BACKUP_DIR=data\backups
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 
-set BACKUP_FILE=%BACKUP_DIR%\athar_backup_%date:~-4%%date:~3,2%%date:~0,2%.sql
-docker exec athar-postgres pg_dump -U athar athar_db > "%BACKUP_FILE%"
+set BACKUP_FILE=%BACKUP_DIR%\Burhan_backup_%date:~-4%%date:~3,2%%date:~0,2%.sql
+docker exec Burhan-postgres pg_dump -U Burhan Burhan_db > "%BACKUP_FILE%"
 echo [✓] Backup saved to: %BACKUP_FILE%
 pause
 goto :eof
@@ -496,7 +496,7 @@ goto :eof
 :help
 echo.
 echo ============================================================
-echo  Athar Islamic QA System - Build System
+echo  Burhan Islamic QA System - Build System
 echo ============================================================
 echo.
 echo Usage: build.bat [command]

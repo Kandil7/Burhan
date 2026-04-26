@@ -2,7 +2,7 @@
 """
 BayanAgenticChunker - SOTA Islamic Corpus Chunker
 ===================================================
-Production-grade agentic hierarchical chunker for Athar/Bayan.
+Production-grade agentic hierarchical chunker for Burhan/Bayan.
 Integrates EHRAG hypergraph pre-computation, semantic diffusion readiness,
 and master_catalog.json enrichment.
 """

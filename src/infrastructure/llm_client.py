@@ -1,5 +1,5 @@
 """
-LLM client abstraction for Athar Islamic QA system.
+LLM client abstraction for Burhan Islamic QA system.
 
 Provides unified interface for multiple LLM providers:
 - OpenAI  (GPT-4o-mini, GPT-4)

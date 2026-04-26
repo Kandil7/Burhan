@@ -1,5 +1,5 @@
 # =============================================================================
-# Athar Islamic QA System - Production Docker Compose
+# Burhan Islamic QA System - Production Docker Compose
 # =============================================================================
 # Usage: docker compose -f docker-compose.prod.yml up -d
 # =============================================================================
@@ -12,12 +12,12 @@ services:
   # ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: athar-postgres
+    container_name: Burhan-postgres
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-athar}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-athar_password}
-      POSTGRES_DB: ${POSTGRES_DB:-athar_db}
+      POSTGRES_USER: ${POSTGRES_USER:-Burhan}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Burhan_password}
+      POSTGRES_DB: ${POSTGRES_DB:-Burhan_db}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -25,13 +25,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init-db:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-athar}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-Burhan}"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
     networks:
-      - athar-network
+      - Burhan-network
     deploy:
       resources:
         limits:
@@ -44,7 +44,7 @@ services:
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: athar-redis
+    container_name: Burhan-redis
     restart: always
     command: >
       redis-server
@@ -63,7 +63,7 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - athar-network
+      - Burhan-network
     deploy:
       resources:
         limits:
@@ -76,7 +76,7 @@ services:
   # ---------------------------------------------------------------------------
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: athar-qdrant
+    container_name: Burhan-qdrant
     restart: always
     environment:
       QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
@@ -92,7 +92,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - athar-network
+      - Burhan-network
     deploy:
       resources:
         limits:
@@ -101,19 +101,19 @@ services:
           memory: 1G
 
   # ---------------------------------------------------------------------------
-  # Athar API Server
+  # Burhan API Server
   # ---------------------------------------------------------------------------
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
-    container_name: athar-api
+    container_name: Burhan-api
     restart: always
     environment:
       APP_ENV: production
       DEBUG: "false"
       SECRET_KEY: ${SECRET_KEY}
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-athar}:${POSTGRES_PASSWORD:-athar_password}@postgres:5432/${POSTGRES_DB:-athar_db}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-Burhan}:${POSTGRES_PASSWORD:-Burhan_password}@postgres:5432/${POSTGRES_DB:-Burhan_db}
       REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/0
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-}
@@ -141,7 +141,7 @@ services:
       retries: 3
       start_period: 60s
     networks:
-      - athar-network
+      - Burhan-network
     deploy:
       resources:
         limits:
@@ -154,7 +154,7 @@ services:
   # ---------------------------------------------------------------------------
   # nginx:
   #   image: nginx:alpine
-  #   container_name: athar-nginx
+  #   container_name: Burhan-nginx
   #   restart: always
   #   ports:
   #     - "80:80"
@@ -165,7 +165,7 @@ services:
   #   depends_on:
   #     - api
   #   networks:
-  #     - athar-network
+  #     - Burhan-network
 
 # ---------------------------------------------------------------------------
 # Volumes
@@ -182,7 +182,7 @@ volumes:
 # Network
 # ---------------------------------------------------------------------------
 networks:
-  athar-network:
+  Burhan-network:
     driver: bridge
     ipam:
       config:

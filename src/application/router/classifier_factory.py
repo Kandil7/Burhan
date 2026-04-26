@@ -1,5 +1,5 @@
 """
-Intent Classification Module for Athar Islamic QA System.
+Intent Classification Module for Burhan Islamic QA System.
 
 This module provides the canonical intent classification system:
 1. KeywordBasedClassifier - Fast keyword matching for clear signals

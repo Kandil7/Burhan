@@ -1,5 +1,5 @@
 """
-Verification Trace for Athar Islamic QA system.
+Verification Trace for Burhan Islamic QA system.
 
 Provides structured tracing for the verification pipeline.
 """

@@ -1,5 +1,5 @@
 """
-Generation Schemas for Athar Islamic QA system.
+Generation Schemas for Burhan Islamic QA system.
 
 Defines schemas for the generation layer.
 """

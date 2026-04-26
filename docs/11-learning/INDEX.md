@@ -1,8 +1,8 @@
-# 🕌 Athar Islamic QA System - دليل التوجيه الشامل
+# 🕌 Burhan Islamic QA System - دليل التوجيه الشامل
 
 ## 📚 مرحباً بك في دليل التوجيه
 
-هذا الدليل مصمم لمهندسي الذكاء الاصطناعي والمطورين الذين يريدون فهم مشروع **Athar** بعمق واحترافية.
+هذا الدليل مصمم لمهندسي الذكاء الاصطناعي والمطورين الذين يريدون فهم مشروع **Burhan** بعمق واحترافية.
 
 ---
 
@@ -289,7 +289,7 @@ Augment: أضف الوثائق إلى الـ prompt
 Generate: LLM يولد إجابة مبنية على الوثائق
 ```
 
-**في Athar**: كل الوكلاء (Fiqh, Hadith, General) يستخدمون RAG
+**في Burhan**: كل الوكلاء (Fiqh, Hadith, General) يستخدمون RAG
 
 ---
 
@@ -300,7 +300,7 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 - نصوص متشابهة = متجهات متشابهة
 - يمكننا حساب التشابه بين النصوص
 
-**في Athar**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
+**في Burhan**: BAAI/bge-m3 (1024 dimensions, 8192 tokens, 100+ languages)
 
 ---
 
@@ -311,7 +311,7 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 - بحث سريع جداً (ملايين المتجهات في ميلي ثواني)
 - يدعم البحث الدلالي (semantic search)
 
-**في Athar**: Qdrant (10 مجموعات، 5.7 مليون متجه)
+**في Burhan**: Qdrant (10 مجموعات، 5.7 مليون متجه)
 
 ---
 
@@ -322,7 +322,7 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 - يوجه السؤال للوكيل الصحيح
 - يحسن دقة الإجابة
 
-**في Athar (المرحلة 8)**:
+**في Burhan (المرحلة 8)**:
 - **Hybrid Intent Classifier** (keyword + Jaccard + confidence gating)
 - **16 نوع نية** مع **10 مستويات أولوية**
 - **4 أنواع فرعية للقرآن** (VERSE_LOOKUP, ANALYTICS, INTERPRETATION, QUOTATION_VALIDATION)
@@ -338,7 +338,7 @@ Generate: LLM يولد إجابة مبنية على الوثائق
 - BM25: يتطابق مع الكلمات
 - الجمع = نتائج أفضل
 
-**في Athar**: Reciprocal Rank Fusion (k=60)
+**في Burhan**: Reciprocal Rank Fusion (k=60)
 
 ---
 
@@ -379,8 +379,8 @@ docker --version
 ### التثبيت
 ```bash
 # استنساخ المستودع
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # تثبيت التبعيات
 make install-dev
@@ -444,7 +444,7 @@ https://huggingface.co/BAAI/bge-m3    ← BGE-m3 model
 
 ## 🎓 الخلاصة
 
-هذا الدليل صُمم ليأخذك من **مبتدئ** إلى **فاهم بعمق** لمشروع Athar.
+هذا الدليل صُمم ليأخذك من **مبتدئ** إلى **فاهم بعمق** لمشروع Burhan.
 
 كل جزء يبني على سابقه. لا تقفز. طبق التمارين. اسأل الأسئلة.
 
@@ -464,7 +464,7 @@ https://huggingface.co/BAAI/bge-m3    ← BGE-m3 model
 - **المُعد**: AI Mentor System
 - **التاريخ**: أبريل 2026
 - **الإصدار**: 2.0
-- **المشروع**: Athar Islamic QA System v0.8.0 (Phase 8 Complete)
+- **المشروع**: Burhan Islamic QA System v0.8.0 (Phase 8 Complete)
 
 ### كيف تساهم
 إذا وجدت خطأ أو تحسين، شاركنا ملاحظاتك.
@@ -497,7 +497,7 @@ https://huggingface.co/BAAI/bge-m3    ← BGE-m3 model
 
 **بُني بـ ❤️ للمجتمع المسلم**
 
-[🕌](#) Athar Islamic QA System • مبني على معمارية Fanar-Sadiq
+[🕌](#) Burhan Islamic QA System • مبني على معمارية Fanar-Sadiq
 
 **دليل توجيه شامل • فهم عميق • تعلم متدرج • المرحلة 8 مكتملة**
 

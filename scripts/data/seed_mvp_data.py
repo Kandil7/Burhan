@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete MVP Data Seeder for Athar Islamic QA System.
+Complete MVP Data Seeder for Burhan Islamic QA System.
 
 Seeds sample data for ALL collections from existing datasets:
 1. hadith_passages - From Sanadset CSV
@@ -19,7 +19,7 @@ Usage:
     python scripts/data/seed_mvp_data.py --collections hadith_passages aqeedah_passages
     python scripts/data/seed_mvp_data.py --limit 50  # Limit docs per collection
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -364,16 +364,16 @@ def build_quran_docs(target: int) -> list[dict]:
     try:
         import os
 
-        db_url = os.environ.get("DATABASE_URL", "postgresql://athar:athar_password@localhost:5432/athar_db")
+        db_url = os.environ.get("DATABASE_URL", "postgresql://Burhan:Burhan_password@localhost:5432/Burhan_db")
         # Parse the URL for psycopg2 connection
         from urllib.parse import urlparse
 
         parsed = urlparse(db_url)
         db_conn = psycopg2.connect(
             host=parsed.hostname or "localhost",
-            database=parsed.path.lstrip("/") or "athar_db",
-            user=parsed.username or "athar",
-            password=parsed.password or "athar_password",
+            database=parsed.path.lstrip("/") or "Burhan_db",
+            user=parsed.username or "Burhan",
+            password=parsed.password or "Burhan_password",
         )
         cur = db_conn.cursor()
 
@@ -497,7 +497,7 @@ async def main(
     target_collections = collections or list(TARGET_SAMPLES.keys())
 
     print(f"\n{'=' * 70}")
-    print("  ATHAR MVP DATA SEEDER")
+    print("  Burhan MVP DATA SEEDER")
     print(f"{'=' * 70}")
     print(f"  Collections: {', '.join(target_collections)}")
     if limit:
@@ -575,7 +575,7 @@ async def main(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Seed MVP data for Athar collections",
+        description="Seed MVP data for Burhan collections",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

@@ -36,7 +36,7 @@ from huggingface_hub import hf_hub_download
 import json, os
 
 INPUT_FILE = hf_hub_download(
-    repo_id="Kandil7/Athar-Mini-Dataset-v2",
+    repo_id="Kandil7/Burhan-Mini-Dataset-v2",
     filename="seerah_passages.jsonl",
     repo_type="dataset",
     local_dir="/content/data",
@@ -191,7 +191,7 @@ import sys
 sys.path.insert(0, "/content")
 
 # ── Config ────────────────────────────────────────────────────────────────────
-HF_OUTPUT_REPO  = "Kandil7/Athar-Mini-Dataset-v2"   # push output to same dataset repo
+HF_OUTPUT_REPO  = "Kandil7/Burhan-Mini-Dataset-v2"   # push output to same dataset repo
 OUTPUT_FILENAME = "seerah_agentic_chunks.jsonl"      # file name inside the repo
 LOCAL_OUTPUT    = f"/content/{OUTPUT_FILENAME}"
 
@@ -379,7 +379,7 @@ print(f"\n🔗 Dataset URL: https://huggingface.co/datasets/{HF_OUTPUT_REPO}")
 ```
 Colab (T4/A100)
     │
-    ├── Cell 3: hf_hub_download("Kandil7/Athar-Mini-Dataset-v2/seerah_passages.jsonl")
+    ├── Cell 3: hf_hub_download("Kandil7/Burhan-Mini-Dataset-v2/seerah_passages.jsonl")
     │           ↓
     ├── Cell 8: Run chunker → write to /content/seerah_agentic_chunks.jsonl
     │           ↓
@@ -388,4 +388,4 @@ Colab (T4/A100)
     └── Cell 11: hf_hub_download() → verify from HF
 ```
 
-The auto-save loop in **Cell 10** is the most production-safe option — it checkpoints every 200 chunks directly to `Kandil7/Athar-Mini-Dataset-v2` so any Colab crash loses at most ~40 minutes of T4 work. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/9b40a2c2-2875-420d-a89b-c45c92fe5a2d/paste.txt)
+The auto-save loop in **Cell 10** is the most production-safe option — it checkpoints every 200 chunks directly to `Kandil7/Burhan-Mini-Dataset-v2` so any Colab crash loses at most ~40 minutes of T4 work. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/9b40a2c2-2875-420d-a89b-c45c92fe5a2d/paste.txt)

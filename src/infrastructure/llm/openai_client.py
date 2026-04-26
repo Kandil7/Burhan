@@ -1,5 +1,5 @@
 """
-OpenAI client factory for Athar.
+OpenAI client factory for Burhan.
 
 Supports any OpenAI-compatible API (OpenAI, Azure, Ollama, vLLM, Groq, etc.)
 by reading from settings.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Common utilities for Athar scripts.
+Common utilities for Burhan scripts.
 
 Provides shared functionality used across all scripts:
 - Path helpers (project root, data dirs, etc.)
@@ -18,7 +18,7 @@ Usage:
         safe_run,
     )
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import functools
@@ -87,7 +87,7 @@ _SCRIPT_LOGGER: Optional[logging.Logger] = None
 
 
 def setup_script_logger(
-    name: str = "athar-script",
+    name: str = "Burhan-script",
     level: int = logging.INFO,
     log_to_file: bool = False,
     log_file: Optional[str] = None,
@@ -125,7 +125,7 @@ def setup_script_logger(
     return logger
 
 
-def get_script_logger(name: str = "athar-script") -> logging.Logger:
+def get_script_logger(name: str = "Burhan-script") -> logging.Logger:
     """Get an existing script logger or create one."""
     logger = logging.getLogger(name)
     if not logger.handlers:
@@ -270,8 +270,8 @@ def load_script_config() -> dict:
         "processed_dir": str(root / "data" / "processed"),
         "seed_dir": str(root / "data" / "seed"),
         "embeddings_dir": str(root / "data" / "embeddings"),
-        "api_url": os.environ.get("ATHAR_API_URL", "http://localhost:8000"),
-        "api_port": int(os.environ.get("ATHAR_API_PORT", "8000")),
+        "api_url": os.environ.get("Burhan_API_URL", "http://localhost:8000"),
+        "api_port": int(os.environ.get("Burhan_API_PORT", "8000")),
     }
 
 

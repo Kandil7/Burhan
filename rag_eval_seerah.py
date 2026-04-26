@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 RAG Evaluation Script for Seerah Passages
-Tests the 20 questions against the Athar API and calculates metrics.
+Tests the 20 questions against the Burhan API and calculates metrics.
 
 Usage:
     python rag_eval_seerah.py                    # Run against localhost:8002

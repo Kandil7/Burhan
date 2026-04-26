@@ -1,5 +1,5 @@
 """
-Use case for classifying user queries in Athar Islamic QA system.
+Use case for classifying user queries in Burhan Islamic QA system.
 
 This module provides:
 - ClassifyQueryInput / ClassifyQueryOutput dataclasses

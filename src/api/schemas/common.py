@@ -1,5 +1,5 @@
 """
-Common schemas for Athar API.
+Common schemas for Burhan API.
 
 Includes shared response models, error schemas, and metadata structures.
 """

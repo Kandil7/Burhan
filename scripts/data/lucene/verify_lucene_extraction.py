@@ -803,7 +803,7 @@ def main():
     args = parser.parse_args()
 
     print(f"{'=' * 70}")
-    print("ATHAR - LUCENE EXTRACTION QUALITY VERIFICATION")
+    print("Burhan - LUCENE EXTRACTION QUALITY VERIFICATION")
     print(f"{'=' * 70}")
     print(f"  Quick mode:  {args.quick}")
     print(f"  Report only: {args.report}")

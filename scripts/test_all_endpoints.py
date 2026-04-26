@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Comprehensive test for all 20 Athar API endpoints.
+Comprehensive test for all 20 Burhan API endpoints.
 """
 
 import urllib.request
@@ -77,7 +77,7 @@ def make_request(method, path, data=None, timeout=30):
 
 def main():
     print("=" * 70)
-    print("TESTING ALL 20 ATHAR API ENDPOINTS")
+    print("TESTING ALL 20 Burhan API ENDPOINTS")
     print("=" * 70)
     print(f"Base URL: {BASE_URL}")
     print("=" * 70)

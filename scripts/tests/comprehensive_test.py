@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Endpoint Testing & Validation Suite for Athar Islamic QA System.
+Comprehensive Endpoint Testing & Validation Suite for Burhan Islamic QA System.
 
 Tests every endpoint with thorough response validation:
 1. Health checks (/health, /ready, /)
@@ -14,7 +14,7 @@ Usage:
     python scripts/tests/comprehensive_test.py --port 8002
     python scripts/tests/comprehensive_test.py --verbose
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -520,7 +520,7 @@ def test_query_endpoint() -> bool:
 def main():
     """Run all tests."""
     parser = argparse.ArgumentParser(
-        description="Comprehensive validation suite for Athar API",
+        description="Comprehensive validation suite for Burhan API",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -535,7 +535,7 @@ Examples:
     base_url = args.url.rstrip("/") if args.url else f"http://localhost:{args.port}"
     make_request.base_url = base_url  # type: ignore[attr-defined]
 
-    print_header("🕌 ATHAR ISLAMIC QA SYSTEM - COMPREHENSIVE VALIDATION SUITE")
+    print_header("🕌 Burhan ISLAMIC QA SYSTEM - COMPREHENSIVE VALIDATION SUITE")
     print(f"{Colors.BOLD}Testing against:{Colors.ENDC} {base_url}\n")
 
     # Check if API is running

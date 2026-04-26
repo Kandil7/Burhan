@@ -1,5 +1,5 @@
 """
-Book Importance Weighter for Athar Islamic QA system.
+Book Importance Weighter for Burhan Islamic QA system.
 
 Scores books by importance based on:
 - Category canonical status (Sahih > Sunan > Commentary)

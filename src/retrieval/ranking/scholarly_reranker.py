@@ -1,5 +1,5 @@
 """
-Scholarly Reranker for Athar Islamic QA system.
+Scholarly Reranker for Burhan Islamic QA system.
 
 This module provides advanced reranking logic that combines:
 1. Semantic relevance (vector score)

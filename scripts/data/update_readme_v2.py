@@ -11,7 +11,7 @@ load_dotenv()
 from huggingface_hub import HfApi
 
 # Configuration
-REPO_ID = "Kandil7/Athar-Datasets"
+REPO_ID = "Kandil7/Burhan-Datasets"
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
 
 # Accurate statistics from data/processed/lucene_pages/collections
@@ -25,7 +25,7 @@ task_categories:
 - text-generation
 - text-retrieval
 - fill-mask
-pretty_name: Athar Islamic QA Datasets
+pretty_name: Burhan Islamic QA Datasets
 tags:
 - islamic-studies
 - quran
@@ -74,7 +74,7 @@ dataset_info:
   dataset_size: 40000000000
 ---
 
-# 🕌 Athar Islamic QA Datasets
+# 🕌 Burhan Islamic QA Datasets
 
 > **18.7M passages from classical Islamic books spanning 1,400 years of scholarship**
 
@@ -186,7 +186,7 @@ seerah_passages              █                                  294,623 (2%)
 from datasets import load_dataset
 
 # Load full dataset
-ds = load_dataset("Kandil7/Athar-Datasets")
+ds = load_dataset("Kandil7/Burhan-Datasets")
 
 # Access specific collection
 for row in ds['train']:
@@ -204,7 +204,7 @@ hadith_ds = ds['train'].filter(lambda x: x['collection'] == 'hadith_passages')
 from datasets import load_dataset
 
 # Stream without downloading
-ds = load_dataset("Kandil7/Athar-Datasets", split="train", streaming=True)
+ds = load_dataset("Kandil7/Burhan-Datasets", split="train", streaming=True)
 
 for i, passage in enumerate(ds):
     if i >= 5:
@@ -276,13 +276,13 @@ imam_bukhari = [
 ]
 ```
 
-### Example 3: Citation-Enhanced QA with Athar
+### Example 3: Citation-Enhanced QA with Burhan
 
 ```python
-# Use the Athar system for grounded answers
-# See: https://github.com/Kandil7/Athar
+# Use the Burhan system for grounded answers
+# See: https://github.com/Kandil7/Burhan
 
-from Athar import FiqhAgent
+from Burhan import FiqhAgent
 
 agent = FiqhAgent()
 result = await agent.execute(
@@ -337,7 +337,7 @@ This dataset is derived from **ElShamela Library** (المكتبة الشامل�
 
 ## 🤝 Related Projects
 
-- **[Athar](https://github.com/Kandil7/Athar)** — Production-ready Islamic QA system using this dataset
+- **[Burhan](https://github.com/Kandil7/Burhan)** — Production-ready Islamic QA system using this dataset
 - **[Fanar-Sadiq Architecture](docs/Fanar-Sadiq%20A%20Multi-Agent%20Architecture%20for%20Grounded%20Islamic%20QA.pdf)** — Research paper
 
 ---
@@ -345,11 +345,11 @@ This dataset is derived from **ElShamela Library** (المكتبة الشامل�
 ## 📝 Citation
 
 ```bibtex
-@misc{athar-datasets-2026,
-  title={Athar Islamic QA Datasets},
+@misc{Burhan-datasets-2026,
+  title={Burhan Islamic QA Datasets},
   author={Kandil, Ahmed},
   year={2026},
-  url={https://huggingface.co/datasets/Kandil7/Athar-Datasets},
+  url={https://huggingface.co/datasets/Kandil7/Burhan-Datasets},
   note={18.7M passages from 10 Islamic collections}
 }
 ```
@@ -373,7 +373,7 @@ This dataset is derived from **ElShamela Library** (المكتبة الشامل�
 ## 📁 File Structure
 
 ```
-Athar-Datasets/
+Burhan-Datasets/
 ├── hadith_passages.jsonl              # 5,059,547 passages (11 GB)
 ├── general_islamic.jsonl              # 3,410,436 passages (6.1 GB)
 ├── fiqh_passages.jsonl                # 2,397,988 passages (6.6 GB)
@@ -390,7 +390,7 @@ Athar-Datasets/
 
 ## 📞 Contact & Support
 
-- **GitHub:** https://github.com/Kandil7/Athar
+- **GitHub:** https://github.com/Kandil7/Burhan
 - **HuggingFace:** https://huggingface.co/Kandil7
 
 ---
@@ -399,7 +399,7 @@ Athar-Datasets/
 
 **Built with ❤️ for the Muslim community**
 
-🕌 Athar Islamic QA • 18.7M passages • 10 collections • 1,400 years of scholarship
+🕌 Burhan Islamic QA • 18.7M passages • 10 collections • 1,400 years of scholarship
 
 </div>
 """

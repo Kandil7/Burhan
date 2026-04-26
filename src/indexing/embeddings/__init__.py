@@ -1,4 +1,4 @@
-"""Embeddings module for Athar Islamic QA system."""
+"""Embeddings module for Burhan Islamic QA system."""
 
 from src.indexing.embeddings.embedding_model import EmbeddingModel, EmbeddingModelError
 from src.indexing.embeddings.embedding_cache import EmbeddingCache, QueryCache

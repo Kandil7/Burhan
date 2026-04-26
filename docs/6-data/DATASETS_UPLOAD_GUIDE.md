@@ -14,7 +14,7 @@ python scripts/prepare_datasets_for_upload.py
 - ✅ Prepares metadata files
 - ✅ Creates README and dataset_info.json
 
-**Output:** `data/athar-datasets/` directory with upload-ready files
+**Output:** `data/Burhan-datasets/` directory with upload-ready files
 
 **Expected Time:** 1-2 hours (compressing 16 GB of books)
 
@@ -46,19 +46,19 @@ pip install huggingface_hub[cli]
 huggingface-cli login
 
 # Create repo
-huggingface-cli repo create Kandil7/Athar-Datasets --type dataset
+huggingface-cli repo create Kandil7/Burhan-Datasets --type dataset
 
 # Clone
-git clone https://huggingface.co/datasets/Kandil7/Athar-Datasets
-cd Athar-Datasets
+git clone https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+cd Burhan-Datasets
 
 # Copy files
-cp -r ../data/athar-datasets/* .
+cp -r ../data/Burhan-datasets/* .
 
 # Commit with git-lfs
 git lfs install
 git add .
-git commit -m "Upload Athar datasets"
+git commit -m "Upload Burhan datasets"
 git push
 ```
 
@@ -89,7 +89,7 @@ git push
 ### 📊 Expected Output
 
 ```
-data/athar-datasets/
+data/Burhan-datasets/
 ├── README.md
 ├── dataset_info.json
 ├── extracted_books/

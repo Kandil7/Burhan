@@ -1,6 +1,6 @@
-# 🧠 Athar RAG Guide
+# 🧠 Burhan RAG Guide
 
-Complete guide to the Retrieval-Augmented Generation (RAG) system in Athar.
+Complete guide to the Retrieval-Augmented Generation (RAG) system in Burhan.
 
 ---
 
@@ -21,7 +21,7 @@ Complete guide to the Retrieval-Augmented Generation (RAG) system in Athar.
 
 ## 🎯 Overview
 
-RAG (Retrieval-Augmented Generation) enables Athar to answer fiqh and general Islamic knowledge questions using **verified sources** only, with proper citations.
+RAG (Retrieval-Augmented Generation) enables Burhan to answer fiqh and general Islamic knowledge questions using **verified sources** only, with proper citations.
 
 ### Key Principles
 

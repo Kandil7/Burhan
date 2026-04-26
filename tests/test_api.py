@@ -40,7 +40,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "name" in data
-        assert data["name"] == "Athar"
+        assert data["name"] == "Burhan"
         assert "docs" in data
 
 
@@ -127,4 +127,4 @@ class TestOpenAPIDocs:
         data = response.json()
         assert "openapi" in data
         assert "info" in data
-        assert data["info"]["title"] == "Athar"
+        assert data["info"]["title"] == "Burhan"

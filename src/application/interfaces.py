@@ -1,5 +1,5 @@
 """
-Application interfaces (Protocols) for Athar Islamic QA system.
+Application interfaces (Protocols) for Burhan Islamic QA system.
 
 Defines the contracts that classifiers and routers must implement:
 - IntentClassifier: Classifies raw query strings into ClassificationResult

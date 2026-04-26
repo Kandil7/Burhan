@@ -1,5 +1,5 @@
 """
-Embedding Cache for Athar Islamic QA system.
+Embedding Cache for Burhan Islamic QA system.
 
 Redis-based caching for embedding vectors with connection pooling.
 - TTL: 7 days (configurable)

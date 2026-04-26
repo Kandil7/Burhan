@@ -1,4 +1,4 @@
-# 🕌 Athar - Islamic QA System
+# 🕌 Burhan - Islamic QA System
 
 > A production-ready, multi-agent Islamic QA system based on the Fanar-Sadiq architecture, providing grounded, citation-backed answers with deterministic calculators for zakat, inheritance, and verified sources from Quran, Hadith, and Fiqh.
 
@@ -6,10 +6,10 @@
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
-[![Phase](https://img.shields.io/badge/status-Phase%2010%20Complete-success.svg)](https://github.com/Kandil7/Athar)
+[![Phase](https://img.shields.io/badge/status-Phase%2010%20Complete-success.svg)](https://github.com/Kandil7/Burhan)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Lines of Code](https://img.shields.io/badge/Lines%20of%20Code-20,000+-orange.svg)]()
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-success.svg)](https://github.com/Kandil7/Athar)
+[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-92%25-success.svg)](https://github.com/Kandil7/Burhan)
 
 ---
 
@@ -84,7 +84,7 @@ See [v2 Migration Notes](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md)
 
 ## 🎯 Overview
 
-**Athar** is an Islamic QA system that answers religious questions with verified sources and proper citations. Built on the **Fanar-Sadiq** multi-agent architecture.
+**Burhan** is an Islamic QA system that answers religious questions with verified sources and proper citations. Built on the **Fanar-Sadiq** multi-agent architecture.
 
 ### Problem & Solution
 
@@ -241,8 +241,8 @@ User Query → Intent Classifier → Multi-Agent Orchestration →
 
 ```bash
 # 1. Clone & setup
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 poetry install --with dev
 cp .env.example .env
 # Edit .env with your API keys
@@ -391,9 +391,9 @@ All data is derived from **ElShamela Library** (المكتبة الشاملة) �
 
 ### 🤗 HuggingFace Datasets
 
-Athar maintains two comprehensive datasets on HuggingFace for the Islamic knowledge community:
+Burhan maintains two comprehensive datasets on HuggingFace for the Islamic knowledge community:
 
-#### 1. [Kandil7/Athar-Datasets](https://huggingface.co/datasets/Kandil7/Athar-Datasets)
+#### 1. [Kandil7/Burhan-Datasets](https://huggingface.co/datasets/Kandil7/Burhan-Datasets)
 
 > **Raw Islamic Texts** - The complete processed dataset from ElShamela Library
 
@@ -449,17 +449,17 @@ Athar maintains two comprehensive datasets on HuggingFace for the Islamic knowle
 from datasets import load_dataset
 
 # Load full dataset
-dataset = load_dataset("Kandil7/Athar-Datasets", split="train")
+dataset = load_dataset("Kandil7/Burhan-Datasets", split="train")
 
 # Load specific collection
-dataset = load_dataset("Kandil7/Athar-Datasets", 
+dataset = load_dataset("Kandil7/Burhan-Datasets", 
                       split="train",
                       filters=[("collection", "fiqh_passages")])
 ```
 
 ---
 
-#### 2. [Kandil7/Athar-Embeddings](https://huggingface.co/datasets/Kandil7/Athar-Embeddings)
+#### 2. [Kandil7/Burhan-Embeddings](https://huggingface.co/datasets/Kandil7/Burhan-Embeddings)
 
 > **Pre-computed Embeddings** - BGE-M3 embeddings for semantic search
 
@@ -499,7 +499,7 @@ from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
 # Load embeddings
-embeddings_dataset = load_dataset("Kandil7/Athar-Embeddings", split="train")
+embeddings_dataset = load_dataset("Kandil7/Burhan-Embeddings", split="train")
 
 # Or generate new embeddings
 model = SentenceTransformer("BGE-M3")
@@ -510,7 +510,7 @@ embeddings = model.encode(["نص عربي للبحث"], normalize_embeddings=Tru
 
 ### Dataset Comparison
 
-| Feature | Athar-Datasets | Athar-Embeddings |
+| Feature | Burhan-Datasets | Burhan-Embeddings |
 |---------|----------------|-------------------|
 | **Type** | Raw text | Vector embeddings |
 | **Size** | ~45 GB | ~5-10 GB |
@@ -552,14 +552,14 @@ ElShamela Library (8,425 books)
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 4: HuggingFace Upload (Athar-Datasets)           │
+│  Stage 4: HuggingFace Upload (Burhan-Datasets)           │
 │  • Upload as JSONL                                       │
 │  • 15.8M documents                                      │
 └─────────────────────────────────────────────────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 5: Embedding Generation (Athar-Embeddings)        │
+│  Stage 5: Embedding Generation (Burhan-Embeddings)        │
 │  • BGE-M3 model (1024 dims)                              │
 │  • Batch processing                                      │
 │  • Upload embeddings                                     │
@@ -575,8 +575,8 @@ ElShamela Library (8,425 books)
 | **Lucene Extraction** | 11,316,717 | 16.49 GB | ✅ Complete |
 | **Merge & Enrichment** | 5,717,177 | ~61 GB | ✅ Complete |
 | **Hierarchical Chunking** | 10 files | ~88 GB | ✅ Complete |
-| **Athar-Datasets** | 15.8M | ~45 GB | ✅ Complete |
-| **Athar-Embeddings** | 2.64M | ~8 GB | ✅ Complete |
+| **Burhan-Datasets** | 15.8M | ~45 GB | ✅ Complete |
+| **Burhan-Embeddings** | 2.64M | ~8 GB | ✅ Complete |
 | **Qdrant Import** | 10 collections | - | ✅ Complete |
 
 ---
@@ -601,7 +601,7 @@ ElShamela Library (8,425 books)
 ## 📁 Project Structure
 
 ```
-Athar/
+Burhan/
 ├── src/                              # Python backend (~200 files)
 │   ├── api/                          # FastAPI routes, schemas, middleware
 │   │   ├── main.py                   # FastAPI app
@@ -928,7 +928,7 @@ HF_TOKEN=your-huggingface-token
 SECRET_KEY=your-secret-key
 
 # Optional
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 QDRANT_URL=http://localhost:6333
 REDIS_URL=redis://localhost:6379/0
 APP_ENV=development
@@ -996,12 +996,12 @@ MIT License - see LICENSE file for details.
 
 **Built with ❤️ for the Muslim community**
 
-[🕌](#) Athar Islamic QA System • Based on Fanar-Sadiq Architecture
+[🕌](#) Burhan Islamic QA System • Based on Fanar-Sadiq Architecture
 
 **Data Source:** [ElShamela Library](https://shamela.ws/) (المكتبة الشاملة) • 8,425 books • 3,146 scholars
 
 **18,000+ lines of code • 10 collections ready • Production ready**
 
-[Documentation](docs/README.md) • [API Docs](http://localhost:8000/docs) • [Issues](https://github.com/Kandil7/Athar/issues)
+[Documentation](docs/README.md) • [API Docs](http://localhost:8000/docs) • [Issues](https://github.com/Kandil7/Burhan/issues)
 
 </div>

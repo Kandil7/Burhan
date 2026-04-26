@@ -43,7 +43,7 @@ from src.api.routes import health, query, tools, rag, quran
 ```
 
 ### constants
-- `APP_NAME`: "Athar Islamic QA System"
+- `APP_NAME`: "Burhan Islamic QA System"
 - `APP_VERSION`: "0.5.0"
 - `PHASE`: "Phase 5: Security & Performance"
 
@@ -165,12 +165,12 @@ from src.api.routes import health, query, tools, rag, quran
 async def lifespan(app: FastAPI):
     # Startup
     setup_logging()
-    logger.info("Athar starting up", environment=settings.environment)
+    logger.info("Burhan starting up", environment=settings.environment)
     
     yield
     
     # Shutdown
-    logger.info("Athar shutting down")
+    logger.info("Burhan shutting down")
 ```
 
 **ما يفعله**:
@@ -189,7 +189,7 @@ async def lifespan(app: FastAPI):
 ```python
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Athar Islamic QA System",
+        title="Burhan Islamic QA System",
         version="0.5.0",
         description="Production-ready Islamic QA system",
         lifespan=lifespan,
@@ -204,7 +204,7 @@ def create_app() -> FastAPI:
 
 **ما يفعله**:
 1. ينشئ تطبيق FastAPI بالمواصفات:
-   - الاسم: "Athar Islamic QA System"
+   - الاسم: "Burhan Islamic QA System"
    - الإصدار: "0.5.0"
    - الـ docs على `/docs` (Swagger)
    - الـ redoc على `/redoc`
@@ -309,7 +309,7 @@ Internet → error_handler → API_key → sanitize → CORS → rate_limit → 
     @app.get("/")
     async def root():
         return {
-            "name": "Athar Islamic QA System",
+            "name": "Burhan Islamic QA System",
             "version": "0.5.0",
             "phase": "Phase 5: Security & Performance",
             "docs": "/docs",
@@ -378,9 +378,9 @@ from src.api.routes import health, query, tools, rag, quran
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
-    logger.info("Athar starting up")
+    logger.info("Burhan starting up")
     yield
-    logger.info("Athar shutting down")
+    logger.info("Burhan shutting down")
 ```
 - يدير دورة حياة التطبيق
 

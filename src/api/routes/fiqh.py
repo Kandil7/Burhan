@@ -1,5 +1,5 @@
 """
-Fiqh endpoint for Athar Islamic QA system.
+Fiqh endpoint for Burhan Islamic QA system.
 
 Provides a dedicated endpoint for Fiqh (Islamic Jurisprudence) queries
 with collection-aware RAG capabilities.
@@ -204,7 +204,7 @@ async def handle_fiqh_question(
     agent=Depends(get_fiqh_agent),
 ) -> FiqhResponse:
     """
-    Submit a Fiqh (Islamic Jurisprudence) question to the Athar system.
+    Submit a Fiqh (Islamic Jurisprudence) question to the Burhan system.
 
     The endpoint:
     1. Validates the request

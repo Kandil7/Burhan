@@ -1,5 +1,5 @@
 """
-Score Fusion Utilities for Athar retrieval system.
+Score Fusion Utilities for Burhan retrieval system.
 
 Provides various score fusion strategies for combining
 results from multiple retrievers (semantic, keyword, etc.).

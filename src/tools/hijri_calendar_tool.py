@@ -1,5 +1,5 @@
 """
-Hijri Calendar Tool for Athar Islamic QA system.
+Hijri Calendar Tool for Burhan Islamic QA system.
 
 Fixes:
   - gregorian_to_hijri: year correction loop prevents negative remaining_days

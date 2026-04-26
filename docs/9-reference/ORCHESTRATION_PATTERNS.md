@@ -1,8 +1,8 @@
-# Athar Multi-Agent Orchestration Patterns
+# Burhan Multi-Agent Orchestration Patterns
 
 ## Overview
 
-This document describes the orchestration patterns for coordinating multiple agents in the Athar Islamic QA system.
+This document describes the orchestration patterns for coordinating multiple agents in the Burhan Islamic QA system.
 
 ---
 

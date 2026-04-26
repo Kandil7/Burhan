@@ -1,5 +1,5 @@
 """
-Search endpoint for Athar Islamic QA system.
+Search endpoint for Burhan Islamic QA system.
 
 Provides RAG-based search operations.
 """

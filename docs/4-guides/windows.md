@@ -1,4 +1,4 @@
-# 🚀 Athar Islamic QA System - Quick Start Guide (Windows)
+# 🚀 Burhan Islamic QA System - Quick Start Guide (Windows)
 
 ## 📋 Batch Scripts Available
 

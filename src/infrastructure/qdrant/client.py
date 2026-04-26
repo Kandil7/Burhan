@@ -1,5 +1,5 @@
 """
-Qdrant Client Wrapper for Athar Islamic QA system.
+Qdrant Client Wrapper for Burhan Islamic QA system.
 
 Provides a clean interface for Qdrant operations, separating infrastructure
 from the retrieval layer.

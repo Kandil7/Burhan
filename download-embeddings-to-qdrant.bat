@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 REM ═══════════════════════════════════════════════════════════════════════
-REM 🕌  ATHAR - Download Embeddings from HuggingFace & Upload to Qdrant
+REM 🕌  Burhan - Download Embeddings from HuggingFace & Upload to Qdrant
 REM ═══════════════════════════════════════════════════════════════════════
 REM Usage:
 REM   download-embeddings-to-qdrant.bat               (smart sync)
@@ -49,7 +49,7 @@ if "!HAS_RESET!"=="1"  set "MODE=⚠  RESET - Delete All + Full Re-upload"
 REM ─── Header ─────────────────────────────────────────────────────────────
 echo.
 echo ═══════════════════════════════════════════════════════════════════════
-echo 🕌  ATHAR - Smart Embeddings Sync  ^|  %DATE% %TIME%
+echo 🕌  Burhan - Smart Embeddings Sync  ^|  %DATE% %TIME%
 echo    Mode: %MODE%
 echo ═══════════════════════════════════════════════════════════════════════
 echo.

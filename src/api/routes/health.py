@@ -1,5 +1,5 @@
 """
-Health check routes for Athar Islamic QA system.
+Health check routes for Burhan Islamic QA system.
 
 Provides endpoints for monitoring service health and readiness.
 Phase 9: Added metrics endpoint.

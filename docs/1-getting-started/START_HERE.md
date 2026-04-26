@@ -1,4 +1,4 @@
-# 🚀 START HERE - Athar Islamic QA System
+# 🚀 START HERE - Burhan Islamic QA System
 
 ## ✅ Project Status: Phase 8 Complete (April 15, 2026)
 
@@ -35,8 +35,8 @@ As of **April 15, 2026**, the system now includes:
 ### Step 1: Install Dependencies
 ```bash
 # Clone repository (if not already done)
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # Install Python dependencies
 make install-dev
@@ -181,7 +181,7 @@ Once started:
 ## 📜 Project Structure
 
 ```
-Athar/
+Burhan/
 ├── src/                          # Python backend (FastAPI)
 │   ├── api/                      # API routes (20 endpoints)
 │   │   ├── routes/

@@ -1,4 +1,4 @@
-# 🕌 Athar Mini-Dataset - COMPLETE ✅
+# 🕌 Burhan Mini-Dataset - COMPLETE ✅
 
 **Date:** April 7, 2026  
 **Status:** ✅ **COMMITTED TO GITHUB**  
@@ -191,4 +191,4 @@ for f in ['fiqh', 'hadith', 'general', 'history', 'arabic', 'aqeedah', 'spiritua
 
 ---
 
-*The Athar Mini-Dataset is now on GitHub, enabling complete system demonstrations with all 11 agents functional across 10 collections.*
+*The Burhan Mini-Dataset is now on GitHub, enabling complete system demonstrations with all 11 agents functional across 10 collections.*

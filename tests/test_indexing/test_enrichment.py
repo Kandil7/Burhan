@@ -88,7 +88,7 @@ class TestAqeedahSchools:
 
     def test_known_aqeedah(self):
         """Test known aqeedah schools."""
-        assert get_aqeedah_school("imam_bukhari") == "athari"
+        assert get_aqeedah_school("imam_bukhari") == "Burhani"
         assert get_aqeedah_school("imam_al-ghazali") == "ashari"
 
     def test_unknown_aqeedah(self):
@@ -127,7 +127,7 @@ class TestEnrichPassage:
         assert enriched["metadata"]["madhhab_inferred"] is False
 
         # Check aqeedah
-        assert enriched["metadata"]["aqeedah_school"] == "athari"
+        assert enriched["metadata"]["aqeedah_school"] == "Burhani"
 
     def test_enrich_with_category_detection(self):
         """Test category detection from content."""

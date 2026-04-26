@@ -1,5 +1,5 @@
 """
-Collection-Aware RAG Agent Base for Athar Islamic QA system.
+Collection-Aware RAG Agent Base for Burhan Islamic QA system.
 
 This module provides the canonical base class for all v2 collection agents,
 integrating retrieval, verification, and generation into a unified pipeline.

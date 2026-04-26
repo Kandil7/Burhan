@@ -4,7 +4,7 @@ import sys
 import traceback
 
 # Add project root to path
-sys.path.insert(0, r"K:\business\projects_v2\Athar")
+sys.path.insert(0, r"K:\business\projects_v2\Burhan")
 
 from src.config.settings import settings
 

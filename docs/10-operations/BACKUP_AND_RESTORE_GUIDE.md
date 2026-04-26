@@ -1,4 +1,4 @@
-# 💾 Backup & Restore Guide - Athar Embeddings & Qdrant
+# 💾 Backup & Restore Guide - Burhan Embeddings & Qdrant
 
 **Purpose:** Save 5.7M embeddings and Qdrant data to HuggingFace for safe backup and sharing
 
@@ -71,7 +71,7 @@ import gzip
 
 # Download embedding
 filepath = hf_hub_download(
-    repo_id="Kandil7/Athar-Embeddings",
+    repo_id="Kandil7/Burhan-Embeddings",
     filename="embeddings/fiqh_passages_embeddings.npy.gz",
     repo_type="dataset"
 )
@@ -99,7 +99,7 @@ print(f"Shape: {embeddings.shape}")
 ## 📁 File Structure After Backup
 
 ```
-HuggingFace Repo: Kandil7/Athar-Embeddings
+HuggingFace Repo: Kandil7/Burhan-Embeddings
 │
 ├── embeddings/
 │   ├── README.md
@@ -148,7 +148,7 @@ poetry run python scripts/restore_from_huggingface.py --all
 ### 3. Migration to New Server
 ```bash
 # New server setup
-git clone https://github.com/Kandil7/Athar
+git clone https://github.com/Kandil7/Burhan
 poetry run python scripts/restore_from_huggingface.py --all
 # Done! Same embeddings, no re-computation
 ```
@@ -162,7 +162,7 @@ Add to `.env`:
 ```bash
 # HuggingFace
 HF_TOKEN=hf_your_token_here
-HF_EMBEDDINGS_REPO_ID=Kandil7/Athar-Embeddings
+HF_EMBEDDINGS_REPO_ID=Kandil7/Burhan-Embeddings
 
 # Qdrant
 QDRANT_URL=http://localhost:6333

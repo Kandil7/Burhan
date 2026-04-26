@@ -1,5 +1,5 @@
 """
-Async database utilities for Athar Islamic QA System.
+Async database utilities for Burhan Islamic QA System.
 
 Provides both async and sync database access with proper thread pool execution
 for sync operations to avoid blocking the event loop.
@@ -160,9 +160,9 @@ class AsyncDatabaseManager:
             self._pool = await asyncpg.create_pool(
                 host=parsed.hostname or "localhost",
                 port=parsed.port or 5432,
-                user=parsed.username or "athar",
+                user=parsed.username or "Burhan",
                 password=parsed.password,
-                database=parsed.path.lstrip("/") or "athar_db",
+                database=parsed.path.lstrip("/") or "Burhan_db",
                 min_size=5,
                 max_size=20,
             )

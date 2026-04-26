@@ -21,10 +21,10 @@ card:
   certified: false
   cohorts: []
   description: 100K Arabic Islamic passages for QA/RAG systems across 10 major Islamic collections
-  homepage: https://athar.islamic
+  homepage: https://Burhan.islamic
   license: cc-by-4.0
   papers: []
-  pretty_name: Athar Mini Dataset v2
+  pretty_name: Burhan Mini Dataset v2
   size_categories:
   - n<1M
   task_categories:
@@ -50,7 +50,7 @@ supervision:
   types: []
 ---
 
-# Athar Mini Dataset v2
+# Burhan Mini Dataset v2
 
 100,000 Arabic Islamic passages for QA/RAG systems across 10 major collections.
 
@@ -125,7 +125,7 @@ supervision:
 
 ```python
 from datasets import load_dataset
-dataset = load_dataset("Kandil7/Athar-Mini-Dataset-v2")
+dataset = load_dataset("Kandil7/Burhan-Mini-Dataset-v2")
 ```
 
 ## License
@@ -134,7 +134,7 @@ CC BY 4.0
 
 ## Related
 
-- [Athar-Islamic-QA](https://huggingface.co/datasets/Kandil7/Athar-Islamic-QA)
+- [Burhan-Islamic-QA](https://huggingface.co/datasets/Kandil7/Burhan-Islamic-QA)
 """
 
 # Save and upload
@@ -146,7 +146,7 @@ print("README.md created")
 api.upload_file(
     path_or_fileobj=open("README.md", "rb"),
     path_in_repo="README.md",
-    repo_id="Kandil7/Athar-Mini-Dataset-v2",
+    repo_id="Kandil7/Burhan-Mini-Dataset-v2",
     repo_type="dataset",
     token=token,
     commit_message="Simplify YAML metadata",

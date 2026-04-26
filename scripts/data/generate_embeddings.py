@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Batch Embedding Generation Script for Athar Islamic QA System.
+Batch Embedding Generation Script for Burhan Islamic QA System.
 
 Generates embeddings for Islamic knowledge collections and upserts them
 to Qdrant vector database.
@@ -24,7 +24,7 @@ Usage:
     python scripts/data/generate_embeddings.py --collection hadith_passages --batch-size 64
     python scripts/data/generate_embeddings.py --collection all --no-resume
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -347,7 +347,7 @@ async def generate_embeddings(
 def main():
     """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(
-        description="Generate Embeddings for Athar collections",
+        description="Generate Embeddings for Burhan collections",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -368,7 +368,7 @@ Examples:
     args = parser.parse_args()
 
     print(f"\n{'=' * 70}")
-    print("  ATHAR EMBEDDING GENERATOR")
+    print("  Burhan EMBEDDING GENERATOR")
     print(f"{'=' * 70}")
     print(f"  Collection: {args.collection}")
     if args.limit:

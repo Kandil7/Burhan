@@ -1,6 +1,6 @@
-# Athar v2 Migration Pack
+# Burhan v2 Migration Pack
 
-## 1) PR Review Checklist for `refactor/athar-v2-architecture`
+## 1) PR Review Checklist for `refactor/Burhan-v2-architecture`
 
 ### Architecture correctness
 - [ ] `CollectionAgent` is the default path for new RAG agents, not `BaseRAGAgent`.
@@ -62,7 +62,7 @@
 
 ---
 
-## 2) Migration Map: current tree -> Athar v2
+## 2) Migration Map: current tree -> Burhan v2
 
 ### API
 - `src/api/main.py` -> keep in place

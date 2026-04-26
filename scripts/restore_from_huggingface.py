@@ -3,7 +3,7 @@
 Restore Embeddings and Qdrant Data from HuggingFace Backup.
 
 Downloads compressed embeddings and Qdrant exports from HuggingFace
-and restores them for use in the Athar RAG system.
+and restores them for use in the Burhan RAG system.
 
 Usage:
     python scripts/restore_from_huggingface.py --embeddings
@@ -42,7 +42,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [

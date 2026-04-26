@@ -1,5 +1,5 @@
 """
-Prayer Times Tool for Athar Islamic QA system.
+Prayer Times Tool for Burhan Islamic QA system.
 
 Fixes:
   - _hour_angle: corrected formula sign (was producing inverted times)

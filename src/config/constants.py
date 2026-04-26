@@ -1,5 +1,5 @@
 """
-Centralized constants for Athar Islamic QA System.
+Centralized constants for Burhan Islamic QA System.
 
 All magic numbers, thresholds, and configuration values should be defined here.
 This ensures consistency across the entire application.

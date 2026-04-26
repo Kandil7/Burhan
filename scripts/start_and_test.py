@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Start Athar API server and run tests.
+Start Burhan API server and run tests.
 """
 
 import multiprocessing

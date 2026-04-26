@@ -1,5 +1,5 @@
 """
-Citation service layer for Athar.
+Citation service layer for Burhan.
 
 - Adapter from raw API payloads to core.Citation.
 - Formatting (inline + footnotes).
@@ -19,7 +19,7 @@ from src.core.citation import Citation, compute_citation_stats, CitationStats
 
 def citation_from_raw(raw: Dict[str, Any]) -> Citation:
     """
-    Convert a raw citation payload (current Athar response format)
+    Convert a raw citation payload (current Burhan response format)
     into a clean Citation object.
 
     Expected raw format (example):
@@ -73,7 +73,7 @@ def citation_from_raw(raw: Dict[str, Any]) -> Citation:
 
 
 def citations_from_response(resp: Dict[str, Any]) -> List[Citation]:
-    """Extract all citations from a full Athar agent response dict."""
+    """Extract all citations from a full Burhan agent response dict."""
     raw_list = resp.get("citations", []) or []
     return [citation_from_raw(c) for c in raw_list]
 
@@ -169,7 +169,7 @@ def render_inline_citations(answer: str, raw_citations: List[Dict[str, Any]]) ->
 
 def enrich_response_with_citations(resp: Dict[str, Any]) -> Dict[str, Any]:
     """
-    High-level helper to enrich an Athar agent response with:
+    High-level helper to enrich an Burhan agent response with:
 
     - answer_clean: answer text with human-friendly inline citations.
     - citations_structured: list of Citation as dicts.

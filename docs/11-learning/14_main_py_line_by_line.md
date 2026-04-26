@@ -2,7 +2,7 @@
 
 ## 🕌 مقدمة
 
-هذا الملف هو **نقطة الدخول الرئيسية** لتطبيق Athar. عندما تشغل `make dev`، هذا الملف هو الذي **ينشئ التطبيق بالكامل**.
+هذا الملف هو **نقطة الدخول الرئيسية** لتطبيق Burhan. عندما تشغل `make dev`، هذا الملف هو الذي **ينشئ التطبيق بالكامل**.
 
 ---
 
@@ -25,7 +25,7 @@
 
 ```python
 """
-FastAPI application factory for Athar Islamic QA system.
+FastAPI application factory for Burhan Islamic QA system.
 
 Creates and configures the FastAPI application with:
 - Security middleware (rate limiting, API key, security headers)
@@ -166,7 +166,7 @@ from src.config.logging_config import setup_logging, get_logger
 ← نستخدمه في كل مكان
 
 # ما يحتويه:
-settings.app_name         # "Athar"
+settings.app_name         # "Burhan"
 settings.app_env          # "development" أو "production"
 settings.debug            # True أو False
 settings.api_v1_prefix    # "/api/v1"
@@ -174,7 +174,7 @@ settings.cors_origins     # ["http://localhost:3000", ...]
 
 # مثال استخدام:
 app = FastAPI(title=settings.app_name)
-# ← title = "Athar"
+# ← title = "Burhan"
 ```
 
 #### `src.config.logging_config.setup_logging, get_logger`
@@ -191,8 +191,8 @@ app = FastAPI(title=settings.app_name)
 # مثال:
 setup_logging()  # ← يهيئ structlog
 logger = get_logger()  # ← يرجع logger
-logger.info("app.startup", app_name="Athar")
-# ← يطبع: 2024-04-14 10:30:00 [info] app.startup app_name=Athar
+logger.info("app.startup", app_name="Burhan")
+# ← يطبع: 2024-04-14 10:30:00 [info] app.startup app_name=Burhan
 ```
 
 ---
@@ -425,16 +425,16 @@ def setup_logging():
 # ما يحدث:
 logger.info(
     "app.startup",                      # اسم الحدث
-    app_name=settings.app_name,         # "Athar"
+    app_name=settings.app_name,         # "Burhan"
     version="0.5.0",                    # الإصدار
     environment=settings.app_env,       # "development"
 )
 
 # ما يطبعه (development):
-# 2024-04-14 10:30:00 [info     ] app.startup app_name=Athar version=0.5.0 environment=development
+# 2024-04-14 10:30:00 [info     ] app.startup app_name=Burhan version=0.5.0 environment=development
 
 # ما يطبعه (production):
-# {"timestamp": "2024-04-14T10:30:00Z", "level": "info", "event": "app.startup", "app_name": "Athar", "version": "0.5.0", "environment": "development"}
+# {"timestamp": "2024-04-14T10:30:00Z", "level": "info", "event": "app.startup", "app_name": "Burhan", "version": "0.5.0", "environment": "development"}
 ```
 
 #### `yield`
@@ -527,7 +527,7 @@ test_app = create_app()  ← يحمل إعدادات testing
     app = FastAPI(
         title=settings.app_name,
         description="""
-# Athar Islamic QA System API
+# Burhan Islamic QA System API
 
 Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
 
@@ -564,12 +564,12 @@ Multi-agent Islamic QA system based on Fanar-Sadiq architecture.
 ← اسم التطبيق (يظهر في Swagger UI)
 
 # القيمة:
-settings.app_name = "Athar"
+settings.app_name = "Burhan"
 
 # أين يظهر؟
 # Swagger UI:
 # ┌─────────────────────────────────┐
-# │ Athar                           │
+# │ Burhan                           │
 # │ Multi-agent Islamic QA system   │
 # └─────────────────────────────────┘
 ```
@@ -620,7 +620,7 @@ http://localhost:8000/docs
 ┌─────────────────────────────────────────┐
 │ FastAPI - Swagger UI                    │
 │                                         │
-│ Athar                                   │
+│ Burhan                                   │
 │ Multi-agent Islamic QA system           │
 │ v0.5.0                                  │
 │                                         │
@@ -657,7 +657,7 @@ http://localhost:8000/redoc
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Athar",
+    "title": "Burhan",
     "version": "0.5.0"
   },
   "paths": {
@@ -1110,7 +1110,7 @@ GET  /api/v1/quran/tafsir-sources      ← مصادر التفسير
 
 ```json
 {
-  "name": "Athar",
+  "name": "Burhan",
   "version": "0.5.0",
   "phase": "5 - Security & Performance",
   "docs": "/docs",

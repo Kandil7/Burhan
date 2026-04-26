@@ -32,7 +32,7 @@ python scripts/prepare_datasets_for_upload_v2.py
 
 ### Output Structure
 ```
-data/athar-datasets-v2/
+data/Burhan-datasets-v2/
 ├── hierarchical_chunks/          # ✅ RECOMMENDED FOR RAG
 │   ├── fiqh_passages.jsonl       # ~1,581 books → chunks
 │   ├── hadith_passages.jsonl     # ~2,358 books → chunks
@@ -70,7 +70,7 @@ python scripts/prepare_datasets_for_upload.py
 
 ### Output Structure
 ```
-data/athar-datasets/
+data/Burhan-datasets/
 ├── extracted_books/              # Raw books (chunked for upload)
 │   ├── extracted_books_part01.tar.gz
 │   └── ... (32 chunks)
@@ -118,15 +118,15 @@ pip install huggingface_hub[cli]
 huggingface-cli login
 
 # For V2
-cd data/athar-datasets-v2
+cd data/Burhan-datasets-v2
 git init
 git lfs install
 git add .
-git commit -m "Upload Athar datasets v2"
+git commit -m "Upload Burhan datasets v2"
 
 # Create repo and push
-huggingface-cli repo create Kandil7/Athar-Datasets-v2 --type dataset
-git remote add origin https://huggingface.co/datasets/Kandil7/Athar-Datasets-v2
+huggingface-cli repo create Kandil7/Burhan-Datasets-v2 --type dataset
+git remote add origin https://huggingface.co/datasets/Kandil7/Burhan-Datasets-v2
 git push
 ```
 
@@ -140,7 +140,7 @@ import json
 
 # Download a collection
 path = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets-v2",
+    repo_id="Kandil7/Burhan-Datasets-v2",
     filename="hierarchical_chunks/fiqh_passages.jsonl",
     repo_type="dataset"
 )
@@ -202,7 +202,7 @@ From 8,424 books:
 # Make sure src/ is in Python path
 export PYTHONPATH=$PYTHONPATH:$PWD
 # Or run from project root
-cd K:\business\projects_v2\Athar
+cd K:\business\projects_v2\Burhan
 ```
 
 ### Out of disk space

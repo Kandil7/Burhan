@@ -1,5 +1,5 @@
 """
-Verification Schemas for Athar Islamic QA system.
+Verification Schemas for Burhan Islamic QA system.
 
 Defines the canonical schemas for the verification layer.
 """

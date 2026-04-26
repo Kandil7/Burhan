@@ -1,4 +1,4 @@
-"""Metadata module for Athar Islamic QA system."""
+"""Metadata module for Burhan Islamic QA system."""
 
 from src.indexing.metadata.title_loader import TitleLoader
 from src.indexing.metadata.master_catalog import MasterCatalog, master_catalog, BookEntry, TextCategory

@@ -1,4 +1,4 @@
-  **Architectural Specification for the Athar Multi-Agent Islamic Knowledge RAG System**
+  **Architectural Specification for the Burhan Multi-Agent Islamic Knowledge RAG System**
 
 - الأقسام الرئيسية:
   0. Scope and Audience  
@@ -15,17 +15,17 @@
   11. Production Deployment Considerations (BGE‑M3, E5, ONNX, quantization، chunking)  
   12. Non-Goals  
 
-وبه استشهادات مختصرة مبنية على مصادر حديثة عن BGE‑M3، LangGraph، وQdrant (quantization + hybrid search + resource optimization)، بالإضافة إلى ملخص Athar‑Datasets الموجود عندك كـ corpus ضخم من 15.7M+ passages و ~8.4k مصدر أولي. [huggingface](https://huggingface.co/BAAI/bge-m3)
+وبه استشهادات مختصرة مبنية على مصادر حديثة عن BGE‑M3، LangGraph، وQdrant (quantization + hybrid search + resource optimization)، بالإضافة إلى ملخص Burhan‑Datasets الموجود عندك كـ corpus ضخم من 15.7M+ passages و ~8.4k مصدر أولي. [huggingface](https://huggingface.co/BAAI/bge-m3)
 
 ما أستطيع فعله الآن هو إعطاؤك **النص الكامل جاهز نسخ‑لصق**:
 
 ***
 
-# Architectural Specification for the Athar Multi-Agent Islamic Knowledge RAG System
+# Architectural Specification for the Burhan Multi-Agent Islamic Knowledge RAG System
 
 ## 0. Scope and Audience
 
-This document specifies the core architecture of the Athar Multi-Agent Retrieval-Augmented Generation (RAG) system. It targets backend/ML engineers, information retrieval researchers, and Islamic studies specialists involved in designing, maintaining, or auditing Athar in production.
+This document specifies the core architecture of the Burhan Multi-Agent Retrieval-Augmented Generation (RAG) system. It targets backend/ML engineers, information retrieval researchers, and Islamic studies specialists involved in designing, maintaining, or auditing Burhan in production.
 
 The goal is to provide a production-grade, Arabic-centric framework that unifies classical Islamic scholarship workflows (isnad, takhrij, tahqiq, ikhtilaf handling) with modern multi-agent RAG, vector search, and verification techniques. [arxiv](https://arxiv.org/abs/2402.03216)
 
@@ -33,9 +33,9 @@ The goal is to provide a production-grade, Arabic-centric framework that unifies
 
 ## 1. System Overview: Digital Isnad at Scale
 
-Athar operates on top of Athar-Datasets (15.7M+ passages from 8,400+ primary sources) to implement a "Digital Isnad" framework: every answer must be grounded in traceable, historically verified texts. The system is designed to: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Athar-Dataset.txt)
+Burhan operates on top of Burhan-Datasets (15.7M+ passages from 8,400+ primary sources) to implement a "Digital Isnad" framework: every answer must be grounded in traceable, historically verified texts. The system is designed to: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 
-- Support Arabic-first queries and responses across classical and modern registers. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Athar-Dataset.txt)
+- Support Arabic-first queries and responses across classical and modern registers. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 - Enforce epistemic integrity for religious knowledge (fatawa, hadith, tafsir, aqeedah).
 - Move from a single naive RAG pipeline to a multi-agent, verification-heavy orchestration layer.
 
@@ -205,7 +205,7 @@ The lifecycle of a `CollectionAgent` mirrors classical Islamic research methodol
 
 ## 3. Retrieval Strategy Matrix
 
-Athar uses domain-specific retrieval configurations tuned for each agent. Different collections have different structure (hadith vs. seerah vs. history) and therefore different BM25/dense weighting and filter priorities. [qdrant](https://qdrant.tech/articles/hybrid-search/)
+Burhan uses domain-specific retrieval configurations tuned for each agent. Different collections have different structure (hadith vs. seerah vs. history) and therefore different BM25/dense weighting and filter priorities. [qdrant](https://qdrant.tech/articles/hybrid-search/)
 
 ### 3.1 Domain-Specific Strategy Table
 
@@ -309,7 +309,7 @@ These prompt constraints align with the Digital Isnad and verification design ab
 
 ### 6.1 Enrichment Pipeline and Era Bucketing
 
-At indexing time, Athar joins raw passages with bibliographic and biographical catalogs to produce rich payloads, including: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Athar-Dataset.txt)
+At indexing time, Burhan joins raw passages with bibliographic and biographical catalogs to produce rich payloads, including: [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 
 - `book_id`, `book_title`, `author_id`, `author_name`, `author_death_year`.
 - `madhhab`, `aqeedah_school`, `era`, `category_main`, `category_sub`.
@@ -385,7 +385,7 @@ Large collections (e.g., hadith, fiqh) use tuned HNSW and quantization settings:
 
 ### 8.2 Resource Optimization
 
-These settings allow Athar to:
+These settings allow Burhan to:
 
 - Run large collections on CPU-optimized servers.
 - Fit vectors into RAM while leaving payloads on NVMe.
@@ -395,7 +395,7 @@ These settings allow Athar to:
 
 ## 9. Cross-Agent Orchestration Patterns
 
-Athar uses LangGraph to implement three primary orchestration patterns for multi-hop queries: [inexture](https://www.inexture.ai/agentic-rag-with-langgraph-adaptive-retrieval-production/)
+Burhan uses LangGraph to implement three primary orchestration patterns for multi-hop queries: [inexture](https://www.inexture.ai/agentic-rag-with-langgraph-adaptive-retrieval-production/)
 
 - Sequential (Methodological Path): `UsulFiqhAgent -> FiqhAgent -> HadithAgent` for questions about how a ruling is derived.
 - Parallel (Holistic Path): `FiqhAgent`, `HadithAgent`, and `TazkiyahAgent` run concurrently on questions like fasting to cover rulings, narrations, and spiritual meanings.
@@ -407,7 +407,7 @@ Orchestration is implemented as a LangGraph `StateGraph` where nodes are agent c
 
 ## 10. Evaluation Framework
 
-Athar uses a "Golden Test Set" (~10k Arabic QA pairs) and modern evaluation tools to benchmark: [dev](https://dev.to/dowhatmatters/a-complete-architecture-guide-for-rag-agent-systems-454i)
+Burhan uses a "Golden Test Set" (~10k Arabic QA pairs) and modern evaluation tools to benchmark: [dev](https://dev.to/dowhatmatters/a-complete-architecture-guide-for-rag-agent-systems-454i)
 
 - Retrieval quality (Recall@k per agent/collection).
 - Citation precision and groundedness.
@@ -428,9 +428,9 @@ Evaluation is performed with tools like Ragas (Arabic-ready) and LLM-based judge
 
 ### 11.2 Indexing Strategy
 
-- Page-level chunking for fiqh and tafsir to preserve ruling context. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Athar-Dataset.txt)
+- Page-level chunking for fiqh and tafsir to preserve ruling context. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 - 256-token chunks for hadith to guarantee matn + isnad remain in a single vector.
-- Prioritize indexing for hadith and fiqh collections, as they dominate query volume and require strongest guarantees. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Athar-Dataset.txt)
+- Prioritize indexing for hadith and fiqh collections, as they dominate query volume and require strongest guarantees. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/f33d27d0-36ae-4a87-b8b8-696472d31141/chat-Search-Burhan-Dataset.txt)
 
 ***
 
@@ -438,7 +438,7 @@ Evaluation is performed with tools like Ragas (Arabic-ready) and LLM-based judge
 
 The current specification does not cover:
 
-- Frontend/UI design for Athar consumer applications.
+- Frontend/UI design for Burhan consumer applications.
 - Dataset ingestion/cleaning tools beyond enriched payload structure.
 - Detailed DevOps pipelines (CI/CD, monitoring stack, etc.).
 

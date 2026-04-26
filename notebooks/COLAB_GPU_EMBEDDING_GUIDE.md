@@ -1,4 +1,4 @@
-# 🚀 Colab GPU Embedding Setup Guide - Athar Islamic QA System
+# 🚀 Colab GPU Embedding Setup Guide - Burhan Islamic QA System
 
 ## Complete Step-by-Step Instructions
 
@@ -16,7 +16,7 @@ This guide walks you through embedding 5.7M documents from 10 collections using 
 5. ✅ ~8 hours of Colab time
 
 ### Data Location Options:
-- **Option A:** Download from HuggingFace (Kandil7/Athar-Datasets)
+- **Option A:** Download from HuggingFace (Kandil7/Burhan-Datasets)
 - **Option B:** Upload from local machine (42.6 GB)
 - **Option C:** Use Google Drive (upload first, then Colab)
 
@@ -69,13 +69,13 @@ from huggingface_hub import snapshot_download
 
 # Download all collections
 snapshot_download(
-    repo_id="Kandil7/Athar-Datasets",
-    local_dir="/content/athar-collections",
+    repo_id="Kandil7/Burhan-Datasets",
+    local_dir="/content/Burhan-collections",
     repo_type="dataset"
 )
 
 # Verify
-!ls -lh /content/athar-collections/
+!ls -lh /content/Burhan-collections/
 ```
 
 ### Option B: Upload from Google Drive
@@ -85,7 +85,7 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 # Copy to working directory
-!cp -r /content/drive/MyDrive/Athar-Collections /content/athar-collections
+!cp -r /content/drive/MyDrive/Burhan-Collections /content/Burhan-collections
 ```
 
 ### Option C: Upload Directly
@@ -115,7 +115,7 @@ COLLECTIONS = [
 ]
 
 # Paths
-COLLECTIONS_DIR = "/content/athar-collections/collections"
+COLLECTIONS_DIR = "/content/Burhan-collections/collections"
 
 # Qdrant configuration
 QDRANT_URL = "http://your-qdrant-url:6333"
@@ -238,11 +238,11 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 import os
-os.makedirs('/content/drive/MyDrive/Athar-Embeddings', exist_ok=True)
+os.makedirs('/content/drive/MyDrive/Burhan-Embeddings', exist_ok=True)
 
 for collection in COLLECTIONS:
     src = f"/content/{collection}_embeddings.npy"
-    dst = f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy"
+    dst = f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy"
     if os.path.exists(src):
         !cp {src} {dst}
         print(f"✅ Saved {collection} embeddings")
@@ -413,7 +413,7 @@ BATCH_SIZE = 512  # or 256
 ```python
 # Save every 30 minutes
 if time.time() - last_save > 1800:
-    np.save(f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy", embeddings)
+    np.save(f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy", embeddings)
 ```
 
 ### Issue 3: Qdrant Upload Too Slow
@@ -463,7 +463,7 @@ def log_progress(collection, status, elapsed):
 
 1. ✅ Verify all 10 collections in Qdrant
 2. ✅ Test retrieval with sample queries
-3. ✅ Update Athar config to use Qdrant
+3. ✅ Update Burhan config to use Qdrant
 4. ✅ Run integration tests
 5. ✅ Deploy to production
 

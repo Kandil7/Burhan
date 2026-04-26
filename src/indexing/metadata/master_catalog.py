@@ -1,5 +1,5 @@
 # Master Catalog Module
-"""Master catalog for all Athar collections and texts."""
+"""Master catalog for all Burhan collections and texts."""
 
 from typing import Dict, List, Optional
 from dataclasses import dataclass

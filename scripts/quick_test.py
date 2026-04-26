@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick Smoke Test for Athar Islamic QA System API.
+Quick Smoke Test for Burhan Islamic QA System API.
 
 Tests all critical endpoints with minimal overhead:
 - Health check
@@ -15,7 +15,7 @@ Usage:
     python scripts/quick_test.py --url http://localhost:8000
     python scripts/quick_test.py --verbose
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -405,9 +405,9 @@ def print_summary(suite: TestSuite) -> None:
 
 
 def main():
-    """Run quick smoke tests against Athar API."""
+    """Run quick smoke tests against Burhan API."""
     parser = argparse.ArgumentParser(
-        description="Quick smoke test for Athar API",
+        description="Quick smoke test for Burhan API",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -432,7 +432,7 @@ Examples:
         base_url = f"http://localhost:{args.port}"
 
     print(f"\n{'=' * 70}")
-    print("🕌 ATHAR ISLAMIC QA - QUICK SMOKE TEST")
+    print("🕌 Burhan ISLAMIC QA - QUICK SMOKE TEST")
     print(f"{'=' * 70}")
     print(f"  Target: {base_url}")
     if args.filter:

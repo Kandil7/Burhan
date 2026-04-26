@@ -1,4 +1,4 @@
-# 🎉 Athar Islamic QA System - ARCHITECTURE IMPROVEMENTS COMPLETE
+# 🎉 Burhan Islamic QA System - ARCHITECTURE IMPROVEMENTS COMPLETE
 
 ## ✅ What's Been Improved
 

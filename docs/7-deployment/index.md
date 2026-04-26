@@ -1,6 +1,6 @@
-# 🚀 Athar Deployment Guide
+# 🚀 Burhan Deployment Guide
 
-Complete guide for deploying Athar Islamic QA system to production.
+Complete guide for deploying Burhan Islamic QA system to production.
 
 ---
 
@@ -47,8 +47,8 @@ Complete guide for deploying Athar Islamic QA system to production.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 ```
 
 ### 2. Create Environment File
@@ -63,13 +63,13 @@ Edit `.env` file:
 
 ```env
 # Application
-APP_NAME=Athar
+APP_NAME=Burhan
 APP_ENV=production
 DEBUG=false
 SECRET_KEY=your-super-secret-key-here
 
 # Database
-DATABASE_URL=postgresql+asyncpg://athar:your_password@postgres:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:your_password@postgres:5432/Burhan_db
 
 # Redis
 REDIS_URL=redis://:your_redis_password@redis:6379/0
@@ -134,29 +134,29 @@ docker compose -f docker/docker-compose.prod.yml ps
 
 ```bash
 # Create virtual environment
-python -m venv /opt/athar/venv
-source /opt/athar/venv/bin/activate
+python -m venv /opt/Burhan/venv
+source /opt/Burhan/venv/bin/activate
 
 # Install dependencies
-pip install -e "/opt/athar[prod]"
+pip install -e "/opt/Burhan[prod]"
 
 # Setup systemd service
-sudo nano /etc/systemd/system/athar-api.service
+sudo nano /etc/systemd/system/Burhan-api.service
 ```
 
-**athar-api.service:**
+**Burhan-api.service:**
 ```ini
 [Unit]
-Description=Athar API
+Description=Burhan API
 After=network.target postgresql.service redis.service
 
 [Service]
 Type=simple
-User=athar
-Group=athar
-WorkingDirectory=/opt/athar
-Environment=PATH=/opt/athar/venv/bin
-ExecStart=/opt/athar/venv/bin/uvicorn src.api.main:app --host 0.0.0.0 --port 8000
+User=Burhan
+Group=Burhan
+WorkingDirectory=/opt/Burhan
+Environment=PATH=/opt/Burhan/venv/bin
+ExecStart=/opt/Burhan/venv/bin/uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 Restart=always
 
 [Install]
@@ -166,7 +166,7 @@ WantedBy=multi-user.target
 ### 2. Frontend Setup
 
 ```bash
-cd /opt/athar/frontend
+cd /opt/Burhan/frontend
 
 # Install dependencies
 npm ci
@@ -201,7 +201,7 @@ server {
 
     # Static files
     location /static/ {
-        alias /opt/athar/frontend/.next/static/;
+        alias /opt/Burhan/frontend/.next/static/;
         expires 1y;
     }
 }
@@ -215,8 +215,8 @@ server {
 
 ```bash
 # Run migration script
-psql -U athar -d athar_db -f migrations/001_initial_schema.sql
-psql -U athar -d athar_db -f migrations/002_quran_translations_tafsir.sql
+psql -U Burhan -d Burhan_db -f migrations/001_initial_schema.sql
+psql -U Burhan -d Burhan_db -f migrations/002_quran_translations_tafsir.sql
 ```
 
 ### Seed Quran Data
@@ -233,7 +233,7 @@ python scripts/seed_quran_data.py --source api
 
 ```bash
 # Connect to database
-psql -U athar -d athar_db
+psql -U Burhan -d Burhan_db
 
 # Check tables
 \dt
@@ -255,7 +255,7 @@ SELECT COUNT(*) FROM surahs;
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `APP_NAME` | No | Athar | Application name |
+| `APP_NAME` | No | Burhan | Application name |
 | `APP_ENV` | Yes | development | Environment (development/production) |
 | `DEBUG` | Yes | false | Debug mode |
 | `DATABASE_URL` | Yes | - | PostgreSQL connection string |
@@ -285,10 +285,10 @@ Collections are auto-created on first use:
 curl http://localhost:8000/health
 
 # Database health
-docker exec athar-postgres pg_isready -U athar
+docker exec Burhan-postgres pg_isready -U Burhan
 
 # Redis health
-docker exec athar-redis redis-cli ping
+docker exec Burhan-redis redis-cli ping
 
 # Qdrant health
 curl http://localhost:6333/healthz
@@ -333,7 +333,7 @@ docker ps | grep postgres
 echo $DATABASE_URL
 
 # Test connection
-docker exec -it athar-postgres psql -U athar -d athar_db -c "SELECT 1;"
+docker exec -it Burhan-postgres psql -U Burhan -d Burhan_db -c "SELECT 1;"
 ```
 
 ---
@@ -350,7 +350,7 @@ Error: Cannot connect to Redis
 docker ps | grep redis
 
 # Test connection
-docker exec -it athar-redis redis-cli ping
+docker exec -it Burhan-redis redis-cli ping
 ```
 
 ---

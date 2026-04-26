@@ -12,7 +12,7 @@ Usage:
     python scripts/prepare_datasets_for_upload_v2.py
 
 Output:
-    data/athar-datasets/
+    data/Burhan-datasets/
     ├── README.md                           # Dataset documentation
     ├── dataset_info.json                   # Dataset metadata
     ├── hierarchical_chunks/                # OPTIMIZED CHUNKS (recommended)
@@ -53,7 +53,7 @@ except ImportError as e:
 
 # Configuration
 DATASETS_DIR = Path("datasets")
-OUTPUT_DIR = Path("data/athar-datasets-v2")
+OUTPUT_DIR = Path("data/Burhan-datasets-v2")
 MAX_FILE_SIZE = 4 * 1024**3  # 4 GB (safe under 5 GB git-lfs limit)
 CHUNK_SIZE = 500 * 1024**2  # 500 MB per archive chunk
 
@@ -252,11 +252,11 @@ def prepare_metadata():
     print("\n📋 Preparing metadata...")
 
     metadata = {
-        "name": "Athar Islamic QA System Datasets (v2)",
+        "name": "Burhan Islamic QA System Datasets (v2)",
         "description": "Comprehensive Islamic scholarly texts with hierarchical chunking for optimal RAG",
         "version": "2.0.0",
         "license": "MIT",
-        "homepage": "https://github.com/Kandil7/Athar",
+        "homepage": "https://github.com/Kandil7/Burhan",
         "chunking_strategy": {
             "type": "hierarchical",
             "levels": ["book_metadata", "chapter_boundaries", "page_boundaries", "content_split"],
@@ -292,7 +292,7 @@ def prepare_metadata():
             "medicine_science": {"description": "Islamic medicine & science", "estimated_books": 40},
         },
         "usage": {
-            "citation": "@misc{athar2026, title={Athar Islamic QA System Datasets}, author={Athar Team}, year={2026}, version={2.0}}",
+            "citation": "@misc{Burhan2026, title={Burhan Islamic QA System Datasets}, author={Burhan Team}, year={2026}, version={2.0}}",
             "acknowledgment": "Data sourced from Shamela Library and Sanadset Hadith Dataset",
         },
     }
@@ -303,7 +303,7 @@ def prepare_metadata():
 def main():
     """Main preparation function."""
     print("=" * 70)
-    print("🕌 ATHAR - PREPARE DATASETS FOR UPLOAD (v2 - Hierarchical)")
+    print("🕌 Burhan - PREPARE DATASETS FOR UPLOAD (v2 - Hierarchical)")
     print("=" * 70)
 
     # Create output directory
@@ -434,7 +434,7 @@ print(chunks[0]['page_number'])
 ```
 """
 
-    readme_content = f"""# 🕌 Athar Islamic QA System - Datasets (v2)
+    readme_content = f"""# 🕌 Burhan Islamic QA System - Datasets (v2)
 
 Comprehensive Islamic scholarly texts with hierarchical chunking for optimal RAG performance.
 
@@ -475,11 +475,11 @@ Comprehensive Islamic scholarly texts with hierarchical chunking for optimal RAG
 ## Citation
 
 ```
-@misc{{athar2026,
-  title={{Athar Islamic QA System Datasets}},
-  author={{Athar Team}},
+@misc{{Burhan2026,
+  title={{Burhan Islamic QA System Datasets}},
+  author={{Burhan Team}},
   year={{2026}},
-  url={{https://huggingface.co/datasets/Kandil7/Athar-Datasets}},
+  url={{https://huggingface.co/datasets/Kandil7/Burhan-Datasets}},
   version={{2.0}}
 }}
 ```

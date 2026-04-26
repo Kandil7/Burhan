@@ -1,5 +1,5 @@
 """
-Error handling middleware for Athar Islamic QA system.
+Error handling middleware for Burhan Islamic QA system.
 
 Catches all exceptions and returns structured error responses.
 """

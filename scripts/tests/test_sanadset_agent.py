@@ -13,7 +13,7 @@ Usage:
     python scripts/tests/test_sanadset_agent.py --query "صلاة الجمعة"
     python scripts/tests/test_sanadset_agent.py --verbose
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse

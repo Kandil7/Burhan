@@ -1,4 +1,4 @@
-# 🚀 Quick Start - Athar Islamic QA System
+# 🚀 Quick Start - Burhan Islamic QA System
 
 ## Option 1: One-Command Start (Recommended)
 
@@ -30,7 +30,7 @@ docker compose -f docker/docker-compose.dev.yml ps
 
 ```bash
 # On Windows
-docker exec -i athar-postgres psql -U athar -d athar_db < migrations/001_initial_schema.sql
+docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql
 ```
 
 ### Step 3: Start Backend API

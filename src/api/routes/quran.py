@@ -1,5 +1,5 @@
 """
-Quran API endpoints for Athar Islamic QA system.
+Quran API endpoints for Burhan Islamic QA system.
 
 Provides endpoints for:
 - Listing surahs

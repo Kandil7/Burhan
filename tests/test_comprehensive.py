@@ -1,5 +1,5 @@
 """
-Comprehensive Test Suite for Athar Islamic QA System.
+Comprehensive Test Suite for Burhan Islamic QA System.
 
 Tests all major components for correctness and edge cases.
 Phase 9: Added comprehensive test coverage.
@@ -471,16 +471,16 @@ class TestCitation:
 class TestExceptions:
     """Tests for exception hierarchy."""
 
-    def test_athar_exception(self):
-        """Test base Athar exception."""
-        from src.core.exceptions import AtharException, AtharErrorCode
+    def test_Burhan_exception(self):
+        """Test base Burhan exception."""
+        from src.core.exceptions import BurhanException, BurhanErrorCode
 
-        exc = AtharException(
+        exc = BurhanException(
             "Test error",
-            AtharErrorCode.INVALID_QUERY,
+            BurhanErrorCode.INVALID_QUERY,
         )
 
-        assert exc.code == AtharErrorCode.INVALID_QUERY
+        assert exc.code == BurhanErrorCode.INVALID_QUERY
         assert exc.status_code == 400
 
     def test_retrieval_exception(self):

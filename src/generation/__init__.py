@@ -1,5 +1,5 @@
 """
-Generation module for Athar Islamic QA system.
+Generation module for Burhan Islamic QA system.
 
 This module handles the generation of responses based on verified evidence.
 It ensures generation only consumes output from the verification layer.

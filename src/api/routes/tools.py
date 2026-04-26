@@ -1,5 +1,5 @@
 """
-Tools endpoint for Athar Islamic QA system.
+Tools endpoint for Burhan Islamic QA system.
 
 Provides deterministic tools (zakat, inheritance, prayer times, etc.).
 """

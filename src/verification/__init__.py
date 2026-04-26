@@ -1,5 +1,5 @@
 """
-Verification module - first-class verification layer for Athar.
+Verification module - first-class verification layer for Burhan.
 """
 
 from src.verification.schemas import (

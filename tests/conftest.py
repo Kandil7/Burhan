@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for Athar tests.
+Pytest configuration and fixtures for Burhan tests.
 
 Provides common fixtures and configuration for all tests.
 """

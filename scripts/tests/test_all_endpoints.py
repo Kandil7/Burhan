@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive API Test Suite for Athar Islamic QA System.
+Comprehensive API Test Suite for Burhan Islamic QA System.
 
 Tests every endpoint with detailed output.
 Usage:
@@ -378,7 +378,7 @@ def test_error_handling():
 
 def main():
     """Run all tests."""
-    print_header("🕌 ATHAR ISLAMIC QA SYSTEM - COMPREHENSIVE API TEST SUITE")
+    print_header("🕌 Burhan ISLAMIC QA SYSTEM - COMPREHENSIVE API TEST SUITE")
     
     print(f"{Colors.BOLD}Testing against:{Colors.ENDC} {BASE_URL}\n")
     

@@ -1,4 +1,4 @@
-# 🕌 Athar - Complete File-by-File Documentation
+# 🕌 Burhan - Complete File-by-File Documentation
 
 ## Every Single File Explained in Detail
 
@@ -18,7 +18,7 @@ This document provides an exhaustive explanation of every file in the `src/` dir
 
 ```python
 """
-Base types for Athar agents.
+Base types for Burhan agents.
 
 This module provides core types that were expected to be migrated from v1
 but were never implemented. Re-exports from canonical locations.
@@ -418,7 +418,7 @@ from fastapi import FastAPI
 from src.api.routes import ask_router, search_router, tools_router, quran_router
 
 app = FastAPI(
-    title="Athar Islamic QA API",
+    title="Burhan Islamic QA API",
     version="0.5.0",
     description="Islamic QA System with RAG",
     docs_url="/docs",
@@ -439,7 +439,7 @@ app.include_router(quran_router, prefix=v1)         # /api/v1/quran
 
 @app.get("/")
 async def root():
-    return {"message": "Athar API", "version": app.version}
+    return {"message": "Burhan API", "version": app.version}
 ```
 
 ---

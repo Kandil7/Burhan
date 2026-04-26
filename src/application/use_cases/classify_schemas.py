@@ -1,5 +1,5 @@
 """
-Query Intent Enum for Athar Islamic QA System.
+Query Intent Enum for Burhan Islamic QA System.
 
 This enum represents high-level domain intents for query classification.
 It's kept for backward compatibility - the canonical classifier uses

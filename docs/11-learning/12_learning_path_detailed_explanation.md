@@ -1,4 +1,4 @@
-# 🎯 شرح مستويات خطة تعلم Athar - تفصيل كامل بالعربية
+# 🎯 شرح مستويات خطة تعلم Burhan - تفصيل كامل بالعربية
 
 ## 🕌 مقدمة
 
@@ -12,7 +12,7 @@
 
 **"مبتدئ كامل"** يعني:
 - لم تفتح المشروع بعد
-- لا تعرف ما هو Athar
+- لا تعرف ما هو Burhan
 - لم ترَ أي سطر من الكود
 - لا تعرف البنية التقنية
 
@@ -82,8 +82,8 @@ git --version
 # افتح terminal أو PowerShell
 # اذهب للمجلد الذي تريد حفظ المشروع فيه
 
-git clone https://github.com/Kandil7/Athar.git
-cd Athar
+git clone https://github.com/Kandil7/Burhan.git
+cd Burhan
 
 # تحقق من الملفات
 ls
@@ -95,7 +95,7 @@ ls
 ```
 1. افتح VS Code
 2. File → Open Folder
-3. اختر مجلد Athar
+3. اختر مجلد Burhan
 4. انتظر حتى يحمّل المشروع
 ```
 
@@ -176,7 +176,7 @@ ls
 ## 📍 ما معنى هذا المستوى؟
 
 **"فهم عام"** يعني:
-- تعرف ما هو Athar بشكل عام
+- تعرف ما هو Burhan بشكل عام
 - تعرف البنية العامة (المجلدات الرئيسية)
 - تستطيع تشغيل التطبيق
 - ترى الـ API يعمل أمامك
@@ -190,12 +190,12 @@ ls
 
 ## 🎯 الأهداف الأربعة بالتفصيل
 
-### الهدف 1: تعرف ما هو Athar
+### الهدف 1: تعرف ما هو Burhan
 
 **ما يجب أن تعرفه:**
 
 ```
-Athar هو:
+Burhan هو:
 ├── نظام إجابة على الأسئلة الإسلامية
 ├── يستخدم الذكاء الاصطناعي (AI)
 ├── يستخدم تقنية RAG (Retrieval-Augmented Generation)
@@ -214,7 +214,7 @@ Athar هو:
 
 **لماذا مهم:**
 - بدون فهم الهدف، لا تفهم لماذا الكود مكتوب هكذا
-- Athar ليس مجرد تطبيق عادي، هو نظام ديني موثوق
+- Burhan ليس مجرد تطبيق عادي، هو نظام ديني موثوق
 
 ---
 
@@ -223,7 +223,7 @@ Athar هو:
 **ما يجب أن تعرفه:**
 
 ```
-Athar/
+Burhan/
 │
 ├── src/                    ← الكود الأساسي (Python)
 │   ├── api/                ← نقاط الدخول (18 endpoint)
@@ -361,10 +361,10 @@ curl http://localhost:8002/health
 ```
 على ورقة، ارسم:
 
-1. مربع كبير يكتب عليه "Athar"
+1. مربع كبير يكتب عليه "Burhan"
 2. داخله مربعات أصغر لكل مجلد رئيسي:
    ┌─────────────────────────────────┐
-   │           Athar                  │
+   │           Burhan                  │
    │  ┌─────┐ ┌──────┐ ┌──────┐     │
    │  │ api │ │config│ │ core │     │
    │  └─────┘ └──────┘ └──────┘     │
@@ -389,7 +389,7 @@ curl http://localhost:8002/health
 **الأسئلة الخمسة:**
 
 ```
-1. ما هو Athar؟
+1. ما هو Burhan؟
    ← نظام إجابة على الأسئلة الإسلامية باستخدام AI و RAG
 
 2. كم عدد الـ endpoints؟
@@ -447,7 +447,7 @@ curl http://localhost:8002/health
 تستطيع القول "أكملت المستوى 1" عندما:
 
 ```
-✅ تستطيع شرح ما هو Athar في جملتين
+✅ تستطيع شرح ما هو Burhan في جملتين
 ✅ تستطيع رسم خريطة المشروع من الذاكرة
 ✅ التطبيق يعمل عندك على المنفذ 8002
 [ ] ترى {"status": "ok"} عند استدعاء /health
@@ -476,7 +476,7 @@ curl http://localhost:8002/health
 "هذا مشروع معقد جداً... هل أستطيع فهمه؟"
 
 أثناء المستوى 1:
-"أها! Athar هو نظام إجابة إسلامي. البنية واضحة..."
+"أها! Burhan هو نظام إجابة إسلامي. البنية واضحة..."
 
 بعد المستوى 1:
 "فهمت الصورة العامة! التطبيق يعمل! مستعد للتفاصيل!"
@@ -536,7 +536,7 @@ curl http://localhost:8002/health
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="Athar Islamic QA System",  # ← اسم التطبيق
+        title="Burhan Islamic QA System",  # ← اسم التطبيق
         version="0.5.0",                   # ← الإصدار
         docs_url="/docs",                  # ← Swagger UI
     )
@@ -558,7 +558,7 @@ from src.api.main import create_app
 
 app = create_app()
 
-print(app.title)       # "Athar Islamic QA System"
+print(app.title)       # "Burhan Islamic QA System"
 print(app.version)     # "0.5.0"
 print(app.routes)      # قائمة الـ routes
 ```
@@ -580,13 +580,13 @@ print(app.routes)      # قائمة الـ routes
 # 2. كيف يعمل:
 
 class Settings(BaseSettings):
-    app_name: str = "Athar"
+    app_name: str = "Burhan"
     llm_provider: str = "groq"
     database_url: str = "postgresql+asyncpg://..."
 
 # ما يحدث:
 # 1. يبحث عن ملف .env
-# 2. يقرأ APP_NAME=Athar
+# 2. يقرأ APP_NAME=Burhan
 # 3. يطابقه مع app_name في الكلاس
 # 4. إذا لم يجد، يستخدم القيمة الافتراضية
 ```
@@ -595,7 +595,7 @@ class Settings(BaseSettings):
 
 | المتغير | النوع | الافتراضي | الوصف |
 |---------|-------|-----------|-------|
-| `app_name` | str | "Athar" | اسم التطبيق |
+| `app_name` | str | "Burhan" | اسم التطبيق |
 | `llm_provider` | str | "groq" | مزود الـ LLM |
 | `groq_model` | str | "qwen/qwen3-32b" | نموذج Groq |
 | `embedding_model` | str | "BAAI/bge-m3" | نموذج التضمين |

@@ -1,6 +1,6 @@
-# Athar Scripts
+# Burhan Scripts
 
-Automation scripts for managing the Athar Islamic QA System.
+Automation scripts for managing the Burhan Islamic QA System.
 
 ---
 

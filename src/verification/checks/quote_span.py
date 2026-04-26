@@ -1,5 +1,5 @@
 """
-Quote span detection for Athar verification pipeline.
+Quote span detection for Burhan verification pipeline.
 
 Design contract (enforced by tests):
   ✅  ﴿...﴾   — Quranic brackets        → extract inner text (strict match)

@@ -1,5 +1,5 @@
 """
-RAG Search Prompts for Athar Islamic QA System.
+RAG Search Prompts for Burhan Islamic QA System.
 
 Contains prompts for RAG-based search operations that combine
 multiple Islamic domains (aqeedah, fiqh, hadith, tafsir, seerah, etc.).

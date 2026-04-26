@@ -1,5 +1,5 @@
 """
-LLM-based Intent Classifier for Athar Islamic QA system.
+LLM-based Intent Classifier for Burhan Islamic QA system.
 
 Uses any OpenAI-compatible chat completion API with JSON-mode output.
 Temperature is fixed at 0.0 for deterministic, reproducible routing.
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 _SYSTEM_PROMPT = (
-    "You are an expert intent classifier for an Islamic QA system called Athar. "
+    "You are an expert intent classifier for an Islamic QA system called Burhan. "
     "Return ONLY valid JSON — no markdown, no explanations, no code fences."
 )
 

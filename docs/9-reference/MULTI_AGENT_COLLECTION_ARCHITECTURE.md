@@ -1,8 +1,8 @@
-# Athar Multi-Agent Collection-Aware RAG Architecture
+# Burhan Multi-Agent Collection-Aware RAG Architecture
 
 ## Overview
 
-This document describes the implementation of the Multi-Agent Collection-Aware RAG system for Athar Islamic QA. The architecture enables hybrid dense/sparse retrieval with per-agent verification and orchestration.
+This document describes the implementation of the Multi-Agent Collection-Aware RAG system for Burhan Islamic QA. The architecture enables hybrid dense/sparse retrieval with per-agent verification and orchestration.
 
 ---
 
@@ -565,5 +565,5 @@ src/
 - [Verification Framework](./VERIFICATION_FRAMEWORK.md) - Verification system
 - [Orchestration Patterns](./ORCHESTRATION_PATTERNS.md) - Multi-agent patterns
 - [Refactor Plan](./refactor_plan_add_multi_agent_collection_ware.md) - Implementation plan
-- [CollectionAgent Architecture](./Athar%20CollectionAgent%20Architecture%20and%20Multi-Agent%20RAG%20Design.md) - Design reference
+- [CollectionAgent Architecture](./Burhan%20CollectionAgent%20Architecture%20and%20Multi-Agent%20RAG%20Design.md) - Design reference
 - [API Documentation](../5-api/COMPLETE_DOCUMENTATION.md)

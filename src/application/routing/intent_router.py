@@ -1,5 +1,5 @@
 """
-Intent Router for Athar Islamic QA System.
+Intent Router for Burhan Islamic QA System.
 
 Routes queries to agents based on intent classification.
 Uses the canonical KeywordBasedClassifier from classifier_factory.py.

@@ -1,5 +1,5 @@
 """
-Redis client for Athar Islamic QA system.
+Redis client for Burhan Islamic QA system.
 
 Provides async Redis connection for caching, session management,
 and rate limiting.

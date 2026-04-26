@@ -1,7 +1,7 @@
 """
 SeerahHierarchicalChunker
 =========================
-Hierarchical chunking strategy for Seerah (and general Athar) corpora.
+Hierarchical chunking strategy for Seerah (and general Burhan) corpora.
 
 Core idea
 ---------

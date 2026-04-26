@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick RAG Data Seeder for Athar Islamic QA System.
+Quick RAG Data Seeder for Burhan Islamic QA System.
 
 Seeds sample fiqh and general Islamic passages into Qdrant
 with embeddings to enable RAG search.
@@ -89,7 +89,7 @@ GENERAL_PASSAGES = [
 async def seed_rag_data():
     """Seed sample data into Qdrant with embeddings."""
     print("\n" + "=" * 60)
-    print("🌱 ATHAR RAG DATA SEEDER")
+    print("🌱 Burhan RAG DATA SEEDER")
     print("=" * 60 + "\n")
 
     # Initialize embedding model

@@ -5,7 +5,7 @@ import subprocess
 import os
 from pathlib import Path
 
-BASE_DIR = Path(r"K:\business\projects_v2\Athar\datasets\system_book_datasets")
+BASE_DIR = Path(r"K:\business\projects_v2\Burhan\datasets\system_book_datasets")
 
 def try_java_lucene_reader():
     """Try to use Java to read Lucene index."""
@@ -59,7 +59,7 @@ public class LuceneReader {
         
         # Check if lucene jars are available
         lucene_jars = []
-        for root, dirs, files in os.walk(r"K:\business\projects_v2\Athar"):
+        for root, dirs, files in os.walk(r"K:\business\projects_v2\Burhan"):
             for f in files:
                 if f.endswith(".jar") and "lucene" in f.lower():
                     lucene_jars.append(os.path.join(root, f))

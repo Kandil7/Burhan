@@ -1,5 +1,5 @@
 """
-Structured exception hierarchy for Athar Islamic QA System.
+Structured exception hierarchy for Burhan Islamic QA System.
 
 Provides meaningful error codes and structured error details for better
 error handling, logging, and API responses.
@@ -11,7 +11,7 @@ from enum import Enum
 from typing import Any
 
 
-class AtharErrorCode(str, Enum):
+class BurhanErrorCode(str, Enum):
     """Error codes with business meaning."""
 
     RETRIEVAL_FAILED = "retrieval_failed"
@@ -31,13 +31,13 @@ class AtharErrorCode(str, Enum):
     QUOTA_EXCEEDED = "quota_exceeded"
 
 
-class AtharException(Exception):
+class BurhanException(Exception):
     """Base exception with structured error code."""
 
     def __init__(
         self,
         message: str,
-        code: AtharErrorCode,
+        code: BurhanErrorCode,
         details: dict[str, Any] | None = None,
         status_code: int = 500,
     ):
@@ -56,7 +56,7 @@ class AtharException(Exception):
         }
 
 
-class RetrievalException(AtharException):
+class RetrievalException(BurhanException):
     """Raised when document retrieval fails."""
 
     def __init__(
@@ -66,13 +66,13 @@ class RetrievalException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.RETRIEVAL_FAILED,
+            BurhanErrorCode.RETRIEVAL_FAILED,
             details,
             status_code=503,
         )
 
 
-class ClassificationException(AtharException):
+class ClassificationException(BurhanException):
     """Raised when intent classification fails."""
 
     def __init__(
@@ -82,25 +82,25 @@ class ClassificationException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.CLASSIFICATION_FAILED,
+            BurhanErrorCode.CLASSIFICATION_FAILED,
             details,
             status_code=422,
         )
 
 
-class AgentTimeoutException(AtharException):
+class AgentTimeoutException(BurhanException):
     """Raised when agent execution times out."""
 
     def __init__(self, agent_name: str, timeout_seconds: float):
         super().__init__(
             f"Agent '{agent_name}' timed out after {timeout_seconds}s",
-            AtharErrorCode.AGENT_TIMEOUT,
+            BurhanErrorCode.AGENT_TIMEOUT,
             {"agent": agent_name, "timeout_seconds": timeout_seconds},
             status_code=504,
         )
 
 
-class AgentExecutionException(AtharException):
+class AgentExecutionException(BurhanException):
     """Raised when agent execution fails."""
 
     def __init__(
@@ -113,13 +113,13 @@ class AgentExecutionException(AtharException):
         details["agent"] = agent_name
         super().__init__(
             f"Agent '{agent_name}' execution failed: {message}",
-            AtharErrorCode.AGENT_EXECUTION_FAILED,
+            BurhanErrorCode.AGENT_EXECUTION_FAILED,
             details,
             status_code=500,
         )
 
 
-class VectorStoreException(AtharException):
+class VectorStoreException(BurhanException):
     """Raised when vector store operations fail."""
 
     def __init__(
@@ -129,13 +129,13 @@ class VectorStoreException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.VECTOR_STORE_UNAVAILABLE,
+            BurhanErrorCode.VECTOR_STORE_UNAVAILABLE,
             details,
             status_code=503,
         )
 
 
-class LLMGenerationException(AtharException):
+class LLMGenerationException(BurhanException):
     """Raised when LLM generation fails."""
 
     def __init__(
@@ -145,13 +145,13 @@ class LLMGenerationException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.LLM_GENERATION_FAILED,
+            BurhanErrorCode.LLM_GENERATION_FAILED,
             details,
             status_code=502,
         )
 
 
-class EmbeddingException(AtharException):
+class EmbeddingException(BurhanException):
     """Raised when embedding generation fails."""
 
     def __init__(
@@ -161,13 +161,13 @@ class EmbeddingException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.EMBEDDING_FAILED,
+            BurhanErrorCode.EMBEDDING_FAILED,
             details,
             status_code=502,
         )
 
 
-class InvalidQueryException(AtharException):
+class InvalidQueryException(BurhanException):
     """Raised when query validation fails."""
 
     def __init__(
@@ -177,13 +177,13 @@ class InvalidQueryException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.INVALID_QUERY,
+            BurhanErrorCode.INVALID_QUERY,
             details,
             status_code=400,
         )
 
 
-class AuthenticationException(AtharException):
+class AuthenticationException(BurhanException):
     """Raised when authentication fails."""
 
     def __init__(
@@ -193,13 +193,13 @@ class AuthenticationException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.AUTHENTICATION_FAILED,
+            BurhanErrorCode.AUTHENTICATION_FAILED,
             details,
             status_code=401,
         )
 
 
-class RateLimitException(AtharException):
+class RateLimitException(BurhanException):
     """Raised when rate limit is exceeded."""
 
     def __init__(
@@ -217,13 +217,13 @@ class RateLimitException(AtharException):
         )
         super().__init__(
             f"Rate limit exceeded: {limit} requests per {window_seconds}s",
-            AtharErrorCode.RATE_LIMIT_EXCEEDED,
+            BurhanErrorCode.RATE_LIMIT_EXCEEDED,
             details,
             status_code=429,
         )
 
 
-class DatabaseException(AtharException):
+class DatabaseException(BurhanException):
     """Raised when database operations fail."""
 
     def __init__(
@@ -233,13 +233,13 @@ class DatabaseException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.DATABASE_ERROR,
+            BurhanErrorCode.DATABASE_ERROR,
             details,
             status_code=500,
         )
 
 
-class NotFoundException(AtharException):
+class NotFoundException(BurhanException):
     """Raised when a resource is not found."""
 
     def __init__(
@@ -253,13 +253,13 @@ class NotFoundException(AtharException):
         details["identifier"] = identifier
         super().__init__(
             f"{resource} not found: {identifier}",
-            AtharErrorCode.NOT_FOUND,
+            BurhanErrorCode.NOT_FOUND,
             details,
             status_code=404,
         )
 
 
-class ConfigurationException(AtharException):
+class ConfigurationException(BurhanException):
     """Raised when configuration is invalid."""
 
     def __init__(
@@ -269,7 +269,7 @@ class ConfigurationException(AtharException):
     ):
         super().__init__(
             message,
-            AtharErrorCode.CONFIGURATION_ERROR,
+            BurhanErrorCode.CONFIGURATION_ERROR,
             details,
             status_code=500,
         )

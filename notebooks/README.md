@@ -1,4 +1,4 @@
-# 🕌 Athar - Complete Notebooks Guide
+# 🕌 Burhan - Complete Notebooks Guide
 
 **Last Updated:** April 15, 2026  
 **Status:** Phase 8 Complete - Ready for GPU Embedding  
@@ -59,7 +59,7 @@ The data has been uploaded to HuggingFace:
 
 ```bash
 # Verify uploads
-poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
+poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Datasets
 ```
 
 **Status:** ✅ All 10 collections uploaded (42.6 GB total)
@@ -133,7 +133,7 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Athar-Datasets
 ### Upload Progress ✅ COMPLETE
 
 ```
-Repository: Kandil7/Athar-Datasets
+Repository: Kandil7/Burhan-Datasets
 Status: Complete ✅
 
 Collections uploaded:
@@ -195,7 +195,7 @@ If you want to store data on Google Drive:
 ```
 Google Drive/
 └── MyDrive/
-    └── Athar/
+    └── Burhan/
         ├── collections/
         │   ├── fiqh_passages.jsonl
         │   ├── hadith_passages.jsonl
@@ -287,10 +287,10 @@ login(token="hf_YOUR_TOKEN_HERE")
 
 ## Resources
 
-- **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **Hugging Face Repo:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
 - **Colab:** https://colab.research.google.com
 - **BGE-m3 Model:** https://huggingface.co/BAAI/bge-m3
-- **Athar GitHub:** https://github.com/Kandil7/Athar
+- **Burhan GitHub:** https://github.com/Kandil7/Burhan
 - **Qdrant Docs:** https://qdrant.tech/documentation
 - **Phase 8 Details:** [docs/10-operations/LUCENE_MERGE_COMPLETE.md](/docs/10-operations/LUCENE_MERGE_COMPLETE.md)
 

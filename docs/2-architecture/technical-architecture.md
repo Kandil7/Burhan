@@ -1,6 +1,6 @@
-# 🏗️ Athar Architecture Documentation
+# 🏗️ Burhan Architecture Documentation
 
-Detailed technical architecture of the Athar Islamic QA system.
+Detailed technical architecture of the Burhan Islamic QA system.
 
 ---
 
@@ -22,7 +22,7 @@ Detailed technical architecture of the Athar Islamic QA system.
 
 ## 🎯 System Overview
 
-Athar is a **multi-agent Islamic QA system** based on the Fanar-Sadiq research architecture. It provides grounded, citation-backed answers to Islamic questions using:
+Burhan is a **multi-agent Islamic QA system** based on the Fanar-Sadiq research architecture. It provides grounded, citation-backed answers to Islamic questions using:
 
 - **Intent Classification**: Route questions to specialized pipelines
 - **Deterministic Calculators**: Accurate zakat and inheritance calculations

@@ -6,7 +6,7 @@ import sqlite3
 import os
 from pathlib import Path
 
-BASE_DIR = Path(r"K:\business\projects_v2\Athar\datasets\system_book_datasets")
+BASE_DIR = Path(r"K:\business\projects_v2\Burhan\datasets\system_book_datasets")
 
 def hex_to_arabic(data):
     if isinstance(data, bytes):
@@ -86,7 +86,7 @@ def check_extracted_books_structure():
     """Check what extracted_books looks like for comparison."""
     print("\n=== EXTRACTED BOOKS STRUCTURE ===")
     
-    extracted_dir = Path(r"K:\business\projects_v2\Athar\datasets\extracted_books")
+    extracted_dir = Path(r"K:\business\projects_v2\Burhan\datasets\extracted_books")
     if not extracted_dir.exists():
         print("Extracted books directory not found")
         return
@@ -111,7 +111,7 @@ def check_dataset_directories():
     """Check all dataset directories."""
     print("\n=== ALL DATASET DIRECTORIES ===")
     
-    datasets_dir = Path(r"K:\business\projects_v2\Athar\datasets")
+    datasets_dir = Path(r"K:\business\projects_v2\Burhan\datasets")
     for item in sorted(datasets_dir.iterdir()):
         if item.is_dir():
             print(f"\nDirectory: {item.name}")

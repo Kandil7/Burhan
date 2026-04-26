@@ -1,4 +1,4 @@
-# Athar Complete Source Code Reference
+# Burhan Complete Source Code Reference
 
 ## Every File Explained in Detail
 
@@ -38,7 +38,7 @@ This document provides the most comprehensive explanation of every single file i
 
 ## Overview
 
-The Athar Islamic QA system is built with a multi-agent architecture that combines:
+The Burhan Islamic QA system is built with a multi-agent architecture that combines:
 
 - **Retrieval-Augmented Generation (RAG)**: Semantic and keyword search to find relevant Islamic texts
 - **Multi-Agent System**: Specialized agents for different Islamic domains (Fiqh, Hadith, Tafsir, etc.)
@@ -424,7 +424,7 @@ from fastapi import FastAPI
 from src.api.routes import ask_router, search_router, tools_router, quran_router
 
 app = FastAPI(
-    title="Athar Islamic QA API",
+    title="Burhan Islamic QA API",
     version="0.5.0",
     description="Islamic QA System with RAG",
     docs_url="/docs",
@@ -911,7 +911,7 @@ class AgentRegistry:
 **Key Exceptions**:
 | Exception | Use Case |
 |-----------|----------|
-| `AtharError` | Base exception |
+| `BurhanError` | Base exception |
 | `ConfigurationError` | Config not found or invalid |
 | `RetrievalError` | Retrieval failure |
 | `VerificationError` | Verification failure |
@@ -1136,7 +1136,7 @@ Indexing pipelines.
 
 | File | Purpose |
 |------|---------|
-| `ingest_athar.py` | Main ingestion pipeline |
+| `ingest_Burhan.py` | Main ingestion pipeline |
 | `build_collection_indexes.py` | Build collection indexes |
 | `analyze_chunks.py` | Analyze document chunks |
 | `sync_metadata.py` | Sync metadata |

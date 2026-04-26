@@ -1,5 +1,5 @@
 """
-Quran Sub-Router for Athar Islamic QA system.
+Quran Sub-Router for Burhan Islamic QA system.
 
 Fixes:
   - _keyword_match: specific patterns evaluated BEFORE generic ones

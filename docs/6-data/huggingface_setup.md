@@ -1,6 +1,6 @@
 # 🤗 Hugging Face Datasets Setup Guide
 
-Complete guide for uploading and accessing Athar datasets on Hugging Face.
+Complete guide for uploading and accessing Burhan datasets on Hugging Face.
 
 ---
 
@@ -87,18 +87,18 @@ huggingface-cli login
 git lfs install
 
 # 4. Create dataset repository
-huggingface-cli repo create Athar-Datasets --type dataset
+huggingface-cli repo create Burhan-Datasets --type dataset
 
 # 5. Clone repository
-git clone https://huggingface.co/datasets/Kandil7/Athar-Datasets
-cd Athar-Datasets
+git clone https://huggingface.co/datasets/Kandil7/Burhan-Datasets
+cd Burhan-Datasets
 
 # 6. Copy dataset files
-cp -r /path/to/athar-datasets/* .
+cp -r /path/to/Burhan-datasets/* .
 
 # 7. Add and commit
 git add .
-git commit -m "Upload Athar datasets"
+git commit -m "Upload Burhan datasets"
 
 # 8. Push (large files via LFS)
 git push
@@ -142,7 +142,7 @@ git push
 ### Required Structure
 
 ```
-Athar-Datasets/
+Burhan-Datasets/
 ├── README.md                    # Dataset documentation
 ├── dataset_info.json            # Metadata
 ├── extracted_books/
@@ -176,11 +176,11 @@ Athar-Datasets/
 from datasets import load_dataset
 
 # Load entire dataset (downloads first)
-dataset = load_dataset("Kandil7/Athar-Datasets")
+dataset = load_dataset("Kandil7/Burhan-Datasets")
 
 # Stream (no download needed)
 dataset = load_dataset(
-    "Kandil7/Athar-Datasets",
+    "Kandil7/Burhan-Datasets",
     streaming=True
 )
 
@@ -196,7 +196,7 @@ from huggingface_hub import hf_hub_download
 
 # Download specific file
 file_path = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="hadith/sanadset.csv",
     repo_type="dataset"
 )
@@ -220,7 +220,7 @@ files_to_download = [
 for filename in files_to_download:
     print(f"📥 Downloading: {filename}")
     path = hf_hub_download(
-        repo_id="Kandil7/Athar-Datasets",
+        repo_id="Kandil7/Burhan-Datasets",
         filename=filename,
         repo_type="dataset"
     )
@@ -237,7 +237,7 @@ login()  # Uses token from secrets
 
 # Download
 path = hf_hub_download(
-    repo_id="Kandil7/Athar-Datasets",
+    repo_id="Kandil7/Burhan-Datasets",
     filename="hadith/sanadset.csv",
     repo_type="dataset"
 )
@@ -298,7 +298,7 @@ from datasets import load_dataset
 
 # Stream data (no download)
 dataset = load_dataset(
-    "Kandil7/Athar-Datasets",
+    "Kandil7/Burhan-Datasets",
     streaming=True,
     split="train"
 )
@@ -368,7 +368,7 @@ from datasets import load_dataset
 
 # Don't download everything
 dataset = load_dataset(
-    "Kandil7/Athar-Datasets",
+    "Kandil7/Burhan-Datasets",
     streaming=True
 )
 
@@ -387,7 +387,7 @@ git push origin v1.0.0
 # Use specific version
 from datasets import load_dataset
 dataset = load_dataset(
-    "Kandil7/Athar-Datasets",
+    "Kandil7/Burhan-Datasets",
     revision="v1.0.0"  # Specific version
 )
 ```

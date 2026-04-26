@@ -1,7 +1,7 @@
 """
-Collection Policy for Athar retrieval system.
+Collection Policy for Burhan retrieval system.
 
-Defines retrieval policies for different Athar-Datasets
+Defines retrieval policies for different Burhan-Datasets
 collections, including priority, weighting, and filtering rules.
 
 Phase 9: Added collection policy for collection-aware retrieval.

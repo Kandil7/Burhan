@@ -12,7 +12,7 @@ load_dotenv()
 from huggingface_hub import HfApi
 
 # Configuration
-REPO_ID = "Kandil7/Athar-Datasets"
+REPO_ID = "Kandil7/Burhan-Datasets"
 LOCAL_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HF_HUB_TOKEN")
 
 # New README content
@@ -26,7 +26,7 @@ task_categories:
 - text-generation
 - text-retrieval
 - fill-mask
-pretty_name: Athar Islamic QA Datasets
+pretty_name: Burhan Islamic QA Datasets
 tags:
 - islamic-studies
 - quran
@@ -86,11 +86,11 @@ dataset_info:
     - path: usul_fiqh.jsonl
 ---
 
-# 🕌 Athar Islamic QA Datasets (Mini Dataset v2)
+# 🕌 Burhan Islamic QA Datasets (Mini Dataset v2)
 
 > **100,000 passages from 10 classical Islamic collections — a sampling of 1.4M years of scholarship**
 
-A streamlined subset of the full Athar Islamic QA dataset, containing 10,000 passages per collection across 10 major Islamic disciplines. Perfect for testing, development, and prototyping RAG-based Islamic QA systems.
+A streamlined subset of the full Burhan Islamic QA dataset, containing 10,000 passages per collection across 10 major Islamic disciplines. Perfect for testing, development, and prototyping RAG-based Islamic QA systems.
 
 **Based on the Fanar-Sadiq Architecture** for grounded, citation-backed Islamic question answering.
 
@@ -179,10 +179,10 @@ Each passage contains the following fields:
 from datasets import load_dataset
 
 # Load the full dataset (all collections)
-ds = load_dataset("Kandil7/Athar-Datasets")
+ds = load_dataset("Kandil7/Burhan-Datasets")
 
 # Load a specific collection
-ds = load_dataset("Kandil7/Athar-Datasets", split="train")
+ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
 
 # Access specific collection
 for row in ds:
@@ -209,7 +209,7 @@ print(f"Loaded {len(passages):,} fiqh passages")
 from datasets import load_dataset
 
 # Stream data without downloading
-ds = load_dataset("Kandil7/Athar-Datasets", split="train", streaming=True)
+ds = load_dataset("Kandil7/Burhan-Datasets", split="train", streaming=True)
 
 for i, passage in enumerate(ds):
     if i >= 5:
@@ -257,7 +257,7 @@ for idx in top_idx:
 ```python
 from datasets import load_dataset
 
-ds = load_dataset("Kandil7/Athar-Datasets", split="train")
+ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
 
 # Get only hadith passages
 hadith_only = ds.filter(lambda x: x['collection'] == 'hadith_passages')
@@ -274,7 +274,7 @@ print(f"Aqeedah passages: {len(aqeedah_only):,}")
 from datasets import load_dataset
 from collections import Counter
 
-ds = load_dataset("Kandil7/Athar-Datasets", split="train")
+ds = load_dataset("Kandil7/Burhan-Datasets", split="train")
 
 # Count authors per collection
 author_counts = Counter()
@@ -309,9 +309,9 @@ for coll, count in author_counts.most_common():
 
 ### Full Dataset (15.7M passages)
 
-The complete Athar dataset with 15.7M passages from 8,425 books:
+The complete Burhan dataset with 15.7M passages from 8,425 books:
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
 - **Size:** ~4.3 GB compressed
 - **Passages:** 15,700,000+
 
@@ -319,17 +319,17 @@ The complete Athar dataset with 15.7M passages from 8,425 books:
 
 A balanced subset for development and testing:
 
-- **URL:** https://huggingface.co/datasets/Kandil7/Athar-Datasets
+- **URL:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets
 - **Size:** ~235 MB
 - **Passages:** 100,000 (10K per collection)
 
 ---
 
-## 🏗️ Parent Project: Athar
+## 🏗️ Parent Project: Burhan
 
-Athar is a production-ready Islamic QA system built on this dataset:
+Burhan is a production-ready Islamic QA system built on this dataset:
 
-- **GitHub:** https://github.com/Kandil7/Athar
+- **GitHub:** https://github.com/Kandil7/Burhan
 - **Architecture:** Fanar-Sadiq Multi-Agent System
 - **Features:**
   - Grounded, citation-backed answers
@@ -348,11 +348,11 @@ Athar is a production-ready Islamic QA system built on this dataset:
 If you use this dataset, please cite:
 
 ```bibtex
-@misc{athar-mini-dataset-v2-2026,
-  title={Athar Islamic QA Datasets (Mini Dataset v2)},
+@misc{Burhan-mini-dataset-v2-2026,
+  title={Burhan Islamic QA Datasets (Mini Dataset v2)},
   author={Kandil, Ahmed},
   year={2026},
-  url={https://huggingface.co/datasets/Kandil7/Athar-Datasets},
+  url={https://huggingface.co/datasets/Kandil7/Burhan-Datasets},
   note={100K passages from 10 Islamic collections}
 }
 ```
@@ -376,7 +376,7 @@ If you use this dataset, please cite:
 ## 📁 File Structure
 
 ```
-Kandil7/Athar-Datasets/
+Kandil7/Burhan-Datasets/
 ├── aqeedah_passages.jsonl           # 10,000 passages
 ├── arabic_language_passages.jsonl    # 10,000 passages
 ├── fiqh_passages.jsonl               # 10,000 passages
@@ -394,7 +394,7 @@ Kandil7/Athar-Datasets/
 
 ## 📞 Contact & Support
 
-- **GitHub:** https://github.com/Kandil7/Athar
+- **GitHub:** https://github.com/Kandil7/Burhan
 - **HuggingFace:** https://huggingface.co/Kandil7
 
 ---
@@ -403,7 +403,7 @@ Kandil7/Athar-Datasets/
 
 **Built with ❤️ for the Muslim community**
 
-🕌 Athar Islamic QA • 100K passages • 10 collections • 1,400 years of scholarship
+🕌 Burhan Islamic QA • 100K passages • 10 collections • 1,400 years of scholarship
 
 </div>
 """

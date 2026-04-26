@@ -1,5 +1,5 @@
 """
-Intent Classifier Factory for Athar Islamic QA System.
+Intent Classifier Factory for Burhan Islamic QA System.
 
 Returns the correct IntentClassifier implementation based on settings.
 Coordinates between Keyword, Hybrid (Master), and LLM-based classifiers.

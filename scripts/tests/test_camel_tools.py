@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test CAMeL Tools integration for Athar Islamic QA System.
+Test CAMeL Tools integration for Burhan Islamic QA System.
 
 Demonstrates how CAMeL Tools improves Arabic text processing.
 Usage:
@@ -79,7 +79,7 @@ def test_morphological():
 
 def main():
     """Run all tests."""
-    print("\n🐫 CAMeL Tools Integration Test for Athar")
+    print("\n🐫 CAMeL Tools Integration Test for Burhan")
     print("="*60)
     
     results = []
@@ -108,7 +108,7 @@ def main():
     print(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 CAMeL Tools is ready for Athar integration!")
+        print("\n🎉 CAMeL Tools is ready for Burhan integration!")
     else:
         print("\n⚠️ Install CAMeL Tools: pip install camel-tools")
 

@@ -1,5 +1,5 @@
 """
-Hybrid Search Retriever for Athar Islamic QA system.
+Hybrid Search Retriever for Burhan Islamic QA system.
 
 Combines semantic search (embeddings) with keyword search (BM25)
 for better retrieval of Islamic texts.

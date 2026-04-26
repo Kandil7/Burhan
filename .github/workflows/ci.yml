@@ -49,9 +49,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: athar
-          POSTGRES_PASSWORD: athar_password
-          POSTGRES_DB: athar_db
+          POSTGRES_USER: Burhan
+          POSTGRES_PASSWORD: Burhan_password
+          POSTGRES_DB: Burhan_db
         ports:
           - 5432:5432
         options: >-
@@ -94,7 +94,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db" >> $GITHUB_ENV
           echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
           echo "QDRANT_URL=http://localhost:6333" >> $GITHUB_ENV
           echo "LLM_PROVIDER=groq" >> $GITHUB_ENV
@@ -166,8 +166,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -f docker/Dockerfile.api -t athar-api:${{ github.sha }} .
+          docker build -f docker/Dockerfile.api -t Burhan-api:${{ github.sha }} .
 
       - name: Test Docker image
         run: |
-          docker run --rm athar-api:${{ github.sha }} python --version
+          docker run --rm Burhan-api:${{ github.sha }} python --version

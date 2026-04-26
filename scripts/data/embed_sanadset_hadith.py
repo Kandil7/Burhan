@@ -26,7 +26,7 @@ Usage:
     # Start from scratch (ignore checkpoint)
     python scripts/data/embed_sanadset_hadith.py --no-resume
 
-Author: Athar Engineering Team
+Author: Burhan Engineering Team
 """
 
 import argparse
@@ -379,7 +379,7 @@ Examples:
     args = parser.parse_args()
 
     print(f"\n{'=' * 70}")
-    print("  ATHAR SANADSET HADITH EMBEDDING PIPELINE")
+    print("  Burhan SANADSET HADITH EMBEDDING PIPELINE")
     print(f"{'=' * 70}")
     print(f"  CSV:      {SANADSET_CSV}")
     print(f"  Batch:    {args.batch_size}")

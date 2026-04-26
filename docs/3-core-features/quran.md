@@ -1,6 +1,6 @@
-# 📖 Athar Quran Pipeline Guide
+# 📖 Burhan Quran Pipeline Guide
 
-Complete guide to the Quran processing system in Athar.
+Complete guide to the Quran processing system in Burhan.
 
 ---
 

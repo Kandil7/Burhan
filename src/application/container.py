@@ -1,5 +1,5 @@
 """
-Dependency injection container for Athar Islamic QA System.
+Dependency injection container for Burhan Islamic QA System.
 
 Provides centralized dependency management with lazy initialization
 for all infrastructure and application components.
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 class Container(containers.DeclarativeContainer):
     """
-    Dependency injection container for Athar application.
+    Dependency injection container for Burhan application.
 
     Provides lazy-initialized singletons for all major components.
 

@@ -1,5 +1,5 @@
 """
-Quotation Validation Engine for Athar Islamic QA system.
+Quotation Validation Engine for Burhan Islamic QA system.
 
 v3 — Complete file (no partial snippets):
   - candidates fetched once per validate() call

@@ -1,4 +1,4 @@
-"""Pipelines module for Athar Islamic QA system."""
+"""Pipelines module for Burhan Islamic QA system."""
 
 from src.indexing.pipelines.build_collection_indexes import (
     CollectionIndexer,

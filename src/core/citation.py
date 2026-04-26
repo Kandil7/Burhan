@@ -1,5 +1,5 @@
 """
-Core citation domain models for Athar.
+Core citation domain models for Burhan.
 
 - Citation: internal canonical representation.
 - CitationStats: simple stats for evaluation/metadata.
@@ -14,7 +14,7 @@ from typing import Optional, List, Dict, Any
 @dataclass
 class Citation:
     """
-    Internal citation representation used inside Athar.
+    Internal citation representation used inside Burhan.
 
     This is the canonical format that all agents/services should use.
     """
@@ -30,7 +30,7 @@ class Citation:
     hadith_number: Optional[str] = None
     page: Optional[str] = None
 
-    # Athar-specific metadata
+    # Burhan-specific metadata
     collection: Optional[str] = None      # e.g. seerah_passages, fiqh_passages
     category: Optional[str] = None        # e.g. "السيرة النبوية"
     content_type: Optional[str] = None    # e.g. "title", "page", "ayah", "hadith"

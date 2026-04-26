@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 :: ============================================
-:: ATHAR - FULL LUCENE EXTRACTION
+:: Burhan - FULL LUCENE EXTRACTION
 :: ============================================
 :: Extracts ALL Lucene indexes from Shamela system_book_datasets
 :: 
@@ -35,7 +35,7 @@ set JAVA_OPTS=-Xmx2g
 if not exist "%OUTPUT_DIR%" mkdir "%OUTPUT_DIR%"
 
 echo ======================================================================
-echo  ATHAR - FULL LUCENE INDEX EXTRACTION
+echo  Burhan - FULL LUCENE INDEX EXTRACTION
 echo ======================================================================
 echo.
 echo  Starting: %DATE% %TIME%

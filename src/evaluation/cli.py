@@ -1,5 +1,5 @@
 """
-Evaluation CLI for Athar RAG System.
+Evaluation CLI for Burhan RAG System.
 
 Provides command-line interface to run evaluations on golden sets.
 """
@@ -96,7 +96,7 @@ async def run_cli(args):
 def main():
     """Main entry point for CLI."""
     parser = argparse.ArgumentParser(
-        description="Run evaluation on Athar RAG system golden sets",
+        description="Run evaluation on Burhan RAG system golden sets",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

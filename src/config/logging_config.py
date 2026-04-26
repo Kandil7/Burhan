@@ -1,5 +1,5 @@
 """
-Logging configuration for Athar Islamic QA system.
+Logging configuration for Burhan Islamic QA system.
 
 Provides a LoggerWrapper that handles both structlog-style calls (with keyword args)
 and standard Python logging for maximum compatibility.
@@ -200,12 +200,12 @@ def get_logger(name: Optional[str] = None) -> LoggerWrapper:
     Get a logger instance that handles structlog-style calls.
 
     Args:
-        name: Logger name (defaults to "athar")
+        name: Logger name (defaults to "Burhan")
 
     Returns:
         LoggerWrapper instance
     """
     if name is None:
-        name = "athar"
+        name = "Burhan"
     logger = logging.getLogger(name)
     return LoggerWrapper(logger)

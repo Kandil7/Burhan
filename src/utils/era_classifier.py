@@ -1,5 +1,5 @@
 """
-Era Classifier for Athar Islamic QA system.
+Era Classifier for Burhan Islamic QA system.
 
 Classifies Islamic scholars into historical eras based on death year (Hijri).
 Extracted from duplicate code in HybridSearcher, CitationNormalizer, and HadithGrader.

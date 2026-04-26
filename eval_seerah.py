@@ -2,7 +2,7 @@
 """
 RAG Evaluation Script for Seerah Passages - Fixed Version
 
-Loads evaluation data from JSONL file and tests against Athar API.
+Loads evaluation data from JSONL file and tests against Burhan API.
 
 Usage:
     python eval_seerah.py                    # Run against localhost:8002

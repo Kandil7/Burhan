@@ -1,6 +1,6 @@
-# 🎨 Athar Frontend Documentation
+# 🎨 Burhan Frontend Documentation
 
-Complete guide to the Athar Next.js frontend application.
+Complete guide to the Burhan Next.js frontend application.
 
 ---
 
@@ -23,7 +23,7 @@ Complete guide to the Athar Next.js frontend application.
 
 ## 🎯 Overview
 
-The Athar frontend is a **Next.js 15** application providing a beautiful, RTL-enabled chat interface for the Islamic QA system.
+The Burhan frontend is a **Next.js 15** application providing a beautiful, RTL-enabled chat interface for the Islamic QA system.
 
 ### Key Features
 

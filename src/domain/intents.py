@@ -1,5 +1,5 @@
 """
-Domain intents and classifications for Athar Islamic QA system.
+Domain intents and classifications for Burhan Islamic QA system.
 
 This module defines:
 - Intent enum: Supported query intents
@@ -19,7 +19,7 @@ from typing import Dict, List
 
 class Intent(str, Enum):
     """
-    Supported query intents for Athar Islamic QA system.
+    Supported query intents for Burhan Islamic QA system.
     """
 
     FIQH = "fiqh"

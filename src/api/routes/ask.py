@@ -1,5 +1,5 @@
 """
-Ask endpoint for Athar Islamic QA system.
+Ask endpoint for Burhan Islamic QA system.
 
 Thin transport layer that delegates to application services/use-cases.
 """
@@ -22,7 +22,7 @@ ask_router = APIRouter(prefix="/ask", tags=["Ask"])
 @ask_router.post(
     "",
     response_model=AskResponse,
-    summary="Submit query to Athar Islamic QA system",
+    summary="Submit query to Burhan Islamic QA system",
     responses={
         400: {"model": ErrorResponse, "description": "Validation error"},
         500: {"model": ErrorResponse, "description": "Internal server error"},

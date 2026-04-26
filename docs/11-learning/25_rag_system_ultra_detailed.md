@@ -1437,4 +1437,4 @@ def strip_cot_leakage(text: str) -> str:
 
 **الإصدار**: 1.0
 
-**الكاتب**: Athar Documentation Team
+**الكاتب**: Burhan Documentation Team

@@ -1604,7 +1604,7 @@ def main():
     args = parser.parse_args()
 
     print(f"{'=' * 70}")
-    print("ATHAR - MERGE LUCENE CONTENT WITH MASTER CATALOG")
+    print("Burhan - MERGE LUCENE CONTENT WITH MASTER CATALOG")
     print(f"{'=' * 70}")
     print(f"  Collections:       {', '.join(args.collections)}")
     print(f"  Chunk size:        {args.chunk_size}")

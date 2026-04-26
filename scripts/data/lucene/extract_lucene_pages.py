@@ -658,7 +658,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 70)
-    print("ATHAR - LUCENE EXTRACTION PIPELINE")
+    print("Burhan - LUCENE EXTRACTION PIPELINE")
     print("=" * 70)
     print(f"  Indexes:     {', '.join(args.indexes)}")
     print(f"  Resume:      {args.resume}")

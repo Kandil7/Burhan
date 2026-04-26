@@ -1,5 +1,5 @@
 """
-Request/Response Logging Middleware for Athar Islamic QA System.
+Request/Response Logging Middleware for Burhan Islamic QA System.
 
 Logs all HTTP requests and responses with structured logging.
 Phase 10: Added request/response logging middleware.

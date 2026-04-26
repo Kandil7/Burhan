@@ -1,8 +1,8 @@
-# Athar Islamic QA System — Detailed Architecture
+# Burhan Islamic QA System — Detailed Architecture
 
 > **Version:** 0.5.0 | **Phase:** 6 — Multi-Agent & Mini-Dataset | **Date:** April 13, 2026  
 > **Based on:** Fanar-Sadiq Multi-Agent Architecture for Grounded Islamic QA  
-> **Repository:** https://github.com/Kandil7/Athar
+> **Repository:** https://github.com/Kandil7/Burhan
 
 ---
 
@@ -27,9 +27,9 @@
 
 ## 1. System Overview
 
-### What is Athar?
+### What is Burhan?
 
-**Athar** (أثر) is a production-ready, multi-agent Islamic Question & Answer system built on the **Fanar-Sadiq** research architecture. It provides grounded, citation-backed answers to religious questions across 16 intent types, combining probabilistic LLM reasoning with deterministic calculators and verified source retrieval.
+**Burhan** (أثر) is a production-ready, multi-agent Islamic Question & Answer system built on the **Fanar-Sadiq** research architecture. It provides grounded, citation-backed answers to religious questions across 16 intent types, combining probabilistic LLM reasoning with deterministic calculators and verified source retrieval.
 
 The system answers questions like:
 - *"ما حكم زكاة الأسهم؟"* → RAG pipeline retrieves fiqh passages, generates answer with citations
@@ -79,7 +79,7 @@ The system answers questions like:
 
 ## 2. 4-Layer Architecture
 
-Athar follows a clean 4-layer architecture with strict separation of concerns. Each layer has a single responsibility and communicates with adjacent layers through well-defined interfaces.
+Burhan follows a clean 4-layer architecture with strict separation of concerns. Each layer has a single responsibility and communicates with adjacent layers through well-defined interfaces.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -478,7 +478,7 @@ Input text: "As stated in Quran 2:255 and صحيح البخاري حديث 1234"
 
 **Prompt structure:**
 ```
-You are an expert intent classifier for an Islamic QA system called Athar.
+You are an expert intent classifier for an Islamic QA system called Burhan.
 
 Available Intents:
 - fiqh: Islamic jurisprudence (halal/haram, worship, transactions, rulings)
@@ -540,7 +540,7 @@ router_fallback_enabled: bool = True
 
 ## 5. Active Agents (6)
 
-Athar has 6 active agents implementing the `BaseAgent` interface. All RAG-based agents inherit from `BaseRAGAgent` to share retrieval, citation, and generation logic.
+Burhan has 6 active agents implementing the `BaseAgent` interface. All RAG-based agents inherit from `BaseRAGAgent` to share retrieval, citation, and generation logic.
 
 ### Agent Hierarchy
 
@@ -1100,7 +1100,7 @@ Book: صحيح البخاري
 
 **File:** `src/config/settings.py`
 
-Athar uses Pydantic `BaseSettings` for automatic environment variable parsing with type validation, defaults, and custom validators.
+Burhan uses Pydantic `BaseSettings` for automatic environment variable parsing with type validation, defaults, and custom validators.
 
 **Key Configuration Groups:**
 
@@ -1134,7 +1134,7 @@ SECRET_KEY=change-this-in-production-please-use-random-string
 # ==========================================
 # Database (PostgreSQL 16)
 # ==========================================
-DATABASE_URL=postgresql+asyncpg://athar:athar_password@localhost:5432/athar_db
+DATABASE_URL=postgresql+asyncpg://Burhan:Burhan_password@localhost:5432/Burhan_db
 DATABASE_POOL_SIZE=10
 DATABASE_MAX_OVERFLOW=20
 
@@ -1497,27 +1497,27 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: athar-postgres
+    container_name: Burhan-postgres
     environment:
-      POSTGRES_DB: athar_db
-      POSTGRES_USER: athar
-      POSTGRES_PASSWORD: athar_password
+      POSTGRES_DB: Burhan_db
+      POSTGRES_USER: Burhan
+      POSTGRES_PASSWORD: Burhan_password
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U athar -d athar_db"]
+      test: ["CMD-SHELL", "pg_isready -U Burhan -d Burhan_db"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - athar-network
+      - Burhan-network
 
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: athar-qdrant
+    container_name: Burhan-qdrant
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -1529,11 +1529,11 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - athar-network
+      - Burhan-network
 
   redis:
     image: redis:7-alpine
-    container_name: athar-redis
+    container_name: Burhan-redis
     ports:
       - "6379:6379"
     volumes:
@@ -1545,20 +1545,20 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - athar-network
+      - Burhan-network
 
   api:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
-    container_name: athar-api
+    container_name: Burhan-api
     ports:
       - "8000:8000"
     volumes:
       - ../src:/app/src
       - ../tests:/app/tests
     environment:
-      DATABASE_URL: postgresql+asyncpg://athar:athar_password@postgres:5432/athar_db
+      DATABASE_URL: postgresql+asyncpg://Burhan:Burhan_password@postgres:5432/Burhan_db
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -1568,11 +1568,11 @@ services:
       qdrant: { condition: service_healthy }
     command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
-      - athar-network
+      - Burhan-network
 
   frontend:
     image: node:20-alpine
-    container_name: athar-frontend
+    container_name: Burhan-frontend
     ports:
       - "3000:3000"
     profiles:
@@ -1580,7 +1580,7 @@ services:
     depends_on:
       - api
     networks:
-      - athar-network
+      - Burhan-network
 
 volumes:
   postgres_data:
@@ -1588,7 +1588,7 @@ volumes:
   redis_data:
 
 networks:
-  athar-network:
+  Burhan-network:
     driver: bridge
 ```
 
@@ -1668,9 +1668,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -f docker/Dockerfile.api -t athar-api:latest .
+        run: docker build -f docker/Dockerfile.api -t Burhan-api:latest .
       - name: Push to registry
-        run: docker push athar-api:latest
+        run: docker push Burhan-api:latest
 ```
 
 **Pipeline Stages:**
@@ -1767,7 +1767,7 @@ jobs:
 ## Appendix A: File Structure Reference
 
 ```
-K:\business\projects_v2\Athar\
+K:\business\projects_v2\Burhan\
 ├── src/
 │   ├── config/
 │   │   ├── settings.py           # Pydantic Settings (50+ vars)
@@ -1953,7 +1953,7 @@ app = create_app()
 
 <div align="center">
 
-**Athar Islamic QA System — Architecture Documentation**  
+**Burhan Islamic QA System — Architecture Documentation**  
 Built with ❤️ for the Muslim community  
 Based on Fanar-Sadiq Multi-Agent Architecture  
 Version 0.5.0 | Phase 6 | April 13, 2026
