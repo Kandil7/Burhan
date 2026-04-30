@@ -1,9 +1,9 @@
 # Retrieval Plan Module
 """Defines retrieval plans and execution strategies."""
 
-from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class PlanStage(str, Enum):
@@ -22,8 +22,8 @@ class RetrievalStep:
 
     stage: PlanStage
     action: str
-    params: Dict[str, Any] = field(default_factory=dict)
-    expected_output: Optional[str] = None
+    params: dict[str, Any] = field(default_factory=dict)
+    expected_output: str | None = None
 
 
 @dataclass
@@ -31,8 +31,8 @@ class RetrievalPlan:
     """A complete retrieval plan."""
 
     query: str
-    steps: List[RetrievalStep] = field(default_factory=list)
-    target_collections: List[str] = field(default_factory=list)
+    steps: list[RetrievalStep] = field(default_factory=list)
+    target_collections: list[str] = field(default_factory=list)
     max_results: int = 10
     enable_reranking: bool = True
 
@@ -40,7 +40,7 @@ class RetrievalPlan:
         """Add a step to the plan."""
         self.steps.append(step)
 
-    def get_steps_by_stage(self, stage: PlanStage) -> List[RetrievalStep]:
+    def get_steps_by_stage(self, stage: PlanStage) -> list[RetrievalStep]:
         """Get all steps for a specific stage."""
         return [s for s in self.steps if s.stage == stage]
 
@@ -49,7 +49,7 @@ class PlanExecutor:
     """Executes retrieval plans."""
 
     def __init__(self):
-        self.plan: Optional[RetrievalPlan] = None
+        self.plan: RetrievalPlan | None = None
 
     def execute(self, plan: RetrievalPlan) -> Any:
         """Execute a retrieval plan."""

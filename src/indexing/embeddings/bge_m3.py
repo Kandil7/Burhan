@@ -1,7 +1,7 @@
 # BGE-M3 Embedding Model
 """BGE-M3 multilingual embedding model."""
 
-from typing import List
+
 from .embedding_model import EmbeddingModel
 
 
@@ -12,12 +12,12 @@ class BGE_M3Embedding(EmbeddingModel):
         self.model_path = model_path
         self.model = None
 
-    def embed(self, text: str) -> List[float]:
+    def embed(self, text: str) -> list[float]:
         """Generate embedding for a single text."""
         # Placeholder - implement actual BGE-M3 embedding
         return [0.0] * self.dimension
 
-    def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for a batch of texts."""
         return [self.embed(text) for text in texts]
 

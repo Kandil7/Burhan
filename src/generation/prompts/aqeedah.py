@@ -1,8 +1,7 @@
 # Aqeedah Prompt Module
 """Prompts for Aqeedah (Islamic creed) responses."""
 
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 AQEEDAH_SYSTEM_PROMPT = """You are an expert in Islamic Theology (Aqeedah).
 Your responses should:
@@ -27,8 +26,8 @@ Provide a detailed explanation based on Islamic Aqeedah."""
 def get_aqeedah_prompt(
     question: str,
     sources: str,
-    focus: Optional[str] = None,
-) -> Dict[str, Any]:
+    focus: str | None = None,
+) -> dict[str, Any]:
     """Get an Aqeedah-specific prompt."""
     user_prompt = AQEEDAH_USER_PROMPT_TEMPLATE.format(
         question=question,

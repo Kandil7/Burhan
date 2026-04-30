@@ -1,8 +1,7 @@
 # Tafsir Prompt Module
 """Prompts for Tafsir (Quranic exegesis) responses."""
 
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 TAFSIR_SYSTEM_PROMPT = """You are an expert in Quranic exegesis (Tafsir).
 Your responses should:
@@ -27,8 +26,8 @@ Provide a detailed explanation based on classical Quranic exegesis."""
 def get_tafsir_prompt(
     question: str,
     verses: str,
-    tafsir_source: Optional[str] = None,
-) -> Dict[str, Any]:
+    tafsir_source: str | None = None,
+) -> dict[str, Any]:
     """Get a Tafsir-specific prompt."""
     user_prompt = TAFSIR_USER_PROMPT_TEMPLATE.format(
         question=question,

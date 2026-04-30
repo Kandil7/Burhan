@@ -187,7 +187,7 @@ class AskResponse(BaseModel):
         description="List of citations with structured references",
     )
 
-    
+
     citation_chunks: list[dict[str, Any]] = Field(
         default_factory=list,
         description="Full chunks/passages used in the answer (text + metadata)",

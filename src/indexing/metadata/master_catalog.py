@@ -1,7 +1,6 @@
 # Master Catalog Module
 """Master catalog for all Burhan collections and texts."""
 
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -30,11 +29,11 @@ class BookEntry:
     category: TextCategory
     language: str = "arabic"
     authority_weight: float = 0.8
-    collection: Optional[str] = None
+    collection: str | None = None
 
 
 # Master catalog of all books
-MASTER_CATALOG: Dict[str, BookEntry] = {
+MASTER_CATALOG: dict[str, BookEntry] = {
     # Quran
     "quran": BookEntry(
         book_id="quran",
@@ -82,20 +81,20 @@ class MasterCatalog:
     def __init__(self):
         self.catalog = MASTER_CATALOG
 
-    def get_book(self, book_id: str) -> Optional[BookEntry]:
+    def get_book(self, book_id: str) -> BookEntry | None:
         """Get book by ID."""
         return self.catalog.get(book_id)
 
-    def get_books_by_category(self, category: TextCategory) -> List[BookEntry]:
+    def get_books_by_category(self, category: TextCategory) -> list[BookEntry]:
         """Get all books in a category."""
         return [b for b in self.catalog.values() if b.category == category]
 
-    def search_books(self, query: str) -> List[BookEntry]:
+    def search_books(self, query: str) -> list[BookEntry]:
         """Search books by title."""
         query_lower = query.lower()
         return [b for b in self.catalog.values() if query_lower in b.title.lower()]
 
-    def get_all_books(self) -> List[BookEntry]:
+    def get_all_books(self) -> list[BookEntry]:
         """Get all books."""
         return list(self.catalog.values())
 

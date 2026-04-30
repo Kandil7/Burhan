@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import re
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -24,7 +25,6 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
-from src.agents.base import strip_cot_leakage
 from src.domain.intents import Intent
 
 # =============================================================================

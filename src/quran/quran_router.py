@@ -10,9 +10,9 @@ Fixes:
 
 from __future__ import annotations
 
-from src.domain.intents import QuranSubIntent
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+from src.domain.intents import QuranSubIntent
 
 logger = get_logger()
 

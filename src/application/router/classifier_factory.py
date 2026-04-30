@@ -14,16 +14,17 @@ Note: EmbeddingClassifier is in src/application/router/embedding_classifier.py
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from src.application.interfaces import IntentClassifier
 from src.config.logging_config import get_logger
 from src.domain.intents import (
-    Intent,
-    INTENT_DESCRIPTIONS,
     KEYWORD_PATTERNS as INTENT_KEYWORDS,
-    normalize_arabic,
+)
+from src.domain.intents import (
+    Intent,
     detect_language,
+    normalize_arabic,
 )
 from src.domain.models import ClassificationResult
 
@@ -56,7 +57,7 @@ class KeywordBasedClassifier(QueryClassifier):
     Uses robust Arabic normalization and match counting for classification.
     """
 
-    def __init__(self, keywords: Optional[Dict[Intent, List[str]]] = None):
+    def __init__(self, keywords: dict[Intent, list[str]] | None = None):
         """
         Initialize the classifier with keywords.
 
@@ -65,7 +66,7 @@ class KeywordBasedClassifier(QueryClassifier):
         """
         self.keywords = keywords or INTENT_KEYWORDS
         # Pre-normalize keywords for performance
-        self._norm_keywords: Dict[Intent, List[str]] = {
+        self._norm_keywords: dict[Intent, list[str]] = {
             intent: [normalize_arabic(kw) for kw in kws] for intent, kws in self.keywords.items()
         }
 
@@ -84,7 +85,7 @@ class KeywordBasedClassifier(QueryClassifier):
         norm_query = normalize_arabic(query)
 
         # Count matches per intent
-        matches: Dict[Intent, int] = {}
+        matches: dict[Intent, int] = {}
         for intent, patterns in self._norm_keywords.items():
             count = sum(1 for p in patterns if p in norm_query)
             if count > 0:

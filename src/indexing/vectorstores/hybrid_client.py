@@ -9,7 +9,7 @@ Provides:
 Phase 3.2: Qdrant Collections Setup for hybrid search.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from qdrant_client import QdrantClient
@@ -25,13 +25,10 @@ from qdrant_client.models import (
 from src.config.logging_config import get_logger
 
 from .hybrid_config import (
-    COLLECTION_CONFIGS,
-    CollectionConfig,
     DenseVectorConfig,
     HNSWConfig,
     QuantizationConfig,
     SparseVectorConfig,
-    get_collection_config,
 )
 
 logger = get_logger()
@@ -73,7 +70,7 @@ class HybridQdrantClient:
             url: Qdrant server URL (default: from settings)
             api_key: Qdrant API key (optional)
         """
-        self._client: Optional[QdrantClient] = None
+        self._client: QdrantClient | None = None
         self._url = url
         self._api_key = api_key
         self._initialized = False
@@ -175,8 +172,8 @@ class HybridQdrantClient:
         self,
         collection: str,
         dense_vec: np.ndarray,
-        sparse_vec: Optional[SparseVector] = None,
-        filters: Optional[dict[str, Any]] = None,
+        sparse_vec: SparseVector | None = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
         alpha: float = 0.6,
     ) -> list[dict[str, Any]]:
@@ -216,7 +213,7 @@ class HybridQdrantClient:
 
         # If sparse vector provided, use hybrid search with both
         if sparse_vec is not None:
-            sparse_weight = 1.0 - alpha
+            1.0 - alpha
 
             # Use prefetch for hybrid search
             query_params["prefetch"] = [
@@ -271,7 +268,7 @@ class HybridQdrantClient:
         self,
         collection: str,
         query_vector: np.ndarray,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
     ) -> list[dict[str, Any]]:
         """
@@ -323,7 +320,7 @@ class HybridQdrantClient:
         self,
         collection: str,
         sparse_query: SparseVector,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
     ) -> list[dict[str, Any]]:
         """
@@ -376,7 +373,7 @@ class HybridQdrantClient:
         collection: str,
         documents: list[dict[str, Any]],
         dense_embeddings: np.ndarray,
-        sparse_vectors: Optional[list[SparseVector]] = None,
+        sparse_vectors: list[SparseVector] | None = None,
     ) -> int:
         """
         Upsert documents with both dense and sparse vectors.

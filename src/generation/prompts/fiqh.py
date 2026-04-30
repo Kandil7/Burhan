@@ -1,8 +1,7 @@
 # Fiqh Prompt Module
 """Prompts for Fiqh (Islamic jurisprudence) responses."""
 
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 FIQH_SYSTEM_PROMPT = """You are an expert in Islamic Fiqh (jurisprudence).
 Your responses should:
@@ -26,8 +25,8 @@ Provide a detailed answer based on Islamic Fiqh principles."""
 def get_fiqh_prompt(
     question: str,
     context: str,
-    school: Optional[str] = None,
-) -> Dict[str, Any]:
+    school: str | None = None,
+) -> dict[str, Any]:
     """Get a Fiqh-specific prompt."""
     user_prompt = FIQH_USER_PROMPT_TEMPLATE.format(
         question=question,

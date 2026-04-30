@@ -22,7 +22,6 @@ from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 
-
 logger = get_logger()
 fiqh_router = APIRouter(prefix="/fiqh", tags=["Fiqh"])
 
@@ -250,7 +249,7 @@ async def handle_fiqh_question(
                 agent.execute(agent_input),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(
                 "fiqh.agent_timeout",
                 trace_id=trace_id,

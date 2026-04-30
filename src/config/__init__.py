@@ -18,21 +18,20 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import BaseModel, Field
 
 from src.agents.collection.base import (
-    CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
     RetrievalStrategy,
+)
+from src.config.settings import settings
+from src.verification.schemas import (
     VerificationCheck,
     VerificationSuite,
 )
-from src.agents.base import AgentOutput
-from src.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,7 @@ class FallbackConfig(BaseModel):
     """Fallback configuration from YAML."""
 
     strategy: str = "chatbot"
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class AbstentionConfig(BaseModel):
@@ -126,7 +125,7 @@ class AgentConfigManager:
     - Managing system prompts from files
     """
 
-    def __init__(self, config_dir: Optional[Path] = None, prompts_dir: Optional[Path] = None):
+    def __init__(self, config_dir: Path | None = None, prompts_dir: Path | None = None):
         """
         Initialize the config manager.
 
@@ -157,7 +156,7 @@ class AgentConfigManager:
         if not config_path.exists():
             raise FileNotFoundError(f"Config not found: {config_path}")
 
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         config = AgentYamlConfig(**data)
@@ -182,14 +181,14 @@ class AgentConfigManager:
         preamble_path = self._prompts_dir / "_shared_preamble.txt"
         preamble = ""
         if preamble_path.exists():
-            with open(preamble_path, "r", encoding="utf-8") as f:
+            with open(preamble_path, encoding="utf-8") as f:
                 preamble = f.read().strip()
 
         # Load agent-specific prompt
         prompt_path = self._prompts_dir / f"{agent_name}_agent.txt"
         agent_prompt = ""
         if prompt_path.exists():
-            with open(prompt_path, "r", encoding="utf-8") as f:
+            with open(prompt_path, encoding="utf-8") as f:
                 agent_prompt = f.read().strip()
 
         # Combine preamble and agent prompt
@@ -246,9 +245,8 @@ class AgentConfigManager:
         )
 
         # Get system prompt if requested
-        system_prompt = ""
         if include_prompt:
-            system_prompt = self.load_system_prompt(agent_name)
+            self.load_system_prompt(agent_name)
 
         return CollectionAgentConfig(
             collection_name=yaml_config.collection_name,
@@ -285,7 +283,7 @@ class AgentConfigManager:
 # ============================================================================
 
 
-_config_manager: Optional[AgentConfigManager] = None
+_config_manager: AgentConfigManager | None = None
 
 
 def get_config_manager() -> AgentConfigManager:

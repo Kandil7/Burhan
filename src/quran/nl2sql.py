@@ -221,7 +221,7 @@ class NL2SQLEngine:
             def _execute() -> list[dict]:
                 result = self.session.execute(text(sql))
                 columns = list(result.keys())
-                return [dict(zip(columns, row)) for row in result.fetchall()]
+                return [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
 
             rows = await asyncio.to_thread(_execute)
             logger.info("nl2sql.executed", sql=sql, rows=len(rows))

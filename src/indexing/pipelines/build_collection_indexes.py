@@ -202,17 +202,17 @@ class CollectionIndexer:
         self.embedding_model = EmbeddingModel()
         self.vector_store = None
         self.chunker = HierarchicalChunker()
-    
+
     async def index_collection(self, collection: str) -> dict:
         # Load documents from data source
         documents = await self._load_documents(collection)
-        
+
         # Chunk documents
         chunks = []
         for doc in documents:
             chunked = await self.chunker.chunk(doc)
             chunks.extend(chunked)
-        
+
         # Generate embeddings in batches
         embeddings = []
         for i in range(0, len(chunks), self.batch_size):
@@ -220,12 +220,12 @@ class CollectionIndexer:
             texts = [c.get("content", "") for c in batch]
             emb = await self.embedding_model.encode(texts)
             embeddings.extend(emb)
-        
+
         # Upsert to vector store
         if self.vector_store is None:
             self.vector_store = await get_vector_store()
-        
+
         count = await self.vector_store.upsert(collection, chunks, np.array(embeddings))
-        
+
         return {"collection": collection, "documents": count}
 """

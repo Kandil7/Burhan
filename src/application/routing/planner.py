@@ -6,8 +6,6 @@ Creates execution plans for complex queries requiring multiple agents.
 
 from __future__ import annotations
 
-from typing import Any
-
 from src.domain.intents import Intent
 
 

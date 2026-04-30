@@ -12,23 +12,28 @@ This module provides:
 from __future__ import annotations
 
 import logging
-from typing import Optional
+from typing import Any
 
+from src.application.router.orchestration import (
+    PRIMARY_THRESHOLD,
+    SECONDARY_THRESHOLD,
+    OrchestrationPlan,
+    create_orchestration_plan,
+    route_via_decision_tree,
+)
 from src.application.router.router_agent import (
     RouterAgent,
     SimpleRoutingDecision,
 )
-from src.application.router.orchestration import (
-    OrchestrationPattern,
-    create_orchestration_plan,
-    MultiAgentOrchestrator,
-    route_via_decision_tree,
-    PRIMARY_THRESHOLD,
-    SECONDARY_THRESHOLD,
-)
-from src.domain.intents import Intent, get_agent_for_intent
+from src.domain.intents import Intent
 
 logger = logging.getLogger(__name__)
+
+
+__all__ = [
+    "MultiAgentRouter",
+    "create_multi_agent_router",
+]
 
 
 # ============================================================================
@@ -199,7 +204,7 @@ class MultiAgentRouter:
         # Need orchestration if 2+ domains detected
         return domain_count >= 2
 
-    def create_plan(self, query: str, intent: Intent) -> "OrchestrationPlan":
+    def create_plan(self, query: str, intent: Intent) -> OrchestrationPlan:
         """
         Create an orchestration plan for the query.
 
@@ -253,6 +258,4 @@ def create_multi_agent_router(classifier: Any) -> MultiAgentRouter:
 __all__ = [
     "MultiAgentRouter",
     "create_multi_agent_router",
-    "route_multi",
-    "should_orchestrate",
 ]

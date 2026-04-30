@@ -11,9 +11,6 @@ from src.agents.collection.base import (
     CollectionAgentConfig,
     FallbackPolicy,
     RetrievalStrategy,
-    VerificationCheck,
-    VerificationReport,
-    VerificationSuite,
 )
 
 # Import domain agents
@@ -26,6 +23,12 @@ from src.agents.collection.seerah import SeerahCollectionAgent
 from src.agents.collection.tafsir import TafsirCollectionAgent
 from src.agents.collection.tazkiyah import TazkiyahCollectionAgent
 from src.agents.collection.usul_fiqh import UsulFiqhCollectionAgent
+from src.domain.intents import IntentLabel
+from src.verification.schemas import (
+    VerificationCheck,
+    VerificationReport,
+    VerificationSuite,
+)
 
 __all__ = [
     # Base classes
@@ -36,6 +39,8 @@ __all__ = [
     "VerificationCheck",
     "FallbackPolicy",
     "VerificationReport",
+    # Intent
+    "IntentLabel",
     # Domain agents
     "FiqhCollectionAgent",
     "HadithCollectionAgent",

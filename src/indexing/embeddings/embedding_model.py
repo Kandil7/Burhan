@@ -202,7 +202,7 @@ class EmbeddingModel:
         result = [None] * len(texts)  # positional slots
         uncached_idx = []  # positions needing encode
 
-        for pos, (text, h) in enumerate(zip(texts, hashes)):
+        for pos, (_text, h) in enumerate(zip(texts, hashes, strict=False)):
             cached_emb = await self.cache.get(h)
             if cached_emb is not None:
                 result[pos] = cached_emb
@@ -215,7 +215,7 @@ class EmbeddingModel:
             new_embs = await self._encode_batch_executor(uncached_texts)
 
             # 3. Store in cache and place in correct position
-            for pos, emb in zip(uncached_idx, new_embs):
+            for pos, emb in zip(uncached_idx, new_embs, strict=False):
                 await self.cache.set(hashes[pos], emb)
                 result[pos] = emb
 

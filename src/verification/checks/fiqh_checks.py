@@ -3,9 +3,10 @@ Verification checks specific to Fiqh (Islamic Jurisprudence) domain.
 """
 
 import re
-from typing import Any, Dict, List, Optional
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from typing import Any
+
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class QuoteValidator(BaseVerifier):
@@ -25,7 +26,7 @@ class QuoteValidator(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """
         Detects hallucinated quotes by checking specific [CX] attributions.
@@ -65,7 +66,7 @@ class QuoteValidator(BaseVerifier):
             )
 
         # 2. Fallback: check general quotes without specific markers
-        general_quotes = re.findall(r'["«](.*?)["»]', claim)
+        re.findall(r'["«](.*?)["»]', claim)
         # (Already handled by logic above if they have [CX], this catches the rest)
 
         return CheckResult(
@@ -88,7 +89,7 @@ class SourceAttributor(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         # Simplified implementation for now
         return CheckResult(
@@ -113,7 +114,7 @@ class EvidenceSufficiency(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         if not evidence or not isinstance(evidence, list):
             return CheckResult(

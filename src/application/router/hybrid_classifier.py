@@ -9,23 +9,22 @@ DEPRECATED: Import directly from src.application.router.classifier_factory inste
 
 # Re-export keyword-based classifier from canonical module
 from src.application.router.classifier_factory import (
+    INTENT_KEYWORDS,
+    ClassifierFactory,
+    HybridIntentClassifier,
     KeywordBasedClassifier,
     MasterHybridClassifier,
-    HybridIntentClassifier,
-    ClassifierFactory,
-    normalize_arabic,
-    detect_language,
-    INTENT_KEYWORDS,
-    classifier_factory,
     QueryClassifier,
+    classifier_factory,
+    detect_language,
+    normalize_arabic,
 )
-
-# Import EmbeddingClassifier from its own module
-from src.application.router.embedding_classifier import EmbeddingClassifier
 
 # Language detection utility (define locally for backward compat)
 from src.application.router.classifier_factory import detect_language as detect_language_util
 
+# Import EmbeddingClassifier from its own module
+from src.application.router.embedding_classifier import EmbeddingClassifier
 
 __all__ = [
     # Core classes

@@ -1,8 +1,8 @@
 # Verification Policies Module
 """Policies for controlling verification behavior."""
 
-from typing import Dict, List, Set
 from enum import Enum
+
 from .schemas import VerifierType
 
 
@@ -20,9 +20,9 @@ class VerificationPolicy:
 
     def __init__(self, level: VerificationLevel = VerificationLevel.STANDARD):
         self.level = level
-        self._enabled_verifiers: Dict[VerifierType, bool] = self._get_defaults()
+        self._enabled_verifiers: dict[VerifierType, bool] = self._get_defaults()
 
-    def _get_defaults(self) -> Dict[VerifierType, bool]:
+    def _get_defaults(self) -> dict[VerifierType, bool]:
         """Get default enabled verifiers for each level."""
         defaults = {
             VerificationLevel.MINIMAL: {
@@ -76,7 +76,7 @@ class VerificationPolicy:
         self.level = level
         self._enabled_verifiers = self._get_defaults()
 
-    def get_enabled_types(self) -> List[VerifierType]:
+    def get_enabled_types(self) -> list[VerifierType]:
         """Get list of enabled verifier types."""
         return [v for v, enabled in self._enabled_verifiers.items() if enabled]
 

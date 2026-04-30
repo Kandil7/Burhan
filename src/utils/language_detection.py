@@ -13,7 +13,6 @@ Usage:
 
 from typing import Literal
 
-
 # Type aliases for language codes
 LanguageCode = Literal["ar", "en", "mixed"]
 

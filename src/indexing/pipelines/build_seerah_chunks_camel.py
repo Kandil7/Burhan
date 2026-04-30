@@ -3,44 +3,67 @@
 import json
 import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
+
+from camel_tools.utils.dediac import dediac_ar
 
 # from camel_tools.tokenizers.senttokenizer import SentTokenizer
 from camel_tools.utils.normalize import (
     normalize_alef_maksura_ar,
     normalize_teh_marbuta_ar,
 )
-from camel_tools.utils.dediac import dediac_ar
 
 # --------- إعدادات عامة ---------
-INPUT_PATH = Path("data/mini_dataset_v2/seerah_passages.jsonl")            # raw JSONL input
+INPUT_PATH = Path("data/mini_dataset_v2/seerah_passages.jsonl")  # raw JSONL input
 OUTPUT_PATH = Path("data/mini_dataset_v2/seerah_chunks_v3.jsonl")
 
-DEFAULT_MAX_CHARS = 1800                  # default char limit
-OVERLAP_SENTENCES = 2                     # sentence overlap between chunks
+DEFAULT_MAX_CHARS = 1800  # default char limit
+OVERLAP_SENTENCES = 2  # sentence overlap between chunks
 
 # sent_tokenizer = SentTokenizer()
 
 # ---------- Heuristics ----------
 
 INDEX_KEYWORDS = [
-    "الفهرس", "الفِهْرِسُ", "الفهرس العام", "الفهرس المفصل",
-    "فهرس", "index",
+    "الفهرس",
+    "الفِهْرِسُ",
+    "الفهرس العام",
+    "الفهرس المفصل",
+    "فهرس",
+    "index",
 ]
 
 DESCRIPTIVE_KEYWORDS = [
-    "الشمائل", "صفة", "صفات", "أخلاق", "خلق", "خصائص",
+    "الشمائل",
+    "صفة",
+    "صفات",
+    "أخلاق",
+    "خلق",
+    "خصائص",
 ]
 
 BATTLE_KEYWORDS = [
-    "غزوة", "سرية", "وقعة", "معركة", "بدر", "أحد", "الخندق",
+    "غزوة",
+    "سرية",
+    "وقعة",
+    "معركة",
+    "بدر",
+    "أحد",
+    "الخندق",
 ]
 
 LESSON_KEYWORDS = [
-    "دروس", "فوائد", "لطائف", "العبرة", "عبرة", "مواقف", "موقف",
+    "دروس",
+    "فوائد",
+    "لطائف",
+    "العبرة",
+    "عبرة",
+    "مواقف",
+    "موقف",
 ]
 
 # ---------- Helpers ----------
+
 
 def detect_index_page(section_title: str, content: str) -> bool:
     """Return True if this looks like an index/table-of-contents page."""
@@ -51,12 +74,9 @@ def detect_index_page(section_title: str, content: str) -> bool:
         return True
 
     # محتوى قصير مليان أرقام صفحات وعناوين سطور قصيرة
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
     if len(lines) >= 5:
-        numbered_like = sum(
-            1 for l in lines
-            if re.search(r"\d{1,3}$", l) and len(l.split()) <= 8
-        )
+        numbered_like = sum(1 for line in lines if re.search(r"\d{1,3}$", line) and len(line.split()) <= 8)
         if numbered_like >= 4:
             return True
 
@@ -82,7 +102,7 @@ def choose_max_chars(section_title: str) -> int:
     return DEFAULT_MAX_CHARS
 
 
-def split_arabic_sentences(text: str) -> List[str]:
+def split_arabic_sentences(text: str) -> list[str]:
     """Sentence splitting using regex fallback."""
     if not text:
         return []
@@ -90,7 +110,7 @@ def split_arabic_sentences(text: str) -> List[str]:
     text = re.sub(r"\n+", "\n", text)
     # sentences = sent_tokenizer.tokenize(text)
     # Using regex as a fallback if SentTokenizer is unavailable
-    sentences = re.split(r'(?<=[.؟!؛])\s+|\n+', text)
+    sentences = re.split(r"(?<=[.؟!؛])\s+|\n+", text)
     return [s.strip() for s in sentences if s.strip()]
 
 
@@ -114,19 +134,19 @@ def has_unbalanced_arabic_quotes(text: str) -> bool:
 
 
 def chunk_sentences(
-    sentences: List[str],
+    sentences: list[str],
     max_chars: int,
     overlap_sents: int = OVERLAP_SENTENCES,
-) -> List[str]:
+) -> list[str]:
     """
     Basic sentence-aware chunking with char limit and sentence overlap.
     """
-    chunks: List[str] = []
+    chunks: list[str] = []
     i = 0
     n = len(sentences)
 
     while i < n:
-        current: List[str] = []
+        current: list[str] = []
         length = 0
         j = i
 
@@ -150,7 +170,7 @@ def chunk_sentences(
     return chunks
 
 
-def repair_broken_spans(chunks: List[str]) -> List[str]:
+def repair_broken_spans(chunks: list[str]) -> list[str]:
     """
     يحاول يصلح الحالات البسيطة للآيات/الأحاديث المقطوعة عبر
     دمج بعض الchunks المتجاورة.
@@ -162,7 +182,7 @@ def repair_broken_spans(chunks: List[str]) -> List[str]:
     if not chunks:
         return chunks
 
-    repaired: List[str] = []
+    repaired: list[str] = []
     skip_next = False
     n = len(chunks)
 
@@ -198,13 +218,13 @@ def repair_broken_spans(chunks: List[str]) -> List[str]:
 
 
 def build_chunk_record(
-    base: Dict[str, Any],
+    base: dict[str, Any],
     chunk_text: str,
     chunk_index: int,
     is_index_page: bool,
     max_chars_used: int,
-) -> Dict[str, Any]:
-    out: Dict[str, Any] = {}
+) -> dict[str, Any]:
+    out: dict[str, Any] = {}
 
     for k, v in base.items():
         if k == "content":
@@ -231,6 +251,7 @@ def build_chunk_record(
 
 # ---------- Main pipeline ----------
 
+
 def process_file(
     input_path: Path = INPUT_PATH,
     output_path: Path = OUTPUT_PATH,
@@ -242,9 +263,7 @@ def process_file(
         print(f"Error: Input file not found: {input_path}")
         return
 
-    with input_path.open("r", encoding="utf-8") as fin, \
-         output_path.open("w", encoding="utf-8") as fout:
-
+    with input_path.open("r", encoding="utf-8") as fin, output_path.open("w", encoding="utf-8") as fout:
         for line in fin:
             line = line.strip()
             if not line:
@@ -276,7 +295,7 @@ def process_file(
 
             # 3) optionally: merge very small trailing chunk with previous
             MIN_CHUNK_CHARS = 250
-            merged_chunks: List[str] = []
+            merged_chunks: list[str] = []
             for ch in chunks:
                 if merged_chunks and len(ch) < MIN_CHUNK_CHARS:
                     merged_chunks[-1] = (merged_chunks[-1] + " " + ch).strip()

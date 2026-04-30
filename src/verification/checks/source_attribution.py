@@ -1,9 +1,10 @@
 # Source Attribution Verifier Module
 """Verifier for source attribution validation."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from typing import Any
+
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class SourceAttributionVerifier(BaseVerifier):
@@ -26,7 +27,7 @@ class SourceAttributionVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify source attribution.
 
@@ -105,7 +106,7 @@ class SourceAttributionVerifier(BaseVerifier):
 
         return True  # Always applicable for factual claims
 
-    def _extract_sources(self, claim: str) -> List[str]:
+    def _extract_sources(self, claim: str) -> list[str]:
         """Extract source references from claim.
 
         Args:
@@ -146,7 +147,7 @@ class SourceAttributionVerifier(BaseVerifier):
         self,
         source: str,
         evidence: Any,
-        evidence_sources: List[str],
+        evidence_sources: list[str],
     ) -> bool:
         """Verify that a source exists in the evidence.
 

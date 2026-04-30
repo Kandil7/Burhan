@@ -1,11 +1,9 @@
 # Islamic Synonyms Module
 """Islamic terminology synonyms for query expansion."""
 
-from typing import List, Dict
-
 
 # Comprehensive Islamic terminology synonyms
-ISLAMIC_SYNONYMS: Dict[str, List[str]] = {
+ISLAMIC_SYNONYMS: dict[str, list[str]] = {
     # Fiqh (Islamic jurisprudence) terms
     "صلاة": ["الصلاة", "الصلوات", "صلوات", "العبادة"],
     "صوم": ["الصيام", "الصوم", "صيام", "رمضان"],
@@ -28,12 +26,12 @@ ISLAMIC_SYNONYMS: Dict[str, List[str]] = {
 }
 
 
-def get_synonyms(term: str) -> List[str]:
+def get_synonyms(term: str) -> list[str]:
     """Get synonyms for a term."""
     return ISLAMIC_SYNONYMS.get(term, [])
 
 
-def expand_with_synonyms(query: str) -> List[str]:
+def expand_with_synonyms(query: str) -> list[str]:
     """Expand a query with synonyms."""
     terms = query.split()
     expanded = [query]

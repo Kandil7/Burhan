@@ -1,11 +1,11 @@
 # School Consistency Verifier Module
 """Verifier for Islamic school (madhhab) consistency."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 from dataclasses import dataclass
+from typing import Any
 
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 # School of thought definitions
 ISLAMIC_SCHOOLS = {
@@ -29,7 +29,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
 
     def __init__(
         self,
-        criteria: Optional[SchoolConsistencyCriteria] = None,
+        criteria: SchoolConsistencyCriteria | None = None,
     ):
         self.verifier_type = VerifierType.SCHOOL_CONSISTENCY
         self.criteria = criteria or SchoolConsistencyCriteria()
@@ -38,7 +38,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify school consistency."""
         # Extract claimed school from claim
@@ -85,7 +85,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return True
 
-    def _extract_school(self, claim: str) -> Optional[str]:
+    def _extract_school(self, claim: str) -> str | None:
         """Extract school of thought from claim."""
         # Placeholder - would implement actual extraction
         claim_lower = claim.lower()
@@ -99,7 +99,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
     def _extract_schools_from_evidence(
         self,
         evidence: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Extract schools from evidence."""
         # Placeholder - would implement actual extraction
         return []

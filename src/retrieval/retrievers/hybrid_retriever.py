@@ -1,8 +1,14 @@
-from src.retrieval.multi_collection_retriever import MultiCollectionRetriever
-from src.retrieval.collection_hybrid_retriever import CollectionHybridRetriever
-from src.indexing.vectorstores.qdrant_store import vector_store
+from typing import Any
+
+import numpy as np
+
+from src.config.constants import CollectionNames
 from src.indexing.embeddings.embedding_model import EmbeddingModel
-from src.config.constants import CollectionNames  # اللي فيه *_passages
+from src.indexing.vectorstores.hybrid_searcher import HybridSearcher
+from src.indexing.vectorstores.qdrant_store import vector_store
+from src.indexing.vectorstores.vector_store import VectorStore
+from src.retrieval.collection_hybrid_retriever import CollectionHybridRetriever
+from src.retrieval.multi_collection_retriever import MultiCollectionRetriever
 
 embedding_model = EmbeddingModel()
 multi_retriever = MultiCollectionRetriever()
@@ -27,6 +33,7 @@ for coll in [
     )
     multi_retriever.register_retriever(coll, retr)
 
+
 class CollectionHybridRetriever:
     """
     Adapter to use HybridSearcher as a retriever for a single collection.
@@ -41,7 +48,7 @@ class CollectionHybridRetriever:
         self.embedding_model = embedding_model
         self.searcher = HybridSearcher(vector_store)
 
-    async def retrieve(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
+    async def retrieve(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
         # 1) Embed query
         query_embedding: np.ndarray = await self.embedding_model.encode_query(query)
 

@@ -1,7 +1,6 @@
 # Classify Service Module
 """Service for handling classification operations."""
 
-from typing import Dict, Any
 from src.application.use_cases.classify_query import (
     ClassifyQueryInput,
     ClassifyQueryOutput,
@@ -30,7 +29,7 @@ class ClassifyService:
             ClassifyQueryOutput with classification
         """
         # Placeholder - would execute classification
-        input_data = ClassifyQueryInput(
+        ClassifyQueryInput(
             query=query,
             language=language,
         )

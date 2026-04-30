@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from src.agents.base import BaseAgent
 from src.config.logging_config import get_logger
@@ -14,10 +14,10 @@ class AgentRegistration:
     """Registration info for an agent or tool."""
 
     name: str
-    instance: Optional[Union[BaseAgent, BaseTool]] = None
-    factory: Optional[Callable[[], Union[BaseAgent, BaseTool]]] = None
+    instance: BaseAgent | BaseTool | None = None
+    factory: Callable[[], BaseAgent | BaseTool] | None = None
     is_agent: bool = True
-    intents: List[Intent] = field(default_factory=list)
+    intents: list[Intent] = field(default_factory=list)
     description: str = ""
 
 
@@ -27,15 +27,15 @@ class AgentRegistry:
     """
 
     def __init__(self) -> None:
-        self._registrations: Dict[str, AgentRegistration] = {}
+        self._registrations: dict[str, AgentRegistration] = {}
         self._initialized = False
 
     def register_agent(
         self,
         name: str,
-        agent: Optional[BaseAgent] = None,
-        factory: Optional[Callable[[], BaseAgent]] = None,
-        intents: Optional[List[Intent]] = None,
+        agent: BaseAgent | None = None,
+        factory: Callable[[], BaseAgent] | None = None,
+        intents: list[Intent] | None = None,
         description: str = "",
     ) -> None:
         if intents is None:
@@ -54,9 +54,9 @@ class AgentRegistry:
     def register_tool(
         self,
         name: str,
-        tool: Optional[BaseTool] = None,
-        factory: Optional[Callable[[], BaseTool]] = None,
-        intents: Optional[List[Intent]] = None,
+        tool: BaseTool | None = None,
+        factory: Callable[[], BaseTool] | None = None,
+        intents: list[Intent] | None = None,
         description: str = "",
     ) -> None:
         if intents is None:
@@ -72,7 +72,7 @@ class AgentRegistry:
         )
         logger.info("registry.tool_registered", name=name, lazy=bool(factory))
 
-    def get_agent(self, name: str) -> Optional[BaseAgent]:
+    def get_agent(self, name: str) -> BaseAgent | None:
         """Get agent by name, initializing if necessary."""
         reg = self._registrations.get(name)
         if not reg or not reg.is_agent:
@@ -84,7 +84,7 @@ class AgentRegistry:
 
         return reg.instance  # type: ignore
 
-    def get_tool(self, name: str) -> Optional[BaseTool]:
+    def get_tool(self, name: str) -> BaseTool | None:
         """Get tool by name, initializing if necessary."""
         reg = self._registrations.get(name)
         if not reg:
@@ -96,7 +96,7 @@ class AgentRegistry:
 
         return reg.instance  # type: ignore
 
-    def get_for_intent(self, intent: Intent) -> Tuple[Optional[Union[BaseAgent, BaseTool]], bool]:
+    def get_for_intent(self, intent: Intent) -> tuple[BaseAgent | BaseTool | None, bool]:
         """Get agent or tool for an intent with lazy resolution."""
         target = INTENT_ROUTING.get(intent)
         if not target:
@@ -119,7 +119,7 @@ class AgentRegistry:
 
 
 # Global registry instance
-_registry: Optional[AgentRegistry] = None
+_registry: AgentRegistry | None = None
 
 
 def get_registry() -> AgentRegistry:
@@ -136,7 +136,6 @@ def initialize_registry() -> AgentRegistry:
 
     # Helpers for dependencies
     def get_deps():
-        from fastapi import FastAPI
         # This is a bit of a hack to get global state if needed
         # In a real DI system, we'd inject these
         from src.api.main import app

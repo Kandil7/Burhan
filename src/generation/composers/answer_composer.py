@@ -1,9 +1,9 @@
 # Answer Composer Module
 """Compose final answer responses."""
 
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class AnswerStyle(str, Enum):
@@ -21,22 +21,22 @@ class AnswerConfig:
 
     style: AnswerStyle = AnswerStyle.DETAILED
     include_citations: bool = True
-    max_length: Optional[int] = None
+    max_length: int | None = None
     include_arabic: bool = True
 
 
 class AnswerComposer:
     """Composes final answers from retrieved content."""
 
-    def __init__(self, config: Optional[AnswerConfig] = None):
+    def __init__(self, config: AnswerConfig | None = None):
         self.config = config or AnswerConfig()
 
     def compose(
         self,
         content: str,
-        citations: Optional[List[Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        citations: list[dict[str, Any]] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Compose final answer."""
         # Apply style
         styled_content = self._apply_style(content)
@@ -67,7 +67,7 @@ class AnswerComposer:
             return f"# Answer\n\n{content}"
         return content
 
-    def _format_citations(self, citations: List[Dict[str, Any]]) -> str:
+    def _format_citations(self, citations: list[dict[str, Any]]) -> str:
         """Format citations for display."""
         lines = ["## Sources"]
         for i, cit in enumerate(citations, 1):

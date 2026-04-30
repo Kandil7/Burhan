@@ -1,9 +1,9 @@
 # Run Tool Use Case
 """Use case for running deterministic tools."""
 
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class ToolType(str, Enum):
@@ -21,7 +21,7 @@ class RunToolInput:
     """Input for run tool use case."""
 
     tool_type: ToolType
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
 
 
 @dataclass
@@ -31,8 +31,8 @@ class RunToolOutput:
     result: Any
     tool_type: ToolType
     success: bool
-    error_message: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    error_message: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class RunToolUseCase:
@@ -69,7 +69,7 @@ class RunToolUseCase:
     def _execute_tool(
         self,
         tool_type: ToolType,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
     ) -> Any:
         """Execute the specified tool."""
         # Placeholder - would call actual tool implementations

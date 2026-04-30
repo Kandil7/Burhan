@@ -1,9 +1,9 @@
 # Risk Policy Module
 """Policies for controlling response risk assessment."""
 
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class RiskLevel(str, Enum):
@@ -20,8 +20,8 @@ class RiskAssessment:
     """Assessment of risk for a response."""
 
     level: RiskLevel
-    concerns: List[str]
-    recommendations: List[str]
+    concerns: list[str]
+    recommendations: list[str]
 
 
 # Topics that require careful handling
@@ -55,7 +55,7 @@ class RiskPolicy:
         self,
         query: str,
         response: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> RiskAssessment:
         """Assess the risk level of a response."""
         concerns = []

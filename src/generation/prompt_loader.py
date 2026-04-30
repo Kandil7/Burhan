@@ -7,7 +7,6 @@ Loads prompts from files for answer generation.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 from src.generation.schemas import PromptTemplate
 
@@ -50,7 +49,7 @@ class PromptLoader:
         preamble = ""
         preamble_path = self._prompts_dir / "_shared_preamble.txt"
         if preamble_path.exists():
-            with open(preamble_path, "r", encoding="utf-8") as f:
+            with open(preamble_path, encoding="utf-8") as f:
                 preamble = f.read().strip()
 
         # Load agent prompt
@@ -58,7 +57,7 @@ class PromptLoader:
         if not agent_prompt_path.exists():
             raise FileNotFoundError(f"Prompt not found: {agent_prompt_path}")
 
-        with open(agent_prompt_path, "r", encoding="utf-8") as f:
+        with open(agent_prompt_path, encoding="utf-8") as f:
             system_prompt = f.read().strip()
 
         # Combine preamble and agent prompt

@@ -13,13 +13,13 @@ import json
 
 from pydantic import BaseModel, Field
 
+from src.config.logging_config import get_logger
+from src.config.settings import settings
 from src.domain.intents import (
     INTENT_DESCRIPTIONS,
     KEYWORD_PATTERNS,
     Intent,
 )
-from src.config.logging_config import get_logger
-from src.config.settings import settings
 
 logger = get_logger()
 

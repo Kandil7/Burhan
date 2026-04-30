@@ -15,10 +15,9 @@ For production, use src.application.router.KeywordBasedClassifier instead.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
-from src.application.use_cases.classify_schemas import QueryIntent
 from src.application.use_cases.classify_rules import classify_by_keywords
+from src.application.use_cases.classify_schemas import QueryIntent
 
 
 @dataclass
@@ -27,7 +26,7 @@ class ClassifyQueryInput:
 
     query: str
     language: str = "en"
-    metadata: Optional[Dict] = None
+    metadata: dict | None = None
 
 
 @dataclass
@@ -37,9 +36,9 @@ class ClassifyQueryOutput:
     intent: QueryIntent
     confidence: float
     suggested_agent: str
-    suggested_collections: List[str]
+    suggested_collections: list[str]
     requires_clarification: bool
-    clarification_options: Optional[List[str]] = None
+    clarification_options: list[str] | None = None
 
 
 class ClassifyQueryUseCase:

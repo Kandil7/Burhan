@@ -13,7 +13,6 @@ Phase 10: Dynamic Scholarly Reranking.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from src.domain.intents import Intent
 from src.retrieval.ranking.book_weighter import BookImportanceWeighter

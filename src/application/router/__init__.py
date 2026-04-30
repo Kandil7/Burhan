@@ -11,44 +11,20 @@ This is the CANONICAL router module - use this for all routing needs.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
-# Re-export core components
-from src.application.router.router_agent import (
-    RouterAgent,
-    router_agent,
-    get_router_agent,
-    init_router_agent,
-    SimpleRoutingDecision,
-)
 
 # Re-export classification
 from src.application.router.classifier_factory import (
+    INTENT_KEYWORDS,
+    ClassifierFactory,
+    HybridIntentClassifier,
     KeywordBasedClassifier,
     MasterHybridClassifier,
-    HybridIntentClassifier,
-    ClassifierFactory,
-    INTENT_KEYWORDS,
-    classifier_factory,
     QueryClassifier,
+    classifier_factory,
 )
-from src.domain.intents import normalize_arabic, detect_language
 
 # Re-export embedding classifier
 from src.application.router.embedding_classifier import EmbeddingClassifier
-
-# Re-export orchestration
-from src.application.router.orchestration import (
-    OrchestrationPattern,
-    AgentTask,
-    OrchestrationPlan,
-    create_orchestration_plan,
-    MultiAgentOrchestrator,
-    route_via_decision_tree,
-    PRIMARY_THRESHOLD,
-    SECONDARY_THRESHOLD,
-    LOW_CONFIDENCE_THRESHOLD,
-)
 
 # Re-export multi-agent
 from src.application.router.multi_agent import (
@@ -56,26 +32,48 @@ from src.application.router.multi_agent import (
     create_multi_agent_router,
 )
 
+# Re-export orchestration
+from src.application.router.orchestration import (
+    LOW_CONFIDENCE_THRESHOLD,
+    PRIMARY_THRESHOLD,
+    SECONDARY_THRESHOLD,
+    AgentTask,
+    MultiAgentOrchestrator,
+    OrchestrationPattern,
+    OrchestrationPlan,
+    create_orchestration_plan,
+    route_via_decision_tree,
+)
+
 # Re-export risk policy
 from src.application.router.risk_policy import (
+    SENSITIVE_PATTERNS,
+    RiskAssessment,
+    RiskLevel,
     RiskPolicy,
     risk_policy,
-    RiskLevel,
-    RiskAssessment,
-    SENSITIVE_PATTERNS,
 )
+
+# Re-export core components
+from src.application.router.router_agent import (
+    RouterAgent,
+    SimpleRoutingDecision,
+    get_router_agent,
+    init_router_agent,
+    router_agent,
+)
+from src.application.routing.executor import AgentExecutor, ExecutionResult
 
 # Re-export intent router (canonical)
 from src.application.routing.intent_router import (
+    INTENT_TO_AGENT,
     IntentRouter,
     get_intent_router,
-    INTENT_TO_AGENT,
 )
 
 # Re-export planner and executor
 from src.application.routing.planner import QueryPlan, QueryPlanner
-from src.application.routing.executor import ExecutionResult, AgentExecutor
-
+from src.domain.intents import detect_language, normalize_arabic
 
 __all__ = [
     # Router agent

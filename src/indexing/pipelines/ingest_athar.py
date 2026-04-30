@@ -1,8 +1,7 @@
 # Ingest Burhan Pipeline
 """Ingest data from Burhan datasets into the vector store."""
 
-from typing import List, Optional, Dict, Any
-import asyncio
+from typing import Any
 
 
 class BurhanIngestPipeline:
@@ -17,7 +16,7 @@ class BurhanIngestPipeline:
         source_path: str,
         collection_name: str,
         batch_size: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Ingest data from Burhan source.
 

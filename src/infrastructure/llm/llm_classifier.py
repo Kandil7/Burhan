@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 from openai import AsyncOpenAI
 
@@ -193,7 +192,7 @@ class LLMIntentClassifier:
         subquestions = [str(q) for q in subquestions if q]
 
         # ── Quran sub-intent (safe cast + pattern fallback) ───────────────
-        q_sub: Optional[QuranSubIntent] = None
+        q_sub: QuranSubIntent | None = None
         if intent is Intent.QURAN:
             sub_str = raw.get("sub_intent")
             if sub_str:

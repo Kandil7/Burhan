@@ -12,7 +12,7 @@ import logging
 import re
 import time
 from abc import ABC, abstractmethod
-from typing import Any, List, Dict, Optional, Set
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,9 +20,7 @@ from src.agents.base import AgentInput, Citation, strip_cot_leakage
 from src.domain.intents import Intent
 from src.verification import (
     VerificationReport,
-    VerificationStatus,
     VerificationSuite,
-    VerificationCheck,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,9 +50,9 @@ class AgentOutput(BaseModel):
     """Standardized output for all agents."""
 
     answer: str = Field(description="Agent answer text")
-    citations: List[Citation] = Field(default_factory=list)
-    citation_chunks: List[Dict[str, Any]] = Field(default_factory=list)
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    citations: list[Citation] = Field(default_factory=list)
+    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
 
@@ -88,7 +86,7 @@ class FallbackPolicy(BaseModel):
         default="chatbot",
         description="Strategy: chatbot/human_review/clarify",
     )
-    message: Optional[str] = Field(default=None, description="Custom fallback message")
+    message: str | None = Field(default=None, description="Custom fallback message")
 
 
 class CollectionAgentConfig(BaseModel):
@@ -126,7 +124,7 @@ class CollectionAgent(ABC):
     name: str = "collection_agent"
     COLLECTION: str = ""
 
-    def __init__(self, config: Optional[CollectionAgentConfig] = None) -> None:
+    def __init__(self, config: CollectionAgentConfig | None = None) -> None:
         self.config = config or CollectionAgentConfig(
             collection_name=self.COLLECTION,
         )
@@ -138,34 +136,34 @@ class CollectionAgent(ABC):
     def classify_intent(self, query: str) -> Intent: ...
 
     @abstractmethod
-    async def retrieve_candidates(self, query: str) -> List[Dict[str, Any]]: ...
+    async def retrieve_candidates(self, query: str) -> list[dict[str, Any]]: ...
 
     @abstractmethod
     async def rerank_candidates(
-        self, query: str, candidates: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]: ...
+        self, query: str, candidates: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]: ...
 
     @abstractmethod
     async def run_verification(
-        self, query: str, candidates: List[Dict[str, Any]]
+        self, query: str, candidates: list[dict[str, Any]]
     ) -> VerificationReport: ...
 
     @abstractmethod
     async def generate_answer(
-        self, query: str, verified_passages: List[Dict[str, Any]], language: str
+        self, query: str, verified_passages: list[dict[str, Any]], language: str
     ) -> str: ...
 
     @abstractmethod
-    def assemble_citations(self, passages: List[Dict[str, Any]]) -> List[Citation]: ...
+    def assemble_citations(self, passages: list[dict[str, Any]]) -> list[Citation]: ...
 
     # ==========================================
     # Shared Helpers
     # ==========================================
 
     @staticmethod
-    def _deduplicate_passages(passages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        seen: Set[int] = set()
-        deduped: List[Dict[str, Any]] = []
+    def _deduplicate_passages(passages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        seen: set[int] = set()
+        deduped: list[dict[str, Any]] = []
         for p in passages:
             content_hash = hash(p.get("content", "")[:200])
             if content_hash not in seen:
@@ -182,7 +180,7 @@ class CollectionAgent(ABC):
                 return preamble_path.read_text(encoding="utf-8").strip()
         except ImportError:
             pass
-        
+
         try:
             with open("prompts/_shared_preamble.txt", encoding="utf-8") as f:
                 return f.read().strip()
@@ -202,14 +200,14 @@ class CollectionAgent(ABC):
     async def run(
         self,
         raw_question: str,
-        meta: Optional[Dict[str, Any]] = None,
+        meta: dict[str, Any] | None = None,
     ) -> AgentOutput:
         """Execute the full RAG pipeline end-to-end."""
         from src.generation.policies.answer_policy import AnswerMode, AnswerPolicy
 
         meta = meta or {}
         language = meta.get("language", "ar")
-        timing: Dict[str, Any] = {}
+        timing: dict[str, Any] = {}
 
         # Step 1: Query intake
         t0 = time.perf_counter()
@@ -222,14 +220,14 @@ class CollectionAgent(ABC):
         timing["classification_ms"] = int((time.perf_counter() - t0) * 1000)
 
         # Step 3: Retrieve candidates (bounded by timeout)
-        retrieval_issues: List[Dict[str, Any]] = []
+        retrieval_issues: list[dict[str, Any]] = []
         t0 = time.perf_counter()
         try:
             candidates = await asyncio.wait_for(
                 self.retrieve_candidates(normalized),
                 timeout=_RETRIEVAL_TIMEOUT_SECONDS,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             elapsed_ms = int((time.perf_counter() - t0) * 1000)
             logger.warning(
                 "retrieve_candidates timed out after %.1fs — query='%s…'",
@@ -425,7 +423,7 @@ class CollectionAgent(ABC):
             from src.quran.verse_retrieval import VerseRetrievalEngine
 
             def fetch_quran_healing():
-                new_passages: List[Dict[str, Any]] = []
+                new_passages: list[dict[str, Any]] = []
                 rem_sources = list(invalid_sources)
                 rem_quotes = list(failed_quotes)
 
@@ -453,7 +451,7 @@ class CollectionAgent(ABC):
                                     rem_sources.remove(src)
                             except Exception:
                                 pass
-                        
+
                         for q_text in failed_quotes:
                             try:
                                 val_res = new_loop.run_until_complete(validator.validate(str(q_text)))
@@ -503,7 +501,7 @@ class CollectionAgent(ABC):
             verification.confidence = min(verification.confidence, 0.85)
 
         # Build output metadata
-        output_meta: Dict[str, Any] = {
+        output_meta: dict[str, Any] = {
             "intent": intent.value if isinstance(intent, Intent) else intent,
             "collection": self.config.collection_name,
             "answer_mode": "answer",
@@ -514,7 +512,7 @@ class CollectionAgent(ABC):
         }
 
         # Build citation_chunks
-        citation_chunks: List[Dict[str, Any]] = []
+        citation_chunks: list[dict[str, Any]] = []
         for p in verification.verified_passages:
             md = p.get("metadata", {}) or {}
             citation_chunks.append({

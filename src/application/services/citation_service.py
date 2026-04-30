@@ -9,15 +9,13 @@ Citation service layer for Burhan.
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
-from typing import List, Dict, Any, Tuple
+from typing import Any
 
-from src.core.citation import Citation, compute_citation_stats, CitationStats
-
+from src.core.citation import Citation, CitationStats, compute_citation_stats
 
 # --------- 1. Adapter: raw API JSON -> Citation --------- #
 
-def citation_from_raw(raw: Dict[str, Any]) -> Citation:
+def citation_from_raw(raw: dict[str, Any]) -> Citation:
     """
     Convert a raw citation payload (current Burhan response format)
     into a clean Citation object.
@@ -72,7 +70,7 @@ def citation_from_raw(raw: Dict[str, Any]) -> Citation:
     )
 
 
-def citations_from_response(resp: Dict[str, Any]) -> List[Citation]:
+def citations_from_response(resp: dict[str, Any]) -> list[Citation]:
     """Extract all citations from a full Burhan agent response dict."""
     raw_list = resp.get("citations", []) or []
     return [citation_from_raw(c) for c in raw_list]
@@ -83,14 +81,14 @@ def citations_from_response(resp: Dict[str, Any]) -> List[Citation]:
 INLINE_PATTERN = re.compile(r"\[(C\d+)\]")  # matches [C1], [C6], ...
 
 
-def _citation_key(c: Citation) -> Tuple[str, str]:
+def _citation_key(c: Citation) -> tuple[str, str]:
     """Key for deduplication: (source_id, page)."""
     return (c.source_id or "", c.page or "")
 
 
-def dedupe_citations(citations: List[Citation]) -> List[Citation]:
+def dedupe_citations(citations: list[Citation]) -> list[Citation]:
     """Deduplicate citations by (source_id, page)."""
-    seen: Dict[Tuple[str, str], Citation] = {}
+    seen: dict[tuple[str, str], Citation] = {}
     for c in citations:
         key = _citation_key(c)
         if key not in seen:
@@ -116,7 +114,7 @@ def format_citation_bracket(c: Citation) -> str:
     return f"[{text}]"
 
 
-def build_footnotes(citations: List[Citation]) -> List[str]:
+def build_footnotes(citations: list[Citation]) -> list[str]:
     """
     Build a numbered footnote list without duplicates.
 
@@ -124,7 +122,7 @@ def build_footnotes(citations: List[Citation]) -> List[str]:
       "1. السيرة النبوية الصحيحة ... – ص 528"
     """
     unique = dedupe_citations(citations)
-    footnotes: List[str] = []
+    footnotes: list[str] = []
     for idx, c in enumerate(unique, start=1):
         ref = c.reference or (f"ص {c.page}" if c.page else "")
         ref_str = f" – {ref}" if ref else ""
@@ -132,12 +130,12 @@ def build_footnotes(citations: List[Citation]) -> List[str]:
     return footnotes
 
 
-def _build_id_map(raw_citations: List[Dict[str, Any]]) -> Dict[str, Citation]:
+def _build_id_map(raw_citations: list[dict[str, Any]]) -> dict[str, Citation]:
     """
     Build a mapping from inline IDs (C1, C2, ...) to Citation objects
     based on raw payload's `source_id`.
     """
-    id_map: Dict[str, Citation] = {}
+    id_map: dict[str, Citation] = {}
     for raw in raw_citations:
         cid = raw.get("source_id")
         if not cid:
@@ -146,7 +144,7 @@ def _build_id_map(raw_citations: List[Dict[str, Any]]) -> Dict[str, Citation]:
     return id_map
 
 
-def render_inline_citations(answer: str, raw_citations: List[Dict[str, Any]]) -> str:
+def render_inline_citations(answer: str, raw_citations: list[dict[str, Any]]) -> str:
     """
     Replace inline [C1], [C2] markers inside the answer text
     with human-friendly citation labels.
@@ -167,7 +165,7 @@ def render_inline_citations(answer: str, raw_citations: List[Dict[str, Any]]) ->
 
 # --------- 3. High-level API for agents/endpoints --------- #
 
-def enrich_response_with_citations(resp: Dict[str, Any]) -> Dict[str, Any]:
+def enrich_response_with_citations(resp: dict[str, Any]) -> dict[str, Any]:
     """
     High-level helper to enrich an Burhan agent response with:
 

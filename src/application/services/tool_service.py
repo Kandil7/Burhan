@@ -1,8 +1,9 @@
 # Tool Service Module
 """Service for handling tool operations."""
 
-from typing import Dict, Any, Optional
-from src.application.use_cases.run_tool import RunToolInput, RunToolOutput, ToolType
+from typing import Any
+
+from src.application.use_cases.run_tool import RunToolOutput, ToolType
 
 
 class ToolService:
@@ -20,7 +21,7 @@ class ToolService:
     async def run_tool(
         self,
         tool_type: ToolType,
-        parameters: Dict[str, Any],
+        parameters: dict[str, Any],
     ) -> RunToolOutput:
         """
         Run a tool with parameters.
@@ -57,24 +58,24 @@ class ToolService:
                 error_message=str(e),
             )
 
-    async def _handle_zakat(self, params: Dict[str, Any]) -> Any:
+    async def _handle_zakat(self, params: dict[str, Any]) -> Any:
         """Handle Zakat calculation."""
         # Placeholder - would call actual tool
         return {"result": "Zakat calculation not implemented"}
 
-    async def _handle_inheritance(self, params: Dict[str, Any]) -> Any:
+    async def _handle_inheritance(self, params: dict[str, Any]) -> Any:
         """Handle Inheritance calculation."""
         return {"result": "Inheritance calculation not implemented"}
 
-    async def _handle_prayer_times(self, params: Dict[str, Any]) -> Any:
+    async def _handle_prayer_times(self, params: dict[str, Any]) -> Any:
         """Handle Prayer times lookup."""
         return {"result": "Prayer times lookup not implemented"}
 
-    async def _handle_hijri_calendar(self, params: Dict[str, Any]) -> Any:
+    async def _handle_hijri_calendar(self, params: dict[str, Any]) -> Any:
         """Handle Hijri calendar lookup."""
         return {"result": "Hijri calendar not implemented"}
 
-    async def _handle_dua_retrieval(self, params: Dict[str, Any]) -> Any:
+    async def _handle_dua_retrieval(self, params: dict[str, Any]) -> Any:
         """Handle Dua retrieval."""
         return {"result": "Dua retrieval not implemented"}
 

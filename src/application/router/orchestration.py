@@ -13,13 +13,13 @@ This module provides:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
 
-from src.domain.intents import Intent, get_agent_for_intent, INTENT_ROUTING
-from src.retrieval.strategies import get_strategy_for_agent, get_collection_for_agent
-from src.agents.base import AgentOutput, AgentInput
+from src.agents.base import AgentInput, AgentOutput
+from src.domain.intents import Intent, get_agent_for_intent
+from src.retrieval.strategies import get_strategy_for_agent
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +159,7 @@ def _detect_complex_query(query: str) -> bool:
     }
 
     matched_domains = 0
-    for domain, keywords in domain_keywords.items():
+    for _domain, keywords in domain_keywords.items():
         if any(kw in query_lower for kw in keywords):
             matched_domains += 1
 

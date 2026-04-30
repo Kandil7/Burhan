@@ -6,6 +6,7 @@ Provides RAG-based search operations.
 
 from __future__ import annotations
 
+import importlib.util
 import re
 import time
 import uuid
@@ -13,17 +14,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from src.api.schemas.common import ErrorResponse
 from src.api.schemas.search import (
-    RAGQueryRequest,
     RAGQueryResponse,
     RAGStatsResponse,
-    SearchRequest,
-    SearchResponse,
+    SearchResult,
     SimpleRAGRequest,
     SimpleRAGResponse,
-    SearchResult,
 )
-from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 from src.generation.prompts.rag import get_rag_prompt
@@ -34,13 +32,7 @@ GENERIC_SEARCH_ERROR = "Search service temporarily unavailable."
 
 
 # ── Availability flag ────────────────────────────────────────────────────
-try:
-    import torch
-    import transformers
-
-    RAG_AVAILABLE = True
-except ImportError:
-    RAG_AVAILABLE = False
+RAG_AVAILABLE = importlib.util.find_spec("torch") is not None and importlib.util.find_spec("transformers") is not None
 
 
 # ── Sentinel ─────────────────────────────────────────────────────────────

@@ -216,20 +216,20 @@ from src.indexing.metadata.title_loader import TitleLoader
 
 class CatalogIndexer:
     CATALOG_COLLECTION = "catalog_metadata"
-    
+
     def __init__(self, batch_size: int = 50):
         self.batch_size = batch_size
         self.embedding_model = EmbeddingModel()
         self.vector_store = None
         self.title_loader = TitleLoader()
-    
+
     async def index_titles(self, book_ids: list[int] | None = None) -> dict:
         documents = []
-        
+
         # Load titles for each book
         for book_id in book_ids or []:
             titles = self.title_loader.get_titles_for_book(book_id)
-            
+
             for page_num, title_text in titles.items():
                 documents.append({
                     "content": title_text,
@@ -239,25 +239,25 @@ class CatalogIndexer:
                         "type": "title",
                     },
                 })
-        
+
         if not documents:
             return {"titles_indexed": 0}
-        
+
         # Generate embeddings
         texts = [d["content"] for d in documents]
         embeddings = await self.embedding_model.encode(texts)
-        
+
         # Upsert to catalog collection
         if self.vector_store is None:
             self.vector_store = await get_vector_store()
-        
+
         await self.vector_store.ensure_collection(self.CATALOG_COLLECTION)
         count = await self.vector_store.upsert(
             self.CATALOG_COLLECTION,
             documents,
             embeddings,
         )
-        
+
         return {
             "titles_indexed": count,
             "books_processed": len(set(d["metadata"]["book_id"] for d in documents)),

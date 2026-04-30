@@ -1,8 +1,8 @@
 # Citation Composer Module
 """Compose citations for answers."""
 
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
+
 from src.domain.citations import Citation
 
 
@@ -18,13 +18,13 @@ class CitationConfig:
 class CitationComposer:
     """Composes formatted citations."""
 
-    def __init__(self, config: Optional[CitationConfig] = None):
+    def __init__(self, config: CitationConfig | None = None):
         self.config = config or CitationConfig()
 
     def compose(
         self,
-        citations: List[Citation],
-    ) -> List[str]:
+        citations: list[Citation],
+    ) -> list[str]:
         """Compose formatted citations."""
         if self.config.format_style == "Burhan":
             return self._compose_Burhan_style(citations)
@@ -34,7 +34,7 @@ class CitationComposer:
             return self._compose_chicago_style(citations)
         return [str(c) for c in citations]
 
-    def _compose_Burhan_style(self, citations: List[Citation]) -> List[str]:
+    def _compose_Burhan_style(self, citations: list[Citation]) -> list[str]:
         """Compose in Burhan style."""
         formatted = []
         for cit in citations:
@@ -48,7 +48,7 @@ class CitationComposer:
             formatted.append(text)
         return formatted
 
-    def _compose_apa_style(self, citations: List[Citation]) -> List[str]:
+    def _compose_apa_style(self, citations: list[Citation]) -> list[str]:
         """Compose in APA style."""
         formatted = []
         for cit in citations:
@@ -56,7 +56,7 @@ class CitationComposer:
             formatted.append(text)
         return formatted
 
-    def _compose_chicago_style(self, citations: List[Citation]) -> List[str]:
+    def _compose_chicago_style(self, citations: list[Citation]) -> list[str]:
         """Compose in Chicago style."""
         formatted = []
         for cit in citations:
@@ -68,7 +68,7 @@ class CitationComposer:
 
     def compose_inline(
         self,
-        citations: List[Citation],
+        citations: list[Citation],
     ) -> str:
         """Compose inline citations."""
         return ", ".join(f"[{cit.source_name}]" for cit in citations)

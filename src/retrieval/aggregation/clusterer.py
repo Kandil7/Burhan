@@ -1,8 +1,8 @@
 # Clusterer Module
 """Clustering of retrieval results for diverse coverage."""
 
-from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -17,13 +17,13 @@ class ClusterConfig:
 class ResultClusterer:
     """Clusters retrieval results for diverse coverage."""
 
-    def __init__(self, config: Optional[ClusterConfig] = None):
+    def __init__(self, config: ClusterConfig | None = None):
         self.config = config or ClusterConfig()
 
     def cluster(
         self,
-        results: List[Dict[str, Any]],
-    ) -> List[List[Dict[str, Any]]]:
+        results: list[dict[str, Any]],
+    ) -> list[list[dict[str, Any]]]:
         """
         Cluster results for diverse retrieval.
 
@@ -38,9 +38,9 @@ class ResultClusterer:
 
     def select_diverse(
         self,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         max_per_cluster: int = 3,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Select diverse results from clusters."""
         clusters = self.cluster(results)
         selected = []

@@ -124,7 +124,7 @@ def _extract_all_quoted_segments(answer: str) -> list[dict]:
 async def detect_misattributed_quran(
     answer: str,
     citations: list[dict],
-    exact_quote_verifier: "ExactQuoteVerifier",
+    exact_quote_verifier: ExactQuoteVerifier,
     min_length: int = 10,
 ) -> list[dict]:
     """

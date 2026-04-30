@@ -1,7 +1,6 @@
 # Citations Domain Module
 """Domain model for citations and source attribution."""
 
-from typing import Optional, List
 from dataclasses import dataclass
 
 
@@ -13,10 +12,10 @@ class Citation:
     source_name: str
     reference: str
     text: str
-    chapter: Optional[str] = None
-    verse: Optional[str] = None
-    hadith_number: Optional[str] = None
-    page: Optional[str] = None
+    chapter: str | None = None
+    verse: str | None = None
+    hadith_number: str | None = None
+    page: str | None = None
     authority_weight: float = 1.0
 
 
@@ -24,33 +23,33 @@ class Citation:
 class CitationChain:
     """Represents a chain of citations supporting a claim."""
 
-    citations: List[Citation]
+    citations: list[Citation]
     is_verified: bool = False
-    verification_notes: Optional[str] = None
+    verification_notes: str | None = None
 
     def add_citation(self, citation: Citation) -> None:
         """Add a citation to the chain."""
         self.citations.append(citation)
 
-    def get_all_sources(self) -> List[str]:
+    def get_all_sources(self) -> list[str]:
         """Get all unique source IDs."""
-        return list(set(c.source_id for c in self.citations))
+        return list({c.source_id for c in self.citations})
 
 
 class SourceAttribution:
     """Handles source attribution for responses."""
 
     def __init__(self):
-        self.citations: List[Citation] = []
+        self.citations: list[Citation] = []
 
     def add_citation(self, citation: Citation) -> None:
         """Add a citation."""
         self.citations.append(citation)
 
-    def get_citations(self) -> List[Citation]:
+    def get_citations(self) -> list[Citation]:
         """Get all citations."""
         return self.citations
 
-    def format_citations(self) -> List[str]:
+    def format_citations(self) -> list[str]:
         """Format citations for display."""
         return [f"[{c.source_name}] {c.reference}" for c in self.citations]

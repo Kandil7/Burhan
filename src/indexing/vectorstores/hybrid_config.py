@@ -12,9 +12,12 @@ Phase 3.2: Qdrant Collections Setup for hybrid search.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict
+from typing import TYPE_CHECKING
 
 from qdrant_client.models import Distance
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
 
 
 class SparseVectorType(str, Enum):
@@ -126,7 +129,7 @@ class CollectionConfig:
 
 
 # Collection configurations for all Islamic knowledge domains
-COLLECTION_CONFIGS: Dict[str, CollectionConfig] = {
+COLLECTION_CONFIGS: dict[str, CollectionConfig] = {
     "fiqh": CollectionConfig(
         name="fiqh",
         dense=DenseVectorConfig(size=1024, distance=Distance.COSINE),
@@ -262,7 +265,6 @@ def recreate_collection(
     Returns:
         True if successful, False otherwise
     """
-    from qdrant_client import QdrantClient as QdrantClientType
     from qdrant_client.models import (
         Distance,
         HnswConfigDiff,

@@ -4,14 +4,13 @@
 import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict, Any, Optional, Type
 
 from src.verification.schemas import (
+    CheckResult,
     VerificationCheck,
-    VerificationSuite,
     VerificationReport,
     VerificationStatus,
-    CheckResult,
+    VerificationSuite,
 )
 
 logger = logging.getLogger(__name__)
@@ -130,7 +129,7 @@ LANGUAGE_VERIFICATION_SUITE = VerificationSuite(
 # Agent Name to Suite Mapping
 # =============================================================================
 
-AGENT_SUITE_MAP: Dict[str, VerificationSuite] = {
+AGENT_SUITE_MAP: dict[str, VerificationSuite] = {
     "fiqh_agent": FIQH_VERIFICATION_SUITE,
     "hadith_agent": HADITH_VERIFICATION_SUITE,
     "tafsir_agent": TAFSIR_VERIFICATION_SUITE,
@@ -153,14 +152,14 @@ AGENT_SUITE_MAP: Dict[str, VerificationSuite] = {
 
 # =============================================================================
 # Registry mapping check names to their implementation classes
-CHECK_IMPLEMENTATIONS: Dict[str, type] = {}
+CHECK_IMPLEMENTATIONS: dict[str, type] = {}
 
 
 def register_all_checks() -> None:
     """Register all available verification checks."""
     # 1. High-Integrity Domain Checks (Quote Verification)
     try:
-        from src.verification.checks.fiqh_checks import QuoteValidator, EvidenceSufficiency
+        from src.verification.checks.fiqh_checks import EvidenceSufficiency, QuoteValidator
 
         register_check("quote_validator", QuoteValidator)
         register_check("evidence_sufficiency", EvidenceSufficiency)
@@ -230,7 +229,7 @@ def register_check(name: str, check_class: type) -> None:
     CHECK_IMPLEMENTATIONS[name] = check_class
 
 
-def get_check_implementation(name: str) -> Optional[type]:
+def get_check_implementation(name: str) -> type | None:
     """Get a check implementation by name.
 
     Args:
@@ -289,7 +288,7 @@ def run_verification_suite(
     initial_count = len(candidates)
     verified_passages: list[dict] = list(candidates)
     all_issues: list[str] = []
-    check_results: Dict[str, CheckResult] = {}
+    check_results: dict[str, CheckResult] = {}
 
     for check in suite.checks:
         if not check.enabled:
@@ -427,13 +426,13 @@ def _run_coroutine_sync(coro):
 
 def create_suite_for_agent(
     agent_name: str,
-    checks: List[VerificationCheck],
+    checks: list[VerificationCheck],
     fail_fast: bool = True,
 ) -> VerificationSuite:
     """Create a custom verification suite for an agent."""
     return VerificationSuite(checks=checks, fail_fast=fail_fast)
 
 
-def list_available_suites() -> List[str]:
+def list_available_suites() -> list[str]:
     """List all available verification suite names."""
     return list(AGENT_SUITE_MAP.keys())

@@ -6,6 +6,7 @@ Uses YAML config from config/agents/seerah.yaml
 
 from __future__ import annotations
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -14,7 +15,6 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
-from src.agents.base import strip_cot_leakage
 from src.domain.intents import Intent
 
 

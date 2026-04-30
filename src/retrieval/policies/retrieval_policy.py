@@ -1,7 +1,6 @@
 # Retrieval Policy Module
 """Policies for controlling retrieval behavior."""
 
-from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
 
@@ -26,7 +25,7 @@ class RetrievalConfig:
     enable_reranking: bool = True
     rerank_top_n: int = 5
     enable_expansion: bool = True
-    expansion_terms: Optional[List[str]] = None
+    expansion_terms: list[str] | None = None
 
 
 class RetrievalPolicy:
@@ -35,7 +34,7 @@ class RetrievalPolicy:
     def __init__(self):
         self.default_config = RetrievalConfig()
 
-    def get_config_for_intent(self, intent: Optional[str] = None) -> RetrievalConfig:
+    def get_config_for_intent(self, intent: str | None = None) -> RetrievalConfig:
         """Get retrieval config based on query intent."""
         # Placeholder - return default config for now
         return self.default_config

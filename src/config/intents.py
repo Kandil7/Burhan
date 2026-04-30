@@ -6,17 +6,17 @@ for backward compatibility with existing code.
 """
 
 from src.domain.intents import (
+    INTENT_DESCRIPTIONS,
+    INTENT_PRIORITY,
+    INTENT_ROUTING,
+    KEYWORD_PATTERNS,
     Intent,
     QuranSubIntent,
-    INTENT_DESCRIPTIONS,
-    INTENT_ROUTING,
-    INTENT_PRIORITY,
-    KEYWORD_PATTERNS,
-    get_intent_description,
-    get_agent_for_intent,
-    is_quran_intent,
     all_intents,
     all_quran_sub_intents,
+    get_agent_for_intent,
+    get_intent_description,
+    is_quran_intent,
 )
 
 __all__ = [

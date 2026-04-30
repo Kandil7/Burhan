@@ -1,14 +1,14 @@
 """Pipelines module for Burhan Islamic QA system."""
 
-from src.indexing.pipelines.build_collection_indexes import (
-    CollectionIndexer,
-    CollectionIndexError,
-    build_collection_indexes,
-)
 from src.indexing.pipelines.build_catalog_indexes import (
     CatalogIndexer,
     CatalogIndexError,
     build_catalog_indexes,
+)
+from src.indexing.pipelines.build_collection_indexes import (
+    CollectionIndexer,
+    CollectionIndexError,
+    build_collection_indexes,
 )
 
 __all__ = [

@@ -12,13 +12,10 @@ Features:
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import BaseModel, ValidationError
-
 
 # Base path for config and prompts directories
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -75,7 +72,7 @@ def load_agent_config(
     if not config_path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         config_data = yaml.safe_load(f) or {}
 
     if load_prompts:
@@ -83,13 +80,13 @@ def load_agent_config(
         prompt_path = PROMPTS_DIR / f"{normalized_name.replace('_agent', '')}_agent.txt"
 
         if prompt_path.exists():
-            with open(prompt_path, "r", encoding="utf-8") as f:
+            with open(prompt_path, encoding="utf-8") as f:
                 agent_prompt = f.read()
 
             # Also load shared preamble
             preamble_path = PROMPTS_DIR / "_shared_preamble.txt"
             if preamble_path.exists():
-                with open(preamble_path, "r", encoding="utf-8") as f:
+                with open(preamble_path, encoding="utf-8") as f:
                     shared_preamble = f.read()
                 config_data["system_prompt"] = f"{shared_preamble}\n\n{agent_prompt}"
             else:
@@ -155,7 +152,7 @@ def load_yaml_config(config_path: Path) -> dict:
     Returns:
         Dictionary with config data
     """
-    with open(config_path, "r", encoding="utf-8") as f:
+    with open(config_path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
 

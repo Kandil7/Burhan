@@ -126,7 +126,7 @@ class LLMClients:
     # ── Factory ───────────────────────────────────────────────────────────────
 
     @classmethod
-    async def create(cls) -> "LLMClients":
+    async def create(cls) -> LLMClients:
         """
         Build and validate all configured LLM clients.
 

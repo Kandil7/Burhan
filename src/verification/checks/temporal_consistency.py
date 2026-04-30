@@ -1,10 +1,11 @@
 # Temporal Consistency Verifier Module
 """Verifier for temporal consistency in historical claims."""
 
-from typing import Optional, Dict, Any, List, Tuple
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 import re
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class TemporalConsistencyVerifier(BaseVerifier):
@@ -17,7 +18,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify temporal consistency."""
         # Extract dates/eras from claim
@@ -57,7 +58,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return True
 
-    def _extract_dates(self, text: str) -> List[Tuple[str, int]]:
+    def _extract_dates(self, text: str) -> list[tuple[str, int]]:
         """Extract dates from text."""
         # Extract AH dates
         ah_patterns = [
@@ -77,16 +78,16 @@ class TemporalConsistencyVerifier(BaseVerifier):
 
         return dates
 
-    def _extract_dates_from_evidence(self, evidence: Any) -> List[Tuple[str, int]]:
+    def _extract_dates_from_evidence(self, evidence: Any) -> list[tuple[str, int]]:
         """Extract dates from evidence."""
         # Placeholder - would implement actual extraction
         return []
 
     def _find_temporal_contradictions(
         self,
-        claim_dates: List[Tuple[str, int]],
-        evidence_dates: List[Tuple[str, int]],
-    ) -> List[str]:
+        claim_dates: list[tuple[str, int]],
+        evidence_dates: list[tuple[str, int]],
+    ) -> list[str]:
         """Find contradictions between dates."""
         contradictions = []
 

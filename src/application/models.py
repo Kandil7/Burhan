@@ -8,7 +8,7 @@ This module contains:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 from src.domain.models import ClassificationResult
 
@@ -35,4 +35,4 @@ class RoutingDecision:
 
     result: ClassificationResult
     route: str
-    agent_metadata: Dict[str, Any] = field(default_factory=dict)
+    agent_metadata: dict[str, Any] = field(default_factory=dict)

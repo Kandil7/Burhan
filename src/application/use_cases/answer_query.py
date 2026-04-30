@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from src.agents.base import AgentInput, AgentOutput
 from src.config.logging_config import get_logger
@@ -39,7 +39,7 @@ class AnswerQueryOutput:
     intent: str
     confidence: float
     citations: list[dict[str, Any]]
-    citation_chunks: list[dict[str, Any]] = field(default_factory=list)  
+    citation_chunks: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     requires_human_review: bool = False
 
@@ -54,7 +54,7 @@ class AnswerQueryUseCase:
     def __init__(self, agent_registry: Any = None, router: Any = None):
         """
         Initialize with injected dependencies.
-        
+
         Args:
             agent_registry: AgentRegistry instance
             router: RouterAgent instance
@@ -73,23 +73,23 @@ class AnswerQueryUseCase:
             AnswerQueryOutput with response and metadata
         """
         start_time = time.time()
-        
+
         # 1. Resolve Dependencies
         # Use injected or global fallbacks
         router = self._router
         if not router:
             from src.application.router.router_agent import get_router_agent
             router = get_router_agent()
-            
+
         registry = self._registry
         if not registry:
             from src.core.registry import get_registry
             registry = get_registry()
-        
+
         # 2. Routing & Intent Classification
         decision = await router.route(input_data.query)
         intent = decision.result.intent
-        
+
         logger.info(
             "use_case.answer_query.routed",
             intent=intent.value,
@@ -101,10 +101,10 @@ class AnswerQueryUseCase:
         if not registry:
             from src.core.registry import get_registry
             registry = get_registry()
-            
+
         # IMPORTANT: Use the intent from the router to find the specialized agent
         agent, is_agent = registry.get_for_intent(intent)
-        
+
         if not agent:
             logger.warning("use_case.answer_query.no_agent_for_intent", intent=intent.value)
             # Fallback to general agent or chatbot
@@ -144,7 +144,7 @@ class AnswerQueryUseCase:
             return self._build_error_output(input_data, str(e))
 
         processing_time_ms = int((time.time() - start_time) * 1000)
-        
+
 
         # 5. Build Output
         # Use router confidence for the top-level 'confidence' field (intent_confidence in API)
@@ -162,7 +162,7 @@ class AnswerQueryUseCase:
             citation_chunks=result.citation_chunks,
             requires_human_review=result.requires_human_review,
         )
-    
+
 
     def _build_error_output(self, input_data: AnswerQueryInput, error: str) -> AnswerQueryOutput:
         """Build error response when agent fails."""
@@ -177,7 +177,7 @@ class AnswerQueryUseCase:
 
 
 # Singleton instance
-_instance: Optional[AnswerQueryUseCase] = None
+_instance: AnswerQueryUseCase | None = None
 
 
 def get_answer_query_use_case(agent_registry: Any = None, router: Any = None) -> AnswerQueryUseCase:
@@ -187,5 +187,5 @@ def get_answer_query_use_case(agent_registry: Any = None, router: Any = None) ->
         _instance = AnswerQueryUseCase(agent_registry=agent_registry, router=router)
     return _instance
 
-#default use case 
+#default use case
 answer_query_use_case =AnswerQueryUseCase()

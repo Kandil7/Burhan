@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -394,7 +393,7 @@ class ConfigRouter:
 # ============================================================================
 
 
-_config_router: Optional[ConfigRouter] = None
+_config_router: ConfigRouter | None = None
 
 
 def get_config_router() -> ConfigRouter:

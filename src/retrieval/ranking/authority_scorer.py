@@ -1,7 +1,6 @@
 # Authority Scorer Module
 """Authority scoring for sources based on scholarly consensus."""
 
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -22,11 +21,11 @@ class AuthorityScore:
 
     level: AuthorityLevel
     score: float
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 # Authority scores for major sources
-SOURCE_AUTHORITY: Dict[str, AuthorityScore] = {
+SOURCE_AUTHORITY: dict[str, AuthorityScore] = {
     "quran": AuthorityScore(
         level=AuthorityLevel.MUTAWATIR,
         score=1.0,
@@ -62,7 +61,7 @@ def get_authority(source_id: str) -> AuthorityScore:
     )
 
 
-def calculate_weighted_authority(sources: List[str]) -> float:
+def calculate_weighted_authority(sources: list[str]) -> float:
     """Calculate weighted authority from multiple sources."""
     if not sources:
         return 0.0

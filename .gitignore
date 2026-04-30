@@ -128,16 +128,27 @@ qdrant_data/
 *.bak
 *.cache
 
-# Windows reserved names
+# Windows reserved names (some already covered but adding for completeness)
 nul
 con
 prn
 aux
 
-#Documentation
-# docs/
-=0.34.0
-data/mini_dataset_v2/combined.jsonl
+# Project-specific temp files
+results
+test_result.txt
+debug_output.txt
+debug_keywords_output.txt
+classifier_debug.txt
+
+# Documentation (keep only main README)
+V2_ARCHITECTURE_REPORT.md
+QWEN.md
 GEMINI.md
 CLAUDE.md
+AGENTS.md
+docs/archive/
+
+# Local Claude settings
 .claude/settings.local.json
+.claude/commands/

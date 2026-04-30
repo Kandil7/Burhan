@@ -1,8 +1,7 @@
 # Abstain Prompt Module
 """Prompts for abstention responses."""
 
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 ABSTAIN_SYSTEM_PROMPT = """You are a responsible AI assistant that knows its limitations.
 When you cannot provide a reliable answer, you should:
@@ -39,8 +38,8 @@ ABSTENTION_REASONS = {
 def get_abstain_prompt(
     question: str,
     reason: str,
-    details: Optional[str] = None,
-) -> Dict[str, Any]:
+    details: str | None = None,
+) -> dict[str, Any]:
     """Get an abstention prompt."""
     reason_description = ABSTENTION_REASONS.get(reason, reason)
 

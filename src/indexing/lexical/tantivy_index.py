@@ -1,9 +1,8 @@
 # Tantivy Index Module
 """Tantivy-based full-text search index."""
 
-from typing import List, Optional, Dict, Any
 import tempfile
-from pathlib import Path
+from typing import Any
 
 
 class TantivyIndex:
@@ -11,15 +10,15 @@ class TantivyIndex:
 
     def __init__(
         self,
-        index_path: Optional[str] = None,
-        schema: Optional[Dict[str, Any]] = None,
+        index_path: str | None = None,
+        schema: dict[str, Any] | None = None,
     ):
         self.index_path = index_path or tempfile.mkdtemp()
         self.schema = schema or self._default_schema()
         self.index = None
         self._is_ready = False
 
-    def _default_schema(self) -> Dict[str, Any]:
+    def _default_schema(self) -> dict[str, Any]:
         """Get default schema configuration."""
         return {
             "text": {"type": "text", "indexed": True, "stored": True},
@@ -35,7 +34,7 @@ class TantivyIndex:
 
     async def add_documents(
         self,
-        documents: List[Dict[str, Any]],
+        documents: list[dict[str, Any]],
     ) -> None:
         """Add documents to the index."""
         if not self._is_ready:
@@ -47,15 +46,15 @@ class TantivyIndex:
         self,
         query: str,
         top_k: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Search the index."""
         if not self._is_ready:
             await self.initialize()
         # Placeholder - implement actual search
         return []
 
-    async def delete(self, doc_ids: List[str]) -> None:
+    async def delete(self, doc_ids: list[str]) -> None:
         """Delete documents from the index."""
         if not self._is_ready:
             await self.initialize()

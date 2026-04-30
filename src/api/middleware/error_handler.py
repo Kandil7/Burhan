@@ -57,11 +57,11 @@ async def error_handler_middleware(request: Request, call_next):
 
     except Exception as e:
         error_str = _safe_error_str(e)
-        
+
         # Determine status code and public message
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         public_message = "An unexpected error occurred"
-        
+
         # Infrastructure error detection
         infra_keywords = ["Connection refused", "OperationalError", "ConnectionError", "Vector store not available"]
         if any(kw in error_str for kw in infra_keywords) or "sqlalchemy" in str(type(e)).lower():

@@ -13,8 +13,8 @@ Phase 9 Enhancement:
 import logging
 import sys
 import time
-from typing import Any, Optional
 from functools import wraps
+from typing import Any
 
 from src.config.settings import settings
 
@@ -195,7 +195,7 @@ def setup_logging(level: str = "INFO") -> None:
         )
 
 
-def get_logger(name: Optional[str] = None) -> LoggerWrapper:
+def get_logger(name: str | None = None) -> LoggerWrapper:
     """
     Get a logger instance that handles structlog-style calls.
 

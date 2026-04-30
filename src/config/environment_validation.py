@@ -5,7 +5,6 @@ Validates required environment variables and dependencies on startup.
 Phase 9: Added comprehensive environment validation.
 """
 
-import os
 import sys
 from typing import Any
 
@@ -58,7 +57,6 @@ class Validator:
     def validate_redis(self) -> bool:
         """Validate Redis connection."""
         try:
-            from src.infrastructure.redis import get_redis
 
             # Just check URL is set
             url = settings.redis_url

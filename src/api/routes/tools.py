@@ -11,6 +11,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 
+from src.api.schemas.common import ErrorResponse
 from src.api.schemas.tools import (
     DuaRequest,
     HijriRequest,
@@ -18,7 +19,6 @@ from src.api.schemas.tools import (
     PrayerTimesRequest,
     ZakatRequest,
 )
-from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.tools.dua_retrieval_tool import DuaRetrievalTool
 from src.tools.hijri_calendar_tool import HijriCalendarTool

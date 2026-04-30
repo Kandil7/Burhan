@@ -2,9 +2,10 @@
 """Verifier for detecting contradictions in claims."""
 
 import re
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from typing import Any
+
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class ContradictionVerifier(BaseVerifier):
@@ -17,7 +18,7 @@ class ContradictionVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Check for contradictions."""
         # Extract claim statements
@@ -50,7 +51,7 @@ class ContradictionVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return evidence is not None
 
-    def _extract_statements(self, claim: str) -> List[str]:
+    def _extract_statements(self, claim: str) -> list[str]:
         """Extract statements from claim."""
         parts = [p.strip() for p in re.split(r"[.!?؟\n]+", claim) if p.strip()]
         return parts or [claim]
@@ -80,8 +81,8 @@ class ContradictionVerifier(BaseVerifier):
                 return True
 
         # Heuristic 2: numeric conflict when same unit appears.
-        stmt_nums = {n for n in re.findall(r"\b\d+\b", stmt)}
-        ev_nums = {n for n in re.findall(r"\b\d+\b", ev)}
+        stmt_nums = set(re.findall(r"\b\d+\b", stmt))
+        ev_nums = set(re.findall(r"\b\d+\b", ev))
         if stmt_nums and ev_nums and stmt_nums.isdisjoint(ev_nums):
             units = {"ayah", "ayat", "verses", "surah", "year", "years", "آية", "آيات", "سورة", "سنة"}
             if any(unit in stmt for unit in units) and any(unit in ev for unit in units):

@@ -21,7 +21,6 @@ Phase 6 Refactoring:
 import hashlib
 import json
 import time
-from typing import Any
 
 import numpy as np
 import redis.asyncio as redis

@@ -9,17 +9,16 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.lifespan import lifespan
 from src.api.middleware.error_handler import error_handler_middleware
+from src.api.middleware.request_logging import RequestIDMiddleware, RequestLoggingMiddleware
 from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
-from src.api.middleware.request_logging import RequestLoggingMiddleware, RequestIDMiddleware
-from src.api.routes.health import router as health_router
 from src.api.routes.ask import ask_router
 from src.api.routes.classify import classify_router
+from src.api.routes.health import router as health_router
+from src.api.routes.quran import router as quran_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
-from src.api.routes.quran import router as quran_router
-from src.api.routes.fiqh import fiqh_router
-from src.api.lifespan import lifespan
 from src.config.environment_validation import validate_environment
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings

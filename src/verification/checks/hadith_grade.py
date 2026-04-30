@@ -1,12 +1,13 @@
 # Hadith Grade Verifier Module
 """Verifier for hadith grading and authenticity with esnad support."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class HadithGrade(str, Enum):
@@ -40,8 +41,8 @@ class HadithGradingResult:
     """
 
     grade: HadithGrade
-    details: Optional[str] = None
-    scholars: List[str] = None
+    details: str | None = None
+    scholars: list[str] = None
 
 
 # Known hadith collections and their default grades
@@ -82,7 +83,7 @@ class HadithGradeVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify hadith grade.
 
@@ -195,7 +196,7 @@ class HadithGradeVerifier(BaseVerifier):
         hadith_keywords = ["hadith", "حديث", "صحيح", "ضعيف", "رسول"]
         return any(kw in claim.lower() for kw in hadith_keywords)
 
-    def _extract_hadith_reference(self, claim: str) -> Optional[str]:
+    def _extract_hadith_reference(self, claim: str) -> str | None:
         """Extract hadith reference from claim.
 
         Args:
@@ -249,7 +250,7 @@ class HadithGradeVerifier(BaseVerifier):
         # Unknown - return default
         return HadithGrade.DAIF
 
-    def enrich_passages_with_authenticity(self, passages: List[Dict]) -> List[Dict]:
+    def enrich_passages_with_authenticity(self, passages: list[dict]) -> list[dict]:
         """Enrich passages with hadith authenticity grades.
 
         Args:

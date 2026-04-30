@@ -8,12 +8,12 @@ This module contains indexing-related components:
 - pipelines: Indexing pipelines
 """
 
-from src.indexing.embeddings.embedding_model import EmbeddingModel
 from src.indexing.embeddings.embedding_cache import EmbeddingCache
-from src.indexing.vectorstores.base import VectorStoreBase
-from src.indexing.vectorstores.qdrant_store import VectorStore
-from src.indexing.vectorstores.factory import get_vector_store
+from src.indexing.embeddings.embedding_model import EmbeddingModel
 from src.indexing.metadata.title_loader import TitleLoader
+from src.indexing.vectorstores.base import VectorStoreBase
+from src.indexing.vectorstores.factory import get_vector_store
+from src.indexing.vectorstores.qdrant_store import VectorStore
 
 __all__ = [
     "EmbeddingModel",

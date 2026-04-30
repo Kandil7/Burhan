@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from ..schemas import CheckResult, VerificationStatus, VerifierType
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 from .quote_span import QuoteSpanDetector
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class ExactQuoteVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         from src.verification.checks.quote_span import RELAXED_DELIMITER_TYPES
 
@@ -65,8 +65,8 @@ class ExactQuoteVerifier(BaseVerifier):
 
         source_type = context.get("source_type", "general") if context else "general"
 
-        failed_quotes: List[str] = []
-        passed_quotes: List[str] = []
+        failed_quotes: list[str] = []
+        passed_quotes: list[str] = []
 
         for span in spans:
             relaxed = span["delimiter_type"] in RELAXED_DELIMITER_TYPES
@@ -119,7 +119,7 @@ class ExactQuoteVerifier(BaseVerifier):
         if not evidence:
             return False
 
-        passages: List[str] = []
+        passages: list[str] = []
         if isinstance(evidence, list):
             for e in evidence:
                 if isinstance(e, dict):

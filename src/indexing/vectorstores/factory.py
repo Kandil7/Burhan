@@ -41,7 +41,7 @@ class VectorStoreFactory:
     def get_vector_store(
         cls,
         store_type: str | None = None,
-    ) -> "VectorStoreBase":
+    ) -> VectorStoreBase:
         """
         Get a vector store instance.
 
@@ -84,7 +84,7 @@ class VectorStoreFactory:
             raise ValueError(f"Unknown vector store type: {store_type}. Supported: qdrant, chroma, faiss")
 
     @classmethod
-    async def initialize_vector_store(cls) -> "VectorStoreBase":
+    async def initialize_vector_store(cls) -> VectorStoreBase:
         """
         Get and initialize the vector store.
 
@@ -116,11 +116,11 @@ class VectorStoreFactory:
 
 
 # Convenience function for quick access
-def get_vector_store() -> "VectorStoreBase":
+def get_vector_store() -> VectorStoreBase:
     """Get the default vector store instance."""
     return VectorStoreFactory.get_vector_store()
 
 
-async def initialize_vector_store() -> "VectorStoreBase":
+async def initialize_vector_store() -> VectorStoreBase:
     """Initialize and return the default vector store."""
     return await VectorStoreFactory.initialize_vector_store()

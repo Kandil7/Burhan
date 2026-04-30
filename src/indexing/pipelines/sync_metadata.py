@@ -1,19 +1,19 @@
 # Sync Metadata Pipeline
 """Synchronize metadata with the vector store."""
 
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 
 class SyncMetadataPipeline:
     """Pipeline for syncing metadata with the vector store."""
 
     def __init__(self):
-        self.last_sync: Optional[str] = None
+        self.last_sync: str | None = None
 
     async def sync(
         self,
         metadata_source: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Sync metadata from source.
 
@@ -31,7 +31,7 @@ class SyncMetadataPipeline:
             "records_removed": 0,
         }
 
-    async def get_sync_status(self) -> Dict[str, Any]:
+    async def get_sync_status(self) -> dict[str, Any]:
         """Get current sync status."""
         return {
             "last_sync": self.last_sync,

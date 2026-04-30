@@ -8,7 +8,7 @@ Coordinates between Keyword, Hybrid (Master), and LLM-based classifiers.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Optional, Any
+from typing import Any
 
 from src.application.interfaces import IntentClassifier
 

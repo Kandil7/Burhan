@@ -102,7 +102,7 @@ def linear_combination_fusion(
     all_docs: dict[int, dict[str, Any]] = {}
     doc_max_scores: dict[int, float] = {}
 
-    for result_list, weight in zip(result_lists, weights):
+    for result_list, weight in zip(result_lists, weights, strict=False):
         for result in result_list:
             doc_id = result.get("id")
             if doc_id is None:
@@ -204,7 +204,7 @@ def merge_ranked_lists(
         return []
 
     # Filter out empty lists
-    non_empty_lists = [l for l in lists if l]
+    non_empty_lists = [lst for lst in lists if lst]
     if not non_empty_lists:
         return []
 

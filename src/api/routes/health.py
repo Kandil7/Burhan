@@ -5,11 +5,11 @@ Provides endpoints for monitoring service health and readiness.
 Phase 9: Added metrics endpoint.
 """
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter
 
 from src.api.schemas.common import HealthResponse
-from src.config.settings import settings
 from src.config.logging_config import metrics
+from src.config.settings import settings
 
 router = APIRouter(tags=["Health"])
 

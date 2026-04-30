@@ -7,7 +7,7 @@ Adds unique request ID to each request for tracing.
 from __future__ import annotations
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware

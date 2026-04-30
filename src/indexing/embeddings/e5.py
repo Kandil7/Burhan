@@ -1,7 +1,7 @@
 # E5 Embedding Model
 """E5 embedding model for text embeddings."""
 
-from typing import List
+
 from .embedding_model import EmbeddingModel
 
 
@@ -12,12 +12,12 @@ class E5Embedding(EmbeddingModel):
         self.model_name = model_name
         self.model = None
 
-    def embed(self, text: str) -> List[float]:
+    def embed(self, text: str) -> list[float]:
         """Generate embedding for a single text."""
         # Placeholder - implement actual E5 embedding
         return [0.0] * self.dimension
 
-    def embed_batch(self, texts: List[str]) -> List[List[float]]:
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for a batch of texts."""
         return [self.embed(text) for text in texts]
 

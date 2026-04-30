@@ -12,18 +12,17 @@ Components:
 - prompt_loader: Loads prompts from files
 """
 
+from src.generation.composers.answer_composer import AnswerComposer
+from src.generation.composers.citation_composer import CitationComposer
+from src.generation.composers.clarification_composer import ClarificationComposer
 from src.generation.schemas import (
-    GenerationRequest as AnswerRequest,
     GeneratedAnswer as AnswerResponse,
+    GenerationRequest as AnswerRequest,
     PromptTemplate,
 )
 
 # Aliases for backward compatibility
 GenerationConfig = dict
-
-from src.generation.composers.answer_composer import AnswerComposer
-from src.generation.composers.citation_composer import CitationComposer
-from src.generation.composers.clarification_composer import ClarificationComposer
 
 __all__ = [
     # Schemas

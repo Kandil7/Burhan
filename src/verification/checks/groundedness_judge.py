@@ -1,11 +1,12 @@
 # Groundedness Judge Module
 """Judge for overall groundedness of responses."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerifierType
 
 
 class GroundednessLevel(str, Enum):
@@ -41,7 +42,7 @@ class GroundednessJudge(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Judge groundedness of claim."""
         # Extract claims from response
@@ -102,7 +103,7 @@ class GroundednessJudge(BaseVerifier):
         """Check if this verifier is applicable."""
         return evidence is not None
 
-    def _extract_claims(self, text: str) -> List[str]:
+    def _extract_claims(self, text: str) -> list[str]:
         """Extract claims from text."""
         # Placeholder - would implement actual claim extraction
         # Split by sentence endings
@@ -111,7 +112,7 @@ class GroundednessJudge(BaseVerifier):
         sentences = re.split(r"[.!?]+", text)
         return [s.strip() for s in sentences if s.strip()]
 
-    def _extract_evidences(self, evidence: Any) -> List[Dict[str, Any]]:
+    def _extract_evidences(self, evidence: Any) -> list[dict[str, Any]]:
         """Extract evidences from evidence object."""
         # Placeholder - would implement actual extraction
         if isinstance(evidence, list):
@@ -121,7 +122,7 @@ class GroundednessJudge(BaseVerifier):
     def _is_supported(
         self,
         claim: str,
-        evidences: List[Dict[str, Any]],
+        evidences: list[dict[str, Any]],
     ) -> bool:
         """Check if a claim is supported by evidence."""
         # Placeholder - would implement actual support detection

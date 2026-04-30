@@ -8,10 +8,9 @@ from __future__ import annotations
 
 import logging
 import sys
-from typing import Optional
 
 
-def get_logger(name: str = "Burhan", level: Optional[int] = None) -> logging.Logger:
+def get_logger(name: str = "Burhan", level: int | None = None) -> logging.Logger:
     """
     Return a configured logger.
 

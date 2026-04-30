@@ -11,27 +11,27 @@ Key features:
 - Collection-aware metadata for better retrieval
 """
 
-from typing import Dict, Optional, Any
 import json
 from pathlib import Path
+from typing import Any
 
-from src.indexing.metadata.master_catalog import (
-    MasterCatalog,
-    master_catalog as default_master_catalog,
-    BookEntry,
-)
+from src.config.logging_config import get_logger
 from src.indexing.metadata.author_catalog import (
     AuthorCatalog,
+)
+from src.indexing.metadata.author_catalog import (
     author_catalog as default_author_catalog,
-    Author,
 )
 from src.indexing.metadata.category_mapping import (
     get_subcategories,
     map_category,
-    CategoryHierarchy,
 )
-
-from src.config.logging_config import get_logger
+from src.indexing.metadata.master_catalog import (
+    MasterCatalog,
+)
+from src.indexing.metadata.master_catalog import (
+    master_catalog as default_master_catalog,
+)
 
 logger = get_logger()
 
@@ -98,7 +98,7 @@ era_classifier = EraClassifier()
 
 
 # Known madhhab affiliations for authors
-MADHHAB_AFFILIATIONS: Dict[str, Dict[str, str]] = {
+MADHHAB_AFFILIATIONS: dict[str, dict[str, str]] = {
     "imam_bukhari": {"madhhab": "hanbali", "inferred": False},
     "imam_muslim": {"madhhab": "shafi'i", "inferred": False},
     "imam_ibn_qayyim": {"madhhab": "hanbali", "inferred": False},
@@ -112,7 +112,7 @@ MADHHAB_AFFILIATIONS: Dict[str, Dict[str, str]] = {
 }
 
 # Known aqeedah schools
-AQEEDAH_SCHOOLS: Dict[str, str] = {
+AQEEDAH_SCHOOLS: dict[str, str] = {
     "imam_bukhari": "Burhani",
     "imam_muslim": "Burhani",
     "imam_ibn_qayyim": "Burhani",
@@ -124,7 +124,7 @@ AQEEDAH_SCHOOLS: Dict[str, str] = {
 }
 
 
-def get_madhhab(author_id: str) -> tuple[Optional[str], bool]:
+def get_madhhab(author_id: str) -> tuple[str | None, bool]:
     """
     Get madhhab for an author.
 
@@ -141,16 +141,16 @@ def get_madhhab(author_id: str) -> tuple[Optional[str], bool]:
     return None, True
 
 
-def get_aqeedah_school(author_id: str) -> Optional[str]:
+def get_aqeedah_school(author_id: str) -> str | None:
     """Get aqeedah school for an author."""
     return AQEEDAH_SCHOOLS.get(author_id)
 
 
 def enrich_passage(
     row: dict,
-    master_cat: Optional[MasterCatalog] = None,
-    author_cat: Optional[AuthorCatalog] = None,
-    cat_map: Optional[Any] = None,
+    master_cat: MasterCatalog | None = None,
+    author_cat: AuthorCatalog | None = None,
+    cat_map: Any | None = None,
 ) -> dict:
     """
     Enrich a passage with author, era, category, and collection metadata.
@@ -269,9 +269,9 @@ def build_metadata_csv(
     input_path: str,
     output_path: str,
     input_format: str = "jsonl",
-    master_cat: Optional[MasterCatalog] = None,
-    author_cat: Optional[AuthorCatalog] = None,
-) -> Dict[str, Any]:
+    master_cat: MasterCatalog | None = None,
+    author_cat: AuthorCatalog | None = None,
+) -> dict[str, Any]:
     """
     Build enriched metadata CSV from input dataset.
 
@@ -372,8 +372,8 @@ def build_metadata_csv(
 
 def enrich_batch(
     passages: list,
-    master_cat: Optional[MasterCatalog] = None,
-    author_cat: Optional[AuthorCatalog] = None,
+    master_cat: MasterCatalog | None = None,
+    author_cat: AuthorCatalog | None = None,
 ) -> list:
     """
     Enrich a batch of passages.

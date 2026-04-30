@@ -10,12 +10,10 @@ For production, use the full MasterHybridClassifier via build_classifier().
 
 from __future__ import annotations
 
-from src.domain.intents import Intent
 from src.application.router.classifier_factory import (
     KeywordBasedClassifier,
-    normalize_arabic,
 )
-
+from src.domain.intents import Intent
 
 # Intent to agent mapping
 INTENT_TO_AGENT: dict[Intent, str] = {

@@ -6,10 +6,8 @@ Phase 10: Added API versioning support.
 """
 
 from enum import Enum
-from typing import Callable
 
 from fastapi import APIRouter, FastAPI, Request
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class APIVersion(str, Enum):

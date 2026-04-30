@@ -8,6 +8,7 @@ but were never implemented. Re-exports from canonical locations.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +31,7 @@ class Citation(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def from_passage(cls, passage, index: int = 1) -> "Citation":
+    def from_passage(cls, passage, index: int = 1) -> Citation:
         """Create Citation from RetrievalPassage.
 
         Args:
@@ -83,12 +84,13 @@ class AgentOutput(BaseModel):
 
     answer: str = Field(description="Agent answer text")
     citations: list[Citation] = Field(default_factory=list)
-    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)  
+    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     requires_human_review: bool = Field(default=False)
 
     model_config = {"extra": "allow"}
+
 
 class BaseAgent:
     """Base class for agents (placeholder)."""
@@ -105,7 +107,10 @@ class BaseAgent:
 # Chain-of-thought markers to strip
 _COT_PATTERNS = [
     re.compile(r"##?\s*(Analysis|Reasoning|Thought|Chain of Thought).*?\n\n", re.IGNORECASE | re.DOTALL),
-    re.compile(r"<\s*(analysis|reasoning|thought|think)\s*>.*?(?:</\s*(?:analysis|reasoning|thought|think)\s*>)?\s*", re.IGNORECASE | re.DOTALL),
+    re.compile(
+        r"<\s*(analysis|reasoning|thought|think)\s*>.*?(?:</\s*(?:analysis|reasoning|thought|think)\s*>)?\s*",
+        re.IGNORECASE | re.DOTALL,
+    ),
     re.compile(r"^.*?<\/\s*(?:analysis|reasoning|thought|think)\s*>\s*", re.IGNORECASE | re.DOTALL),
     re.compile(r"###\s*(?:Let me|I'll|I will).*?\n\s*", re.IGNORECASE),
 ]
@@ -162,7 +167,7 @@ class VerificationReport(BaseModel):
         passages: list,
         is_verified: bool = True,
         confidence: float = 0.8,
-    ) -> "VerificationReport":
+    ) -> VerificationReport:
         """Create VerificationReport from list of passages.
 
         Args:

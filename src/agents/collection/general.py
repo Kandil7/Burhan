@@ -152,10 +152,10 @@ class GeneralCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
-        preamble = self._load_shared_preamble()
+        self._load_shared_preamble()
         try:
             with open("prompts/general_agent.txt", encoding="utf-8") as f:
-                agent_prompt = f.read()
+                f.read()
         except FileNotFoundError:
             return """أنت معلم إسلامي متخصص.
 استند حصراً إلى المصادر المُقدَّمة.

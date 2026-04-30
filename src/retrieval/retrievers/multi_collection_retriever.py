@@ -1,33 +1,33 @@
 # Multi-Collection Retriever Module
 """Retrieval across multiple collections."""
 
-from typing import List, Optional, Dict, Any
 import asyncio
+from typing import Any
 
 
 class MultiCollectionRetriever:
     """Retriever that queries multiple collections."""
 
-    def __init__(self, retrievers: Optional[Dict[str, Any]] = None):
-        self.retrievers: Dict[str, Any] = retrievers or {}
+    def __init__(self, retrievers: dict[str, Any] | None = None):
+        self.retrievers: dict[str, Any] = retrievers or {}
 
     async def retrieve(
         self,
         query: str,
-        collections: List[str],
+        collections: list[str],
         top_k: int = 10,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         """
         Retrieve from multiple collections.
 
         Returns:
             Dict mapping collection_id to list of results
         """
-        results: Dict[str, List[Dict[str, Any]]] = {}
+        results: dict[str, list[dict[str, Any]]] = {}
 
         # Build tasks for collections that have retrievers
         tasks = []
-        ordered_ids: List[str] = []
+        ordered_ids: list[str] = []
 
         for collection_id in collections:
             retriever = self.retrievers.get(collection_id)
@@ -40,7 +40,7 @@ class MultiCollectionRetriever:
 
         if tasks:
             retrieved_lists = await asyncio.gather(*tasks, return_exceptions=True)
-            for coll_id, res in zip(ordered_ids, retrieved_lists):
+            for coll_id, res in zip(ordered_ids, retrieved_lists, strict=False):
                 if isinstance(res, Exception):
                     # TODO: log error هنا لو حابب
                     results[coll_id] = []
@@ -53,6 +53,6 @@ class MultiCollectionRetriever:
         """Register a retriever for a collection."""
         self.retrievers[collection_id] = retriever
 
-    def get_retriever(self, collection_id: str) -> Optional[Any]:
+    def get_retriever(self, collection_id: str) -> Any | None:
         """Get the retriever for a specific collection."""
         return self.retrievers.get(collection_id)
