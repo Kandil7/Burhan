@@ -19,8 +19,8 @@ from src.api.schemas.ask import (
     AskResponse,
 )
 from src.api.schemas.classification import (
-    ClassificationRequest,
-    ClassificationResponse,
+    ClassifyRequest,
+    ClassificationResultSchema,
     RoutingDecisionSchema,
 )
 from src.api.schemas.common import (
@@ -34,8 +34,16 @@ from src.api.schemas.search import (
     SearchResult,
 )
 from src.api.schemas.tools import (
-    ToolRequest,
-    ToolResponse,
+    ZakatRequest,
+    ZakatResponse,
+    InheritanceRequest,
+    InheritanceResponse,
+    PrayerTimesRequest,
+    PrayerTimesResponse,
+    HijriRequest,
+    HijriResponse,
+    DuaRequest,
+    DuaResponse,
 )
 
 __all__ = [
@@ -43,8 +51,8 @@ __all__ = [
     "AskRequest",
     "AskResponse",
     # Classification
-    "ClassificationRequest",
-    "ClassificationResponse",
+    "ClassifyRequest",
+    "ClassificationResultSchema",
     "RoutingDecisionSchema",
     # Common
     "ErrorResponse",
@@ -55,6 +63,14 @@ __all__ = [
     "SearchResponse",
     "SearchResult",
     # Tools
-    "ToolRequest",
-    "ToolResponse",
+    "ZakatRequest",
+    "ZakatResponse",
+    "InheritanceRequest",
+    "InheritanceResponse",
+    "PrayerTimesRequest",
+    "PrayerTimesResponse",
+    "HijriRequest",
+    "HijriResponse",
+    "DuaRequest",
+    "DuaResponse",
 ]

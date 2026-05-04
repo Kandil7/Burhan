@@ -238,11 +238,11 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 import os
-os.makedirs('/content/drive/MyDrive/Burhan-Embeddings', exist_ok=True)
+os.makedirs('/content/drive/MyDrive/Athar-Embeddings', exist_ok=True)
 
 for collection in COLLECTIONS:
     src = f"/content/{collection}_embeddings.npy"
-    dst = f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy"
+    dst = f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy"
     if os.path.exists(src):
         !cp {src} {dst}
         print(f"✅ Saved {collection} embeddings")
@@ -413,7 +413,7 @@ BATCH_SIZE = 512  # or 256
 ```python
 # Save every 30 minutes
 if time.time() - last_save > 1800:
-    np.save(f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy", embeddings)
+    np.save(f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy", embeddings)
 ```
 
 ### Issue 3: Qdrant Upload Too Slow

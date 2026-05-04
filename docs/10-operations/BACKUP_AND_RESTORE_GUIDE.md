@@ -71,7 +71,7 @@ import gzip
 
 # Download embedding
 filepath = hf_hub_download(
-    repo_id="Kandil7/Burhan-Embeddings",
+    repo_id="Kandil7/Athar-Embeddings",
     filename="embeddings/fiqh_passages_embeddings.npy.gz",
     repo_type="dataset"
 )
@@ -99,7 +99,7 @@ print(f"Shape: {embeddings.shape}")
 ## 📁 File Structure After Backup
 
 ```
-HuggingFace Repo: Kandil7/Burhan-Embeddings
+HuggingFace Repo: Kandil7/Athar-Embeddings
 │
 ├── embeddings/
 │   ├── README.md
@@ -162,7 +162,7 @@ Add to `.env`:
 ```bash
 # HuggingFace
 HF_TOKEN=hf_your_token_here
-HF_EMBEDDINGS_REPO_ID=Kandil7/Burhan-Embeddings
+HF_EMBEDDINGS_REPO_ID=Kandil7/Athar-Embeddings
 
 # Qdrant
 QDRANT_URL=http://localhost:6333

@@ -42,7 +42,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [

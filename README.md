@@ -459,7 +459,7 @@ dataset = load_dataset("Kandil7/Athar-Datasets",
 
 ---
 
-#### 2. [Kandil7/Burhan-Embeddings](https://huggingface.co/datasets/Kandil7/Burhan-Embeddings)
+#### 2. [Kandil7/Athar-Embeddings](https://huggingface.co/datasets/Kandil7/Athar-Embeddings)
 
 > **Pre-computed Embeddings** - BGE-M3 embeddings for semantic search
 
@@ -499,7 +499,7 @@ from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
 # Load embeddings
-embeddings_dataset = load_dataset("Kandil7/Burhan-Embeddings", split="train")
+embeddings_dataset = load_dataset("Kandil7/Athar-Embeddings", split="train")
 
 # Or generate new embeddings
 model = SentenceTransformer("BGE-M3")
@@ -510,7 +510,7 @@ embeddings = model.encode(["نص عربي للبحث"], normalize_embeddings=Tru
 
 ### Dataset Comparison
 
-| Feature | Athar-Datasets | Burhan-Embeddings |
+| Feature | Athar-Datasets | Athar-Embeddings |
 |---------|----------------|-------------------|
 | **Type** | Raw text | Vector embeddings |
 | **Size** | ~45 GB | ~5-10 GB |
@@ -559,7 +559,7 @@ ElShamela Library (8,425 books)
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Stage 5: Embedding Generation (Burhan-Embeddings)        │
+│  Stage 5: Embedding Generation (Athar-Embeddings)        │
 │  • BGE-M3 model (1024 dims)                              │
 │  • Batch processing                                      │
 │  • Upload embeddings                                     │
@@ -576,7 +576,7 @@ ElShamela Library (8,425 books)
 | **Merge & Enrichment** | 5,717,177 | ~61 GB | ✅ Complete |
 | **Hierarchical Chunking** | 10 files | ~88 GB | ✅ Complete |
 | **Athar-Datasets** | 15.8M | ~45 GB | ✅ Complete |
-| **Burhan-Embeddings** | 2.64M | ~8 GB | ✅ Complete |
+| **Athar-Embeddings** | 2.64M | ~8 GB | ✅ Complete |
 | **Qdrant Import** | 10 collections | - | ✅ Complete |
 
 ---

@@ -46,7 +46,7 @@ EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 BACKUP_DIR = PROJECT_ROOT / "data" / "processed" / "hf_backup"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [
