@@ -263,7 +263,7 @@ async def handle_fiqh_question(
                     "message": "The query took too long. Please try again.",
                     "trace_id": trace_id,
                 },
-            )
+            ) from None
 
         # Calculate timing
         processing_time_ms = int((time.time() - start_time) * 1000)

@@ -167,10 +167,10 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
     # Paths that require API key
     PROTECTED_PATHS = [
-        "/api/v1/query",
+        "/api/v1/ask",
+        "/api/v1/search",
         "/api/v1/tools",
         "/api/v1/quran",
-        "/api/v1/rag",
     ]
 
     def __init__(self, app, api_key: str | None = None):

@@ -126,7 +126,7 @@ def load_agent_config_typed(
     try:
         return config_class(**config_data)
     except ValidationError as e:
-        raise ValueError(f"Invalid config for {agent_name}: {e}")
+        raise ValueError(f"Invalid config for {agent_name}: {e}") from e
 
 
 def get_all_agent_configs() -> list[str]:

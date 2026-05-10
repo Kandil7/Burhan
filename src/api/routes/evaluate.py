@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import time
-import uuid
 from pathlib import Path
 from typing import Any
 
@@ -97,7 +96,7 @@ def load_dataset(dataset_name: str, limit: int) -> list[DatasetItem]:
         raise FileNotFoundError(f"Dataset file not found: {file_path}")
 
     items = []
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         for i, line in enumerate(f):
             if i >= limit:
                 break
@@ -119,8 +118,10 @@ def load_dataset(dataset_name: str, limit: int) -> list[DatasetItem]:
 async def create_fresh_llm_classifier() -> "LLMIntentClassifier":
     """Create a fresh LLM classifier instance for each request."""
     import os
-    from src.config.settings import settings
+
     from openai import AsyncOpenAI
+
+    from src.config.settings import settings
     from src.infrastructure.llm.llm_classifier import LLMIntentClassifier
 
     try:
@@ -149,8 +150,9 @@ async def create_fresh_llm_classifier() -> "LLMIntentClassifier":
 
 async def classify_direct_llm(query: str) -> tuple[str, float, str]:
     """Direct LLM classification using Groq API."""
-    import os
     import json
+    import os
+
     import httpx
 
     from src.config.settings import settings
@@ -242,7 +244,6 @@ Examples:
                 parsed = json.loads(content)
             except json.JSONDecodeError:
                 # Try to extract JSON from the text using regex - more robust
-                import re
 
                 # Find the first { and last } to get the full JSON object
                 start = content.find("{")
@@ -251,7 +252,7 @@ Examples:
                     json_str = content[start : end + 1]
                     try:
                         parsed = json.loads(json_str)
-                    except:
+                    except (json.JSONDecodeError, ValueError):
                         logger.warning(f"=== DIRECT_LLM: Regex extracted JSON failed: {json_str[:100]}")
 
                 if not parsed:
@@ -647,7 +648,7 @@ async def list_datasets() -> dict:
     for file_path in base_path.glob("*.jsonl"):
         dataset_name = file_path.stem.replace("_real_user_eval", "")
         # Count lines in file
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             line_count = sum(1 for _ in f)
         datasets.append(
             {

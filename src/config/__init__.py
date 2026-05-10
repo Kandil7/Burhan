@@ -22,16 +22,31 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
 
-from src.agents.collection.base import (
-    CollectionAgentConfig,
-    FallbackPolicy,
-    RetrievalStrategy,
-)
 from src.config.settings import settings
-from src.verification.schemas import (
-    VerificationCheck,
-    VerificationSuite,
-)
+
+
+# Lazy imports to break circular dependency
+# Load these only when functions are called, not at module import time
+def _get_collection_types():
+    """Lazy import to break circular dependency."""
+    from src.agents.collection.base import (
+        CollectionAgentConfig,
+        FallbackPolicy,
+        RetrievalStrategy,
+    )
+
+    return CollectionAgentConfig, FallbackPolicy, RetrievalStrategy
+
+
+def _get_verification_types():
+    """Lazy import verification schemas."""
+    from src.verification.schemas import (
+        VerificationCheck,
+        VerificationSuite,
+    )
+
+    return VerificationCheck, VerificationSuite
+
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +216,7 @@ class AgentConfigManager:
         self,
         agent_name: str,
         include_prompt: bool = True,
-    ) -> CollectionAgentConfig:
+    ) -> "CollectionAgentConfig":
         """
         Get a CollectionAgentConfig for the specified agent.
 
@@ -212,6 +227,14 @@ class AgentConfigManager:
         Returns:
             CollectionAgentConfig instance
         """
+        # Lazy import to avoid circular dependency
+        from src.agents.collection.base import (
+            CollectionAgentConfig,
+            FallbackPolicy,
+            RetrievalStrategy,
+        )
+        from src.verification.schemas import VerificationCheck, VerificationSuite
+
         yaml_config = self.load_config(agent_name)
 
         # Convert retrieval config
