@@ -15,10 +15,11 @@ from src.api.middleware.request_logging import RequestIDMiddleware, RequestLoggi
 from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 from src.api.routes.ask import ask_router
 from src.api.routes.classify import classify_router
-from src.api.routes.health import router as health_router
+from src.api.routes.health import health_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
+from src.api.routes.evaluate import evaluate_router
 from src.config.environment_validation import validate_environment
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
@@ -71,13 +72,13 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(classify_router)  # /classify
 
-
     # V1 API routes
     v1 = settings.api_v1_prefix
     app.include_router(ask_router, prefix=v1)  # /api/v1/ask
     app.include_router(search_router, prefix=v1)  # /api/v1/search (merged from rag)
     app.include_router(tools_router, prefix=v1)  # /api/v1/tools
     app.include_router(quran_router, prefix=v1)  # /api/v1/quran
+    app.include_router(evaluate_router)  # /evaluate (no prefix for public access)
 
     # ── Root ─────────────────────────────────────────────────────────────
     @app.get("/", tags=["Root"])

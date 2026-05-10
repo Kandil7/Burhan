@@ -11,7 +11,7 @@ from src.api.schemas.common import HealthResponse
 from src.config.logging_config import metrics
 from src.config.settings import settings
 
-router = APIRouter(tags=["Health"])
+health_router = APIRouter(tags=["Health"])
 
 
 async def check_postgres() -> str:
@@ -53,7 +53,7 @@ async def check_qdrant() -> str:
         return f"error: {str(e)[:50]}"
 
 
-@router.get("/health", response_model=HealthResponse)
+@health_router.get("/health", response_model=HealthResponse)
 async def health_check():
     """
     Basic health check endpoint.
@@ -68,7 +68,7 @@ async def health_check():
     )
 
 
-@router.get("/ready", response_model=HealthResponse)
+@health_router.get("/ready", response_model=HealthResponse)
 async def readiness_check():
     """
     Readiness probe - checks all service connections.
@@ -91,7 +91,7 @@ async def readiness_check():
     return HealthResponse(status="ok" if all_healthy else "degraded", version=settings.app_version, services=services)
 
 
-@router.get("/metrics")
+@health_router.get("/metrics")
 async def get_metrics():
     """
     Metrics endpoint for monitoring.
@@ -104,19 +104,19 @@ async def get_metrics():
     return metrics.get_metrics()
 
 
-@router.get("/metrics/counters")
+@health_router.get("/metrics/counters")
 async def get_counters():
     """Get counter metrics only."""
     return metrics.get_metrics()["counters"]
 
 
-@router.get("/metrics/timings")
+@health_router.get("/metrics/timings")
 async def get_timings():
     """Get timing metrics only."""
     return metrics.get_metrics()["timings"]
 
 
-@router.get("/metrics/reset", status_code=204)
+@health_router.get("/metrics/reset", status_code=204)
 async def reset_metrics():
     """Reset all metrics."""
     metrics.reset()

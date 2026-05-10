@@ -17,7 +17,7 @@ from src.api.routes.ask import ask_router
 from src.api.routes.classify import classify_router
 from src.api.routes.fiqh import fiqh_router
 from src.api.routes.health import health_router
-from src.api.routes.quran import quran_router
+from src.api.routes.quran import router as quran_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
 

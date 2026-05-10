@@ -10,11 +10,10 @@ This module contains all infrastructure components:
 """
 
 from src.infrastructure.database import AsyncDatabaseManager
-from src.infrastructure.llm_client import LLMClient
-from src.infrastructure.redis import RedisManager
+from src.infrastructure.llm_client import LLMClients
 
 __all__ = [
-    "LLMClient",
+    "LLMClients",
     "AsyncDatabaseManager",
     "RedisManager",
 ]
