@@ -17,7 +17,11 @@ from src.generation.composers.citation_composer import CitationComposer
 from src.generation.composers.clarification_composer import ClarificationComposer
 from src.generation.schemas import (
     GeneratedAnswer as AnswerResponse,
+)
+from src.generation.schemas import (
     GenerationRequest as AnswerRequest,
+)
+from src.generation.schemas import (
     PromptTemplate,
 )
 

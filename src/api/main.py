@@ -15,11 +15,11 @@ from src.api.middleware.request_logging import RequestIDMiddleware, RequestLoggi
 from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
 from src.api.routes.ask import ask_router
 from src.api.routes.classify import classify_router
+from src.api.routes.evaluate import evaluate_router
 from src.api.routes.health import health_router
 from src.api.routes.quran import router as quran_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
-from src.api.routes.evaluate import evaluate_router
 from src.config.environment_validation import validate_environment
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings

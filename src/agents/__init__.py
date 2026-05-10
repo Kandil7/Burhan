@@ -15,14 +15,14 @@ from src.agents.base import (
     Citation,
 )
 from src.agents.collection import (
+    AqeedahCollectionAgent,
     CollectionAgent,
     CollectionAgentConfig,
     FiqhCollectionAgent,
     HadithCollectionAgent,
-    TafsirCollectionAgent,
-    AqeedahCollectionAgent,
-    SeerahCollectionAgent,
     IntentLabel,
+    SeerahCollectionAgent,
+    TafsirCollectionAgent,
 )
 
 __all__ = [
