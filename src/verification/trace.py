@@ -21,7 +21,7 @@ class VerificationStep(BaseModel):
     status: str = Field(default="running")  # running, completed, failed
     details: dict[str, Any] = Field(default_factory=dict)
 
-    def complete(self, status: str = "completed", details: dict[str, Any] | None = None):
+    def complete(self, status: str = "completed", details: dict[str, Any] | None = None) -> None:
         """Mark step as complete."""
         self.end_time = datetime.utcnow()
         self.status = status
@@ -42,21 +42,21 @@ class VerificationTrace(BaseModel):
     overall_status: str = Field(default="running")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def add_step(self, step: VerificationStep):
+    def add_step(self, step: VerificationStep) -> None:
         """Add a step to the trace."""
         self.steps.append(step)
 
-    def complete(self, status: str, metadata: dict[str, Any] | None = None):
+    def complete(self, status: str, metadata: dict[str, Any] | None = None) -> None:
         """Mark trace as complete."""
         self.end_time = datetime.utcnow()
         self.overall_status = status
         if metadata:
             self.metadata.update(metadata)
 
-    def get_timing_summary(self) -> dict[str, float]:
+    def get_timing_summary(self) -> dict[str, Any]:
         """Get timing summary for all steps."""
         total_ms = 0.0
-        step_times = {}
+        step_times: dict[str, float] = {}
 
         for step in self.steps:
             if step.end_time and step.start_time:
