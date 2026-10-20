@@ -148,7 +148,7 @@ class QueryExpander:
         # Returns: ["صلاة الفجر", "صلاة", "الفجر", ...]
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.synonyms = ISLAMIC_SYNONYMS
 
     def expand(self, query: str) -> list[str]:
@@ -305,7 +305,7 @@ class RetrievalQueryExpander(QueryExpander):
     Returns multiple query variations for parallel retrieval.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def get_retrieval_queries(
