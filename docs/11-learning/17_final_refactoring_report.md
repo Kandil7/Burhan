@@ -1,5 +1,9 @@
 # 🎉 تقرير إنجاز إعادة الهيكلة - Phase 6 Refactoring Complete
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## 📋 نظرة عامة
 
 تم بنجاح تنفيذ **8 تحسينات جوهرية** على معمارية مشروع Burhan Islamic QA System.
@@ -27,12 +31,14 @@
 _chatbot = None
 _chatbot_lock = threading.Lock()
 
+
 def get_chatbot():
     global _chatbot
     with _chatbot_lock:
         if _chatbot is None:
             _chatbot = ChatbotAgent()
         return _chatbot
+
 
 # بعد: سطر واحد!
 _chatbot = LazySingleton(ChatbotAgent)
@@ -57,10 +63,12 @@ _chatbot = LazySingleton(ChatbotAgent)
 ```python
 # قبل
 import redis  # Sync - Blocking!
+
 data = self._redis.get(key)  # يحجب كل الطلبات!
 
 # بعد
 import redis.asyncio as redis  # Async - Non-blocking!
+
 data = await self._redis.get(key)  # لا يحجب!
 ```
 
@@ -82,13 +90,14 @@ data = await self._redis.get(key)  # لا يحجب!
 **الحل:**
 ```python
 # قبل
-id=str(uuid.uuid4())  # جديد كل مرة → تضاعف!
+id = str(uuid.uuid4())  # جديد كل مرة → تضاعف!
 
 # بعد
 import hashlib
+
 content = doc.get("content", "")
 doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]  # ثابت!
-id=doc_id
+id = doc_id
 ```
 
 **التأثير:**
@@ -119,8 +128,10 @@ class EraClassifier:
             return "prophetic"
         # ...
 
+
 # استخدام في كل مكان
 from src.utils.era_classifier import EraClassifier
+
 era = EraClassifier.classify(death_year)
 ```
 
@@ -142,14 +153,13 @@ era = EraClassifier.classify(death_year)
 ```python
 # src/utils/language_detection.py
 def detect_language(text: str, threshold: float = 0.3) -> str:
-    arabic_chars = sum(
-        1 for char in text
-        if '\u0600' <= char <= '\u06FF'
-    )
+    arabic_chars = sum(1 for char in text if "\u0600" <= char <= "\u06ff")
     # ...
+
 
 # استخدام
 from src.utils.language_detection import detect_language
+
 lang = detect_language(query)
 ```
 
