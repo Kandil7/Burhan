@@ -1,5 +1,9 @@
 # Burhan Refactor & Implementation Plan
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 هذا الملف يحوّل وثيقة  
 **“Burhan CollectionAgent Architecture and Multi-Agent RAG Design”**  
 إلى خطة تنفيذ عملية داخل مشروع Burhan، مع مراحل واضحة، ملفات مقترحة، و‑checklists.[file:138]
@@ -127,8 +131,7 @@ Burhan/
   - `assemble_citations`.[file:138]
 - [ ] إضافة method:
   ```python
-  async def run(self, raw_question: str, meta: dict | None) -> FinalAnswer:
-      ...
+  async def run(self, raw_question: str, meta: dict | None) -> FinalAnswer: ...
   ```
   لتنفيذ lifecycle end‑to‑end.
 
@@ -158,8 +161,7 @@ Burhan/
   - تعريف `retrieval_matrix` من القسم 2.1/2.2 (FiqhAgent…).[file:138]
   - دالة:
     ```python
-    def get_strategy_for_agent(agent_name: str) -> RetrievalStrategy:
-        ...
+    def get_strategy_for_agent(agent_name: str) -> RetrievalStrategy: ...
     ```
 - [ ] `reranker.py`:
   - interface لـ cross-encoder/ColBERT:
@@ -189,7 +191,8 @@ Burhan/
     ```python
     class VerificationCheckRunner(ABC):
         name: str
-        fail_policy: Literal['abstain', 'warn', 'proceed']
+        fail_policy: Literal["abstain", "warn", "proceed"]
+
         async def run(self, passages, normalized_query) -> VerificationResultPiece: ...
     ```
 - [ ] `fiqh_checks.py`:
@@ -201,8 +204,7 @@ Burhan/
   - config YAML‑like مطابق للمثال (FiqhAgent suite).[file:138]
 - [ ] util:
   ```python
-  def build_verification_suite_for(agent_name: str) -> VerificationSuite:
-      ...
+  def build_verification_suite_for(agent_name: str) -> VerificationSuite: ...
   ```
 
 **Acceptance Criteria**
@@ -228,8 +230,7 @@ Burhan/
 - [ ] نسخ FiqhAgent system prompt الكامل إلى `fiqh_prompt.txt`.[file:138]
 - [ ] utility في `agents/fiqh_agent.py`:
   ```python
-  def load_prompt(name: str) -> str:
-      ...
+  def load_prompt(name: str) -> str: ...
   ```
 
 ---
@@ -342,8 +343,7 @@ Burhan/
     - HNSW configs: large/medium/small + mapping لكل collection كما في الوثيقة.[file:138]
   - دالة:
     ```python
-    def recreate_all_collections(client):
-        ...
+    def recreate_all_collections(client): ...
     ```
 - [ ] `ingest_Burhan_to_qdrant.py`:
   - تحميل enriched data
