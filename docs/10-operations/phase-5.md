@@ -216,10 +216,10 @@ New: build.bat menu
 
 ### For Developers
 ```
-Old: python scripts/test_api.py
+Old: python scripts/tests/test_api.py
 New: build.bat test:api
 
-Old: python scripts/complete_ingestion.py --books 100
+Old: python scripts/ingestion/complete_ingestion.py --books 100
 New: build.bat data:ingest (then choose option)
 
 Old: docker compose logs -f
