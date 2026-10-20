@@ -4,6 +4,7 @@ Verse Retrieval Engine for Burhan Islamic QA system.
 This module provides a class for retrieving verses from the database based on a given query.
 
 """
+
 from __future__ import annotations
 
 import json
@@ -21,12 +22,12 @@ logger = get_logger()
 
 NAMED_VERSES_PATH = Path(__file__).parent / "named_verses.json"
 
-_RE_DIACRITICS    = re.compile(r"[\u064B-\u065F\u0670]")
-_RE_ALEF          = re.compile(r"[أإآٱ]")
-_RE_NUMBER_REF    = re.compile(r"^\d+\s*[:\-]\s*\d+$")
+_RE_DIACRITICS = re.compile(r"[\u064B-\u065F\u0670]")
+_RE_ALEF = re.compile(r"[أإآٱ]")
+_RE_NUMBER_REF = re.compile(r"^\d+\s*[:\-]\s*\d+$")
 # include Arabic-Indic digits U+0660–U+0669
-_RE_NAME_NUM      = re.compile(r"^(.+?)\s+([\d\u0660-\u0669]+)$")
-_RE_ARABIC_INDIC  = re.compile(r"[\u0660-\u0669]")
+_RE_NAME_NUM = re.compile(r"^(.+?)\s+([\d\u0660-\u0669]+)$")
+_RE_ARABIC_INDIC = re.compile(r"[\u0660-\u0669]")
 
 
 def _to_arabic_ascii(text: str) -> str:
@@ -56,9 +57,9 @@ class VerseRetrievalEngine:
     """
 
     def __init__(self, session: Session) -> None:
-        self.session      = session
-        self._raw_verses  = self._load_named_verses()        # full JSON including _meta
-        self.named_verses = self._build_verse_index()        # only valid verse entries
+        self.session = session
+        self._raw_verses = self._load_named_verses()  # full JSON including _meta
+        self.named_verses = self._build_verse_index()  # only valid verse entries
 
     # ── Named verse loader ────────────────────────────────────────────────────
 
@@ -66,7 +67,8 @@ class VerseRetrievalEngine:
         try:
             if NAMED_VERSES_PATH.exists():
                 with open(NAMED_VERSES_PATH, encoding="utf-8") as f:
-                    return json.load(f)
+                    data: dict = json.load(f)
+                    return data
         except Exception as e:
             logger.error("verse.named_verses_load_error", error=str(e))
         return {}
@@ -76,11 +78,7 @@ class VerseRetrievalEngine:
         strip _meta and any entry that is not a verse dict.
         A valid verse entry must have "surah" key.
         """
-        return {
-            k: v
-            for k, v in self._raw_verses.items()
-            if isinstance(v, dict) and "surah" in v
-        }
+        return {k: v for k, v in self._raw_verses.items() if isinstance(v, dict) and "surah" in v}
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -121,11 +119,11 @@ class VerseRetrievalEngine:
             raise VerseNotFoundError(f"Invalid reference format: {reference!r}")
 
         surah_num = int(match.group(1))
-        ayah_num  = int(match.group(2))
+        ayah_num = int(match.group(2))
 
         ayah = (
             self.session.query(Ayah)
-            .options(joinedload(Ayah.surah))          # Fix #7
+            .options(joinedload(Ayah.surah))  # Fix #7
             .join(Surah)
             .filter(Surah.number == surah_num, Ayah.number_in_surah == ayah_num)
             .first()
@@ -155,9 +153,7 @@ class VerseRetrievalEngine:
             start, end = verse_data["ayah_range"]
             return await self.lookup_surah_range(surah_num, start, end, include_translation)
 
-        verse = await self.lookup_by_number(
-            f"{surah_num}:{verse_data['ayah']}", include_translation
-        )
+        verse = await self.lookup_by_number(f"{surah_num}:{verse_data['ayah']}", include_translation)
         return [verse]
 
     def _resolve_named_verse(self, name: str) -> dict | None:
@@ -169,7 +165,7 @@ class VerseRetrievalEngine:
         Pass 3: partial key match  (key in name_key or name_key in key)
         Pass 4: partial alias match
         """
-        if len(name.strip()) < 2:              # guard against 1-char inputs
+        if len(name.strip()) < 2:  # guard against 1-char inputs
             return None
 
         name_key = self._normalise_key(name)
@@ -206,12 +202,12 @@ class VerseRetrievalEngine:
         reference: str,
         include_translation: bool = True,
     ) -> dict:
-        match = _RE_NAME_NUM.match(reference.strip())   # Fix #5
+        match = _RE_NAME_NUM.match(reference.strip())  # Fix #5
         if not match:
             raise VerseNotFoundError(f"Invalid reference: {reference!r}")
 
         surah_name = match.group(1).strip()
-        ayah_num   = int(_to_arabic_ascii(match.group(2)))  # Fix #5
+        ayah_num = int(_to_arabic_ascii(match.group(2)))  # Fix #5
 
         surah = self._find_surah_by_name(surah_name)
         if not surah:
@@ -219,7 +215,7 @@ class VerseRetrievalEngine:
 
         ayah = (
             self.session.query(Ayah)
-            .options(joinedload(Ayah.surah))            # Fix #7
+            .options(joinedload(Ayah.surah))  # Fix #7
             .filter(Ayah.surah_id == surah.id, Ayah.number_in_surah == ayah_num)
             .first()
         )
@@ -238,7 +234,7 @@ class VerseRetrievalEngine:
     ) -> list[dict]:
         ayahs = (
             self.session.query(Ayah)
-            .options(joinedload(Ayah.surah))            # Fix #7
+            .options(joinedload(Ayah.surah))  # Fix #7
             .join(Surah)
             .filter(
                 Surah.number == surah_number,
@@ -260,7 +256,7 @@ class VerseRetrievalEngine:
         # Stage 1: DB-side LIKE on text_simple
         ayahs = (
             self.session.query(Ayah)
-            .options(joinedload(Ayah.surah))            # Fix #7
+            .options(joinedload(Ayah.surah))  # Fix #7
             .filter(Ayah.text_simple.like(f"%{query}%"))
             .limit(limit)
             .all()
@@ -276,7 +272,7 @@ class VerseRetrievalEngine:
         while len(matching) < limit:
             batch: list[Ayah] = (
                 self.session.query(Ayah)
-                .options(joinedload(Ayah.surah))        # Fix #7
+                .options(joinedload(Ayah.surah))  # Fix #7
                 .order_by(Ayah.number)
                 .limit(batch_size)
                 .offset(offset)
@@ -286,7 +282,7 @@ class VerseRetrievalEngine:
                 break
 
             for ayah in batch:
-                source = getattr(ayah, "text_simple", None) or ayah.text_uthmani or ""
+                source = str(getattr(ayah, "text_simple", None) or ayah.text_uthmani or "")
                 if normalized_query in self._normalize_arabic(source):
                     matching.append(ayah)
                     if len(matching) >= limit:
@@ -312,47 +308,34 @@ class VerseRetrievalEngine:
         return text
 
     def _find_surah_by_name(self, name: str) -> Surah | None:
-        surah = (
-            self.session.query(Surah)
-            .filter(or_(Surah.name_ar == name, Surah.name_en == name))
-            .first()
-        )
+        surah = self.session.query(Surah).filter(or_(Surah.name_ar == name, Surah.name_en == name)).first()
         if surah:
             return surah
 
         if name.isdigit():
-            return (
-                self.session.query(Surah)
-                .filter(Surah.number == int(name))
-                .first()
-            )
+            return self.session.query(Surah).filter(Surah.number == int(name)).first()
 
-        return (
-            self.session.query(Surah)
-            .filter(or_(Surah.name_ar.contains(name), Surah.name_en.contains(name)))
-            .first()
-        )
+        return self.session.query(Surah).filter(or_(Surah.name_ar.contains(name), Surah.name_en.contains(name))).first()
 
     def _format_ayah(self, ayah: Ayah, include_translation: bool = True) -> dict:
         result: dict[str, Any] = {
-            "surah_number":  ayah.surah.number,
+            "surah_number": ayah.surah.number,
             "surah_name_ar": ayah.surah.name_ar,
             "surah_name_en": ayah.surah.name_en,
-            "ayah_number":   ayah.number_in_surah,
-            "text_uthmani":  ayah.text_uthmani,
-            "text_simple":   getattr(ayah, "text_simple",  None),
-            "juz":           getattr(ayah, "juz",          None),
-            "page":          getattr(ayah, "page",         None),
-            "hizb":          getattr(ayah, "hizb",         None),
-            "rub_el_hizb":   getattr(ayah, "rub_el_hizb", None),
-            "sajdah":        getattr(ayah, "sajdah",       None),
-            "quran_url":     f"https://quran.com/{ayah.surah.number}/{ayah.number_in_surah}",
+            "ayah_number": ayah.number_in_surah,
+            "text_uthmani": ayah.text_uthmani,
+            "text_simple": getattr(ayah, "text_simple", None),
+            "juz": getattr(ayah, "juz", None),
+            "page": getattr(ayah, "page", None),
+            "hizb": getattr(ayah, "hizb", None),
+            "rub_el_hizb": getattr(ayah, "rub_el_hizb", None),
+            "sajdah": getattr(ayah, "sajdah", None),
+            "quran_url": f"https://quran.com/{ayah.surah.number}/{ayah.number_in_surah}",
         }
 
         if include_translation and getattr(ayah, "translations", None):
             result["translations"] = [
-                {"language": t.language, "translator": t.translator, "text": t.text}
-                for t in ayah.translations
+                {"language": t.language, "translator": t.translator, "text": t.text} for t in ayah.translations
             ]
 
         return result
