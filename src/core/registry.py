@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from src.agents.base import BaseAgent
 from src.config.logging_config import get_logger
@@ -14,10 +15,10 @@ class AgentRegistration:
     """Registration info for an agent or tool."""
 
     name: str
-    instance: Optional[Union[BaseAgent, BaseTool]] = None
-    factory: Optional[Callable[[], Union[BaseAgent, BaseTool]]] = None
+    instance: BaseAgent | BaseTool | None = None
+    factory: Callable[[], BaseAgent | BaseTool] | None = None
     is_agent: bool = True
-    intents: List[Intent] = field(default_factory=list)
+    intents: list[Intent] = field(default_factory=list)
     description: str = ""
 
 
@@ -27,15 +28,15 @@ class AgentRegistry:
     """
 
     def __init__(self) -> None:
-        self._registrations: Dict[str, AgentRegistration] = {}
+        self._registrations: dict[str, AgentRegistration] = {}
         self._initialized = False
 
     def register_agent(
         self,
         name: str,
-        agent: Optional[BaseAgent] = None,
-        factory: Optional[Callable[[], BaseAgent]] = None,
-        intents: Optional[List[Intent]] = None,
+        agent: BaseAgent | None = None,
+        factory: Callable[[], BaseAgent] | None = None,
+        intents: list[Intent] | None = None,
         description: str = "",
     ) -> None:
         if intents is None:
@@ -54,9 +55,9 @@ class AgentRegistry:
     def register_tool(
         self,
         name: str,
-        tool: Optional[BaseTool] = None,
-        factory: Optional[Callable[[], BaseTool]] = None,
-        intents: Optional[List[Intent]] = None,
+        tool: BaseTool | None = None,
+        factory: Callable[[], BaseTool] | None = None,
+        intents: list[Intent] | None = None,
         description: str = "",
     ) -> None:
         if intents is None:
@@ -72,7 +73,7 @@ class AgentRegistry:
         )
         logger.info("registry.tool_registered", name=name, lazy=bool(factory))
 
-    def get_agent(self, name: str) -> Optional[BaseAgent]:
+    def get_agent(self, name: str) -> BaseAgent | None:
         """Get agent by name, initializing if necessary."""
         reg = self._registrations.get(name)
         if not reg or not reg.is_agent:
@@ -84,7 +85,7 @@ class AgentRegistry:
 
         return reg.instance  # type: ignore
 
-    def get_tool(self, name: str) -> Optional[BaseTool]:
+    def get_tool(self, name: str) -> BaseTool | None:
         """Get tool by name, initializing if necessary."""
         reg = self._registrations.get(name)
         if not reg:
@@ -96,7 +97,7 @@ class AgentRegistry:
 
         return reg.instance  # type: ignore
 
-    def get_for_intent(self, intent: Intent) -> Tuple[Optional[Union[BaseAgent, BaseTool]], bool]:
+    def get_for_intent(self, intent: Intent) -> tuple[BaseAgent | BaseTool | None, bool]:
         """Get agent or tool for an intent with lazy resolution."""
         target = INTENT_ROUTING.get(intent)
         if not target:
@@ -119,7 +120,7 @@ class AgentRegistry:
 
 
 # Global registry instance
-_registry: Optional[AgentRegistry] = None
+_registry: AgentRegistry | None = None
 
 
 def get_registry() -> AgentRegistry:
@@ -135,11 +136,12 @@ def initialize_registry() -> AgentRegistry:
     registry = AgentRegistry()
 
     # Helpers for dependencies
-    def get_deps():
-        from fastapi import FastAPI
+    def get_deps() -> Any:
+
         # This is a bit of a hack to get global state if needed
         # In a real DI system, we'd inject these
         from src.api.main import app
+
         return {
             "embedding_model": getattr(app.state, "embedding_model", None),
             "vector_store": getattr(app.state, "vector_store", None),
@@ -147,24 +149,29 @@ def initialize_registry() -> AgentRegistry:
         }
 
     # Helpers for lazy instantiation
-    def build_zakat():
+    def build_zakat() -> Any:
         from src.tools.zakat_calculator import ZakatCalculator
+
         return ZakatCalculator(gold_price_per_gram=75.0, silver_price_per_gram=0.9)
 
-    def build_inheritance():
+    def build_inheritance() -> Any:
         from src.tools.inheritance_calculator import InheritanceCalculator
+
         return InheritanceCalculator()
 
-    def build_prayer():
+    def build_prayer() -> Any:
         from src.tools.prayer_times_tool import PrayerTimesTool
+
         return PrayerTimesTool()
 
-    def build_hijri():
+    def build_hijri() -> Any:
         from src.tools.hijri_calendar_tool import HijriCalendarTool
+
         return HijriCalendarTool()
 
-    def build_dua():
+    def build_dua() -> Any:
         from src.tools.dua_retrieval_tool import DuaRetrievalTool
+
         return DuaRetrievalTool()
 
     # Register tools lazily
@@ -175,26 +182,72 @@ def initialize_registry() -> AgentRegistry:
     registry.register_tool("dua_tool", factory=build_dua)
 
     # Register V2 Collection Agents lazily with dependency injection
-    def build_fiqh():
+    def build_fiqh() -> Any:
         from src.agents.collection.fiqh import FiqhCollectionAgent
+
         return FiqhCollectionAgent(**get_deps())
 
-    def build_hadith():
+    def build_hadith() -> Any:
         from src.agents.collection.hadith import HadithCollectionAgent
+
         return HadithCollectionAgent(**get_deps())
 
-    def build_general():
+    def build_general() -> Any:
         from src.agents.collection.general import GeneralCollectionAgent
+
         return GeneralCollectionAgent(**get_deps())
 
-    def build_seerah():
+    def build_seerah() -> Any:
         from src.agents.collection.seerah import SeerahCollectionAgent
+
         return SeerahCollectionAgent(**get_deps())
+
+    def build_tafsir() -> Any:
+        from src.agents.collection.tafsir import TafsirCollectionAgent
+
+        return TafsirCollectionAgent(**get_deps())
+
+    def build_aqeedah() -> Any:
+        from src.agents.collection.aqeedah import AqeedahCollectionAgent
+
+        return AqeedahCollectionAgent(**get_deps())
+
+    def build_usul_fiqh() -> Any:
+        from src.agents.collection.usul_fiqh import UsulFiqhCollectionAgent
+
+        return UsulFiqhCollectionAgent(**get_deps())
+
+    def build_history() -> Any:
+        from src.agents.collection.history import HistoryCollectionAgent
+
+        return HistoryCollectionAgent(**get_deps())
+
+    def build_language() -> Any:
+        from src.agents.collection.language import LanguageCollectionAgent
+
+        return LanguageCollectionAgent(**get_deps())
+
+    def build_tazkiyah() -> Any:
+        from src.agents.collection.tazkiyah import TazkiyahCollectionAgent
+
+        return TazkiyahCollectionAgent(**get_deps())
+
+    def build_chatbot() -> Any:
+        from src.agents.chatbot_agent import ChatbotAgent
+
+        return ChatbotAgent()
 
     registry.register_agent("fiqh_agent", factory=build_fiqh)
     registry.register_agent("hadith_agent", factory=build_hadith)
     registry.register_agent("general_islamic_agent", factory=build_general)
     registry.register_agent("seerah_agent", factory=build_seerah)
+    registry.register_agent("tafsir_agent", factory=build_tafsir)
+    registry.register_agent("aqeedah_agent", factory=build_aqeedah)
+    registry.register_agent("usul_fiqh_agent", factory=build_usul_fiqh)
+    registry.register_agent("history_agent", factory=build_history)
+    registry.register_agent("language_agent", factory=build_language)
+    registry.register_agent("tazkiyah_agent", factory=build_tazkiyah)
+    registry.register_agent("chatbot_agent", factory=build_chatbot)
 
     registry._initialized = True
     logger.info("registry.initialized.v2")
