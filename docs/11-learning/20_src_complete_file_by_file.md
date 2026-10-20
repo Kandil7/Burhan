@@ -37,6 +37,7 @@ from pydantic import BaseModel, Field
 ```python
 class Citation(BaseModel):
     """Source citation for agent answers."""
+
     source_id: str = Field(description="Source document ID")
     text: str = Field(description="Quoted text from source")
     book_title: str | None = Field(default=None, description="Book title")
@@ -52,11 +53,7 @@ class Citation(BaseModel):
 **Example**:
 ```python
 citation = Citation(
-    source_id="sahih_bukhari_tafsir",
-    text="الصلاة عماد الدين",
-    book_title="صحيح البخاري",
-    page=580,
-    grade="sahih"
+    source_id="sahih_bukhari_tafsir", text="الصلاة عماد الدين", book_title="صحيح البخاري", page=580, grade="sahih"
 )
 ```
 
@@ -67,6 +64,7 @@ citation = Citation(
 ```python
 class AgentInput(BaseModel):
     """Standard input for agents."""
+
     query: str = Field(description="User query")
     language: str = Field(default="ar", description="Query language (ar/en)")
     collection: str | None = Field(default=None, description="Target collection")
@@ -78,11 +76,7 @@ class AgentInput(BaseModel):
 
 **Example**:
 ```python
-input = AgentInput(
-    query="ما حكم الزكاة؟",
-    language="ar",
-    metadata={"madhhab": "hanafi"}
-)
+input = AgentInput(query="ما حكم الزكاة؟", language="ar", metadata={"madhhab": "hanafi"})
 ```
 
 ---
@@ -92,6 +86,7 @@ input = AgentInput(
 ```python
 class AgentOutput(BaseModel):
     """Standard output for agents."""
+
     answer: str = Field(description="Agent answer text")
     citations: list[Citation] = Field(default_factory=list)
     metadata: dict = Field(default_factory=dict)
@@ -109,6 +104,7 @@ class AgentOutput(BaseModel):
 ```python
 class BaseAgent:
     """Base class for agents (placeholder)."""
+
     async def execute(self, input: AgentInput) -> AgentOutput:
         """Execute the agent."""
         raise NotImplementedError
@@ -127,9 +123,10 @@ _COT_PATTERNS = [
     re.compile(r"###\s*(?:Let me|I'll|I will).*?\n\s*", re.IGNORECASE),
 ]
 
+
 def strip_cot_leakage(text: str) -> str:
     """Remove chain-of-thought leakage from generated text.
-    
+
     Strips patterns like:
     - "## Analysis\n...", "## Reasoning\n..."
     - <analysis>...</analysis>
@@ -149,7 +146,7 @@ def strip_cot_leakage(text: str) -> str:
 
 ---
 
-## src/agents/collection_agent.py
+## src/agents/collection/base.py
 
 **Purpose**: Legacy alias for backward compatibility.
 
@@ -172,15 +169,15 @@ from src.agents.collection.base import (
 )
 
 __all__ = [
-    "RetrievalStrategy", 
+    "RetrievalStrategy",
     "VerificationCheck",
-    "VerificationSuite", 
+    "VerificationSuite",
     "VerificationReport",
 ]
 ```
 
 **Imported by**: 
-- `src/verifiers/suite_builder.py`
+- `src/verification/suite_builder.py`
 - `src/retrieval/strategies.py`
 - Various test files
 
@@ -230,8 +227,9 @@ __all__ = [
 ```python
 class CollectionAgentConfig(BaseModel):
     """Configuration for a CollectionAgent."""
+
     name: str
-    collection: str              # Qdrant collection name
+    collection: str  # Qdrant collection name
     top_k: int
     prompt_template: str
     system_prompt: str
@@ -241,6 +239,7 @@ class CollectionAgentConfig(BaseModel):
 ```python
 class RetrievalStrategy(BaseModel):
     """How to retrieve documents."""
+
     collection: str
     top_k: int
     filters: dict | None
@@ -250,21 +249,24 @@ class RetrievalStrategy(BaseModel):
 ```python
 class VerificationCheck(BaseModel):
     """A single verification check."""
-    name: str                    # e.g., "quote_validator"
-    fail_policy: str            # "abstain", "warn", "proceed"
+
+    name: str  # e.g., "quote_validator"
+    fail_policy: str  # "abstain", "warn", "proceed"
     enabled: bool
 ```
 
 ```python
 class VerificationSuite(BaseModel):
     """Collection of verification checks."""
+
     checks: list[VerificationCheck]
 ```
 
 ```python
 class VerificationReport(BaseModel):
     """Results from verification."""
-    status: str               # "passed", "failed", "abstained"
+
+    status: str  # "passed", "failed", "abstained"
     confidence: float
     verified_passages: list[str]
     abstained: bool
@@ -272,8 +274,9 @@ class VerificationReport(BaseModel):
 ```
 
 ```python
-class IntentLabel(str, Enum):
+class Intent(str, Enum):
     """Domain-specific intents."""
+
     FiqhHukm = "fiqh_hukm"
     FiqhMasaail = "fiqh_masaail"
     HadithTakhrij = "hadith_takhrij"
@@ -432,10 +435,11 @@ app.include_router(classify_router)
 # v1 endpoints
 v1 = settings.api_v1_prefix  # "/api/v1"
 
-app.include_router(ask_router, prefix=v1)      # /api/v1/ask
-app.include_router(search_router, prefix=v1)      # /api/v1/search
-app.include_router(tools_router, prefix=v1)       # /api/v1/tools
-app.include_router(quran_router, prefix=v1)         # /api/v1/quran
+app.include_router(ask_router, prefix=v1)  # /api/v1/ask
+app.include_router(search_router, prefix=v1)  # /api/v1/search
+app.include_router(tools_router, prefix=v1)  # /api/v1/tools
+app.include_router(quran_router, prefix=v1)  # /api/v1/quran
+
 
 @app.get("/")
 async def root():
@@ -456,40 +460,41 @@ async def root():
 async def lifespan(app: FastAPI):
     # ── 1. Settings ─────────────────────────────────────────────
     settings = get_settings()
-    
+
     # ── 2. Registry ───────────────────────────────────────────
     registry = get_registry()
-    
+
     # ── 3. Infrastructure ────────────────────────────────────────
     # Qdrant
     app.state.qdrant = get_qdrant_client()
-    
+
     # Redis
     app.state.redis = get_redis()
-    
+
     # PostgreSQL
     app.state.db = get_database()
-    
+
     # ── 4. Embedding Model ────────────────────────────────
     app.state.embedding_model = get_embedding_model()
-    
+
     # ── 5. Classifier & Router ───────────────────────────
     from src.application.classifier_factory import build_classifier
+
     classifier = build_classifier(embedding_model=app.state.embedding_model)
     router = RouterAgent(classifier=classifier)
     app.state.router = router
-    
+
     # ── 6. Use Case & Service ───────────────────────
     use_case = AnswerQueryUseCase(agent_registry=registry, router=router)
     app.state.ask_service = AskService(answer_query_use_case=use_case)
-    
+
     # ── 7. Standard Agents (Static) ────────────────────
     # Register collection agents
     registry.register("fiqh:rag", FiQHCollectionAgent(config))
     # ... more agents
-    
+
     yield
-    
+
     # ── Cleanup ────────────────────────────────────────
     await app.state.qdrant.close()
     await app.state.redis.close()
@@ -602,7 +607,8 @@ class AnswerQueryInput:
     collection: str | None = None
     metadata: dict = field(default_factory=dict)
 
-@dataclass  
+
+@dataclass
 class AnswerQueryOutput:
     answer: str
     citations: list[Citation]
@@ -610,27 +616,30 @@ class AnswerQueryOutput:
     confidence: float
     processing_time_ms: int
 
+
 class AnswerQueryUseCase:
     """Main use case for answering queries."""
-    
+
     def __init__(self, agent_registry, router):
         self.agents = agent_registry
         self.router = router
-    
+
     async def execute(self, input: AnswerQueryInput) -> AnswerQueryOutput:
         # 1. Classify intent
         decision = await self.router.route(input.query)
-        
+
         # 2. Get agent
         agent = self.agents.get(decision.route)
-        
+
         # 3. Execute
-        result = await agent.execute(AgentInput(
-            query=input.query,
-            language=input.language,
-            metadata=input.metadata,
-        ))
-        
+        result = await agent.execute(
+            AgentInput(
+                query=input.query,
+                language=input.language,
+                metadata=input.metadata,
+            )
+        )
+
         # 4. Return
         return AnswerQueryOutput(
             answer=result.answer,
@@ -696,10 +705,12 @@ class MasterHybridClassifier(IntentClassifier):
 def _detect_language(text: str) -> str:
     """Detect Arabic/English."""
     # Count Arabic vs Latin characters
-    
+
+
 def _classify_quran_subintent(text: str) -> tuple[QuranSubIntent, float]:
     """Determine Quran sub-intent."""
-    
+
+
 def _infer_requires_retrieval(intent, sub) -> bool:
     """Determine if retrieval needed."""
 ```
@@ -795,13 +806,14 @@ RETRIEVAL_MATRIX = {
         rerank=True,
     ),
     "hadith_agent": RetrievalStrategy(
-        collection="hadith_passages", 
+        collection="hadith_passages",
         top_k=10,
         filters={"grade": "sahih"},
         rerank=True,
     ),
     # ... more agents
 }
+
 
 def get_strategy_for_agent(agent_name: str) -> RetrievalStrategy:
     return RETRIEVAL_MATRIX.get(agent_name, DEFAULT_STRATEGY)
@@ -878,11 +890,11 @@ class DenseRetriever:
 
 ---
 
-# 📁 src/verification/ vs src/verifiers/
+# 📁 src/verification/
 
 ## src/verification/__init__.py
 
-**Purpose**: Empty wrapper - placeholder for future.
+**Purpose**: Public exports for the verification layer.
 
 ```python
 """Verification module - first-class verification layer."""
@@ -898,7 +910,7 @@ from src.verification.trace import VerificationStep, VerificationTrace, generate
 
 __all__ = [
     "VerificationStatus",
-    "CheckResult", 
+    "CheckResult",
     "VerificationReport",
     "AbstentionReason",
     "Abstention",
@@ -908,11 +920,11 @@ __all__ = [
 ]
 ```
 
-**Note**: Just re-exports from `src/verifiers/`.
+**Note**: The former `src/verifiers/` package no longer exists; all checks live under `src/verification/checks/`.
 
 ---
 
-## src/verifiers/suite_builder.py
+## src/verification/suite_builder.py
 
 **Purpose**: Build and run verification suites.
 
@@ -923,22 +935,26 @@ __all__ = [
 ```python
 def build_verification_suite_for(agent_name: str) -> VerificationSuite:
     """Build verification suite for specific agent."""
-    
+
     SUITES = {
-        "fiqh": VerificationSuite(checks=[
-            VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
-            VerificationCheck(name="source_attributor", fail_policy="warn", enabled=True),
-            VerificationCheck(name="contradiction_detector", fail_policy="proceed", enabled=True),
-            VerificationCheck(name="evidence_sufficiency", fail_policy="abstain", enabled=True),
-        ]),
-        "hadith": VerificationSuite(checks=[
-            VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
-            VerificationCheck(name="hadith_grade_checker", fail_policy="abstain", enabled=True),
-            # ...
-        ]),
+        "fiqh": VerificationSuite(
+            checks=[
+                VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
+                VerificationCheck(name="source_attributor", fail_policy="warn", enabled=True),
+                VerificationCheck(name="contradiction_detector", fail_policy="proceed", enabled=True),
+                VerificationCheck(name="evidence_sufficiency", fail_policy="abstain", enabled=True),
+            ]
+        ),
+        "hadith": VerificationSuite(
+            checks=[
+                VerificationCheck(name="quote_validator", fail_policy="abstain", enabled=True),
+                VerificationCheck(name="hadith_grade_checker", fail_policy="abstain", enabled=True),
+                # ...
+            ]
+        ),
         # ... more agents
     }
-    
+
     return SUITES.get(agent_name, VerificationSuite(checks=[]))
 ```
 
@@ -1002,7 +1018,7 @@ Due to length constraints, here are quick references for remaining modules:
 | `src/core/` | 4 | Registry, exceptions, router |
 | `src/domain/` | 10+ | Intents, models |
 | `src/infrastructure/` | 15+ | Qdrant, LLM, DB |
-| `src/knowledge/` | 14 | Legacy wrapper |
+| `src/indexing/` + `src/retrieval/` | — | Replaced the v1 `src/knowledge/` package |
 | `src/tools/` | 10 | Islamic tools |
 | `src/generation/` | 15 | Answer generation |
 | `src/quran/` | 10 | Quran logic |
