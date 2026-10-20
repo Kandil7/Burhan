@@ -179,14 +179,11 @@ from datasets import load_dataset
 dataset = load_dataset("Kandil7/Burhan-Datasets")
 
 # Stream (no download needed)
-dataset = load_dataset(
-    "Kandil7/Burhan-Datasets",
-    streaming=True
-)
+dataset = load_dataset("Kandil7/Burhan-Datasets", streaming=True)
 
 # Access data
-for item in dataset['train']:
-    print(item['text'])
+for item in dataset["train"]:
+    print(item["text"])
 ```
 
 ### Method 2: Direct Download
@@ -195,11 +192,7 @@ for item in dataset['train']:
 from huggingface_hub import hf_hub_download
 
 # Download specific file
-file_path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
-    filename="hadith/sanadset.csv",
-    repo_type="dataset"
-)
+file_path = hf_hub_download(repo_id="Kandil7/Burhan-Datasets", filename="hadith/sanadset.csv", repo_type="dataset")
 
 print(f"Downloaded to: {file_path}")
 ```
@@ -219,11 +212,7 @@ files_to_download = [
 
 for filename in files_to_download:
     print(f"📥 Downloading: {filename}")
-    path = hf_hub_download(
-        repo_id="Kandil7/Burhan-Datasets",
-        filename=filename,
-        repo_type="dataset"
-    )
+    path = hf_hub_download(repo_id="Kandil7/Burhan-Datasets", filename=filename, repo_type="dataset")
     print(f"   ✅ Saved to: {path}")
 ```
 
@@ -236,14 +225,11 @@ from huggingface_hub import login, hf_hub_download
 login()  # Uses token from secrets
 
 # Download
-path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets",
-    filename="hadith/sanadset.csv",
-    repo_type="dataset"
-)
+path = hf_hub_download(repo_id="Kandil7/Burhan-Datasets", filename="hadith/sanadset.csv", repo_type="dataset")
 
 # Use in pandas
 import pandas as pd
+
 df = pd.read_csv(path)
 print(f"Loaded {len(df)} hadith")
 ```
@@ -297,11 +283,7 @@ git push
 from datasets import load_dataset
 
 # Stream data (no download)
-dataset = load_dataset(
-    "Kandil7/Burhan-Datasets",
-    streaming=True,
-    split="train"
-)
+dataset = load_dataset("Kandil7/Burhan-Datasets", streaming=True, split="train")
 
 # Access data on-demand
 for item in dataset:
@@ -331,32 +313,33 @@ for item in dataset:
 import tarfile
 import os
 
-def create_chunks(source_dir, output_dir, chunk_size=4*1024**3):
+
+def create_chunks(source_dir, output_dir, chunk_size=4 * 1024**3):
     """Split directory into chunks."""
-    files = list(source_dir.rglob('*.txt'))
+    files = list(source_dir.rglob("*.txt"))
     chunk_num = 0
     current_size = 0
     current_files = []
-    
+
     for f in files:
         size = f.stat().st_size
         if current_size + size > chunk_size and current_files:
             # Write chunk
             chunk_path = output_dir / f"part{chunk_num:02d}.tar.gz"
-            with tarfile.open(chunk_path, 'w:gz') as tar:
+            with tarfile.open(chunk_path, "w:gz") as tar:
                 for cf in current_files:
                     tar.add(cf)
             chunk_num += 1
             current_files = []
             current_size = 0
-        
+
         current_files.append(f)
         current_size += size
-    
+
     # Last chunk
     if current_files:
         chunk_path = output_dir / f"part{chunk_num:02d}.tar.gz"
-        with tarfile.open(chunk_path, 'w:gz') as tar:
+        with tarfile.open(chunk_path, "w:gz") as tar:
             for cf in current_files:
                 tar.add(cf)
 ```
@@ -367,14 +350,11 @@ def create_chunks(source_dir, output_dir, chunk_size=4*1024**3):
 from datasets import load_dataset
 
 # Don't download everything
-dataset = load_dataset(
-    "Kandil7/Burhan-Datasets",
-    streaming=True
-)
+dataset = load_dataset("Kandil7/Burhan-Datasets", streaming=True)
 
 # Process without downloading
-for book in dataset['extracted_books']:
-    analyze(book['text'])
+for book in dataset["extracted_books"]:
+    analyze(book["text"])
 ```
 
 ### 3. Version Your Datasets
