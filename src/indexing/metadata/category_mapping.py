@@ -1,7 +1,6 @@
 # Category Mapping Module
 """Category mapping for Islamic text classification."""
 
-from typing import Dict, List, Set
 from enum import Enum
 
 
@@ -14,7 +13,7 @@ class CategoryHierarchy(str, Enum):
 
 
 # Primary to secondary category mappings
-PRIMARY_TO_SECONDARY: Dict[str, List[str]] = {
+PRIMARY_TO_SECONDARY: dict[str, list[str]] = {
     "quran": ["tafsir", "quranic_sciences", "recitation"],
     "hadith": ["fiqh", "aqeedah", "ethics", "history"],
     "fiqh": ["ibadat", "muamalat", "family", "penal", "constitutional"],
@@ -27,7 +26,7 @@ PRIMARY_TO_SECONDARY: Dict[str, List[str]] = {
 }
 
 # Category keywords for classification
-CATEGORY_KEYWORDS: Dict[str, Set[str]] = {
+CATEGORY_KEYWORDS: dict[str, set[str]] = {
     "quran": {"قرآن", "آية", "سورة", "تنزيل", "كتاب الله"},
     "hadith": {"حديث", "رسول", "صحيح", "ضعيف", "سنّة"},
     "fiqh": {"حكم", "فقيه", "مذهب", "فتوى", " صلاة", "صوم", "زكاة", "حج"},
@@ -40,7 +39,7 @@ CATEGORY_KEYWORDS: Dict[str, Set[str]] = {
 }
 
 
-def map_category(text: str) -> List[str]:
+def map_category(text: str) -> list[str]:
     """Map text to categories based on keywords."""
     if not text:
         return []
@@ -62,11 +61,11 @@ def map_category(text: str) -> List[str]:
     return found_categories
 
 
-def get_subcategories(category: str) -> List[str]:
+def get_subcategories(category: str) -> list[str]:
     """Get subcategories for a primary category."""
     return PRIMARY_TO_SECONDARY.get(category, [])
 
 
-def get_all_categories() -> List[str]:
+def get_all_categories() -> list[str]:
     """Get all category names."""
     return list(CATEGORY_KEYWORDS.keys())
