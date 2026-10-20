@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import time
 import uuid
-from typing import TYPE_CHECKING
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.api.schemas.classify import ClassifyRequest, ClassifyResponse
+from src.api.schemas.classify import ClassificationResult, ClassifyRequest, ClassifyResponse
 from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 
@@ -29,7 +29,7 @@ def _build_trace_id() -> str:
 # ── Lazy import to avoid circular dependency ─────────────────────────────
 
 
-def get_router(request: Request):
+def get_router(request: Request) -> Any:
     """Inject the shared RouterAgent from app state."""
     if hasattr(request.app.state, "router"):
         return request.app.state.router
@@ -54,7 +54,7 @@ def get_router(request: Request):
 async def classify(
     request: Request,
     req: ClassifyRequest,
-    router_agent=Depends(get_router),
+    router_agent: Any = Depends(get_router),
 ) -> ClassifyResponse:
     """
     Classify a user query and return the routing decision.
@@ -89,16 +89,16 @@ async def classify(
 
         # Return response with trace metadata
         return ClassifyResponse(
-            result={
-                "intent": decision.result.intent.value,
-                "confidence": decision.result.confidence,
-                "language": decision.result.language,
-                "reasoning": decision.result.reasoning,
-                "requires_retrieval": decision.result.requires_retrieval,
-                "method": decision.result.method,
-                "quran_subintent": (decision.result.quran_subintent.value if decision.result.quran_subintent else None),
-                "subquestions": decision.result.subquestions,
-            },
+            result=ClassificationResult(
+                intent=decision.result.intent.value,
+                confidence=decision.result.confidence,
+                language=decision.result.language,
+                reasoning=decision.result.reasoning,
+                requires_retrieval=decision.result.requires_retrieval,
+                method=decision.result.method,
+                quran_subintent=(decision.result.quran_subintent.value if decision.result.quran_subintent else None),
+                subquestions=decision.result.subquestions,
+            ),
             route=decision.route,
             agent_metadata=decision.agent_metadata,
             # Trace metadata
