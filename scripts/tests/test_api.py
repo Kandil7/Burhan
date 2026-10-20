@@ -25,16 +25,12 @@ from scripts.utils import setup_script_logger
 logger = setup_script_logger("test-api")
 
 
-def make_request(
-    method: str, url: str, data: Optional[dict] = None, timeout: int = 30
-) -> tuple[bool, int, dict]:
+def make_request(method: str, url: str, data: Optional[dict] = None, timeout: int = 30) -> tuple[bool, int, dict]:
     """Make HTTP request and return (success, status_code, response_data)."""
     try:
         if data:
             body = json.dumps(data).encode("utf-8")
-            req = urllib.request.Request(
-                url, data=body, headers={"Content-Type": "application/json"}, method=method
-            )
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method=method)
         else:
             req = urllib.request.Request(url, method=method)
 
