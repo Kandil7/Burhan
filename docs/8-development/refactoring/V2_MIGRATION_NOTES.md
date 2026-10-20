@@ -1,5 +1,9 @@
 # Burhan v2 Architecture Migration
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## Overview
 
 This document describes the migration from the legacy Burhan architecture to the v2 architecture.
