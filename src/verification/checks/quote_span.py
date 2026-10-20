@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -30,7 +29,7 @@ class QuoteSpan:
     text: str
     delimiter_type: str = "unknown"  # quran | arabic | neutral
     is_arabic: bool = False
-    validation_status: Optional[str] = None
+    validation_status: str | None = None
 
 
 # ── Compiled patterns (delimiter-pair based only) ────────────────────────────
@@ -54,8 +53,8 @@ _ANY_QUOTE_RE = re.compile(
 )
 
 _PATTERNS: list[tuple[re.Pattern, str, bool]] = [
-    (_QURAN_RE,   "quran",   True),
-    (_ARABIC_RE,  "arabic",  True),
+    (_QURAN_RE, "quran", True),
+    (_ARABIC_RE, "arabic", True),
     (_NEUTRAL_RE, "neutral", False),
 ]
 
