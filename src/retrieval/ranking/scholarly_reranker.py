@@ -13,7 +13,6 @@ Phase 10: Dynamic Scholarly Reranking.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from src.domain.intents import Intent
 from src.retrieval.ranking.book_weighter import BookImportanceWeighter
@@ -99,10 +98,10 @@ class ScholarlyReranker:
         scored_candidates.sort(key=lambda x: x.get("scholarly_score", 0), reverse=True)
 
         logger.info(
-            "scholarly_reranker.complete",
-            intent=intent,
-            count=len(scored_candidates),
-            top_score=scored_candidates[0]["scholarly_score"] if scored_candidates else 0,
+            "scholarly_reranker.complete intent=%s count=%s top_score=%s",
+            intent,
+            len(scored_candidates),
+            scored_candidates[0]["scholarly_score"] if scored_candidates else 0,
         )
 
         return scored_candidates[:top_k]
