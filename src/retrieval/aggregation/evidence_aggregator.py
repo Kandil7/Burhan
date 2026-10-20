@@ -1,8 +1,8 @@
 # Evidence Aggregator Module
 """Aggregating evidence from multiple retrieval sources."""
 
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -21,12 +21,12 @@ class AggregatedEvidence:
 class EvidenceAggregator:
     """Aggregates evidence from multiple retrieval results."""
 
-    def __init__(self):
-        self.evidences: List[AggregatedEvidence] = []
+    def __init__(self) -> None:
+        self.evidences: list[AggregatedEvidence] = []
 
     def add_results(
         self,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         source_id: str,
         source_name: str,
     ) -> None:
@@ -47,7 +47,7 @@ class EvidenceAggregator:
     def get_top_evidences(
         self,
         top_k: int = 10,
-    ) -> List[AggregatedEvidence]:
+    ) -> list[AggregatedEvidence]:
         """Get top-k aggregated evidences."""
         sorted_evidences = sorted(
             self.evidences,
