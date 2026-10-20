@@ -6,6 +6,7 @@ Provides RAG-based search operations.
 
 from __future__ import annotations
 
+import importlib.util
 import re
 import time
 import uuid
@@ -13,17 +14,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from src.api.schemas.common import ErrorResponse
 from src.api.schemas.search import (
-    RAGQueryRequest,
     RAGQueryResponse,
     RAGStatsResponse,
-    SearchRequest,
-    SearchResponse,
+    SearchResult,
     SimpleRAGRequest,
     SimpleRAGResponse,
-    SearchResult,
 )
-from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 from src.generation.prompts.rag import get_rag_prompt
@@ -34,13 +32,10 @@ GENERIC_SEARCH_ERROR = "Search service temporarily unavailable."
 
 
 # ── Availability flag ────────────────────────────────────────────────────
-try:
-    import torch
-    import transformers
-
-    RAG_AVAILABLE = True
-except ImportError:
-    RAG_AVAILABLE = False
+# Probe with find_spec instead of importing torch/transformers: importing
+# them costs hundreds of megabytes of memory and seconds of startup time,
+# and the slim API image does not include them.
+RAG_AVAILABLE = importlib.util.find_spec("torch") is not None and importlib.util.find_spec("transformers") is not None
 
 
 # ── Sentinel ─────────────────────────────────────────────────────────────
@@ -153,7 +148,7 @@ def _format_sources(results: list[dict]) -> list[dict]:
 
 
 # ── Dependencies ─────────────────────────────────────────────────────────
-def _get_state(request: Request, attr: str, label: str):
+def _get_state(request: Request, attr: str, label: str) -> Any:
     """Get state attribute from app state."""
     obj = getattr(request.app.state, attr, None)
     if obj is None:
@@ -161,23 +156,23 @@ def _get_state(request: Request, attr: str, label: str):
     return obj
 
 
-def get_fiqh_agent(request: Request):
+def get_fiqh_agent(request: Request) -> Any:
     return _get_state(request, "fiqh_agent", "FiqhAgent")
 
 
-def get_general_agent(request: Request):
+def get_general_agent(request: Request) -> Any:
     return _get_state(request, "general_agent", "GeneralIslamicAgent")
 
 
-def get_embedding_model(request: Request):
+def get_embedding_model(request: Request) -> Any:
     return _get_state(request, "embedding_model", "EmbeddingModel")
 
 
-def get_vector_store(request: Request):
+def get_vector_store(request: Request) -> Any:
     return _get_state(request, "vector_store", "VectorStore")
 
 
-def get_llm_client(request: Request):
+def get_llm_client(request: Request) -> Any:
     return _get_state(request, "llm_client", "LLM client")
 
 
@@ -190,9 +185,9 @@ def get_llm_client(request: Request):
 )
 async def get_rag_stats(
     request: Request,
-    vector_store=Depends(get_vector_store),
-    embedding_model=Depends(get_embedding_model),
-):
+    vector_store: Any = Depends(get_vector_store),
+    embedding_model: Any = Depends(get_embedding_model),
+) -> Any:
     """Get RAG system statistics."""
     trace_id = _build_trace_id()
     _require_rag_available()
@@ -232,10 +227,10 @@ async def get_rag_stats(
 async def simple_rag_query(
     request: Request,
     req: SimpleRAGRequest,
-    embedding_model=Depends(get_embedding_model),
-    vector_store=Depends(get_vector_store),
-    llm_client=Depends(get_llm_client),
-):
+    embedding_model: Any = Depends(get_embedding_model),
+    vector_store: Any = Depends(get_vector_store),
+    llm_client: Any = Depends(get_llm_client),
+) -> Any:
     trace_id = _build_trace_id()
     start_time = time.time()
     _require_rag_available()
