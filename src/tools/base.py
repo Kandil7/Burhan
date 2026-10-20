@@ -6,6 +6,7 @@ and implement the execute() method with standardized input/output.
 
 Tools are deterministic and don't require document retrieval.
 """
+
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -19,11 +20,9 @@ class ToolInput(BaseModel):
     Tools receive query text plus optional parameters
     depending on their specific requirements.
     """
+
     query: str = Field(description="User's question")
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Tool-specific parameters (location, assets, heirs, etc.)"
-    )
+    metadata: dict = Field(default_factory=dict, description="Tool-specific parameters (location, assets, heirs, etc.)")
 
 
 class ToolOutput(BaseModel):
@@ -32,13 +31,11 @@ class ToolOutput(BaseModel):
 
     Contains result data that will be formatted by the agent/orchestrator.
     """
+
     result: dict[str, Any] = Field(description="Tool calculation result")
     success: bool = Field(default=True, description="Whether tool execution succeeded")
     error: str = Field(default="", description="Error message if failed")
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Tool-specific metadata (calculation method, assumptions)"
-    )
+    metadata: dict = Field(default_factory=dict, description="Tool-specific metadata (calculation method, assumptions)")
 
 
 class BaseTool(ABC):
@@ -72,7 +69,7 @@ class BaseTool(ABC):
     name: str = "base_tool"
 
     @abstractmethod
-    async def execute(self, **kwargs) -> ToolOutput:
+    async def execute(self, **kwargs: Any) -> ToolOutput:
         """
         Execute tool logic and return result.
 
@@ -84,7 +81,7 @@ class BaseTool(ABC):
         """
         pass
 
-    async def __call__(self, **kwargs) -> ToolOutput:
+    async def __call__(self, **kwargs: Any) -> ToolOutput:
         """Allow tool to be called directly like a function."""
         return await self.execute(**kwargs)
 
