@@ -11,9 +11,10 @@
 ```python
 # src/core/router.py
 
+
 class Router:
     """موجه الأسئلة."""
-    
+
     def __init__(self, intent_classifier):
         self._classifier = intent_classifier
         self._intent_to_agent = {
@@ -29,11 +30,11 @@ class Router:
             IntentType.HISTORY: "history:rag",
             IntentType.GENERAL_ISLAMIC: "general:rag",
         }
-    
+
     def route(self, intent: IntentType) -> str:
         """توجيه."""
         return self._intent_to_agent.get(intent, "general:rag")
-    
+
     def get_intent(self, query: str) -> IntentType:
         """الحصول على النية."""
         return self._classifier.classify(query).intent
@@ -46,18 +47,19 @@ class Router:
 ### 2.1 router Agent
 
 ```python
-# src/application/router.py
+# src/application/router/router_agent.py
+
 
 class RouterAgent:
     """وكيل التوجيه."""
-    
+
     def __init__(self, classifier):
         self._classifier = classifier
-    
+
     async def route(self, query: str) -> RoutingDecision:
         """توجيه سؤال."""
         result = await self._classifier.classify(query)
-        
+
         return RoutingDecision(
             intent=result.intent,
             confidence=result.confidence,
@@ -74,29 +76,30 @@ class RouterAgent:
 ### 3.1 MasterHybridClassifier
 
 ```python
-# src/application/hybrid_classifier.py
+# src/application/router/hybrid_classifier.py
+
 
 class MasterHybridClassifier:
     """مصنف هجين."""
-    
+
     def __init__(self, embedding_model=None):
         self._keyword = KeywordBasedClassifier()
         self._embedding = EmbeddingClassifier(embedding_model) if embedding_model else None
-    
+
     async def classify(self, query: str) -> ClassificationResult:
         """تصنيف."""
         # Keyword first
         kw_result = await self._keyword.classify(query)
-        
+
         if kw_result.confidence >= 0.85:
             return kw_result
-        
+
         # Embedding fallback
         if self._embedding:
             emb_result = await self._embedding.classify(query)
             if emb_result.confidence > kw_result.confidence:
                 return emb_result
-        
+
         return kw_result
 ```
 
