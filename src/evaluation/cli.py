@@ -11,12 +11,13 @@ import asyncio
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from src.evaluation.golden_set_schema import get_fiqh_golden_set, load_golden_set
 from src.evaluation.metrics import run_evaluation
 
 
-def load_agent(agent_name: str):
+def load_agent(agent_name: str) -> Any:
     """
     Load an agent by name.
 
@@ -33,22 +34,23 @@ def load_agent(agent_name: str):
         HadithCollectionAgent,
         TafsirCollectionAgent,
     )
+    from src.config import get_config_manager
 
-    agent_map = {
-        "fiqh": FiqhCollectionAgent,
-        "hadith": HadithCollectionAgent,
-        "tafsir": TafsirCollectionAgent,
-        "aqeedah": AqeedahCollectionAgent,
-    }
+    config = get_config_manager().get_collection_agent_config(agent_name)
 
-    agent_class = agent_map.get(agent_name)
-    if agent_class:
-        return agent_class()
+    if agent_name == "fiqh":
+        return FiqhCollectionAgent(config=config)
+    if agent_name == "hadith":
+        return HadithCollectionAgent(config=config)
+    if agent_name == "tafsir":
+        return TafsirCollectionAgent(config=config)
+    if agent_name == "aqeedah":
+        return AqeedahCollectionAgent(config=config)
 
     return None
 
 
-async def run_cli(args):
+async def run_cli(args: Any) -> Any:
     """
     Run evaluation from CLI arguments.
 
@@ -93,7 +95,7 @@ async def run_cli(args):
     return result
 
 
-def main():
+def main() -> None:
     """Main entry point for CLI."""
     parser = argparse.ArgumentParser(
         description="Run evaluation on Burhan RAG system golden sets",
