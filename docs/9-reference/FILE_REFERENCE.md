@@ -53,20 +53,14 @@ K:\business\projects_v2\Burhan\
 │   │   ├── citation.py                          # Citation Normalizer
 │   │   └── registry.py                          # Agent Registry
 │   │
-│   ├── agents/                                  # 13 agent implementations
+│   ├── agents/                                  # Base agent + v2 collection agents
 │   │   ├── __init__.py
-│   │   ├── base.py                              # BaseAgent, AgentInput, AgentOutput
-│   │   ├── fiqh_agent.py                        # Fiqh RAG Agent
-│   │   ├── hadith_agent.py                      # Hadith RAG Agent
-│   │   ├── sanadset_hadith_agent.py             # Sanadset 650K Hadith Agent
-│   │   ├── tafsir_agent.py                      # Quran Tafsir Agent
-│   │   ├── aqeedah_agent.py                     # Islamic Creed Agent
-│   │   ├── seerah_agent.py                      # Prophet Biography Agent
-│   │   ├── islamic_history_agent.py             # Islamic History Agent
-│   │   ├── fiqh_usul_agent.py                   # Jurisprudence Principles Agent
-│   │   ├── arabic_language_agent.py             # Arabic Language Agent
-│   │   ├── general_islamic_agent.py             # General Knowledge Agent
-│   │   └── chatbot_agent.py                     # Greeting/Small Talk Agent
+│   │   ├── base.py                              # BaseAgent, AgentInput, AgentOutput, Citation
+│   │   ├── chatbot_agent.py                     # Greeting/Small Talk Agent
+│   │   └── collection/                          # v2 canonical agents
+│   │       ├── base.py                          # CollectionAgent base
+│   │       ├── fiqh.py, usul_fiqh.py, hadith.py, tafsir.py, aqeedah.py
+│   │       └── seerah.py, history.py, language.py, tazkiyah.py, general.py
 │   │
 │   ├── tools/                                   # 5 deterministic tools
 │   │   ├── __init__.py
@@ -185,7 +179,7 @@ K:\business\projects_v2\Burhan\
 │   │
 │   ├── DATA EXTRACTION:
 │   ├── extract_master_catalog.py                # Extract master.db (5 min)
-│   ├── extract_all_lucene_pipeline.py           # Full Lucene extraction (3-5 hrs)
+│   ├── scripts/data/lucene/run_pipeline.py           # Full Lucene extraction (3-5 hrs)
 │   ├── extract_all_lucene.bat                   # Windows batch version
 │   ├── LuceneExtractor.java                     # Java Lucene extractor
 │   ├── simple_lucene_extract.py                 # Simple Lucene test
@@ -326,18 +320,18 @@ K:\business\projects_v2\Burhan\
 ### Core System
 1. `src/api/main.py` - App entry
 2. `src/core/router.py` - Intent classifier
-3. `src/core/orchestrator.py` - Response router
+3. `src/application/router/orchestration.py` - Response router
 4. `src/core/registry.py` - Agent registry
 
 ### Data Pipeline
-1. `scripts/extract_master_catalog.py` - Extract metadata
-2. `scripts/extract_all_lucene_pipeline.py` - Extract content
-3. `scripts/chunk_all_books.py` - Build chunks
+1. `scripts/data/extract_master_catalog.py` - Extract metadata
+2. `scripts/data/lucene/run_pipeline.py` - Extract content
+3. `scripts/ingestion/chunk_all_books.py` - Build chunks
 4. `notebooks/01_embed_all_collections.ipynb` - Embed
 
 ### Testing
 1. `scripts/quick_test.py` - Quick smoke test
-2. `scripts/test_all_endpoints_detailed.py` - Full test
+2. `scripts/tests/test_all_endpoints_detailed.py` - Full test
 3. `tests/` - Unit tests
 
 ---
