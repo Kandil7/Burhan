@@ -2,6 +2,10 @@
 
 # Burhan
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 Answer skipped.
 <span style="display:none">[^1_1]</span>
 
@@ -1308,7 +1312,7 @@ class HybridQueryClassifier:
             "requires_retrieval": llm_result.get("requires_retrieval", True),
             "sub_intent": llm_result.get("sub_intent"),
             "reason": "fallback_to_prototype",
-            "sub_questions": llm_result.get("sub_questions", [])
+            "sub_questions": llm_result.get("sub_questions", []),
         }
 ```
 
@@ -1928,19 +1932,13 @@ class HybridQueryClassifier:
         guid = self._extract_guid(q)
         if guid:
             return QueryDecision(
-                intent_type="guid_lookup",
-                confidence=0.99,
-                entities={"guid": guid},
-                next_action="metadata_only"
+                intent_type="guid_lookup", confidence=0.99, entities={"guid": guid}, next_action="metadata_only"
             )
 
         short_id = self._extract_short_id(q)
         if short_id and any(tok in q.lower() for tok in ["short", "id", "معرف", "كود"]):
             return QueryDecision(
-                intent_type="guid_lookup",
-                confidence=0.93,
-                entities={"short_id": short_id},
-                next_action="metadata_only"
+                intent_type="guid_lookup", confidence=0.93, entities={"short_id": short_id}, next_action="metadata_only"
             )
 
         category_id = self._match_category(q)
@@ -1958,7 +1956,7 @@ class HybridQueryClassifier:
                 confidence=0.88,
                 entities={"author_name": author_name} if author_name else {},
                 filters=filters,
-                next_action="metadata_then_rag"
+                next_action="metadata_then_rag",
             )
 
         if any(word in q for word in ["كتب", "مؤلفات", "مصنفات", "روايات", "شروح"]):
@@ -1967,7 +1965,7 @@ class HybridQueryClassifier:
                 confidence=0.86,
                 entities={"author_name": author_name} if author_name else {},
                 filters={"category_id": category_id} if category_id else {},
-                next_action="metadata_only"
+                next_action="metadata_only",
             )
 
         if any(word in q for word in ["من هو", "ترجمة", "المؤلف", "الكاتب", "وفاته"]):
@@ -1975,7 +1973,7 @@ class HybridQueryClassifier:
                 intent_type="author_lookup",
                 confidence=0.84,
                 entities={"author_name": author_name} if author_name else {},
-                next_action="metadata_only"
+                next_action="metadata_only",
             )
 
         if category_id:
@@ -1983,14 +1981,14 @@ class HybridQueryClassifier:
                 intent_type="category_lookup",
                 confidence=0.78,
                 filters={"category_id": category_id},
-                next_action="metadata_only"
+                next_action="metadata_only",
             )
 
         return QueryDecision(
             intent_type="hybrid_search",
             confidence=0.55,
             filters={"extracted_only": True},
-            next_action="metadata_then_rag"
+            next_action="metadata_then_rag",
         )
 
     def _extract_guid(self, q: str) -> Optional[str]:
@@ -2016,8 +2014,18 @@ class HybridQueryClassifier:
 
     def _looks_like_content_question(self, q: str) -> bool:
         indicators = [
-            "ما معنى", "ما حكم", "اشرح", "لخص", "ما القول", "اذكر",
-            "ابحث", "استخرج", "أين", "هل", "ما الدليل", "قارن"
+            "ما معنى",
+            "ما حكم",
+            "اشرح",
+            "لخص",
+            "ما القول",
+            "اذكر",
+            "ابحث",
+            "استخرج",
+            "أين",
+            "هل",
+            "ما الدليل",
+            "قارن",
         ]
         return any(x in q for x in indicators)
 ```
@@ -2051,40 +2059,31 @@ classifier = HybridQueryClassifier(
     ],
 )
 
+
 class QueryRequest(BaseModel):
     query: str
+
 
 @app.post("/classify")
 def classify_query(payload: QueryRequest):
     decision = classifier.classify(payload.query)
     return decision.__dict__
 
+
 @app.post("/route")
 def route_query(payload: QueryRequest):
     decision = classifier.classify(payload.query)
 
     if decision.next_action == "metadata_only":
-        return {
-            "route": "metadata_agent",
-            "decision": decision.__dict__
-        }
+        return {"route": "metadata_agent", "decision": decision.__dict__}
 
     if decision.next_action == "metadata_then_rag":
-        return {
-            "route": "metadata_agent -> retrieval_agent",
-            "decision": decision.__dict__
-        }
+        return {"route": "metadata_agent -> retrieval_agent", "decision": decision.__dict__}
 
     if decision.next_action == "sql_lookup":
-        return {
-            "route": "sql_agent",
-            "decision": decision.__dict__
-        }
+        return {"route": "sql_agent", "decision": decision.__dict__}
 
-    return {
-        "route": "fallback_agent",
-        "decision": decision.__dict__
-    }
+    return {"route": "fallback_agent", "decision": decision.__dict__}
 ```
 
 هذا المثال منطقي مع وضعك الحالي لأن مرحلة `/route` لا تنفذ SQL أو RAG بعد، لكنها تبني orchestration contract واضح بين الوكلاء قبل التوسع في التنفيذ.[^14_1]
@@ -2579,17 +2578,12 @@ README يوضح أن `books.db` موجود كقاعدة قابلة للاستع�
 from pydantic import BaseModel
 from typing import Literal, Optional, List, Dict, Any
 
+
 class UserIntent(BaseModel):
-    intent: Literal[
-        "book_lookup",
-        "author_lookup",
-        "category_lookup",
-        "semantic_qa",
-        "recommendation",
-        "guid_lookup"
-    ]
+    intent: Literal["book_lookup", "author_lookup", "category_lookup", "semantic_qa", "recommendation", "guid_lookup"]
     raw_query: str
     constraints: Dict[str, Any] = {}
+
 
 class RetrievalPlan(BaseModel):
     mode: Literal["metadata_only", "rag", "hybrid"]
@@ -2601,6 +2595,7 @@ class RetrievalPlan(BaseModel):
     extracted_only: bool = True
     text_files: List[str] = []
     notes: List[str] = []
+
 
 class AgentResult(BaseModel):
     agent: str
@@ -2922,12 +2917,11 @@ shamela-multi-agent/
 
 ```python
 # app/models/db_models.py
-from sqlalchemy import (
-    Column, Integer, String, Float, Text, ForeignKey, UniqueConstraint, Index
-)
+from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
 
 class Book(Base):
     __tablename__ = "books"
@@ -2947,6 +2941,7 @@ class Book(Base):
 
     authors = relationship("BookAuthor", back_populates="book", cascade="all, delete-orphan")
 
+
 class Author(Base):
     __tablename__ = "authors"
 
@@ -2958,6 +2953,7 @@ class Author(Base):
 
     books = relationship("BookAuthor", back_populates="author", cascade="all, delete-orphan")
 
+
 class BookAuthor(Base):
     __tablename__ = "bookauthors"
 
@@ -2968,6 +2964,7 @@ class BookAuthor(Base):
 
     book = relationship("Book", back_populates="authors")
     author = relationship("Author", back_populates="books")
+
 
 Index("idx_books_guid", Book.guid)
 Index("idx_books_title", Book.title)
@@ -2985,6 +2982,7 @@ Index("idx_authors_name", Author.name)
 # app/core/config.py
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "Shamela Multi-Agent"
     DATABASE_URL: str = "sqlite:///./shamela.db"
@@ -2993,6 +2991,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()
 ```
@@ -3007,6 +3006,7 @@ connect_args = {"check_same_thread": False} if settings.DATABASE_URL.startswith(
 
 engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db():
     db = SessionLocal()
@@ -3025,20 +3025,16 @@ def get_db():
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Literal
 
+
 class UserQuery(BaseModel):
     query: str
 
+
 class UserIntent(BaseModel):
-    intent: Literal[
-        "book_lookup",
-        "author_lookup",
-        "category_lookup",
-        "guid_lookup",
-        "semantic_qa",
-        "recommendation"
-    ]
+    intent: Literal["book_lookup", "author_lookup", "category_lookup", "guid_lookup", "semantic_qa", "recommendation"]
     raw_query: str
     constraints: Dict[str, Any] = Field(default_factory=dict)
+
 
 class RetrievalPlan(BaseModel):
     mode: Literal["metadata_only", "rag", "hybrid"] = "metadata_only"
@@ -3050,9 +3046,11 @@ class RetrievalPlan(BaseModel):
     text_files: List[str] = Field(default_factory=list)
     notes: List[str] = Field(default_factory=list)
 
+
 class AgentEvidence(BaseModel):
     source: str
     data: Dict[str, Any]
+
 
 class QAResponse(BaseModel):
     answer: str
@@ -3064,6 +3062,7 @@ class QAResponse(BaseModel):
 ```python
 # app/models/agent_state.py
 from typing import TypedDict, List, Dict, Any
+
 
 class GraphState(TypedDict, total=False):
     query: str
@@ -3089,24 +3088,24 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from app.models.db_models import Book, BookAuthor
 
+
 def search_books(db: Session, q: str, extracted_only: bool = False, limit: int = 20):
     query = db.query(Book).filter(Book.title.ilike(f"%{q}%"))
     if extracted_only:
         query = query.filter(Book.extracted == 1)
     return query.limit(limit).all()
 
+
 def get_book_by_guid(db: Session, guid: str):
     return db.query(Book).filter(Book.guid == guid).first()
 
+
 def get_books_by_author(db: Session, author_id: int, extracted_only: bool = True, limit: int = 50):
-    query = (
-        db.query(Book)
-        .join(BookAuthor, Book.bookid == BookAuthor.bookid)
-        .filter(BookAuthor.authorid == author_id)
-    )
+    query = db.query(Book).join(BookAuthor, Book.bookid == BookAuthor.bookid).filter(BookAuthor.authorid == author_id)
     if extracted_only:
         query = query.filter(Book.extracted == 1)
     return query.limit(limit).all()
+
 
 def get_books_by_category(db: Session, catid: int, extracted_only: bool = True, limit: int = 50):
     query = db.query(Book).filter(Book.catid == catid)
@@ -3120,8 +3119,10 @@ def get_books_by_category(db: Session, catid: int, extracted_only: bool = True, 
 from sqlalchemy.orm import Session
 from app.models.db_models import Author
 
+
 def search_authors(db: Session, q: str, limit: int = 20):
     return db.query(Author).filter(Author.name.ilike(f"%{q}%")).limit(limit).all()
+
 
 def get_author_by_guid(db: Session, guid: str):
     return db.query(Author).filter(Author.guid == guid).first()
@@ -3132,8 +3133,10 @@ def get_author_by_guid(db: Session, guid: str):
 from sqlalchemy.orm import Session
 from app.models.db_models import Book
 
+
 def list_categories(db: Session):
     return db.query(Book.catid, Book.catname).distinct().all()
+
 
 def find_category_by_name(db: Session, q: str):
     return db.query(Book.catid, Book.catname).filter(Book.catname.ilike(f"%{q}%")).distinct().all()
@@ -3147,18 +3150,24 @@ def find_category_by_name(db: Session, q: str):
 # app/services/normalization.py
 import re
 
+
 def normalize_arabic(text: str) -> str:
     text = text.strip()
     replacements = {
-        "أ": "ا", "إ": "ا", "آ": "ا",
-        "ى": "ي", "ة": "ه",
-        "ؤ": "و", "ئ": "ي",
+        "أ": "ا",
+        "إ": "ا",
+        "آ": "ا",
+        "ى": "ي",
+        "ة": "ه",
+        "ؤ": "و",
+        "ئ": "ي",
     }
     for k, v in replacements.items():
         text = text.replace(k, v)
     text = re.sub(r"[ًٌٍَُِّْـ]", "", text)
     text = re.sub(r"\s+", " ", text)
     return text
+
 
 def normalize_author_name(text: str) -> str:
     text = normalize_arabic(text)
@@ -3174,6 +3183,7 @@ def normalize_author_name(text: str) -> str:
 ```python
 # app/agents/router.py
 from app.models.schemas import UserIntent
+
 
 class RouterAgent:
     def run(self, query: str) -> UserIntent:
@@ -3194,20 +3204,19 @@ class RouterAgent:
 from app.repositories.authors import search_authors
 from app.services.normalization import normalize_author_name
 
+
 class AuthorAgent:
     def run(self, db, query: str):
         normalized = normalize_author_name(query)
         candidates = search_authors(db, normalized, limit=10)
-        return [
-            {"authorid": a.authorid, "guid": a.guid, "name": a.name, "death": a.death}
-            for a in candidates
-        ]
+        return [{"authorid": a.authorid, "guid": a.guid, "name": a.name, "death": a.death} for a in candidates]
 ```
 
 ```python
 # app/agents/category_agent.py
 from app.repositories.categories import find_category_by_name
 from app.services.normalization import normalize_arabic
+
 
 class CategoryAgent:
     def run(self, db, query: str):
@@ -3219,6 +3228,7 @@ class CategoryAgent:
 ```python
 # app/agents/book_agent.py
 from app.repositories.books import search_books, get_books_by_author, get_books_by_category
+
 
 class BookAgent:
     def run(self, db, query: str = "", author_id: int | None = None, catid: int | None = None):
@@ -3247,6 +3257,7 @@ class BookAgent:
 # app/agents/guid_agent.py
 from app.repositories.books import get_book_by_guid
 
+
 class GuidAgent:
     def run(self, db, guid: str):
         b = get_book_by_guid(db, guid)
@@ -3258,7 +3269,7 @@ class GuidAgent:
             "shortid": b.shortid,
             "title": b.title,
             "file": b.file,
-            "extracted": b.extracted
+            "extracted": b.extracted,
         }
 ```
 
@@ -3266,6 +3277,7 @@ class GuidAgent:
 # app/agents/retrieval_agent.py
 from pathlib import Path
 from app.core.config import settings
+
 
 class RetrievalAgent:
     def run(self, text_files: list[str], query: str, top_k: int = 5):
@@ -3279,10 +3291,7 @@ class RetrievalAgent:
                 idx = text.find(query)
                 start = max(0, idx - 500)
                 end = min(len(text), idx + 1000)
-                chunks.append({
-                    "file": file_name,
-                    "snippet": text[start:end]
-                })
+                chunks.append({"file": file_name, "snippet": text[start:end]})
             if len(chunks) >= top_k:
                 break
         return chunks
@@ -3356,6 +3365,7 @@ from langgraph.graph import StateGraph, END
 from app.models.agent_state import GraphState
 from app.graph.nodes import route_node, answer_node
 
+
 def build_graph(db):
     graph = StateGraph(GraphState)
 
@@ -3378,11 +3388,15 @@ def build_graph(db):
             return "author"
         return "book"
 
-    graph.add_conditional_edges("route", route_decision, {
-        "author": "author",
-        "category": "category",
-        "book": "book",
-    })
+    graph.add_conditional_edges(
+        "route",
+        route_decision,
+        {
+            "author": "author",
+            "category": "category",
+            "book": "book",
+        },
+    )
 
     graph.add_edge("author", "book")
     graph.add_edge("category", "book")
@@ -3407,6 +3421,7 @@ from app.models.schemas import UserQuery
 
 router = APIRouter(prefix="/qa", tags=["qa"])
 
+
 @router.post("/ask")
 def ask(payload: UserQuery, db: Session = Depends(get_db)):
     app_graph = build_graph(db)
@@ -3421,6 +3436,7 @@ from app.api.qa import router as qa_router
 
 app = FastAPI(title="Shamela Multi-Agent")
 app.include_router(qa_router)
+
 
 @app.get("/health")
 def health():
@@ -3440,6 +3456,7 @@ import json
 from pathlib import Path
 from app.core.config import settings
 
+
 def load_json(name: str):
     path = Path(settings.METADATA_DIR) / name
     with open(path, "r", encoding="utf-8") as f:
@@ -3451,6 +3468,7 @@ def load_json(name: str):
 from app.core.db import SessionLocal, engine
 from app.models.db_models import Base, Book, Author, BookAuthor
 from app.ingestion.parse_json import load_json
+
 
 def ingest():
     Base.metadata.create_all(bind=engine)
@@ -3503,6 +3521,7 @@ def ingest():
 
     db.commit()
     db.close()
+
 
 if __name__ == "__main__":
     ingest()
@@ -6778,6 +6797,7 @@ Question:
 ```python
 from typing import TypedDict, List, Dict, Any, Optional
 
+
 class GraphState(TypedDict, total=False):
     # input
     query: str
@@ -6830,7 +6850,7 @@ NODES = [
     "retrieve",
     "rerank",
     "answer",
-    "verify"
+    "verify",
 ]
 ```
 
@@ -6909,6 +6929,7 @@ START
 ```python
 from langgraph.graph import StateGraph, END
 
+
 def build_graph():
     graph = StateGraph(GraphState)
 
@@ -6944,22 +6965,30 @@ def build_graph():
             return "retrieve"
         return "answer"
 
-    graph.add_conditional_edges("route", route_decision, {
-        "guid_resolver": "guid_resolver",
-        "author_resolver": "author_resolver",
-        "category_resolver": "category_resolver",
-        "plan": "plan",
-    })
+    graph.add_conditional_edges(
+        "route",
+        route_decision,
+        {
+            "guid_resolver": "guid_resolver",
+            "author_resolver": "author_resolver",
+            "category_resolver": "category_resolver",
+            "plan": "plan",
+        },
+    )
 
     graph.add_edge("guid_resolver", "plan")
     graph.add_edge("author_resolver", "category_resolver")
     graph.add_edge("category_resolver", "book_resolver")
     graph.add_edge("book_resolver", "plan")
 
-    graph.add_conditional_edges("plan", plan_decision, {
-        "retrieve": "retrieve",
-        "answer": "answer",
-    })
+    graph.add_conditional_edges(
+        "plan",
+        plan_decision,
+        {
+            "retrieve": "retrieve",
+            "answer": "answer",
+        },
+    )
 
     graph.add_edge("retrieve", "rerank")
     graph.add_edge("rerank", "answer")
@@ -7967,11 +7996,13 @@ CSV ليس “مستندًا” بنفس معنى الكتاب؛ بل هو **tab
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
+
 class CanonicalSource(BaseModel):
     source_id: str
-    source_type: str          # json | pdf | csv | txt | db
+    source_type: str  # json | pdf | csv | txt | db
     source_path: str
     mime_type: Optional[str] = None
+
 
 class CanonicalDocument(BaseModel):
     doc_id: str
@@ -7981,6 +8012,7 @@ class CanonicalDocument(BaseModel):
     source: CanonicalSource
     metadata: Dict[str, Any] = {}
     entities: Dict[str, Any] = {}
+
 
 class CanonicalChunk(BaseModel):
     chunk_id: str
@@ -8445,7 +8477,7 @@ multi-format-islamic-rag/
 ```python
 class CanonicalSource:
     source_id: str
-    source_type: str          # json | pdf | csv | txt | db
+    source_type: str  # json | pdf | csv | txt | db
     source_name: str
     source_path: str
     mime_type: str | None
@@ -8462,9 +8494,9 @@ class CanonicalSource:
 ```python
 class CanonicalDocument:
     doc_id: str
-    doc_type: str             # book | article | report | note | page_bundle
+    doc_type: str  # book | article | report | note | page_bundle
     title: str | None
-    language: str             # ar | en | mixed
+    language: str  # ar | en | mixed
     content: str | None
     summary: str | None
 
@@ -8487,14 +8519,10 @@ class CanonicalDocument:
         "size_mb": float | None,
         "page_count": int | None,
         "row_count": int | None,
-        "tags": list[str]
+        "tags": list[str],
     }
 
-    lineage: {
-        "parent_id": str | None,
-        "parent_type": str | None,
-        "children_ids": list[str]
-    }
+    lineage: {"parent_id": str | None, "parent_type": str | None, "children_ids": list[str]}
 ```
 
 
@@ -8511,7 +8539,7 @@ class CanonicalDocument:
 ```python
 class CanonicalRecord:
     record_id: str
-    record_type: str          # book_record | author_record | category_record | csv_row | db_row
+    record_type: str  # book_record | author_record | category_record | csv_row | db_row
     source: CanonicalSource
 
     primary_text: str | None
@@ -8526,15 +8554,10 @@ class CanonicalRecord:
         "category_id": int | None,
         "table_name": str | None,
         "row_index": int | None,
-        "language": str | None
+        "language": str | None,
     }
 
-    links: {
-        "book_guid": str | None,
-        "author_guid": str | None,
-        "category_guid": str | None,
-        "related_ids": list[str]
-    }
+    links: {"book_guid": str | None, "author_guid": str | None, "category_guid": str | None, "related_ids": list[str]}
 ```
 
 
@@ -8547,14 +8570,11 @@ class CanonicalChunk:
     chunk_id: str
     doc_id: str
     chunk_index: int
-    chunk_type: str           # paragraph | page | row_group | verse | table_slice
+    chunk_type: str  # paragraph | page | row_group | verse | table_slice
     text: str
     text_len: int
 
-    offsets: {
-        "start": int | None,
-        "end": int | None
-    }
+    offsets: {"start": int | None, "end": int | None}
 
     source: CanonicalSource
 
@@ -8574,15 +8594,10 @@ class CanonicalChunk:
         "table_name": str | None,
         "source_file": str | None,
         "extracted": bool | None,
-        "language": str
+        "language": str,
     }
 
-    retrieval: {
-        "embeddable": bool,
-        "keyword_searchable": bool,
-        "vector_indexed": bool,
-        "sparse_indexed": bool
-    }
+    retrieval: {"embeddable": bool, "keyword_searchable": bool, "vector_indexed": bool, "sparse_indexed": bool}
 ```
 
 
@@ -8591,15 +8606,11 @@ class CanonicalChunk:
 ```python
 class CanonicalCitation:
     citation_id: str
-    citation_type: str        # book | quran | table | db_row | document
+    citation_type: str  # book | quran | table | db_row | document
     source_name: str
     doc_id: str | None
     chunk_id: str | None
-    locator: {
-        "page": int | None,
-        "row": int | None,
-        "section": str | None
-    }
+    locator: {"page": int | None, "row": int | None, "section": str | None}
     snippet: str
     metadata: dict[str, object]
 ```
@@ -8612,7 +8623,7 @@ class CanonicalCitation:
 
 ```python
 class RetrievalPlan:
-    mode: str                 # metadata_only | structured_only | unstructured_only | hybrid | quran_exact | calculator | tool
+    mode: str  # metadata_only | structured_only | unstructured_only | hybrid | quran_exact | calculator | tool
     intent: str
     query_for_retrieval: str
 
@@ -8626,20 +8637,15 @@ class RetrievalPlan:
         "category_names": list[str],
         "source_types": list[str],
         "table_names": list[str],
-        "extracted_only": bool
+        "extracted_only": bool,
     }
 
-    retrieval_params: {
-        "top_k_dense": int,
-        "top_k_sparse": int,
-        "top_k_final": int,
-        "rerank": bool
-    }
+    retrieval_params: {"top_k_dense": int, "top_k_sparse": int, "top_k_final": int, "rerank": bool}
 
     output_contract: {
-        "expected_output": str,     # list | answer | quote | calculation | lookup
+        "expected_output": str,  # list | answer | quote | calculation | lookup
         "require_citations": bool,
-        "allow_abstain": bool
+        "allow_abstain": bool,
     }
 ```
 
@@ -9936,7 +9942,7 @@ class CanonicalChunk:
         "book_id": int | None,
         "book_guid": str | None,
         "author_ids": list[int],
-        "category_id": int | None
+        "category_id": int | None,
     }
 ```
 
@@ -9949,10 +9955,7 @@ class CanonicalCitation:
     doc_id: str
     chunk_id: str | None
     citation_type: str
-    locator: {
-        "page": int | None,
-        "section": str | None
-    }
+    locator: {"page": int | None, "section": str | None}
     snippet: str
     metadata: dict
 ```
@@ -10851,6 +10854,7 @@ islamic-rag/
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 
+
 class Settings(BaseSettings):
     APP_NAME: str = "Islamic RAG System"
     APP_VERSION: str = "1.0.0"
@@ -10893,6 +10897,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
+
 settings = Settings()
 ```
 
@@ -10909,6 +10914,7 @@ from app.core.config import settings
 engine = create_engine(settings.DATABASE_URL, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
@@ -10928,8 +10934,17 @@ def get_db():
 ```python
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Float, Text, DateTime,
-    ForeignKey, Table, Index, UniqueConstraint
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    Table,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from app.core.db import Base
@@ -10942,6 +10957,7 @@ bookauthors = Table(
     Column("guid", String(64), index=True),
     Column("role", String(32), default="main"),
 )
+
 
 class Book(Base):
     __tablename__ = "books"
@@ -10962,6 +10978,7 @@ class Book(Base):
     authors = relationship("Author", secondary=bookauthors, back_populates="books")
     chunks = relationship("Chunk", back_populates="book", cascade="all, delete-orphan")
 
+
 class Author(Base):
     __tablename__ = "authors"
 
@@ -10973,6 +10990,7 @@ class Author(Base):
 
     books = relationship("Book", secondary=bookauthors, back_populates="authors")
 
+
 class Category(Base):
     __tablename__ = "categories"
 
@@ -10981,6 +10999,7 @@ class Category(Base):
     name = Column(String(128), index=True, nullable=False)
 
     books = relationship("Book", back_populates="category")
+
 
 class Chunk(Base):
     __tablename__ = "chunks"
@@ -11001,6 +11020,7 @@ class Chunk(Base):
         UniqueConstraint("bookid", "chunkindex", name="uq_book_chunk"),
     )
 
+
 class QueryLog(Base):
     __tablename__ = "querylogs"
 
@@ -11012,6 +11032,7 @@ class QueryLog(Base):
     latencyms = Column(Float, nullable=True)
     citations = Column(Text, nullable=True)
     createdat = Column(DateTime, default=datetime.utcnow, index=True)
+
 
 class Citation(Base):
     __tablename__ = "citations"
@@ -11034,11 +11055,13 @@ class Citation(Base):
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel
 
+
 class AuthorLite(BaseModel):
     authorid: int
     guid: str
     name: str
     death: Optional[int] = None
+
 
 class BookResponse(BaseModel):
     bookid: int
@@ -11055,6 +11078,7 @@ class BookResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class AuthorResponse(BaseModel):
     authorid: int
     guid: str
@@ -11065,6 +11089,7 @@ class AuthorResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class CategoryResponse(BaseModel):
     catid: int
     guid: str
@@ -11072,6 +11097,7 @@ class CategoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class UserIntent(BaseModel):
     intent: str
@@ -11083,12 +11109,14 @@ class UserIntent(BaseModel):
     reasoning: str = ""
     next_action: str = "retrieval"
 
+
 class RetrievalPlan(BaseModel):
     mode: Literal["metadata_only", "rag", "hybrid"] = "rag"
     bookids: List[int] = []
     authorids: List[int] = []
     categoryids: List[int] = []
     extractedonly: bool = True
+
 
 class CitationOut(BaseModel):
     bookid: int
@@ -11099,11 +11127,13 @@ class CitationOut(BaseModel):
     text: str
     relevancescore: float
 
+
 class QueryRequest(BaseModel):
     query: str
     categoryids: Optional[List[int]] = None
     authorids: Optional[List[int]] = None
     bookids: Optional[List[int]] = None
+
 
 class QueryResponse(BaseModel):
     answer: str
@@ -11125,25 +11155,16 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from app.models.dbmodels import Book
 
+
 class BookRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def get_by_id(self, bookid: int) -> Optional[Book]:
-        return (
-            self.db.query(Book)
-            .options(joinedload(Book.authors))
-            .filter(Book.bookid == bookid)
-            .first()
-        )
+        return self.db.query(Book).options(joinedload(Book.authors)).filter(Book.bookid == bookid).first()
 
     def get_by_guid(self, guid: str) -> Optional[Book]:
-        return (
-            self.db.query(Book)
-            .options(joinedload(Book.authors))
-            .filter(Book.guid == guid)
-            .first()
-        )
+        return self.db.query(Book).options(joinedload(Book.authors)).filter(Book.guid == guid).first()
 
     def search(
         self,
@@ -11174,6 +11195,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.dbmodels import Author
 
+
 class AuthorRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -11198,6 +11220,7 @@ class AuthorRepository:
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from app.models.dbmodels import Category
+
 
 class CategoryRepository:
     def __init__(self, db: Session):
@@ -11224,6 +11247,7 @@ from app.models.schemas import UserIntent
 GUID_PATTERN = re.compile(r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", re.I)
 SHORTID_PATTERN = re.compile(r"\b[A-F0-9]{6}\b", re.I)
 
+
 class RouterAgent:
     def classify(self, query: str) -> UserIntent:
         if GUID_PATTERN.search(query):
@@ -11249,11 +11273,29 @@ class RouterAgent:
         lower = query.lower()
 
         if any(k in lower for k in ["زكاة", "zakat"]):
-            return UserIntent(intent="ZAKAT", confidence=0.9, requires_retrieval=False, reasoning="Zakat query", next_action="calculator")
+            return UserIntent(
+                intent="ZAKAT",
+                confidence=0.9,
+                requires_retrieval=False,
+                reasoning="Zakat query",
+                next_action="calculator",
+            )
         if any(k in lower for k in ["ميراث", "inheritance", "مواريث"]):
-            return UserIntent(intent="INHERITANCE", confidence=0.9, requires_retrieval=False, reasoning="Inheritance query", next_action="calculator")
+            return UserIntent(
+                intent="INHERITANCE",
+                confidence=0.9,
+                requires_retrieval=False,
+                reasoning="Inheritance query",
+                next_action="calculator",
+            )
         if any(k in lower for k in ["سورة", "آية", "quran", "قرآن"]):
-            return UserIntent(intent="QURAN", confidence=0.8, requires_retrieval=True, reasoning="Quran-related query", next_action="retrieval")
+            return UserIntent(
+                intent="QURAN",
+                confidence=0.8,
+                requires_retrieval=True,
+                reasoning="Quran-related query",
+                next_action="retrieval",
+            )
 
         return UserIntent(
             intent="FIQH",
@@ -11271,6 +11313,7 @@ class RouterAgent:
 
 ```python
 from app.models.schemas import RetrievalPlan, UserIntent
+
 
 class RetrievalPlanner:
     def create_plan(self, intent: UserIntent) -> RetrievalPlan:
@@ -11292,6 +11335,7 @@ class RetrievalPlanner:
 ```python
 from typing import List, Dict, Any, Optional
 
+
 class VectorStoreService:
     def search(self, query: str, k: int = 10, filter_dict: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         return []
@@ -11311,6 +11355,7 @@ from typing import TypedDict, Dict, List, Any
 from app.agents.router import RouterAgent
 from app.services.planner import RetrievalPlanner
 
+
 class GraphState(TypedDict, total=False):
     query: str
     decision: Dict[str, Any]
@@ -11318,6 +11363,7 @@ class GraphState(TypedDict, total=False):
     retrievalchunks: List[Dict[str, Any]]
     answer: str
     citations: List[Dict[str, Any]]
+
 
 def build_graph():
     router = RouterAgent()
@@ -11331,6 +11377,7 @@ def build_graph():
 
     def plan_node(state: GraphState):
         from app.models.schemas import UserIntent
+
         decision = UserIntent(**state["decision"])
         plan = planner.create_plan(decision)
         return {"retrievalplan": plan.model_dump()}
@@ -11371,6 +11418,7 @@ from app.repositories.books import BookRepository
 
 router = APIRouter(prefix="/books", tags=["books"])
 
+
 @router.get("/search", response_model=List[BookResponse])
 def search_books(
     q: Optional[str] = None,
@@ -11383,6 +11431,7 @@ def search_books(
 ):
     repo = BookRepository(db)
     return repo.search(q, catid, authorid, extracted, skip, limit)
+
 
 @router.get("/{bookid}", response_model=BookResponse)
 def get_book(bookid: int, db: Session = Depends(get_db)):
@@ -11403,6 +11452,7 @@ from app.models.schemas import AuthorResponse
 from app.repositories.authors import AuthorRepository
 
 router = APIRouter(prefix="/authors", tags=["authors"])
+
 
 @router.get("/search", response_model=List[AuthorResponse])
 def search_authors(
@@ -11429,6 +11479,7 @@ from app.repositories.categories import CategoryRepository
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
+
 @router.get("", response_model=List[CategoryResponse])
 def list_categories(db: Session = Depends(get_db)):
     repo = CategoryRepository(db)
@@ -11446,6 +11497,7 @@ from app.graph.builder import build_graph
 
 router = APIRouter(prefix="/qa", tags=["qa"])
 graph = build_graph()
+
 
 @router.post("/ask", response_model=QueryResponse)
 def ask(request: QueryRequest):
@@ -11479,9 +11531,11 @@ app.include_router(authors.router)
 app.include_router(categories.router)
 app.include_router(qa.router)
 
+
 @app.get("/")
 def root():
     return {"name": "Islamic RAG System", "status": "ok"}
+
 
 @app.get("/health")
 def health():
@@ -11530,6 +11584,7 @@ def health():
 ```python
 from typing import TypedDict, List, Dict, Any, Optional
 
+
 class AgentState(TypedDict, total=False):
     query: str
     userid: Optional[int]
@@ -11565,6 +11620,7 @@ from app.models.dbmodels import Book, Author, Category, bookauthors
 
 DATA_DIR = Path("data/metadata")
 
+
 def load_categories(db: Session, filepath: Path):
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -11578,6 +11634,7 @@ def load_categories(db: Session, filepath: Path):
         )
         db.merge(row)
     db.commit()
+
 
 def load_authors(db: Session, filepath: Path):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -11594,6 +11651,7 @@ def load_authors(db: Session, filepath: Path):
         )
         db.merge(row)
     db.commit()
+
 
 def load_books(db: Session, filepath: Path):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -11635,6 +11693,7 @@ def load_books(db: Session, filepath: Path):
 
     db.commit()
 
+
 def main():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -11645,6 +11704,7 @@ def main():
         print("SQLite metadata load completed.")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()
@@ -11660,6 +11720,7 @@ from pathlib import Path
 from typing import List, Dict
 from app.core.config import settings
 
+
 def simple_chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> List[Dict]:
     chunk_size = chunk_size or settings.CHUNK_SIZE
     overlap = overlap or settings.CHUNK_OVERLAP
@@ -11673,19 +11734,22 @@ def simple_chunk_text(text: str, chunk_size: int = None, overlap: int = None) ->
         end = min(start + chunk_size, len(text))
         chunk_text = text[start:end].strip()
         if chunk_text:
-            chunks.append({
-                "chunkindex": idx,
-                "text": chunk_text,
-                "textlen": len(chunk_text),
-                "startoffset": start,
-                "endoffset": end,
-            })
+            chunks.append(
+                {
+                    "chunkindex": idx,
+                    "text": chunk_text,
+                    "textlen": len(chunk_text),
+                    "startoffset": start,
+                    "endoffset": end,
+                }
+            )
             idx += 1
         if end == len(text):
             break
         start = max(end - overlap, 0)
 
     return chunks
+
 
 def validate_chunk(text: str) -> bool:
     if len(text) < 50:
@@ -11695,6 +11759,7 @@ def validate_chunk(text: str) -> bool:
     if not any(ch.isalnum() for ch in text):
         return False
     return True
+
 
 def chunk_book_file(file_path: str) -> List[Dict]:
     content = Path(file_path).read_text(encoding="utf-8")
@@ -11836,31 +11901,37 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def test_root():
     response = client.get("/")
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
 
+
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+
 
 def test_categories_endpoint():
     response = client.get("/categories")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+
 def test_books_search_endpoint():
     response = client.get("/books/search")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+
 def test_authors_search_endpoint():
     response = client.get("/authors/search")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
 
 def test_qa_ask_endpoint():
     payload = {"query": "ما حكم الزكاة؟"}
@@ -11880,17 +11951,20 @@ def test_qa_ask_endpoint():
 ```python
 from app.agents.router import RouterAgent
 
+
 def test_guid_detection():
     router = RouterAgent()
     result = router.classify("ابحث عن الكتاب ace0dc28-7030-5890-8962-fdaf7a448647")
     assert result.requires_retrieval is False
     assert result.entities["guid"] == "ace0dc28-7030-5890-8962-fdaf7a448647"
 
+
 def test_shortid_detection():
     router = RouterAgent()
     result = router.classify("هات الكتاب 6B86B2")
     assert result.requires_retrieval is False
     assert result.entities["shortid"].upper() == "6B86B2"
+
 
 def test_zakat_intent():
     router = RouterAgent()
@@ -11905,6 +11979,7 @@ def test_zakat_intent():
 ```python
 from app.services.planner import RetrievalPlanner
 from app.models.schemas import UserIntent
+
 
 def test_retrieval_plan_default():
     planner = RetrievalPlanner()
@@ -11973,6 +12048,7 @@ import json
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+
 class GUIDIndexRepository:
     def __init__(self, file_path: str = "data/metadata/guidindex.json"):
         self.file_path = Path(file_path)
@@ -12019,11 +12095,14 @@ from app.models.dbmodels import User
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -12031,11 +12110,13 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
+
 def decode_access_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
+
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(
@@ -12078,6 +12159,7 @@ class User(Base):
 
     queries = relationship("QueryLog", back_populates="user")
 
+
 # داخل QueryLog
 userid = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
 user = relationship("User", back_populates="queries")
@@ -12094,6 +12176,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+
 class UserResponse(BaseModel):
     id: int
     username: str
@@ -12102,6 +12185,7 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class Token(BaseModel):
     access_token: str
@@ -12127,11 +12211,10 @@ from app.models.schemas import UserCreate, UserResponse, Token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
 @router.post("/register", response_model=UserResponse)
 def register(userdata: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(
-        (User.username == userdata.username) | (User.email == userdata.email)
-    ).first()
+    existing = db.query(User).filter((User.username == userdata.username) | (User.email == userdata.email)).first()
 
     if existing:
         raise HTTPException(status_code=400, detail="Username or email already registered")
@@ -12145,6 +12228,7 @@ def register(userdata: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     return user
+
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -12161,6 +12245,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
@@ -12188,6 +12273,7 @@ from qdrant_client.http.models import (
 from sentence_transformers import SentenceTransformer
 
 from app.core.config import settings
+
 
 class VectorStoreService:
     def __init__(self):
@@ -12265,17 +12351,19 @@ class VectorStoreService:
         formatted = []
         for result in results:
             payload = result.payload
-            formatted.append({
-                "chunkid": payload.get("chunkid"),
-                "bookid": payload.get("bookid"),
-                "bookguid": payload.get("bookguid"),
-                "booktitle": payload.get("booktitle"),
-                "categoryid": payload.get("categoryid"),
-                "categoryname": payload.get("categoryname"),
-                "chunkindex": payload.get("chunkindex"),
-                "text": payload.get("text"),
-                "score": result.score,
-            })
+            formatted.append(
+                {
+                    "chunkid": payload.get("chunkid"),
+                    "bookid": payload.get("bookid"),
+                    "bookguid": payload.get("bookguid"),
+                    "booktitle": payload.get("booktitle"),
+                    "categoryid": payload.get("categoryid"),
+                    "categoryname": payload.get("categoryname"),
+                    "chunkindex": payload.get("chunkindex"),
+                    "text": payload.get("text"),
+                    "score": result.score,
+                }
+            )
         return formatted
 ```
 
@@ -12287,20 +12375,23 @@ class VectorStoreService:
 ```python
 from typing import List, Dict, Any
 
+
 class CitationValidator:
     def validate(self, answer: str, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         valid = []
         for chunk in chunks:
             if chunk.get("text") and len(chunk["text"]) > 20:
-                valid.append({
-                    "bookid": chunk.get("bookid"),
-                    "booktitle": chunk.get("booktitle", ""),
-                    "bookguid": chunk.get("bookguid", ""),
-                    "chunkid": chunk.get("chunkid", ""),
-                    "chunkindex": chunk.get("chunkindex", 0),
-                    "text": chunk.get("text", "")[:280],
-                    "relevancescore": chunk.get("score", 0.0),
-                })
+                valid.append(
+                    {
+                        "bookid": chunk.get("bookid"),
+                        "booktitle": chunk.get("booktitle", ""),
+                        "bookguid": chunk.get("bookguid", ""),
+                        "chunkid": chunk.get("chunkid", ""),
+                        "chunkindex": chunk.get("chunkindex", 0),
+                        "text": chunk.get("text", "")[:280],
+                        "relevancescore": chunk.get("score", 0.0),
+                    }
+                )
         return valid
 ```
 
@@ -12315,10 +12406,12 @@ from pydantic import BaseModel
 
 from app.services.citationvalidator import CitationValidator
 
+
 class AnswerResult(BaseModel):
     answer: str
     citations: List[Dict[str, Any]]
     confidence: float
+
 
 class AnswerAgent:
     def __init__(self, llm=None):
@@ -12395,6 +12488,7 @@ planner = RetrievalPlanner()
 vectorstore = VectorStoreService()
 answer_agent = AnswerAgent()
 
+
 def log_query(db: Session, userid: int | None, query: str, result: dict, latencyms: float):
     row = QueryLog(
         userid=userid,
@@ -12407,6 +12501,7 @@ def log_query(db: Session, userid: int | None, query: str, result: dict, latency
     )
     db.add(row)
     db.commit()
+
 
 @router.post("/plan")
 def create_plan(request: QueryRequest):
@@ -12424,6 +12519,7 @@ def create_plan(request: QueryRequest):
         "intent": intent.model_dump(),
         "plan": plan.model_dump(),
     }
+
 
 @router.post("/retrieve")
 def retrieve_docs(request: QueryRequest):
@@ -12449,6 +12545,7 @@ def retrieve_docs(request: QueryRequest):
         "plan": plan.model_dump(),
         "chunks": chunks,
     }
+
 
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(
@@ -12534,9 +12631,11 @@ app.include_router(authors.router)
 app.include_router(categories.router)
 app.include_router(qa.router)
 
+
 @app.get("/")
 def root():
     return {"name": "Islamic RAG System", "status": "ok"}
+
 
 @app.get("/health")
 def health():
@@ -12604,6 +12703,7 @@ def health():
 import re
 from typing import List, Dict, Any
 
+
 class ArabicChunker:
     def __init__(self, chunk_size: int = 1200, overlap: int = 150, min_chunk_len: int = 80):
         self.chunk_size = chunk_size
@@ -12637,12 +12737,14 @@ class ArabicChunker:
 
             chunk_text = text[start:end].strip()
             if len(chunk_text) >= self.min_chunk_len:
-                chunks.append({
-                    "text": chunk_text,
-                    "startoffset": start,
-                    "endoffset": end,
-                    "textlen": len(chunk_text),
-                })
+                chunks.append(
+                    {
+                        "text": chunk_text,
+                        "startoffset": start,
+                        "endoffset": end,
+                        "textlen": len(chunk_text),
+                    }
+                )
 
             if end >= len(text):
                 break
@@ -12742,6 +12844,7 @@ class MetadataLoader:
 from pathlib import Path
 from typing import Optional
 
+
 class ExtractedTextLoader:
     def __init__(self, extracted_dir: str = "data/extractedbooks"):
         self.extracted_dir = Path(extracted_dir)
@@ -12784,6 +12887,7 @@ class ExtractedTextLoader:
 import hashlib
 from qdrant_client.http.models import FilterSelector
 
+
 class VectorStoreService:
     # ... نفس الكود السابق ...
 
@@ -12813,9 +12917,7 @@ class VectorStoreService:
         self.client.delete(
             collection_name=self.collection_name,
             points_selector=FilterSelector(
-                filter=Filter(
-                    must=[FieldCondition(key="bookid", match=MatchValue(value=bookid))]
-                )
+                filter=Filter(must=[FieldCondition(key="bookid", match=MatchValue(value=bookid))])
             ),
         )
 
@@ -12843,6 +12945,7 @@ from app.ingestion.metadata_loader import MetadataLoader
 from app.ingestion.text_loader import ExtractedTextLoader
 from app.services.vectorstore import VectorStoreService
 
+
 class IngestionPipeline:
     def __init__(
         self,
@@ -12862,28 +12965,30 @@ class IngestionPipeline:
         payloads = []
         for i, chunk in enumerate(chunks):
             chunkid = f"{book_meta['guid']}:chunk:{i}"
-            payloads.append({
-                "chunkid": chunkid,
-                "bookid": book_meta["bookid"],
-                "bookguid": book_meta["guid"],
-                "bookshortid": book_meta["shortid"],
-                "booktitle": book_meta["title"],
-                "categoryid": book_meta["categoryid"],
-                "categoryname": book_meta["categoryname"],
-                "authorids": book_meta["authorids"],
-                "authorguids": book_meta["authorguids"],
-                "authornames": book_meta["authornames"],
-                "datehijri": book_meta["datehijri"],
-                "chunkindex": i,
-                "text": chunk["text"],
-                "textlen": chunk["textlen"],
-                "startoffset": chunk["startoffset"],
-                "endoffset": chunk["endoffset"],
-                "sourcefile": source_file,
-                "extracted": book_meta["extracted"],
-                "sourcetype": "book",
-                "language": "ar",
-            })
+            payloads.append(
+                {
+                    "chunkid": chunkid,
+                    "bookid": book_meta["bookid"],
+                    "bookguid": book_meta["guid"],
+                    "bookshortid": book_meta["shortid"],
+                    "booktitle": book_meta["title"],
+                    "categoryid": book_meta["categoryid"],
+                    "categoryname": book_meta["categoryname"],
+                    "authorids": book_meta["authorids"],
+                    "authorguids": book_meta["authorguids"],
+                    "authornames": book_meta["authornames"],
+                    "datehijri": book_meta["datehijri"],
+                    "chunkindex": i,
+                    "text": chunk["text"],
+                    "textlen": chunk["textlen"],
+                    "startoffset": chunk["startoffset"],
+                    "endoffset": chunk["endoffset"],
+                    "sourcefile": source_file,
+                    "extracted": book_meta["extracted"],
+                    "sourcetype": "book",
+                    "language": "ar",
+                }
+            )
         return payloads
 
     def ingest_book(self, bookid: int, reindex: bool = True, batch_size: int = 100) -> Dict[str, Any]:
@@ -12922,7 +13027,9 @@ class IngestionPipeline:
             "source_file": book_meta.get("file") or f"{bookid}.txt",
         }
 
-    def ingest_range(self, start_id: int = 1, end_id: Optional[int] = None, limit: Optional[int] = None) -> Dict[str, Any]:
+    def ingest_range(
+        self, start_id: int = 1, end_id: Optional[int] = None, limit: Optional[int] = None
+    ) -> Dict[str, Any]:
         bookids = self.metadata_loader.list_extracted_books(start_id=start_id, end_id=end_id)
         if limit is not None:
             bookids = bookids[:limit]
@@ -12944,7 +13051,9 @@ class IngestionPipeline:
                 stats["errors"].append({"bookid": bookid, "error": result["error"]})
 
             if idx % 20 == 0:
-                print(f"[INGEST] processed={idx} ok={stats['processed']} failed={stats['failed']} chunks={stats['total_chunks']}")
+                print(
+                    f"[INGEST] processed={idx} ok={stats['processed']} failed={stats['failed']} chunks={stats['total_chunks']}"
+                )
 
         return stats
 ```
@@ -12965,6 +13074,7 @@ import argparse
 from app.core.db import SessionLocal
 from app.services.vectorstore import VectorStoreService
 from app.ingestion.pipeline import IngestionPipeline
+
 
 def main():
     parser = argparse.ArgumentParser(description="Islamic RAG ingestion CLI")
@@ -12993,6 +13103,7 @@ def main():
             print(vectorstore.get_stats())
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()
@@ -13039,15 +13150,18 @@ from app.ingestion.pipeline import IngestionPipeline
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+
 def require_superuser(user: User = Depends(get_current_user)) -> User:
     if not user.issuperuser:
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
 
+
 @router.post("/reindex/book/{bookid}")
 def reindex_book(bookid: int, db: Session = Depends(get_db), _: User = Depends(require_superuser)):
     pipeline = IngestionPipeline(db=db, vectorstore=VectorStoreService())
     return pipeline.ingest_book(bookid, reindex=True)
+
 
 @router.get("/vector/stats")
 def vector_stats(_: User = Depends(require_superuser)):
@@ -13126,6 +13240,7 @@ from sentence_transformers import CrossEncoder
 
 from app.core.config import settings
 
+
 class RerankerService:
     def __init__(self):
         self.model = CrossEncoder(settings.RERANKER_MODEL)
@@ -13158,6 +13273,7 @@ from pydantic import BaseModel, Field
 
 from app.core.config import settings
 
+
 class RetrievalPlan(BaseModel):
     mode: str = "metadataonly"
     bookids: List[int] = Field(default_factory=list)
@@ -13165,6 +13281,7 @@ class RetrievalPlan(BaseModel):
     categoryids: List[int] = Field(default_factory=list)
     extractedonly: bool = True
     intent: str | None = None
+
 
 class RetrievalPlanner:
     def create_plan(
@@ -13198,6 +13315,7 @@ class RetrievalPlanner:
             intent=intent.get("intent"),
         )
 
+
 class RetrievalAgent:
     def __init__(self, vectorstore):
         self.vectorstore = vectorstore
@@ -13229,6 +13347,7 @@ class RetrievalAgent:
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
+
 class UserIntent(BaseModel):
     intent: str
     confidence: float
@@ -13239,6 +13358,7 @@ class UserIntent(BaseModel):
     reasoning: str
     nextaction: str
 
+
 class RetrievalPlanSchema(BaseModel):
     mode: Literal["metadataonly", "rag", "hybrid"] = "metadataonly"
     bookids: List[int] = Field(default_factory=list)
@@ -13246,6 +13366,7 @@ class RetrievalPlanSchema(BaseModel):
     categoryids: List[int] = Field(default_factory=list)
     extractedonly: bool = True
     intent: Optional[str] = None
+
 
 class Citation(BaseModel):
     bookid: int
@@ -13256,11 +13377,13 @@ class Citation(BaseModel):
     text: str
     relevancescore: float
 
+
 class QueryRequest(BaseModel):
     query: str
     categoryids: Optional[List[int]] = None
     authorids: Optional[List[int]] = None
     bookids: Optional[List[int]] = None
+
 
 class QueryResponse(BaseModel):
     answer: str
@@ -13277,6 +13400,7 @@ class QueryResponse(BaseModel):
 
 ```python
 from typing import TypedDict, List, Dict, Any, Optional
+
 
 class GraphState(TypedDict, total=False):
     query: str
@@ -13326,6 +13450,7 @@ guid_agent = GUIDAgent()
 planner = RetrievalPlanner()
 reranker = RerankerService()
 
+
 def route_node(state):
     query = state["query"]
     intent = router_agent.classify(query)
@@ -13334,17 +13459,20 @@ def route_node(state):
         "normalizedquery": query.strip(),
     }
 
+
 def author_node(state, db: Session):
     query = state["query"]
     intent = state.get("intent", {})
     candidates = author_agent.resolve(db, query, intent)
     return {"authorcandidates": candidates}
 
+
 def category_node(state, db: Session):
     query = state["query"]
     intent = state.get("intent", {})
     candidates = category_agent.resolve(db, query, intent)
     return {"categorycandidates": candidates}
+
 
 def book_node(state, db: Session):
     author_candidates = state.get("authorcandidates", [])
@@ -13362,6 +13490,7 @@ def book_node(state, db: Session):
     )
     return {"bookcandidates": candidates}
 
+
 def guid_node(state, db: Session):
     intent = state.get("intent", {})
     entities = intent.get("entities", {})
@@ -13373,6 +13502,7 @@ def guid_node(state, db: Session):
     candidate = guid_agent.resolve(db, guid_or_shortid)
     return {"guidcandidate": candidate}
 
+
 def plan_node(state):
     plan = planner.create_plan(
         intent=state.get("intent", {}),
@@ -13383,15 +13513,18 @@ def plan_node(state):
     )
     return {"retrievalplan": plan.model_dump()}
 
+
 def retrieve_node(state, vectorstore):
     query = state["query"]
     plan_dict = state.get("retrievalplan", {})
     from app.agents.retrievalagent import RetrievalPlan
+
     plan = RetrievalPlan(**plan_dict)
 
     retrieval_agent = RetrievalAgent(vectorstore=vectorstore)
     chunks = retrieval_agent.search(query, plan)
     return {"retrievalchunks": chunks}
+
 
 def rerank_node(state):
     query = state["query"]
@@ -13401,6 +13534,7 @@ def rerank_node(state):
 
     ranked = reranker.rerank(query=query, documents=chunks, top_k=5)
     return {"rerankedchunks": ranked}
+
 
 def answer_node(state, llm=None):
     query = state["query"]
@@ -13438,6 +13572,7 @@ from app.graph.nodes import (
     rerank_node,
     answer_node,
 )
+
 
 def build_graph(db, vectorstore, llm=None):
     graph = StateGraph(GraphState)
@@ -13522,6 +13657,7 @@ from app.services.vectorstore import VectorStoreService
 router = APIRouter(prefix="/qa", tags=["qa"])
 vectorstore = VectorStoreService()
 
+
 def log_query(db: Session, userid: int | None, query: str, result: dict, latencyms: float):
     row = QueryLog(
         userid=userid,
@@ -13534,6 +13670,7 @@ def log_query(db: Session, userid: int | None, query: str, result: dict, latency
     )
     db.add(row)
     db.commit()
+
 
 @router.post("/plan")
 def create_plan(request: QueryRequest, db: Session = Depends(get_db)):
@@ -13549,6 +13686,7 @@ def create_plan(request: QueryRequest, db: Session = Depends(get_db)):
         "guidcandidate": result.get("guidcandidate"),
     }
 
+
 @router.post("/retrieve")
 def retrieve_docs(request: QueryRequest, db: Session = Depends(get_db)):
     graph = build_graph(db=db, vectorstore=vectorstore, llm=None)
@@ -13561,6 +13699,7 @@ def retrieve_docs(request: QueryRequest, db: Session = Depends(get_db)):
         "rerankedchunks": result.get("rerankedchunks", []),
     }
 
+
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(
     request: QueryRequest,
@@ -13570,10 +13709,12 @@ def ask_question(
 ):
     start = time.time()
     graph = build_graph(db=db, vectorstore=vectorstore, llm=None)
-    result = graph.invoke({
-        "query": request.query,
-        "userid": current_user.id if current_user else None,
-    })
+    result = graph.invoke(
+        {
+            "query": request.query,
+            "userid": current_user.id if current_user else None,
+        }
+    )
     latencyms = (time.time() - start) * 1000
 
     background_tasks.add_task(
@@ -13652,9 +13793,12 @@ def ask_question(
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class AuthorAgent:
     def resolve(self, db: Session, query: str, intent: dict | None = None, limit: int = 10) -> list[dict]:
-        rows = db.execute(text("""
+        rows = (
+            db.execute(
+                text("""
             SELECT authorid, guid, shortid, name, death
             FROM authors
             WHERE name LIKE :q
@@ -13662,11 +13806,16 @@ class AuthorAgent:
                 CASE WHEN name = :exact THEN 0 ELSE 1 END,
                 LENGTH(name) ASC
             LIMIT :limit
-        """), {
-            "q": f"%{query.strip()}%",
-            "exact": query.strip(),
-            "limit": limit,
-        }).mappings().all()
+        """),
+                {
+                    "q": f"%{query.strip()}%",
+                    "exact": query.strip(),
+                    "limit": limit,
+                },
+            )
+            .mappings()
+            .all()
+        )
 
         return [dict(r) for r in rows]
 ```
@@ -13680,9 +13829,12 @@ class AuthorAgent:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class CategoryAgent:
     def resolve(self, db: Session, query: str, intent: dict | None = None, limit: int = 10) -> list[dict]:
-        rows = db.execute(text("""
+        rows = (
+            db.execute(
+                text("""
             SELECT catid, guid, name
             FROM categories
             WHERE name LIKE :q
@@ -13690,11 +13842,16 @@ class CategoryAgent:
                 CASE WHEN name = :exact THEN 0 ELSE 1 END,
                 LENGTH(name) ASC
             LIMIT :limit
-        """), {
-            "q": f"%{query.strip()}%",
-            "exact": query.strip(),
-            "limit": limit,
-        }).mappings().all()
+        """),
+                {
+                    "q": f"%{query.strip()}%",
+                    "exact": query.strip(),
+                    "limit": limit,
+                },
+            )
+            .mappings()
+            .all()
+        )
 
         return [dict(r) for r in rows]
 ```
@@ -13707,6 +13864,7 @@ class CategoryAgent:
 ```python
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class BookAgent:
     def find_books(
@@ -13756,16 +13914,24 @@ class BookAgent:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class GUIDAgent:
     def resolve(self, db: Session, guid_or_shortid: str) -> dict | None:
         value = guid_or_shortid.strip()
 
-        row = db.execute(text("""
+        row = (
+            db.execute(
+                text("""
             SELECT bookid, guid, shortid, title, catid, catname, extracted, file, sizemb
             FROM books
             WHERE guid = :value OR UPPER(shortid) = UPPER(:value)
             LIMIT 1
-        """), {"value": value}).mappings().first()
+        """),
+                {"value": value},
+            )
+            .mappings()
+            .first()
+        )
 
         return dict(row) if row else None
 ```
@@ -13779,6 +13945,7 @@ class GUIDAgent:
 import re
 from pydantic import BaseModel
 
+
 class ZakatResult(BaseModel):
     totalwealth: float
     nisabthreshold: float
@@ -13786,6 +13953,7 @@ class ZakatResult(BaseModel):
     isabovenisab: bool
     message: str
     calculationmethod: str
+
 
 class ZakatAgent:
     GOLD_PRICE_PER_GRAM = 250.0
@@ -13831,7 +13999,7 @@ class ZakatAgent:
                 "nisabthreshold": nisab,
                 "isabovenisab": above,
                 "calculationmethod": "2.5% simplified estimation",
-            }
+            },
         }
 ```
 
@@ -13843,6 +14011,7 @@ class ZakatAgent:
 ```python
 import re
 from typing import List, Dict, Any
+
 
 class QuranAgent:
     def extract_verse_reference(self, query: str) -> dict | None:
@@ -13874,15 +14043,17 @@ class QuranAgent:
 
         citations = []
         for chunk in top:
-            citations.append({
-                "bookid": chunk.get("bookid"),
-                "booktitle": chunk.get("booktitle", ""),
-                "bookguid": chunk.get("bookguid", ""),
-                "chunkid": chunk.get("chunkid", ""),
-                "chunkindex": chunk.get("chunkindex", 0),
-                "text": chunk.get("text", "")[:280],
-                "relevancescore": chunk.get("rerankscore", chunk.get("score", 0.0)),
-            })
+            citations.append(
+                {
+                    "bookid": chunk.get("bookid"),
+                    "booktitle": chunk.get("booktitle", ""),
+                    "bookguid": chunk.get("bookguid", ""),
+                    "chunkid": chunk.get("chunkid", ""),
+                    "chunkindex": chunk.get("chunkindex", 0),
+                    "text": chunk.get("text", "")[:280],
+                    "relevancescore": chunk.get("rerankscore", chunk.get("score", 0.0)),
+                }
+            )
 
         return {
             "answer": answer,
@@ -13904,6 +14075,7 @@ from app.agents.quranagent import QuranAgent
 
 zakat_agent = ZakatAgent()
 quran_agent = QuranAgent()
+
 
 def answer_node(state, llm=None):
     query = state["query"]
@@ -13955,11 +14127,13 @@ def route_decision(state) -> Literal["guid", "author", "plan"]:
 
     return "plan"
 
+
 def plan_decision(state) -> Literal["retrieve", "answer"]:
     plan = state.get("retrievalplan", {})
     if plan.get("mode") == "metadataonly":
         return "answer"
     return "retrieve"
+
 
 graph.add_conditional_edges(
     "plan",
@@ -14048,6 +14222,7 @@ CONFIDENCETHRESHOLD=0.7
 from typing import Optional, List
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     APPNAME: str = "Islamic RAG System"
     APPVERSION: str = "1.0.0"
@@ -14077,6 +14252,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
 
 settings = Settings()
 ```
@@ -14203,6 +14379,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ```python
 import re
+
 
 class ArabicNormalizer:
     TATWEEL = "ـ"
@@ -14446,6 +14623,7 @@ Query:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class KeywordStoreService:
     def __init__(self, db: Session):
         self.db = db
@@ -14483,6 +14661,7 @@ class KeywordStoreService:
 ```python
 from typing import Any
 
+
 class VectorStoreService:
     # existing __init__ and qdrant setup here
 
@@ -14518,15 +14697,17 @@ class VectorStoreService:
         formatted = []
         for r in results:
             payload = r.payload or {}
-            formatted.append({
-                "chunkid": payload.get("chunkid"),
-                "bookid": payload.get("bookid"),
-                "bookguid": payload.get("bookguid"),
-                "booktitle": payload.get("booktitle"),
-                "chunkindex": payload.get("chunkindex", 0),
-                "text": payload.get("text", ""),
-                "score": float(r.score),
-            })
+            formatted.append(
+                {
+                    "chunkid": payload.get("chunkid"),
+                    "bookid": payload.get("bookid"),
+                    "bookguid": payload.get("bookguid"),
+                    "booktitle": payload.get("booktitle"),
+                    "chunkindex": payload.get("chunkindex", 0),
+                    "text": payload.get("text", ""),
+                    "score": float(r.score),
+                }
+            )
         return formatted
 ```
 
@@ -14539,6 +14720,7 @@ class VectorStoreService:
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 
+
 class RetrievalPlan(BaseModel):
     mode: str = "metadataonly"
     bookids: List[int] = Field(default_factory=list)
@@ -14546,6 +14728,7 @@ class RetrievalPlan(BaseModel):
     categoryids: List[int] = Field(default_factory=list)
     extractedonly: bool = True
     intent: str | None = None
+
 
 class RetrievalPlanner:
     def create_plan(
@@ -14579,6 +14762,7 @@ class RetrievalPlanner:
             intent=intent.get("intent"),
         )
 
+
 class RetrievalAgent:
     def __init__(self, vectorstore, keywordstore, reranker):
         self.vectorstore = vectorstore
@@ -14603,7 +14787,9 @@ class RetrievalAgent:
         reranked = self.reranker.rerank(query=query, documents=merged, top_k=5)
         return reranked
 
-    def _merge_results(self, vector_results: List[Dict[str, Any]], keyword_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _merge_results(
+        self, vector_results: List[Dict[str, Any]], keyword_results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         by_chunk = {}
 
         for item in vector_results:
@@ -14634,8 +14820,11 @@ class RetrievalAgent:
 ```python
 from typing import List, Dict, Any
 
+
 class CitationValidator:
-    def validate(self, answer: str, chunks: List[Dict[str, Any]], citations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def validate(
+        self, answer: str, chunks: List[Dict[str, Any]], citations: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         if not citations:
             return []
 
@@ -14671,10 +14860,12 @@ from pydantic import BaseModel
 
 from app.services.citationvalidator import CitationValidator
 
+
 class AnswerResult(BaseModel):
     answer: str
     citations: List[Dict[str, Any]]
     confidence: float
+
 
 class AnswerAgent:
     def __init__(self, llm=None):
@@ -14700,15 +14891,17 @@ class AnswerAgent:
 
         citations = []
         for chunk in chunks[:5]:
-            citations.append({
-                "bookid": chunk.get("bookid"),
-                "booktitle": chunk.get("booktitle", ""),
-                "bookguid": chunk.get("bookguid", ""),
-                "chunkid": chunk.get("chunkid", ""),
-                "chunkindex": chunk.get("chunkindex", 0),
-                "text": chunk.get("text", "")[:280],
-                "relevancescore": chunk.get("rerankscore", chunk.get("score", 0.0)),
-            })
+            citations.append(
+                {
+                    "bookid": chunk.get("bookid"),
+                    "booktitle": chunk.get("booktitle", ""),
+                    "bookguid": chunk.get("bookguid", ""),
+                    "chunkid": chunk.get("chunkid", ""),
+                    "chunkindex": chunk.get("chunkindex", 0),
+                    "text": chunk.get("text", "")[:280],
+                    "relevancescore": chunk.get("rerankscore", chunk.get("score", 0.0)),
+                }
+            )
 
         citations = self.validator.validate(answer=answer, chunks=chunks[:5], citations=citations)
 
@@ -14770,6 +14963,7 @@ from app.agents.retrievalagent import RetrievalPlanner, RetrievalAgent, Retrieva
 planner = RetrievalPlanner()
 reranker = RerankerService()
 
+
 def retrieve_node(state, db, vectorstore):
     query = state["query"]
     plan = RetrievalPlan(**state.get("retrievalplan", {}))
@@ -14802,6 +14996,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+
 def setup_logging():
     Path("logs").mkdir(exist_ok=True)
 
@@ -14811,9 +15006,7 @@ def setup_logging():
     if logger.handlers:
         return logger
 
-    formatter = logging.Formatter(
-        "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s | %(name)s | %(levelname)s | %(message)s")
 
     file_handler = RotatingFileHandler("logs/app.log", maxBytes=5_000_000, backupCount=5, encoding="utf-8")
     file_handler.setFormatter(formatter)
@@ -14848,6 +15041,7 @@ router = APIRouter(prefix="/qa", tags=["qa"])
 logger = setup_logging()
 vectorstore = VectorStoreService()
 
+
 @router.post("/ask", response_model=QueryResponse)
 def ask(request: QueryRequest, db: Session = Depends(get_db)):
     start = time.perf_counter()
@@ -14857,13 +15051,18 @@ def ask(request: QueryRequest, db: Session = Depends(get_db)):
 
     latency_ms = (time.perf_counter() - start) * 1000
 
-    logger.info(json.dumps({
-        "query": request.query,
-        "intent": result.get("intent", {}).get("intent"),
-        "confidence": result.get("confidence", 0.0),
-        "citations": len(result.get("citations", [])),
-        "latencyms": latency_ms,
-    }, ensure_ascii=False))
+    logger.info(
+        json.dumps(
+            {
+                "query": request.query,
+                "intent": result.get("intent", {}).get("intent"),
+                "confidence": result.get("confidence", 0.0),
+                "citations": len(result.get("citations", [])),
+                "latencyms": latency_ms,
+            },
+            ensure_ascii=False,
+        )
+    )
 
     return QueryResponse(
         answer=result.get("answer", ""),
@@ -14884,15 +15083,18 @@ def ask(request: QueryRequest, db: Session = Depends(get_db)):
 ```python
 from app.agents.router import RouterAgent
 
+
 def test_guid_detection():
     agent = RouterAgent(llm=None)
     result = agent.classify("ابحث عن الكتاب GUID ace0dc28-7030-5890-8962-fdaf7a448647")
     assert result.subintent == "GUIDLOOKUP"
 
+
 def test_shortid_detection():
     agent = RouterAgent(llm=None)
     result = agent.classify("هات الكتاب 6B86B2")
     assert result.subintent == "SHORTIDLOOKUP"
+
 
 def test_zakat_detection():
     agent = RouterAgent(llm=None)
@@ -14929,6 +15131,7 @@ def test_citation_validation():
 
 ```python
 from app.agents.answeragent import AnswerAgent
+
 
 def test_answer_agent_fallback():
     agent = AnswerAgent(llm=None)
@@ -15016,13 +15219,11 @@ def test_answer_agent_fallback():
 
 ```python
 # app/models/dbmodels.py
-from sqlalchemy import (
-    Column, Integer, String, Boolean, Float, Text, DateTime,
-    ForeignKey, Index, UniqueConstraint
-)
+from sqlalchemy import Column, Integer, String, Boolean, Float, Text, DateTime, ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.db import Base
+
 
 class Chunk(Base):
     __tablename__ = "chunks"
@@ -15141,6 +15342,7 @@ from typing import List, Dict, Any
 
 from app.core.config import settings
 
+
 @dataclass
 class RawChunk:
     chunkid: str
@@ -15149,6 +15351,7 @@ class RawChunk:
     textlen: int
     startoffset: int
     endoffset: int
+
 
 class ChunkProcessor:
     def __init__(self, chunk_size: int | None = None, overlap: int | None = None):
@@ -15202,7 +15405,7 @@ class ChunkProcessor:
         if target_end >= len(text):
             return len(text)
 
-        window = text[start:target_end + 200]
+        window = text[start : target_end + 200]
         candidates = []
 
         for sep in ["\n\n", "\n", "۔", ".", "!", "؟", ":"]:
@@ -15244,30 +15447,45 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+
 class BookTextExtractor:
     def __init__(self, db: Session, extracted_root: str = "./data/extractedbooks"):
         self.db = db
         self.extracted_root = Path(extracted_root)
 
     def get_book_metadata(self, bookid: int) -> dict | None:
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT b.bookid, b.guid, b.shortid, b.title, b.catid, b.catname,
                    b.extracted, b.file, b.sizemb
             FROM books b
             WHERE b.bookid = :bookid
             LIMIT 1
-        """), {"bookid": bookid}).mappings().first()
+        """),
+                {"bookid": bookid},
+            )
+            .mappings()
+            .first()
+        )
 
         return dict(row) if row else None
 
     def get_book_authors(self, bookid: int) -> list[dict]:
-        rows = self.db.execute(text("""
+        rows = (
+            self.db.execute(
+                text("""
             SELECT a.authorid, a.guid, a.shortid, a.name, a.death, ba.role
             FROM bookauthors ba
             JOIN authors a ON a.authorid = ba.authorid
             WHERE ba.bookid = :bookid
             ORDER BY a.authorid
-        """), {"bookid": bookid}).mappings().all()
+        """),
+                {"bookid": bookid},
+            )
+            .mappings()
+            .all()
+        )
 
         return [dict(r) for r in rows]
 
@@ -15296,6 +15514,7 @@ class BookTextExtractor:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class ChunkRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -15309,7 +15528,8 @@ class ChunkRepository:
         if not rows:
             return
 
-        self.db.execute(text("""
+        self.db.execute(
+            text("""
             INSERT INTO chunks (
                 chunkid, bookid, chunkindex, text, textlen,
                 startoffset, endoffset, pagenumber, sourcefile
@@ -15317,23 +15537,30 @@ class ChunkRepository:
                 :chunkid, :bookid, :chunkindex, :text, :textlen,
                 :startoffset, :endoffset, :pagenumber, :sourcefile
             )
-        """), rows)
+        """),
+            rows,
+        )
 
         fts_rows = []
         for r in rows:
-            fts_rows.append({
-                "chunkid": r["chunkid"],
-                "bookid": r["bookid"],
-                "booktitle": r.get("booktitle", ""),
-                "authornames": r.get("authornames", ""),
-                "categoryname": r.get("categoryname", ""),
-                "text": r["text"],
-            })
+            fts_rows.append(
+                {
+                    "chunkid": r["chunkid"],
+                    "bookid": r["bookid"],
+                    "booktitle": r.get("booktitle", ""),
+                    "authornames": r.get("authornames", ""),
+                    "categoryname": r.get("categoryname", ""),
+                    "text": r["text"],
+                }
+            )
 
-        self.db.execute(text("""
+        self.db.execute(
+            text("""
             INSERT INTO chunks_fts (chunkid, bookid, booktitle, authornames, categoryname, text)
             VALUES (:chunkid, :bookid, :booktitle, :authornames, :categoryname, :text)
-        """), fts_rows)
+        """),
+            fts_rows,
+        )
 
         self.db.commit()
 ```
@@ -15350,8 +15577,10 @@ class ChunkRepository:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 def create_fts_tables(db: Session):
-    db.execute(text("""
+    db.execute(
+        text("""
         CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
             chunkid UNINDEXED,
             bookid UNINDEXED,
@@ -15361,7 +15590,8 @@ def create_fts_tables(db: Session):
             text,
             tokenize = 'unicode61'
         )
-    """))
+    """)
+    )
     db.commit()
 ```
 
@@ -15384,6 +15614,7 @@ from app.ingestion.extractor import BookTextExtractor
 from app.ingestion.chunkprocessor import ChunkProcessor
 from app.ingestion.chunkrepository import ChunkRepository
 from app.services.vectorstore import VectorStoreService
+
 
 class IngestionPipeline:
     def __init__(self, db: Session, vectorstore: VectorStoreService, extracted_root: str = "./data/extractedbooks"):
@@ -15442,20 +15673,22 @@ class IngestionPipeline:
                 "footnotes": [],
             }
 
-            db_rows.append({
-                "chunkid": common["chunkid"],
-                "bookid": common["bookid"],
-                "chunkindex": common["chunkindex"],
-                "text": common["text"],
-                "textlen": common["textlen"],
-                "startoffset": common["startoffset"],
-                "endoffset": common["endoffset"],
-                "pagenumber": common["pagenumber"],
-                "sourcefile": common["sourcefile"],
-                "booktitle": common["booktitle"],
-                "authornames": " | ".join(common["authornames"]),
-                "categoryname": common["categoryname"] or "",
-            })
+            db_rows.append(
+                {
+                    "chunkid": common["chunkid"],
+                    "bookid": common["bookid"],
+                    "chunkindex": common["chunkindex"],
+                    "text": common["text"],
+                    "textlen": common["textlen"],
+                    "startoffset": common["startoffset"],
+                    "endoffset": common["endoffset"],
+                    "pagenumber": common["pagenumber"],
+                    "sourcefile": common["sourcefile"],
+                    "booktitle": common["booktitle"],
+                    "authornames": " | ".join(common["authornames"]),
+                    "categoryname": common["categoryname"] or "",
+                }
+            )
 
             vector_rows.append(common)
 
@@ -15489,6 +15722,7 @@ from qdrant_client.models import Distance, VectorParams, PointStruct
 from sentencetransformers import SentenceTransformer
 
 from app.core.config import settings
+
 
 class VectorStoreService:
     def __init__(self):
@@ -15548,6 +15782,7 @@ class VectorStoreService:
 ```python
 import hashlib
 
+
 def stable_point_id(chunkid: str) -> int:
     return int(hashlib.sha1(chunkid.encode("utf-8")).hexdigest()[:15], 16)
 ```
@@ -15555,7 +15790,7 @@ def stable_point_id(chunkid: str) -> int:
 ثم:
 
 ```python
-id=stable_point_id(chunk["chunkid"])
+id = stable_point_id(chunk["chunkid"])
 ```
 
 هذا مهم جدًا لو كنت ستعيد re-indexing لكتاب بعينه.
@@ -15569,6 +15804,7 @@ id=stable_point_id(chunk["chunkid"])
 ```python
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class KeywordStoreService:
     def __init__(self, db: Session):
@@ -15595,14 +15831,16 @@ class KeywordStoreService:
 
         results = []
         for r in rows:
-            results.append({
-                "chunkid": r["chunkid"],
-                "bookid": r["bookid"],
-                "booktitle": r.get("booktitle", ""),
-                "text": r["text"],
-                "score": float(r["score"]) if r["score"] is not None else 0.0,
-                "source": "fts5",
-            })
+            results.append(
+                {
+                    "chunkid": r["chunkid"],
+                    "bookid": r["bookid"],
+                    "booktitle": r.get("booktitle", ""),
+                    "text": r["text"],
+                    "score": float(r["score"]) if r["score"] is not None else 0.0,
+                    "source": "fts5",
+                }
+            )
         return results
 ```
 
@@ -15625,6 +15863,7 @@ FTS5 بـ `unicode61` جيد كبداية، لكنه ليس tokenizer عربي �
 
 ```python
 from collections import defaultdict
+
 
 def reciprocal_rank_fusion(vector_results, keyword_results, k_constant: int = 60):
     scores = defaultdict(float)
@@ -15913,6 +16152,7 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -15931,8 +16171,17 @@ def get_db():
 ```python
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Float, Text, DateTime,
-    ForeignKey, Table, Index, UniqueConstraint
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    Table,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 
@@ -15947,6 +16196,7 @@ bookauthors = Table(
     Column("role", String(32), default="main"),
 )
 
+
 class Category(Base):
     __tablename__ = "categories"
 
@@ -15955,6 +16205,7 @@ class Category(Base):
     name = Column(String(128), index=True, nullable=False)
 
     books = relationship("Book", back_populates="category")
+
 
 class Author(Base):
     __tablename__ = "authors"
@@ -15966,6 +16217,7 @@ class Author(Base):
     death = Column(Integer, nullable=True)
 
     books = relationship("Book", secondary=bookauthors, back_populates="authors")
+
 
 class Book(Base):
     __tablename__ = "books"
@@ -16000,6 +16252,7 @@ class Book(Base):
         Index("idx_books_file", "file"),
     )
 
+
 class Chunk(Base):
     __tablename__ = "chunks"
 
@@ -16025,6 +16278,7 @@ class Chunk(Base):
         UniqueConstraint("bookid", "chunkindex", name="uq_book_chunk"),
     )
 
+
 class QueryLog(Base):
     __tablename__ = "querylogs"
 
@@ -16042,6 +16296,7 @@ class QueryLog(Base):
         Index("idx_querylogs_created", "createdat"),
         Index("idx_querylogs_intent", "intent"),
     )
+
 
 class Citation(Base):
     __tablename__ = "citations"
@@ -16068,11 +16323,13 @@ from app.core.db import engine
 from app.models import dbmodels  # noqa
 from app.core.db import Base
 
+
 def create_all():
     Base.metadata.create_all(bind=engine)
 
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
                 chunkid UNINDEXED,
                 bookid UNINDEXED,
@@ -16082,7 +16339,9 @@ def create_all():
                 text,
                 tokenize = 'unicode61'
             )
-        """))
+        """)
+        )
+
 
 if __name__ == "__main__":
     create_all()
@@ -16107,6 +16366,7 @@ from app.models.dbmodels import Book, Author, Category, bookauthors
 
 DATA_DIR = Path("./data/metadata")
 
+
 def load_categories(db: Session, path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
     items = data["categories"] if "categories" in data else data
@@ -16119,6 +16379,7 @@ def load_categories(db: Session, path: Path):
         )
         db.merge(row)
     db.commit()
+
 
 def load_authors(db: Session, path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -16134,6 +16395,7 @@ def load_authors(db: Session, path: Path):
         )
         db.merge(row)
     db.commit()
+
 
 def load_books(db: Session, path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -16163,7 +16425,9 @@ def load_books(db: Session, path: Path):
                 continue
 
             db.execute(
-                bookauthors.insert().prefix_with("OR IGNORE").values(
+                bookauthors.insert()
+                .prefix_with("OR IGNORE")
+                .values(
                     bookid=b.bookid,
                     authorid=authorid,
                     guid=a.get("guid"),
@@ -16171,6 +16435,7 @@ def load_books(db: Session, path: Path):
                 )
             )
     db.commit()
+
 
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
@@ -16198,6 +16463,7 @@ from typing import List
 
 from app.core.config import settings
 
+
 @dataclass
 class RawChunk:
     chunkid: str
@@ -16206,6 +16472,7 @@ class RawChunk:
     textlen: int
     startoffset: int
     endoffset: int
+
 
 class ChunkProcessor:
     def __init__(self, chunk_size: int | None = None, overlap: int | None = None):
@@ -16235,7 +16502,7 @@ class ChunkProcessor:
         if target_end >= len(text):
             return len(text)
 
-        window = text[start:min(len(text), target_end + 200)]
+        window = text[start : min(len(text), target_end + 200)]
         candidates = []
 
         for sep in ["\n\n", "\n", "؟", "!", ".", ":", "؛"]:
@@ -16298,30 +16565,45 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
+
 class BookTextExtractor:
     def __init__(self, db: Session, extracted_root: str = "./data/extractedbooks"):
         self.db = db
         self.extracted_root = Path(extracted_root)
 
     def get_book_metadata(self, bookid: int) -> dict | None:
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT b.bookid, b.guid, b.shortid, b.title, b.catid, b.catname,
                    b.extracted, b.file, b.sizemb
             FROM books b
             WHERE b.bookid = :bookid
             LIMIT 1
-        """), {"bookid": bookid}).mappings().first()
+        """),
+                {"bookid": bookid},
+            )
+            .mappings()
+            .first()
+        )
 
         return dict(row) if row else None
 
     def get_book_authors(self, bookid: int) -> list[dict]:
-        rows = self.db.execute(text("""
+        rows = (
+            self.db.execute(
+                text("""
             SELECT a.authorid, a.guid, a.shortid, a.name, a.death, ba.role
             FROM bookauthors ba
             JOIN authors a ON a.authorid = ba.authorid
             WHERE ba.bookid = :bookid
             ORDER BY a.authorid
-        """), {"bookid": bookid}).mappings().all()
+        """),
+                {"bookid": bookid},
+            )
+            .mappings()
+            .all()
+        )
 
         return [dict(r) for r in rows]
 
@@ -16348,6 +16630,7 @@ class BookTextExtractor:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class ChunkRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -16361,7 +16644,8 @@ class ChunkRepository:
         if not rows:
             return
 
-        self.db.execute(text("""
+        self.db.execute(
+            text("""
             INSERT INTO chunks (
                 chunkid, bookid, chunkindex, text, textlen,
                 startoffset, endoffset, pagenumber, sourcefile
@@ -16369,23 +16653,30 @@ class ChunkRepository:
                 :chunkid, :bookid, :chunkindex, :text, :textlen,
                 :startoffset, :endoffset, :pagenumber, :sourcefile
             )
-        """), rows)
+        """),
+            rows,
+        )
 
         fts_rows = []
         for r in rows:
-            fts_rows.append({
-                "chunkid": r["chunkid"],
-                "bookid": r["bookid"],
-                "booktitle": r.get("booktitle", ""),
-                "authornames": r.get("authornames", ""),
-                "categoryname": r.get("categoryname", ""),
-                "text": r["text"],
-            })
+            fts_rows.append(
+                {
+                    "chunkid": r["chunkid"],
+                    "bookid": r["bookid"],
+                    "booktitle": r.get("booktitle", ""),
+                    "authornames": r.get("authornames", ""),
+                    "categoryname": r.get("categoryname", ""),
+                    "text": r["text"],
+                }
+            )
 
-        self.db.execute(text("""
+        self.db.execute(
+            text("""
             INSERT INTO chunks_fts (chunkid, bookid, booktitle, authornames, categoryname, text)
             VALUES (:chunkid, :bookid, :booktitle, :authornames, :categoryname, :text)
-        """), fts_rows)
+        """),
+            fts_rows,
+        )
 
         self.db.commit()
 ```
@@ -16402,16 +16693,15 @@ import hashlib
 from typing import List, Dict, Any, Optional
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import (
-    Distance, VectorParams, PointStruct, Filter,
-    FieldCondition, MatchValue, MatchAny
-)
+from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue, MatchAny
 from sentencetransformers import SentenceTransformer
 
 from app.core.config import settings
 
+
 def stable_point_id(chunkid: str) -> int:
     return int(hashlib.sha1(chunkid.encode("utf-8")).hexdigest()[:15], 16)
+
 
 class VectorStoreService:
     def __init__(self):
@@ -16462,9 +16752,7 @@ class VectorStoreService:
     def delete_by_bookid(self, bookid: int):
         self.client.delete(
             collection_name=self.collectionname,
-            points_selector=Filter(
-                must=[FieldCondition(key="bookid", match=MatchValue(value=bookid))]
-            )
+            points_selector=Filter(must=[FieldCondition(key="bookid", match=MatchValue(value=bookid))]),
         )
 
     def search(self, query: str, k: int = 10, filter_dict: Optional[dict] = None) -> List[Dict[str, Any]]:
@@ -16498,18 +16786,20 @@ class VectorStoreService:
         formatted = []
         for result in results:
             payload = result.payload or {}
-            formatted.append({
-                "chunkid": payload.get("chunkid"),
-                "bookid": payload.get("bookid"),
-                "bookguid": payload.get("bookguid"),
-                "booktitle": payload.get("booktitle"),
-                "authorids": payload.get("authorids", []),
-                "categoryid": payload.get("categoryid"),
-                "categoryname": payload.get("categoryname"),
-                "chunkindex": payload.get("chunkindex", 0),
-                "text": payload.get("text", ""),
-                "score": float(result.score),
-            })
+            formatted.append(
+                {
+                    "chunkid": payload.get("chunkid"),
+                    "bookid": payload.get("bookid"),
+                    "bookguid": payload.get("bookguid"),
+                    "booktitle": payload.get("booktitle"),
+                    "authorids": payload.get("authorids", []),
+                    "categoryid": payload.get("categoryid"),
+                    "categoryname": payload.get("categoryname"),
+                    "chunkindex": payload.get("chunkindex", 0),
+                    "text": payload.get("text", ""),
+                    "score": float(result.score),
+                }
+            )
         return formatted
 ```
 
@@ -16529,6 +16819,7 @@ from app.ingestion.extractor import BookTextExtractor
 from app.ingestion.chunkprocessor import ChunkProcessor
 from app.ingestion.chunkrepository import ChunkRepository
 from app.services.vectorstore import VectorStoreService
+
 
 class IngestionPipeline:
     def __init__(self, db: Session, vectorstore: VectorStoreService, extracted_root: str = "./data/extractedbooks"):
@@ -16587,20 +16878,22 @@ class IngestionPipeline:
                 "sourcetype": "book",
             }
 
-            db_rows.append({
-                "chunkid": payload["chunkid"],
-                "bookid": payload["bookid"],
-                "chunkindex": payload["chunkindex"],
-                "text": payload["text"],
-                "textlen": payload["textlen"],
-                "startoffset": payload["startoffset"],
-                "endoffset": payload["endoffset"],
-                "pagenumber": payload["pagenumber"],
-                "sourcefile": payload["sourcefile"],
-                "booktitle": payload["booktitle"],
-                "authornames": " | ".join(authornames),
-                "categoryname": payload["categoryname"] or "",
-            })
+            db_rows.append(
+                {
+                    "chunkid": payload["chunkid"],
+                    "bookid": payload["bookid"],
+                    "chunkindex": payload["chunkindex"],
+                    "text": payload["text"],
+                    "textlen": payload["textlen"],
+                    "startoffset": payload["startoffset"],
+                    "endoffset": payload["endoffset"],
+                    "pagenumber": payload["pagenumber"],
+                    "sourcefile": payload["sourcefile"],
+                    "booktitle": payload["booktitle"],
+                    "authornames": " | ".join(authornames),
+                    "categoryname": payload["categoryname"] or "",
+                }
+            )
 
             vector_rows.append(payload)
 
@@ -16695,6 +16988,7 @@ if __name__ == "__main__":
 ```python
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class KeywordStoreService:
     def __init__(self, db: Session):
@@ -16846,14 +17140,18 @@ uvicorn app.main:app --reload
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 
+
 class QueryRequest(BaseModel):
     query: str
     categoryids: Optional[List[int]] = None
     authorids: Optional[List[int]] = None
     bookids: Optional[List[int]] = None
 
+
 class UserIntent(BaseModel):
-    intent: str = Field(description="FIQH, QURAN, ISLAMICKNOWLEDGE, GREETING, ZAKAT, INHERITANCE, DUA, HIJRICALENDAR, PRAYERTIMES")
+    intent: str = Field(
+        description="FIQH, QURAN, ISLAMICKNOWLEDGE, GREETING, ZAKAT, INHERITANCE, DUA, HIJRICALENDAR, PRAYERTIMES"
+    )
     confidence: float
     language: str
     requiresretrieval: bool
@@ -16861,6 +17159,7 @@ class UserIntent(BaseModel):
     entities: Dict[str, Any] = Field(default_factory=dict)
     reasoning: str
     nextaction: str
+
 
 class RetrievalPlan(BaseModel):
     mode: Literal["metadataonly", "rag", "hybrid"] = "rag"
@@ -16871,6 +17170,7 @@ class RetrievalPlan(BaseModel):
     topk: int = 10
     reranktopk: int = 5
 
+
 class Citation(BaseModel):
     bookid: int
     booktitle: str
@@ -16879,6 +17179,7 @@ class Citation(BaseModel):
     chunkindex: int
     text: str
     relevancescore: float
+
 
 class QueryResponse(BaseModel):
     answer: str
@@ -16897,6 +17198,7 @@ class QueryResponse(BaseModel):
 
 ```python
 from typing import TypedDict, List, Dict, Any, Optional
+
 
 class GraphState(TypedDict, total=False):
     query: str
@@ -16943,6 +17245,7 @@ from app.models.schemas import UserIntent
 
 GUID_PATTERN = re.compile(r"\b[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\b", re.I)
 SHORTID_PATTERN = re.compile(r"\b[A-F0-9]{6}\b", re.I)
+
 
 class RouterAgent:
     INTENTS = [
@@ -17027,14 +17330,22 @@ README يوضح أن عندك `guid` و`shortid` كـ identifiers رئيسية،
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class GUIDAgent:
     def resolve(self, db: Session, guid_or_shortid: str) -> dict | None:
-        row = db.execute(text("""
+        row = (
+            db.execute(
+                text("""
             SELECT bookid, guid, shortid, title, catid, catname, extracted, file, sizemb
             FROM books
             WHERE guid = :value OR shortid = :value
             LIMIT 1
-        """), {"value": guid_or_shortid}).mappings().first()
+        """),
+                {"value": guid_or_shortid},
+            )
+            .mappings()
+            .first()
+        )
 
         return dict(row) if row else None
 ```
@@ -17051,6 +17362,7 @@ class GUIDAgent:
 import re
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class AuthorAgent:
     STOPWORDS = {"كتاب", "كتب", "في", "عن", "من", "ما", "هو", "حكم", "يجوز", "ال", "ابحث"}
@@ -17069,13 +17381,20 @@ class AuthorAgent:
         seen = set()
 
         for term in terms[:5]:
-            rows = db.execute(text("""
+            rows = (
+                db.execute(
+                    text("""
                 SELECT authorid, guid, shortid, name, death
                 FROM authors
                 WHERE name LIKE :term
                 ORDER BY LENGTH(name) ASC
                 LIMIT 5
-            """), {"term": f"%{term}%"}).mappings().all()
+            """),
+                    {"term": f"%{term}%"},
+                )
+                .mappings()
+                .all()
+            )
 
             for r in rows:
                 item = dict(r)
@@ -17098,6 +17417,7 @@ import re
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class CategoryAgent:
     def _extract_terms(self, query: str) -> list[str]:
         tokens = re.split(r"[\s،,:;!?()]+", query)
@@ -17113,13 +17433,20 @@ class CategoryAgent:
         seen = set()
 
         for term in terms[:5]:
-            rows = db.execute(text("""
+            rows = (
+                db.execute(
+                    text("""
                 SELECT catid, guid, name
                 FROM categories
                 WHERE name LIKE :term
                 ORDER BY LENGTH(name) ASC
                 LIMIT 5
-            """), {"term": f"%{term}%"}).mappings().all()
+            """),
+                    {"term": f"%{term}%"},
+                )
+                .mappings()
+                .all()
+            )
 
             for r in rows:
                 item = dict(r)
@@ -17140,6 +17467,7 @@ class CategoryAgent:
 ```python
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class BookAgent:
     def find_books(
@@ -17203,6 +17531,7 @@ from typing import List, Dict, Any
 from sentencetransformers import CrossEncoder
 from app.core.config import settings
 
+
 class RerankerService:
     def __init__(self):
         self.model = CrossEncoder(settings.RERANKERMODEL)
@@ -17236,6 +17565,7 @@ from sqlalchemy.orm import Session
 from app.services.keywordstore import KeywordStoreService
 from app.services.vectorstore import VectorStoreService
 from app.services.reranker import RerankerService
+
 
 class RetrievalAgent:
     def __init__(self):
@@ -17302,6 +17632,7 @@ class RetrievalAgent:
 ```python
 from typing import List, Dict, Any
 
+
 class AnswerAgent:
     def __init__(self, llm=None):
         self.llm = llm
@@ -17333,15 +17664,17 @@ class AnswerAgent:
 
         citations = []
         for ch in top:
-            citations.append({
-                "bookid": ch.get("bookid"),
-                "booktitle": ch.get("booktitle"),
-                "bookguid": ch.get("bookguid"),
-                "chunkid": ch.get("chunkid"),
-                "chunkindex": ch.get("chunkindex", 0),
-                "text": ch.get("text", "")[:300],
-                "relevancescore": float(ch.get("rerankscore") or ch.get("rrfscore") or ch.get("score") or 0.0),
-            })
+            citations.append(
+                {
+                    "bookid": ch.get("bookid"),
+                    "booktitle": ch.get("booktitle"),
+                    "bookguid": ch.get("bookguid"),
+                    "chunkid": ch.get("chunkid"),
+                    "chunkindex": ch.get("chunkindex", 0),
+                    "text": ch.get("text", "")[:300],
+                    "relevancescore": float(ch.get("rerankscore") or ch.get("rrfscore") or ch.get("score") or 0.0),
+                }
+            )
 
         confidence = 0.85 if top else 0.0
 
@@ -17366,6 +17699,7 @@ class AnswerAgent:
 ```python
 import re
 from typing import Dict
+
 
 class ZakatAgent:
     GOLD_PRICE_PER_GRAM = 250.0
@@ -17433,6 +17767,7 @@ retrievalagent = RetrievalAgent()
 answeragent = AnswerAgent()
 zakatagent = ZakatAgent()
 
+
 def route_node(state: GraphState) -> GraphState:
     intent = routeragent.classify(state["query"])
     return {
@@ -17440,13 +17775,16 @@ def route_node(state: GraphState) -> GraphState:
         "normalizedquery": state["query"].strip(),
     }
 
+
 def author_node(state: GraphState, db: Session) -> GraphState:
     candidates = authoragent.resolve(db, state["query"], state.get("intent"))
     return {"authorcandidates": candidates}
 
+
 def category_node(state: GraphState, db: Session) -> GraphState:
     candidates = categoryagent.resolve(db, state["query"], state.get("intent"))
     return {"categorycandidates": candidates}
+
 
 def book_node(state: GraphState, db: Session) -> GraphState:
     authorids = [a["authorid"] for a in state.get("authorcandidates", []) if a.get("authorid")]
@@ -17462,6 +17800,7 @@ def book_node(state: GraphState, db: Session) -> GraphState:
     )
     return {"bookcandidates": candidates}
 
+
 def guid_node(state: GraphState, db: Session) -> GraphState:
     entities = state.get("intent", {}).get("entities", {})
     target = entities.get("guid") or entities.get("shortid")
@@ -17470,6 +17809,7 @@ def guid_node(state: GraphState, db: Session) -> GraphState:
 
     candidate = guidagent.resolve(db, target)
     return {"guidcandidate": candidate}
+
 
 def plan_node(state: GraphState) -> GraphState:
     intent = state.get("intent", {})
@@ -17502,6 +17842,7 @@ def plan_node(state: GraphState) -> GraphState:
     }
     return {"retrievalplan": plan}
 
+
 def retrieve_node(state: GraphState, db: Session, vectorstore) -> GraphState:
     plan = state.get("retrievalplan", {})
     if plan.get("mode") == "metadataonly":
@@ -17509,6 +17850,7 @@ def retrieve_node(state: GraphState, db: Session, vectorstore) -> GraphState:
 
     chunks = retrievalagent.search(db=db, vectorstore=vectorstore, query=state["query"], plan=plan)
     return {"retrievalchunks": chunks}
+
 
 def answer_node(state: GraphState) -> GraphState:
     intent = state.get("intent", {})
@@ -17562,6 +17904,7 @@ from app.graph.nodes import (
     answer_node,
 )
 
+
 def build_graph(db, vectorstore):
     graph = StateGraph(GraphState)
 
@@ -17595,7 +17938,7 @@ def build_graph(db, vectorstore):
             "guid": "guid",
             "author": "author",
             "plan": "plan",
-        }
+        },
     )
 
     graph.add_edge("author", "category")
@@ -17630,15 +17973,18 @@ router = APIRouter(prefix="/qa", tags=["question-answering"])
 
 vectorstore = VectorStoreService()
 
+
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest, db: Session = Depends(get_db)):
     start = time.time()
     try:
         appgraph = build_graph(db, vectorstore)
-        result = appgraph.invoke({
-            "query": request.query,
-            "userid": None,
-        })
+        result = appgraph.invoke(
+            {
+                "query": request.query,
+                "userid": None,
+            }
+        )
 
         latencyms = (time.time() - start) * 1000.0
 
@@ -17688,6 +18034,7 @@ app.add_middleware(
 
 app.include_router(qa_router)
 
+
 @app.get("/")
 def root():
     return {
@@ -17695,6 +18042,7 @@ def root():
         "docs": "/docs",
         "health": "/health",
     }
+
 
 @app.get("/health")
 def health():
@@ -17805,6 +18153,7 @@ README يوضح أن هذا GUID صالح كمثال فعلي وأن قاعدة 
 from typing import List, Optional
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     APPNAME: str = "Islamic RAG System"
     APPVERSION: str = "1.0.0"
@@ -17850,6 +18199,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
+
 settings = Settings()
 ```
 
@@ -17864,6 +18214,7 @@ settings = Settings()
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from langchain_community.llms import HuggingFacePipeline
 from app.core.config import settings
+
 
 class LLMService:
     _llm = None
@@ -17913,6 +18264,7 @@ class LLMService:
 ```python
 from typing import List, Dict, Any
 
+
 class PromptBuilder:
     SYSTEM_PROMPTS = {
         "FIQH": (
@@ -17933,10 +18285,7 @@ class PromptBuilder:
             "أجب بناءً على النصوص المسترجعة فقط، "
             "مع المحافظة على الدقة وعدم الجزم بما لا تدعمه النصوص."
         ),
-        "DUA": (
-            "أنت مساعد متخصص في الأدعية والرقائق. "
-            "أجب فقط من النصوص المعطاة، وإذا لم يوجد نص واضح فصرّح بذلك."
-        ),
+        "DUA": ("أنت مساعد متخصص في الأدعية والرقائق. أجب فقط من النصوص المعطاة، وإذا لم يوجد نص واضح فصرّح بذلك."),
     }
 
     def build_context(self, chunks: List[Dict[str, Any]], max_chunks: int = 5) -> str:
@@ -17994,6 +18343,7 @@ USED_CITATIONS: [C1, C2, ...]
 import re
 from typing import List, Dict, Any
 
+
 class CitationValidator:
     CITE_PATTERN = re.compile(r"\[C(\d+)\]")
 
@@ -18020,17 +18370,17 @@ class CitationValidator:
         citations = []
         for cid in valid:
             ch = chunk_map[cid]
-            citations.append({
-                "bookid": ch.get("bookid"),
-                "booktitle": ch.get("booktitle"),
-                "bookguid": ch.get("bookguid"),
-                "chunkid": ch.get("chunkid"),
-                "chunkindex": ch.get("chunkindex", 0),
-                "text": ch.get("text", "")[:300],
-                "relevancescore": float(
-                    ch.get("rerankscore") or ch.get("rrfscore") or ch.get("score") or 0.0
-                ),
-            })
+            citations.append(
+                {
+                    "bookid": ch.get("bookid"),
+                    "booktitle": ch.get("booktitle"),
+                    "bookguid": ch.get("bookguid"),
+                    "chunkid": ch.get("chunkid"),
+                    "chunkindex": ch.get("chunkindex", 0),
+                    "text": ch.get("text", "")[:300],
+                    "relevancescore": float(ch.get("rerankscore") or ch.get("rrfscore") or ch.get("score") or 0.0),
+                }
+            )
 
         return {
             "validcitationids": valid,
@@ -18115,6 +18465,7 @@ import re
 from typing import Dict, Any, List
 from app.agents.answeragent import AnswerAgent
 
+
 class QuranAgent:
     VERSE_PATTERNS = [
         re.compile(r"(\d+)\s*:\s*(\d+)"),
@@ -18187,6 +18538,7 @@ import json
 from sqlalchemy.orm import Session
 from app.models.dbmodels import QueryLog, Citation
 
+
 class QueryLoggerService:
     def log_query(
         self,
@@ -18210,13 +18562,15 @@ class QueryLoggerService:
         db.refresh(qlog)
 
         for c in result.get("citations", []):
-            db.add(Citation(
-                querylogid=qlog.id,
-                bookid=c.get("bookid"),
-                chunkid=c.get("chunkid"),
-                citationtext=c.get("text", ""),
-                relevancescore=float(c.get("relevancescore", 0.0)),
-            ))
+            db.add(
+                Citation(
+                    querylogid=qlog.id,
+                    bookid=c.get("bookid"),
+                    chunkid=c.get("chunkid"),
+                    citationtext=c.get("text", ""),
+                    relevancescore=float(c.get("relevancescore", 0.0)),
+                )
+            )
 
         db.commit()
         return qlog.id
@@ -18233,6 +18587,7 @@ class QueryLoggerService:
 from app.agents.quranagent import QuranAgent
 
 quranagent = QuranAgent()
+
 
 def answer_node(state: GraphState) -> GraphState:
     intent = state.get("intent", {})
@@ -18279,16 +18634,24 @@ def answer_node(state: GraphState) -> GraphState:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class BookRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def get_by_id(self, bookid: int):
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT bookid, guid, shortid, title, catid, catname, extracted, file, sizemb
             FROM books
             WHERE bookid = :bookid
-        """), {"bookid": bookid}).mappings().first()
+        """),
+                {"bookid": bookid},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 
     def search(self, q: str | None = None, skip: int = 0, limit: int = 20):
@@ -18306,13 +18669,20 @@ class BookRepository:
         return [dict(r) for r in rows]
 
     def get_by_category(self, categoryid: int, skip: int = 0, limit: int = 50):
-        rows = self.db.execute(text("""
+        rows = (
+            self.db.execute(
+                text("""
             SELECT bookid, guid, shortid, title, catid, catname, extracted, file, sizemb
             FROM books
             WHERE catid = :catid
             ORDER BY title
             LIMIT :limit OFFSET :skip
-        """), {"catid": categoryid, "skip": skip, "limit": limit}).mappings().all()
+        """),
+                {"catid": categoryid, "skip": skip, "limit": limit},
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 ```
 
@@ -18324,6 +18694,7 @@ class BookRepository:
 ```python
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 
 class AuthorRepository:
     def __init__(self, db: Session):
@@ -18342,11 +18713,18 @@ class AuthorRepository:
         return [dict(r) for r in rows]
 
     def get_by_id(self, authorid: int):
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT authorid, guid, shortid, name, death
             FROM authors
             WHERE authorid = :authorid
-        """), {"authorid": authorid}).mappings().first()
+        """),
+                {"authorid": authorid},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 ```
 
@@ -18359,24 +18737,38 @@ class AuthorRepository:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class CategoryRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def list_all(self):
-        rows = self.db.execute(text("""
+        rows = (
+            self.db.execute(
+                text("""
             SELECT catid, guid, name
             FROM categories
             ORDER BY name
-        """)).mappings().all()
+        """)
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 
     def get_by_id(self, catid: int):
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT catid, guid, name
             FROM categories
             WHERE catid = :catid
-        """), {"catid": catid}).mappings().first()
+        """),
+                {"catid": catid},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 ```
 
@@ -18394,9 +18786,11 @@ from app.repositories.books import BookRepository
 
 router = APIRouter(prefix="/books", tags=["books"])
 
+
 @router.get("/search")
 def search_books(q: str | None = None, skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return BookRepository(db).search(q=q, skip=skip, limit=limit)
+
 
 @router.get("/{bookid}")
 def get_book(bookid: int, db: Session = Depends(get_db)):
@@ -18420,9 +18814,11 @@ from app.repositories.authors import AuthorRepository
 
 router = APIRouter(prefix="/authors", tags=["authors"])
 
+
 @router.get("/search")
 def search_authors(q: str | None = None, skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return AuthorRepository(db).search(q=q, skip=skip, limit=limit)
+
 
 @router.get("/{authorid}")
 def get_author(authorid: int, db: Session = Depends(get_db)):
@@ -18447,9 +18843,11 @@ from app.repositories.books import BookRepository
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
+
 @router.get("")
 def list_categories(db: Session = Depends(get_db)):
     return CategoryRepository(db).list_all()
+
 
 @router.get("/{catid}")
 def get_category(catid: int, db: Session = Depends(get_db)):
@@ -18457,6 +18855,7 @@ def get_category(catid: int, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
     return row
+
 
 @router.get("/{catid}/books")
 def get_category_books(catid: int, skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
@@ -18486,15 +18885,18 @@ router = APIRouter(prefix="/qa", tags=["question-answering"])
 vectorstore = VectorStoreService()
 querylogger = QueryLoggerService()
 
+
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest, db: Session = Depends(get_db)):
     start = time.time()
     try:
         appgraph = build_graph(db, vectorstore)
-        result = appgraph.invoke({
-            "query": request.query,
-            "userid": None,
-        })
+        result = appgraph.invoke(
+            {
+                "query": request.query,
+                "userid": None,
+            }
+        )
 
         latencyms = (time.time() - start) * 1000.0
         result["latencyms"] = latencyms
@@ -18557,9 +18959,11 @@ app.include_router(books_router)
 app.include_router(authors_router)
 app.include_router(categories_router)
 
+
 @app.get("/")
 def root():
     return {"name": "Islamic RAG System", "docs": "/docs", "health": "/health"}
+
 
 @app.get("/health")
 def health():
@@ -18579,20 +18983,24 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def test_health():
     res = client.get("/health")
     assert res.status_code == 200
     assert res.json()["status"] == "healthy"
+
 
 def test_books_search():
     res = client.get("/books/search?q=تفسير")
     assert res.status_code == 200
     assert isinstance(res.json(), list)
 
+
 def test_categories_list():
     res = client.get("/categories")
     assert res.status_code == 200
     assert isinstance(res.json(), list)
+
 
 def test_qa_endpoint_shape():
     res = client.post("/qa/ask", json={"query": "ما حكم بيع العينة؟"})
@@ -18632,6 +19040,7 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def run_benchmark():
     results = []
 
@@ -18644,15 +19053,17 @@ def run_benchmark():
         data = res.json() if ok else {}
         predicted = (data.get("intent") or {}).get("intent")
 
-        results.append({
-            "query": item["query"],
-            "expected_intent": item["expected_intent"],
-            "predicted_intent": predicted,
-            "intent_match": predicted == item["expected_intent"],
-            "citation_count": len(data.get("citations", [])) if ok else 0,
-            "latencyms": latency,
-            "status_code": res.status_code,
-        })
+        results.append(
+            {
+                "query": item["query"],
+                "expected_intent": item["expected_intent"],
+                "predicted_intent": predicted,
+                "intent_match": predicted == item["expected_intent"],
+                "citation_count": len(data.get("citations", [])) if ok else 0,
+                "latencyms": latency,
+                "status_code": res.status_code,
+            }
+        )
 
     return results
 ```
@@ -18774,6 +19185,7 @@ def summarize_results(results):
 from sqlalchemy import Column, Integer, String, Text, Index, UniqueConstraint
 from app.models.dbmodels import Base
 
+
 class QuranVerse(Base):
     __tablename__ = "quran_verses"
 
@@ -18808,6 +19220,7 @@ import json
 from app.core.db import SessionLocal
 from app.models.quranmodels import QuranVerse
 
+
 def load_quran(filepath: str):
     db = SessionLocal()
     with open(filepath, "r", encoding="utf-8") as f:
@@ -18839,26 +19252,41 @@ def load_quran(filepath: str):
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+
 class QuranRepository:
     def __init__(self, db: Session):
         self.db = db
 
     def get_verse(self, surah: int, ayah: int):
-        row = self.db.execute(text("""
+        row = (
+            self.db.execute(
+                text("""
             SELECT surah_number, surah_name_ar, ayah_number, text_uthmani, text_simple, page, juz
             FROM quran_verses
             WHERE surah_number = :surah AND ayah_number = :ayah
             LIMIT 1
-        """), {"surah": surah, "ayah": ayah}).mappings().first()
+        """),
+                {"surah": surah, "ayah": ayah},
+            )
+            .mappings()
+            .first()
+        )
         return dict(row) if row else None
 
     def search_by_text(self, q: str, limit: int = 10):
-        rows = self.db.execute(text("""
+        rows = (
+            self.db.execute(
+                text("""
             SELECT surah_number, surah_name_ar, ayah_number, text_uthmani, text_simple, page, juz
             FROM quran_verses
             WHERE text_simple LIKE :q OR text_uthmani LIKE :q
             LIMIT :limit
-        """), {"q": f"%{q}%", "limit": limit}).mappings().all()
+        """),
+                {"q": f"%{q}%", "limit": limit},
+            )
+            .mappings()
+            .all()
+        )
         return [dict(r) for r in rows]
 ```
 
@@ -18873,6 +19301,7 @@ from typing import Dict, Any, List
 from sqlalchemy.orm import Session
 from app.repositories.quran import QuranRepository
 from app.agents.answeragent import AnswerAgent
+
 
 class QuranAgent:
     VERSE_PATTERNS = [
@@ -18904,15 +19333,17 @@ class QuranAgent:
                 )
                 return {
                     "answer": answer,
-                    "citations": [{
-                        "bookid": 0,
-                        "booktitle": f"القرآن الكريم - {verse['surah_name_ar']}",
-                        "bookguid": "QURAN",
-                        "chunkid": f"quran:{verse['surah_number']}:{verse['ayah_number']}",
-                        "chunkindex": verse["ayah_number"],
-                        "text": verse["text_uthmani"],
-                        "relevancescore": 1.0,
-                    }],
+                    "citations": [
+                        {
+                            "bookid": 0,
+                            "booktitle": f"القرآن الكريم - {verse['surah_name_ar']}",
+                            "bookguid": "QURAN",
+                            "chunkid": f"quran:{verse['surah_number']}:{verse['ayah_number']}",
+                            "chunkindex": verse["ayah_number"],
+                            "text": verse["text_uthmani"],
+                            "relevancescore": 1.0,
+                        }
+                    ],
                     "confidence": 0.99,
                     "verseref": verseref,
                 }
@@ -18950,6 +19381,7 @@ class QuranAgent:
 from pydantic import BaseModel, Field
 from typing import Optional
 
+
 class InheritanceInput(BaseModel):
     estate_amount: float = Field(gt=0)
     wives: int = 0
@@ -18978,6 +19410,7 @@ class InheritanceInput(BaseModel):
 from typing import Dict, Any
 from app.models.inheritance import InheritanceInput
 
+
 class InheritanceAgent:
     def calculate(self, data: InheritanceInput) -> Dict[str, Any]:
         estate = data.estate_amount
@@ -18997,12 +19430,12 @@ class InheritanceAgent:
             remaining -= shares["wives_total"]
 
         if data.mother:
-            shares["mother"] = 1/6 if has_children else 1/3
+            shares["mother"] = 1 / 6 if has_children else 1 / 3
             remaining -= shares["mother"]
 
         if data.father:
             if has_children:
-                shares["father"] = 1/6
+                shares["father"] = 1 / 6
                 remaining -= shares["father"]
             else:
                 shares["father_residuary"] = None
@@ -19055,6 +19488,7 @@ from app.agents.inheritanceagent import InheritanceAgent
 
 router = APIRouter(prefix="/inheritance", tags=["inheritance"])
 agent = InheritanceAgent()
+
 
 @router.post("/calculate")
 def calculate_inheritance(payload: InheritanceInput):
@@ -19208,6 +19642,7 @@ import json
 import hashlib
 import redis
 
+
 class CacheService:
     def __init__(self, url: str = "redis://redis:6379/0"):
         self.client = redis.from_url(url, decode_responses=True)
@@ -19232,6 +19667,7 @@ class CacheService:
 from app.services.cache import CacheService
 
 cache = CacheService()
+
 
 @router.post("/ask", response_model=QueryResponse)
 def ask_question(request: QueryRequest, db: Session = Depends(get_db)):
@@ -19280,6 +19716,7 @@ def ask_question(request: QueryRequest, db: Session = Depends(get_db)):
 import asyncio
 from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
+
 
 class BatchQueryService:
     def __init__(self, ask_fn, max_workers: int = 4):
@@ -19409,6 +19846,7 @@ elif any(w in ql for w in ["سورة", "آية", "اية", "quran", "قرآن", 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
 
+
 class SQLQueryPlan(BaseModel):
     mode: Literal["sql_lookup", "sql_aggregate"]
     sql: str
@@ -19425,11 +19863,18 @@ class SQLQueryPlan(BaseModel):
 ```python
 import re
 
+
 class SQLGuard:
     ALLOWED = {"SELECT"}
     FORBIDDEN_PATTERNS = [
-        r"\bINSERT\b", r"\bUPDATE\b", r"\bDELETE\b", r"\bDROP\b",
-        r"\bALTER\b", r"\bCREATE\b", r"\bATTACH\b", r";"
+        r"\bINSERT\b",
+        r"\bUPDATE\b",
+        r"\bDELETE\b",
+        r"\bDROP\b",
+        r"\bALTER\b",
+        r"\bCREATE\b",
+        r"\bATTACH\b",
+        r";",
     ]
 
     ALLOWED_TABLES = {"books", "authors", "categories", "bookauthors"}
@@ -19460,6 +19905,7 @@ class SQLGuard:
 from typing import Dict, Any
 from app.models.sqlschemas import SQLQueryPlan
 
+
 class SQLAgent:
     def plan(self, query: str) -> SQLQueryPlan | None:
         q = query.strip().lower()
@@ -19473,7 +19919,7 @@ class SQLAgent:
                     WHERE extracted = 1 AND catname LIKE :cat
                 """,
                 params={"cat": "%تفسير%"},
-                explanation="حساب عدد الكتب المستخرجة في تصنيف التفسير."
+                explanation="حساب عدد الكتب المستخرجة في تصنيف التفسير.",
             )
 
         if "أكثر" in q and ("تصنيف" in q or "التصنيفات" in q):
@@ -19488,7 +19934,7 @@ class SQLAgent:
                     LIMIT 10
                 """,
                 params={},
-                explanation="إرجاع أكثر 10 تصنيفات من حيث عدد الكتب المستخرجة."
+                explanation="إرجاع أكثر 10 تصنيفات من حيث عدد الكتب المستخرجة.",
             )
 
         if "حجم" in q and ("الكتب المستخرجة" in q or "المستخرج" in q):
@@ -19500,7 +19946,7 @@ class SQLAgent:
                     WHERE extracted = 1
                 """,
                 params={},
-                explanation="حساب الحجم الإجمالي للكتب المستخرجة."
+                explanation="حساب الحجم الإجمالي للكتب المستخرجة.",
             )
 
         if ("كتب" in q or "مؤلفات" in q) and ("لـ" in q or "ل" in q):
@@ -19516,7 +19962,7 @@ class SQLAgent:
                     LIMIT 50
                 """,
                 params={"author": "%ابن كثير%"},
-                explanation="استرجاع الكتب المرتبطة بالمؤلف المطلوب."
+                explanation="استرجاع الكتب المرتبطة بالمؤلف المطلوب.",
             )
 
         return None
@@ -19533,6 +19979,7 @@ class SQLAgent:
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.services.sqlguard import SQLGuard
+
 
 class SQLRunner:
     def __init__(self):
@@ -19560,6 +20007,7 @@ from app.services.sqlrunner import SQLRunner
 router = APIRouter(prefix="/sql", tags=["sql"])
 agent = SQLAgent()
 runner = SQLRunner()
+
 
 @router.post("/ask")
 def ask_sql(payload: dict, db: Session = Depends(get_db)):
@@ -19634,6 +20082,7 @@ from app.agents.categoryagent import CategoryAgent
 from app.agents.bookagent import BookAgent
 from app.repositories.quran import QuranRepository
 
+
 class MultiHopPlanner:
     def __init__(self):
         self.authoragent = AuthorAgent()
@@ -19666,6 +20115,7 @@ class MultiHopPlanner:
 from app.services.multihop import MultiHopPlanner
 
 multihopplanner = MultiHopPlanner()
+
 
 def multihop_plan_node(state: GraphState, db):
     plan = multihopplanner.plan(db=db, query=state["query"], intent=state.get("intent", {}))
@@ -19742,25 +20192,37 @@ from app.core.db import get_db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+
 @router.get("/overview")
 def overview(db: Session = Depends(get_db)):
     total_queries = db.execute(text("SELECT COUNT(*) AS c FROM querylogs")).scalar() or 0
     avg_latency = db.execute(text("SELECT AVG(latencyms) FROM querylogs")).scalar() or 0
     avg_conf = db.execute(text("SELECT AVG(confidence) FROM querylogs")).scalar() or 0
 
-    top_intents = db.execute(text("""
+    top_intents = (
+        db.execute(
+            text("""
         SELECT intent, COUNT(*) AS c
         FROM querylogs
         GROUP BY intent
         ORDER BY c DESC
         LIMIT 10
-    """)).mappings().all()
+    """)
+        )
+        .mappings()
+        .all()
+    )
 
-    citation_coverage = db.execute(text("""
+    citation_coverage = (
+        db.execute(
+            text("""
         SELECT
             SUM(CASE WHEN citations IS NOT NULL AND citations != '[]' THEN 1 ELSE 0 END) * 1.0 / NULLIF(COUNT(*), 0)
         FROM querylogs
-    """)).scalar() or 0
+    """)
+        ).scalar()
+        or 0
+    )
 
     return {
         "total_queries": total_queries,
@@ -19770,25 +20232,41 @@ def overview(db: Session = Depends(get_db)):
         "top_intents": [dict(r) for r in top_intents],
     }
 
+
 @router.get("/slow-queries")
 def slow_queries(db: Session = Depends(get_db), limit: int = 20):
-    rows = db.execute(text("""
+    rows = (
+        db.execute(
+            text("""
         SELECT id, query, intent, latencyms, confidence, createdat
         FROM querylogs
         ORDER BY latencyms DESC
         LIMIT :limit
-    """), {"limit": limit}).mappings().all()
+    """),
+            {"limit": limit},
+        )
+        .mappings()
+        .all()
+    )
     return [dict(r) for r in rows]
+
 
 @router.get("/low-confidence")
 def low_confidence(db: Session = Depends(get_db), threshold: float = 0.5, limit: int = 20):
-    rows = db.execute(text("""
+    rows = (
+        db.execute(
+            text("""
         SELECT id, query, intent, confidence, latencyms, createdat
         FROM querylogs
         WHERE confidence < :threshold
         ORDER BY confidence ASC
         LIMIT :limit
-    """), {"threshold": threshold, "limit": limit}).mappings().all()
+    """),
+            {"threshold": threshold, "limit": limit},
+        )
+        .mappings()
+        .all()
+    )
     return [dict(r) for r in rows]
 ```
 
@@ -19798,13 +20276,20 @@ def low_confidence(db: Session = Depends(get_db), threshold: float = 0.5, limit:
 ```python
 @router.get("/citations")
 def citations_review(db: Session = Depends(get_db), limit: int = 50):
-    rows = db.execute(text("""
+    rows = (
+        db.execute(
+            text("""
         SELECT c.id, c.querylogid, c.bookid, c.chunkid, c.relevancescore, q.query, q.intent, q.createdat
         FROM citations c
         JOIN querylogs q ON q.id = c.querylogid
         ORDER BY c.id DESC
         LIMIT :limit
-    """), {"limit": limit}).mappings().all()
+    """),
+            {"limit": limit},
+        )
+        .mappings()
+        .all()
+    )
     return [dict(r) for r in rows]
 ```
 
@@ -19822,6 +20307,7 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
 router = APIRouter(tags=["admin-ui"])
+
 
 @router.get("/admin/ui", response_class=HTMLResponse)
 def admin_ui():
@@ -21310,11 +21796,15 @@ def load_books(db: Session, path: Path):
 
         for a in book.get("authors", []):
             authorid = a["id"] if "id" in a else a["authorid"]
-            stmt = bookauthors.insert().prefix_with("OR IGNORE").values(
-                bookid=row.bookid,
-                authorid=authorid,
-                guid=a.get("guid"),
-                role=a.get("role", "main"),
+            stmt = (
+                bookauthors.insert()
+                .prefix_with("OR IGNORE")
+                .values(
+                    bookid=row.bookid,
+                    authorid=authorid,
+                    guid=a.get("guid"),
+                    role=a.get("role", "main"),
+                )
             )
             db.execute(stmt)
 
@@ -21486,7 +21976,7 @@ class QdrantVectorStore:
 
         points = []
         for i, (chunk, emb) in enumerate(zip(chunks, embeddings)):
-            point_id = abs(hash(f'{chunk["bookid"]}-{chunk["chunkindex"]}'))
+            point_id = abs(hash(f"{chunk['bookid']}-{chunk['chunkindex']}"))
             points.append(
                 PointStruct(
                     id=point_id,
@@ -21850,6 +22340,7 @@ from pydantic import BaseModel, Field
 
 # ---------- Auth ----------
 
+
 class UserCreate(BaseModel):
     username: str
     email: str
@@ -21872,6 +22363,7 @@ class Token(BaseModel):
 
 
 # ---------- Metadata ----------
+
 
 class AuthorResponse(BaseModel):
     authorid: int
@@ -21918,6 +22410,7 @@ class BookSearchRequest(BaseModel):
 
 
 # ---------- QA ----------
+
 
 class Citation(BaseModel):
     bookid: int
@@ -22044,11 +22537,7 @@ class BookRepository:
             stmt = stmt.where(Book.extracted == extracted)
 
         if authorid is not None:
-            stmt = (
-                stmt.join(Book.authors)
-                .where(Author.authorid == authorid)
-                .distinct()
-            )
+            stmt = stmt.join(Book.authors).where(Author.authorid == authorid).distinct()
 
         stmt = stmt.order_by(Book.title).offset(skip).limit(limit)
         return self.db.execute(stmt).scalars().all()
@@ -22058,11 +22547,7 @@ class BookRepository:
         return self.db.execute(stmt).scalars().all()
 
     def get_by_author(self, authorid: int) -> List[Book]:
-        stmt = (
-            select(Book)
-            .join(Book.authors)
-            .where(Author.authorid == authorid, Book.extracted == True)
-        )
+        stmt = select(Book).join(Book.authors).where(Author.authorid == authorid, Book.extracted == True)
         return self.db.execute(stmt).scalars().all()
 ```
 
@@ -22124,11 +22609,7 @@ class CategoryRepository:
         return self.db.execute(stmt).scalars().all()
 
     def get_books(self, catid: int) -> List[Book]:
-        stmt = (
-            select(Book)
-            .where(Book.catid == catid, Book.extracted == True)
-            .order_by(Book.title)
-        )
+        stmt = select(Book).where(Book.catid == catid, Book.extracted == True).order_by(Book.title)
         return self.db.execute(stmt).scalars().all()
 ```
 
@@ -22211,9 +22692,7 @@ def get_book(bookid: int, db: Session = Depends(get_db)):
     repo = BookRepository(db)
     book = repo.get_by_id(bookid)
     if not book:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
     return book
 
 
@@ -22222,9 +22701,7 @@ def get_book_by_guid(guid: str, db: Session = Depends(get_db)):
     repo = BookRepository(db)
     book = repo.get_by_guid(guid)
     if not book:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Book not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
     return book
 ```
 
@@ -22579,7 +23056,7 @@ class QdrantVectorStore:
 
         points = []
         for chunk, vec in zip(chunks, vectors):
-            pid = abs(hash(f'{chunk["bookid"]}-{chunk["chunkindex"]}'))
+            pid = abs(hash(f"{chunk['bookid']}-{chunk['chunkindex']}"))
             points.append(
                 PointStruct(
                     id=pid,
@@ -22644,12 +23121,7 @@ from app.services.vectorstore import QdrantVectorStore
 
 def iter_chunks(db: Session):
     extracted_dir = Path(settings.EXTRACTEDBOOKS_DIR)
-    books = (
-        db.query(Book)
-        .filter(Book.extracted == True)
-        .order_by(Book.catid, Book.bookid)
-        .all()
-    )
+    books = db.query(Book).filter(Book.extracted == True).order_by(Book.catid, Book.bookid).all()
 
     for book in books:
         if not book.file:
@@ -22899,12 +23371,16 @@ from pydantic import BaseModel, Field
 
 
 class UserIntent(BaseModel):
-    intent: str = Field(description="One of FIQH, QURAN, ISLAMICKNOWLEDGE, GREETING, ZAKAT, INHERITANCE, DUA, HIJRICALENDAR, PRAYERTIMES")
+    intent: str = Field(
+        description="One of FIQH, QURAN, ISLAMICKNOWLEDGE, GREETING, ZAKAT, INHERITANCE, DUA, HIJRICALENDAR, PRAYERTIMES"
+    )
     confidence: float = Field(description="Confidence score between 0 and 1")
     language: str = Field(description="ar or en")
     requiresretrieval: bool = Field(description="Whether RAG retrieval is needed")
     subintent: Optional[str] = Field(default=None, description="Sub-intent for specific cases like QURAN_VERSELOOKUP")
-    entities: Dict[str, Any] = Field(default_factory=dict, description="Extracted entities like author, book, category, guid, shortid")
+    entities: Dict[str, Any] = Field(
+        default_factory=dict, description="Extracted entities like author, book, category, guid, shortid"
+    )
     reasoning: str = Field(description="Brief explanation of classification")
     nextaction: str = Field(description="metadataonly, retrieval, calculator, sqllookup, tool")
 ```
@@ -23456,9 +23932,7 @@ GENERAL_SYSTEM_PROMPT = (
     "Be concise and clear. If something is not in the context, say that you do not know."
 )
 
-GREETING_SYSTEM_PROMPT = (
-    "You are a polite assistant. Reply with an appropriate Islamic greeting and short response."
-)
+GREETING_SYSTEM_PROMPT = "You are a polite assistant. Reply with an appropriate Islamic greeting and short response."
 
 
 def build_context(chunks: List[Dict[str, Any]], max_chunks: int = 5) -> str:
@@ -23667,6 +24141,7 @@ def answer_node(state: GraphState) -> GraphState:
 from app.graph.nodes import route_node, plan_node, retrieve_node, answer_node
 # ...
 
+
 def build_graph(db: Session):
     graph = StateGraph(GraphState)
 
@@ -23750,6 +24225,7 @@ def ask(request: QueryRequest, db: Session = Depends(get_db)):
 ```python
 # app/main.py
 from app.api import qa
+
 app.include_router(qa.router)
 ```
 
@@ -24202,7 +24678,9 @@ class QueryLogger:
                 db,
                 userid=userid,
                 query=query,
-                intent=response.get("intent", {}).get("intent") if isinstance(response.get("intent"), dict) else response.get("intent"),
+                intent=response.get("intent", {}).get("intent")
+                if isinstance(response.get("intent"), dict)
+                else response.get("intent"),
                 confidence=response.get("confidence"),
                 response=response.get("answer"),
                 latencyms=latencyms,
@@ -24368,9 +24846,7 @@ class QuranVerse(Base):
 
     createdat = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_quran_surah_ayah", "surah_number", "ayah_number", unique=True),
-    )
+    __table_args__ = (Index("idx_quran_surah_ayah", "surah_number", "ayah_number", unique=True),)
 ```
 
 هذا يعكس فكرة أن بعض domains تحتاج structured store خاص بها بدل generic corpus فقط.[^69_1]
@@ -24872,8 +25348,17 @@ graph.add_node("answer", lambda s: answer_node(s, db))
 ```python
 # app/models/dbmodels.py
 from sqlalchemy import (
-    Column, Integer, String, Boolean, Float, Text, DateTime,
-    ForeignKey, Table, Index, UniqueConstraint
+    Column,
+    Integer,
+    String,
+    Boolean,
+    Float,
+    Text,
+    DateTime,
+    ForeignKey,
+    Table,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
@@ -24897,11 +25382,7 @@ class QueryLog(Base):
     createdat = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="queries")
-    citation_rows = relationship(
-        "Citation",
-        back_populates="querylog",
-        cascade="all, delete-orphan"
-    )
+    citation_rows = relationship("Citation", back_populates="querylog", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_querylogs_created", "createdat"),
@@ -25427,9 +25908,7 @@ def check_special_patterns(self, query: str):
             language="ar",
             requiresretrieval=False,
             subintent="CALCULATION",
-            entities={
-                "amounts": [float(n.replace(",", "")) for n in numbers] if numbers else []
-            },
+            entities={"amounts": [float(n.replace(",", "")) for n in numbers] if numbers else []},
             reasoning="Zakat calculation detected",
             nextaction="calculator",
         )
