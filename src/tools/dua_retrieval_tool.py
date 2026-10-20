@@ -6,8 +6,10 @@ No LLM generation - returns exact text with translations and references.
 
 Based on Fanar-Sadiq architecture: Verified sources only, no generation.
 """
+
 import json
 from pathlib import Path
+from typing import Any
 
 from src.config.logging_config import get_logger
 from src.tools.base import BaseTool, ToolOutput
@@ -44,15 +46,16 @@ class DuaRetrievalTool(BaseTool):
             "dua.tool_initialized",
             duas_count=len(self.duas),
             azkar_count=len(self.azkar),
-            total=len(self.duas) + len(self.azkar)
+            total=len(self.duas) + len(self.azkar),
         )
 
     def _load_duas(self) -> list[dict]:
         """Load duas from JSON database (Hisn al-Muslim)."""
         try:
             if self.duas_path.exists():
-                with open(self.duas_path, encoding='utf-8') as f:
-                    return json.load(f)
+                with open(self.duas_path, encoding="utf-8") as f:
+                    duas: list[dict] = json.load(f)
+                    return duas
         except Exception as e:
             logger.error("dua.load_error", error=str(e))
         return []
@@ -61,19 +64,15 @@ class DuaRetrievalTool(BaseTool):
         """Load azkar from imported database."""
         try:
             if self.azkar_path.exists():
-                with open(self.azkar_path, encoding='utf-8') as f:
-                    return json.load(f)
+                with open(self.azkar_path, encoding="utf-8") as f:
+                    azkar: list[dict] = json.load(f)
+                    return azkar
         except Exception as e:
             logger.error("azkar.load_error", error=str(e))
         return []
 
     async def execute(
-        self,
-        query: str = "",
-        occasion: str | None = None,
-        category: str | None = None,
-        limit: int = 5,
-        **kwargs
+        self, query: str = "", occasion: str | None = None, category: str | None = None, limit: int = 5, **kwargs: Any
     ) -> ToolOutput:
         """
         Retrieve duas based on occasion, category, or query.
@@ -118,17 +117,27 @@ class DuaRetrievalTool(BaseTool):
                     filtered = [d for d in all_duas if mapped_occasion in d.get("occasion", "").lower()]
                 if not filtered:
                     # Try partial match in occasion or category
-                    filtered = [d for d in all_duas if category_lower in d.get("occasion", "").lower() or category_lower in d.get("category", "").lower()]
+                    filtered = [
+                        d
+                        for d in all_duas
+                        if category_lower in d.get("occasion", "").lower()
+                        or category_lower in d.get("category", "").lower()
+                    ]
                 all_duas = filtered
 
-            # Filter by occasion (with broader matching)
+            # Filter by occasion. Match the occasion field first: the category
+            # "morning_evening" is shared by both morning and evening adhkar,
+            # so matching it would return evening duas for a morning request.
             if occasion:
                 occasion_lower = occasion.lower()
-                all_duas = [
-                    d for d in all_duas
-                    if occasion_lower in d.get("occasion", "").lower()
-                    or occasion_lower in d.get("category", "").lower()
-                ]
+                mapped_occasion = category_to_occasion.get(occasion_lower, occasion_lower)
+                all_duas = [d for d in all_duas if d.get("occasion", "").lower() == mapped_occasion]
+                if not all_duas:
+                    all_duas = [d for d in all_duas if d.get("occasion", "").lower() == occasion_lower]
+                if not all_duas:
+                    all_duas = [d for d in all_duas if occasion_lower in d.get("occasion", "").lower()]
+                if not all_duas:
+                    all_duas = [d for d in all_duas if mapped_occasion in d.get("category", "").lower()]
 
             # Semantic search by query (simple keyword matching for Phase 2)
             if query and not occasion and not category:
@@ -141,40 +150,24 @@ class DuaRetrievalTool(BaseTool):
             result = {
                 "duas": all_duas,
                 "count": len(all_duas),
-                "filters": {
-                    "occasion": occasion,
-                    "category": category,
-                    "query": query if query else None
-                },
-                "sources": {
-                    "hisn_al_muslim": len(self.duas),
-                    "azkar_db": len(self.azkar)
-                }
+                "filters": {"occasion": occasion, "category": category, "query": query if query else None},
+                "sources": {"hisn_al_muslim": len(self.duas), "azkar_db": len(self.azkar)},
             }
 
-            logger.info(
-                "dua.retrieved",
-                count=len(all_duas),
-                occasion=occasion,
-                category=category
-            )
+            logger.info("dua.retrieved", count=len(all_duas), occasion=occasion, category=category)
 
             return ToolOutput(
                 result=result,
                 success=True,
                 metadata={
                     "source": "Hisn al-Muslim + Azkar Database (https://github.com/osamayy/azkar-db)",
-                    "note": "All duas are from verified sources with proper references"
-                }
+                    "note": "All duas are from verified sources with proper references",
+                },
             )
 
         except Exception as e:
             logger.error("dua.retrieval_error", error=str(e))
-            return ToolOutput(
-                result={},
-                success=False,
-                error=f"Error retrieving duas: {str(e)}"
-            )
+            return ToolOutput(result={}, success=False, error=f"Error retrieving duas: {str(e)}")
 
     def _search_duas(self, query: str, duas: list[dict]) -> list[dict]:
         """
