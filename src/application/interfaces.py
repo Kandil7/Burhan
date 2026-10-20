@@ -14,9 +14,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from src.domain.models import ClassificationResult
 from src.application.models import RoutingDecision
-
+from src.domain.models import ClassificationResult
 
 # ==========================================
 # Core Protocols
