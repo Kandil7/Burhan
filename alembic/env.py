@@ -1,4 +1,10 @@
-"""Alembic environment configuration for Burhan Islamic QA System."""
+"""Alembic environment configuration for Burhan Islamic QA System.
+
+NOTE: Alembic is scaffolded but has no revisions, so ``alembic upgrade head`` is a
+no-op. The database schema is created and evolved by the raw SQL files under
+``migrations/`` (see ``migrations/README.md``). Only use Alembic after generating a
+baseline revision that reflects the current schema.
+"""
 
 import asyncio
 from logging.config import fileConfig
@@ -19,6 +25,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from src.data.models import Base
+
 target_metadata = Base.metadata
 
 # other values from the config, set by the needs of env.py,
