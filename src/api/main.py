@@ -6,20 +6,26 @@ Epic 7: Simplified API layer with thin transport routes.
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.lifespan import lifespan
 from src.api.middleware.error_handler import error_handler_middleware
-from src.api.middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
-from src.api.middleware.request_logging import RequestLoggingMiddleware, RequestIDMiddleware
-from src.api.routes.health import router as health_router
+from src.api.middleware.request_logging import RequestIDMiddleware, RequestLoggingMiddleware
+from src.api.middleware.security import (
+    APIKeyMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from src.api.routes.ask import ask_router
 from src.api.routes.classify import classify_router
+from src.api.routes.fiqh import fiqh_router
+from src.api.routes.health import router as health_router
+from src.api.routes.quran import router as quran_router
 from src.api.routes.search import search_router
 from src.api.routes.tools import tools_router
-from src.api.routes.quran import router as quran_router
-from src.api.routes.fiqh import fiqh_router
-from src.api.lifespan import lifespan
 from src.config.environment_validation import validate_environment
 from src.config.logging_config import get_logger, setup_logging
 from src.config.settings import settings
@@ -60,10 +66,14 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
+        # The CORS spec forbids credentials with a wildcard origin.
+        allow_credentials=settings.cors_allow_credentials and "*" not in settings.cors_origins,
         allow_methods=settings.cors_methods,
         allow_headers=settings.cors_headers,
     )
+
+    if settings.api_key_enabled:
+        app.add_middleware(APIKeyMiddleware)
 
     app.middleware("http")(error_handler_middleware)
 
@@ -72,17 +82,17 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(classify_router)  # /classify
 
-
     # V1 API routes
     v1 = settings.api_v1_prefix
     app.include_router(ask_router, prefix=v1)  # /api/v1/ask
     app.include_router(search_router, prefix=v1)  # /api/v1/search (merged from rag)
     app.include_router(tools_router, prefix=v1)  # /api/v1/tools
     app.include_router(quran_router, prefix=v1)  # /api/v1/quran
+    app.include_router(fiqh_router, prefix=v1)  # /api/v1/fiqh
 
     # ── Root ─────────────────────────────────────────────────────────────
     @app.get("/", tags=["Root"])
-    async def root():
+    async def root() -> Any:
         return {
             "name": settings.app_name,
             "version": settings.app_version,
