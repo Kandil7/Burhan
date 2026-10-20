@@ -16,6 +16,7 @@ Design principles
 - close_all() properly closes both clients.
 - temperature=0.0 handled correctly (not treated as falsy).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -33,9 +34,10 @@ logger = get_logger()
 # ── Optional Groq import ──────────────────────────────────────────────────────
 try:
     from groq import AsyncGroq
+
     GROQ_AVAILABLE = True
 except ImportError:
-    AsyncGroq = None          # type: ignore[misc,assignment]
+    AsyncGroq = None  # type: ignore[misc,assignment]
     GROQ_AVAILABLE = False
 
 # ── Regex ─────────────────────────────────────────────────────────────────────
@@ -45,13 +47,13 @@ _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 MODELS: dict[str, dict[str, str]] = {
     "openai": {
         "default": "gpt-4o-mini",
-        "fast":    "gpt-4o-mini",
-        "smart":   "gpt-4o",
+        "fast": "gpt-4o-mini",
+        "smart": "gpt-4o",
     },
     "groq": {
         "default": "qwen/qwen3-32b",
-        "fast":    "meta-llama/llama-3.3-70b-versatile",
-        "smart":   "qwen/qwen3-32b",
+        "fast": "meta-llama/llama-3.3-70b-versatile",
+        "smart": "qwen/qwen3-32b",
     },
 }
 
@@ -69,6 +71,7 @@ class ConfigurationError(Exception):
 # ─────────────────────────────────────────────────────────────────────────────
 # Pure helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _strip_thinking(text: str) -> str:
     """
@@ -98,6 +101,7 @@ def _thinking_extra_body(provider: str) -> dict[str, Any]:
 # LLMClients — single object injected into app.state
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class LLMClients:
     """
     Container for all initialised LLM clients.
@@ -116,17 +120,17 @@ class LLMClients:
     def __init__(
         self,
         openai_client: AsyncOpenAI | None,
-        groq_client: Any | None,          # AsyncGroq | None
+        groq_client: Any | None,  # AsyncGroq | None
         active_provider: str,
     ) -> None:
-        self._openai  = openai_client
-        self._groq    = groq_client
+        self._openai = openai_client
+        self._groq = groq_client
         self._provider = active_provider.lower()
 
     # ── Factory ───────────────────────────────────────────────────────────────
 
     @classmethod
-    async def create(cls) -> "LLMClients":
+    async def create(cls) -> LLMClients:
         """
         Build and validate all configured LLM clients.
 
@@ -139,21 +143,15 @@ class LLMClients:
 
         if provider == "groq":
             if not GROQ_AVAILABLE:
-                raise ConfigurationError(
-                    "Groq package not installed. Run: pip install groq"
-                )
+                raise ConfigurationError("Groq package not installed. Run: pip install groq")
             if not settings.groq_api_key:
-                raise ConfigurationError(
-                    "GROQ_API_KEY is not set. Add it to your .env file."
-                )
+                raise ConfigurationError("GROQ_API_KEY is not set. Add it to your .env file.")
             groq_client = AsyncGroq(api_key=settings.groq_api_key)
             logger.info("llm.groq_initialized", model=MODELS["groq"]["default"])
 
-        else:   # openai (default)
+        else:  # openai (default)
             if not settings.openai_api_key:
-                raise ConfigurationError(
-                    "OPENAI_API_KEY is not set. Add it to your .env file."
-                )
+                raise ConfigurationError("OPENAI_API_KEY is not set. Add it to your .env file.")
             openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
             logger.info("llm.openai_initialized", model=settings.llm_model)
 
@@ -198,14 +196,14 @@ class LLMClients:
         - <think> blocks are stripped automatically.
         - temperature=0.0 is handled correctly (not treated as falsy).
         """
-        messages = []
+        messages: list[Any] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
         # None → use settings; 0.0 → keep as 0.0 (not falsy)
-        _temp   = settings.llm_temperature if temperature is None else temperature
-        _tokens = settings.llm_max_tokens  if max_tokens  is None else max_tokens
+        _temp = settings.llm_temperature if temperature is None else temperature
+        _tokens = settings.llm_max_tokens if max_tokens is None else max_tokens
 
         try:
             response = await self.client.chat.completions.create(
@@ -219,7 +217,9 @@ class LLMClients:
             logger.error("llm.generate_text_error", error=str(e), exc_info=True)
             raise
 
-        return _strip_thinking(response.choices[0].message.content)
+        content = _strip_thinking(response.choices[0].message.content or "")
+
+        return content
 
     async def generate_json(
         self,
@@ -234,22 +234,24 @@ class LLMClients:
           instruction instead.
         - <think> blocks stripped before JSON parsing.
         """
-        messages = []
+        messages: list[Any] = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         else:
             # Fallback system prompt when none provided — ensures JSON output
-            messages.append({
-                "role": "system",
-                "content": "Respond with valid JSON only. No explanation.",
-            })
+            messages.append(
+                {
+                    "role": "system",
+                    "content": "Respond with valid JSON only. No explanation.",
+                }
+            )
         messages.append({"role": "user", "content": prompt})
 
         kwargs: dict[str, Any] = {
-            "model":       settings.llm_model,
-            "messages":    messages,
+            "model": settings.llm_model,
+            "messages": messages,
             "temperature": 0.0,
-            "max_tokens":  settings.llm_max_tokens,
+            "max_tokens": settings.llm_max_tokens,
         }
 
         # Only add response_format for providers that support it
@@ -268,7 +270,8 @@ class LLMClients:
         content = _strip_thinking(response.choices[0].message.content)
 
         try:
-            return json.loads(content)
+            result: dict[str, Any] = json.loads(content)
+            return result
         except json.JSONDecodeError as e:
             logger.error("llm.json_decode_error", raw=content[:200], error=str(e))
             raise ValueError(f"LLM returned invalid JSON: {e}") from e
@@ -280,7 +283,7 @@ class LLMClients:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _legacy_clients: LLMClients | None = None
-_legacy_lock:    asyncio.Lock | None = None
+_legacy_lock: asyncio.Lock | None = None
 
 
 def _get_legacy_lock() -> asyncio.Lock:
@@ -328,9 +331,7 @@ async def generate_text(
 ) -> str:
     """Legacy module-level generate_text. Prefer LLMClients.generate_text()."""
     clients = await _get_legacy_clients()
-    return await clients.generate_text(
-        prompt, system_prompt, temperature, max_tokens
-    )
+    return await clients.generate_text(prompt, system_prompt, temperature, max_tokens)
 
 
 async def generate_json(
