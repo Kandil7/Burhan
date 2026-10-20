@@ -4,6 +4,11 @@
 
 This document summarizes all improvements implemented in Phase 5 to address the code review findings and enhance security, performance, and code quality.
 
+> **Status: historical phase record.** This summary describes the Phase 5 work and the file
+> layout as it existed then. Some module paths named below (for example
+> `src/api/schemas/validation.py`, `src/infrastructure/llm_cache.py`) have since been moved or
+> removed. Treat the paths as history, not as the current structure.
+
 ---
 
 ## Completed Improvements
@@ -28,6 +33,7 @@ This document summarizes all improvements implemented in Phase 5 to address the 
 **Usage**:
 ```python
 from src.config.constants import RetrievalConfig, LLMConfig
+
 
 class FiqhAgent(BaseAgent):
     TOP_K_RETRIEVAL = RetrievalConfig.TOP_K_FIQH
@@ -59,7 +65,7 @@ from src.api.schemas.validation import ZakatCalculationInput
 data = ZakatCalculationInput(
     assets={"cash": 50000},
     debts=5000,  # Will be validated
-    madhhab="hanafi"
+    madhhab="hanafi",
 )
 ```
 
@@ -100,10 +106,7 @@ data = ZakatCalculationInput(
 from src.infrastructure.llm_cache import generate_with_cache
 
 response = await generate_with_cache(
-    llm_client,
-    prompt="What is fiqh?",
-    system_prompt="You are an Islamic scholar",
-    use_cache=True
+    llm_client, prompt="What is fiqh?", system_prompt="You are an Islamic scholar", use_cache=True
 )
 ```
 
@@ -174,7 +177,7 @@ async def list_surahs():
     "error": {
         "code": "VALIDATION_ERROR",
         "message": "Human readable message",
-        "details": {"field": "email", "issue": "Invalid format"}
+        "details": {"field": "email", "issue": "Invalid format"},
     }
 }
 ```
@@ -214,7 +217,7 @@ instance, is_agent = registry.get_for_intent(Intent.FIQH)
 ### 10. Removed Hardcoded Values ✅
 
 **Files Updated**:
-- `src/agents/fiqh_agent.py`
+- `src/agents/collection/fiqh.py`
 - (Other agents to follow same pattern)
 
 **Changes**:
@@ -238,21 +241,21 @@ instance, is_agent = registry.get_for_intent(Intent.FIQH)
 **Added Indexes**:
 ```python
 # Surah indexes
-Index('idx_surah_number', Surah.number)
+Index("idx_surah_number", Surah.number)
 
 # Ayah indexes
-Index('idx_ayah_surah', Ayah.surah_id)
-Index('idx_ayah_surah_number', Ayah.surah_id, Ayah.number_in_surah)
-Index('idx_ayah_juz', Ayah.juz)
-Index('idx_ayah_page', Ayah.page)
+Index("idx_ayah_surah", Ayah.surah_id)
+Index("idx_ayah_surah_number", Ayah.surah_id, Ayah.number_in_surah)
+Index("idx_ayah_juz", Ayah.juz)
+Index("idx_ayah_page", Ayah.page)
 
 # Translation indexes
-Index('idx_translation_ayah', Translation.ayah_id)
-Index('idx_translation_language', Translation.language)
+Index("idx_translation_ayah", Translation.ayah_id)
+Index("idx_translation_language", Translation.language)
 
 # Tafsir indexes
-Index('idx_tafsir_ayah', Tafsir.ayah_id)
-Index('idx_tafsir_source', Tafsir.source)
+Index("idx_tafsir_ayah", Tafsir.ayah_id)
+Index("idx_tafsir_source", Tafsir.source)
 ```
 
 ---
@@ -275,8 +278,8 @@ Index('idx_tafsir_source', Tafsir.source)
 |------|---------|
 | `src/config/settings.py` | Added security/cache settings |
 | `src/api/main.py` | Added security middleware |
-| `src/core/orchestrator.py` | Refactored to use registry |
-| `src/agents/fiqh_agent.py` | Uses settings + constants |
+| `src/application/router/orchestration.py` | Refactored to use registry |
+| `src/agents/collection/fiqh.py` | Uses settings + constants |
 | `src/api/routes/quran.py` | Thread pool execution |
 
 ---
