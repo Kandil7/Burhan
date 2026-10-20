@@ -49,16 +49,12 @@ This document describes the retrieval strategy system for the Multi-Agent Collec
 ### Using Strategies
 
 ```python
-from src.retrieval.strategies import (
-    get_strategy_for_agent,
-    get_collection_for_agent,
-    RetrievalStrategy
-)
+from src.retrieval.strategies import get_strategy_for_agent, get_collection_for_agent, RetrievalStrategy
 
 # Get strategy for an agent
 strategy = get_strategy_for_agent("fiqh_agent")
 print(strategy.dense_weight)  # 0.6
-print(strategy.top_k)          # 80
+print(strategy.top_k)  # 80
 print(strategy.score_threshold)  # 0.65
 
 # Get collection for an agent
@@ -70,19 +66,10 @@ print(collection)  # "fiqh"
 
 ```python
 # Custom strategy
-custom_strategy = RetrievalStrategy(
-    dense_weight=0.7,
-    sparse_weight=0.3,
-    top_k=50,
-    rerank=True,
-    score_threshold=0.7
-)
+custom_strategy = RetrievalStrategy(dense_weight=0.7, sparse_weight=0.3, top_k=50, rerank=True, score_threshold=0.7)
 
 # Use in agent
-agent = FiqhCollectionAgent(config=CollectionAgentConfig(
-    collection_name="fiqh",
-    strategy=custom_strategy
-))
+agent = FiqhCollectionAgent(config=CollectionAgentConfig(collection_name="fiqh", strategy=custom_strategy))
 ```
 
 ---
@@ -129,8 +116,8 @@ Reranking is enabled for most agents (except general_islamic_agent) to improve r
 
 ```python
 DenseVectorConfig(
-    size=1024,              # Embedding dimension
-    distance=Distance.COSINE  # Cosine similarity
+    size=1024,  # Embedding dimension
+    distance=Distance.COSINE,  # Cosine similarity
 )
 ```
 
@@ -139,8 +126,8 @@ DenseVectorConfig(
 ```python
 SparseVectorConfig(
     type="BM25",
-    k1=1.5,                # Term frequency saturation
-    b=0.75                 # Document length normalization
+    k1=1.5,  # Term frequency saturation
+    b=0.75,  # Document length normalization
 )
 ```
 
@@ -148,30 +135,22 @@ SparseVectorConfig(
 
 ```python
 HNSWPreset.LARGE = {
-    "m": 32,               # Number of connections
-    "ef_construct": 256,   # Search width during build
-    "full_scan_threshold": 10000
+    "m": 32,  # Number of connections
+    "ef_construct": 256,  # Search width during build
+    "full_scan_threshold": 10000,
 }
 
-HNSWPreset.MEDIUM = {
-    "m": 16,
-    "ef_construct": 128,
-    "full_scan_threshold": 10000
-}
+HNSWPreset.MEDIUM = {"m": 16, "ef_construct": 128, "full_scan_threshold": 10000}
 
-HNSWPreset.SMALL = {
-    "m": 8,
-    "ef_construct": 64,
-    "full_scan_threshold": 10000
-}
+HNSWPreset.SMALL = {"m": 8, "ef_construct": 64, "full_scan_threshold": 10000}
 ```
 
 ### Quantization
 
 ```python
 QuantizationConfig(
-    type="INT8",           # 8-bit integer quantization
-    always_ram=False       # Keep in disk if possible
+    type="INT8",  # 8-bit integer quantization
+    always_ram=False,  # Keep in disk if possible
 )
 ```
 
@@ -235,17 +214,9 @@ COLLECTION_CONFIGS["tafsir"] = CollectionConfig(
 
 ```python
 # In retrieval request
-filters = {
-    "madhhab": "hanafi",
-    "era": "classical"
-}
+filters = {"madhhab": "hanafi", "era": "classical"}
 
-results = await vector_store.search(
-    collection="fiqh",
-    query_embedding=embedding,
-    top_k=80,
-    filters=filters
-)
+results = await vector_store.search(collection="fiqh", query_embedding=embedding, top_k=80, filters=filters)
 ```
 
 ---
