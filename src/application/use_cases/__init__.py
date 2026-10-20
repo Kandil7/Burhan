@@ -16,42 +16,37 @@ Each use case follows clean architecture:
 """
 
 from src.application.use_cases.answer_query import (
-    AnswerQueryUseCase,
-    answer_query_use_case,
     AnswerQueryInput,
     AnswerQueryOutput,
+    AnswerQueryUseCase,
+    answer_query_use_case,
 )
-
-from src.application.use_cases.classify_query import (
-    ClassifyQueryUseCase,
-    classify_query_use_case,
-    ClassifyQueryInput,
-    ClassifyQueryOutput,
-)
-
-from src.application.use_cases.classify_schemas import QueryIntent
-
-from src.application.use_cases.run_retrieval import (
-    RunRetrievalUseCase,
-    run_retrieval_use_case,
-    RunRetrievalInput,
-    RunRetrievalOutput,
-)
-
-from src.application.use_cases.run_tool import (
-    RunToolUseCase,
-    run_tool_use_case,
-    RunToolInput,
-    RunToolOutput,
-    ToolType,
-)
-
 from src.application.use_cases.build_trace import (
-    BuildTraceUseCase,
-    build_trace_use_case,
     BuildTraceInput,
     BuildTraceOutput,
+    BuildTraceUseCase,
     TraceEvent,
+    build_trace_use_case,
+)
+from src.application.use_cases.classify_query import (
+    ClassifyQueryInput,
+    ClassifyQueryOutput,
+    ClassifyQueryUseCase,
+    classify_query_use_case,
+)
+from src.application.use_cases.classify_schemas import QueryIntent
+from src.application.use_cases.run_retrieval import (
+    RunRetrievalInput,
+    RunRetrievalOutput,
+    RunRetrievalUseCase,
+    run_retrieval_use_case,
+)
+from src.application.use_cases.run_tool import (
+    RunToolInput,
+    RunToolOutput,
+    RunToolUseCase,
+    ToolType,
+    run_tool_use_case,
 )
 
 __all__ = [
