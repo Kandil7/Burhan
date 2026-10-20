@@ -1,10 +1,10 @@
 # Trace Service Module
 """Service for handling execution traces."""
 
-from typing import Optional, Dict, Any, List
 from datetime import datetime
+from typing import Any
+
 from src.application.use_cases.build_trace import (
-    BuildTraceInput,
     BuildTraceOutput,
     TraceEvent,
 )
@@ -13,8 +13,8 @@ from src.application.use_cases.build_trace import (
 class TraceService:
     """Service for managing execution traces."""
 
-    def __init__(self):
-        self.active_traces: Dict[str, List[TraceEvent]] = {}
+    def __init__(self) -> None:
+        self.active_traces: dict[str, list[TraceEvent]] = {}
 
     def start_trace(self, query_id: str) -> str:
         """Start a new trace."""
@@ -27,7 +27,7 @@ class TraceService:
         query_id: str,
         event_type: str,
         component: str,
-        details: Dict[str, Any],
+        details: dict[str, Any],
     ) -> None:
         """Add an event to the trace."""
         if query_id not in self.active_traces:
@@ -44,16 +44,10 @@ class TraceService:
     async def build_trace(
         self,
         query_id: str,
-        final_response: Optional[str] = None,
+        final_response: str | None = None,
     ) -> BuildTraceOutput:
         """Build and finalize the trace."""
         events = self.active_traces.get(query_id, [])
-
-        input_data = BuildTraceInput(
-            query_id=query_id,
-            events=events,
-            final_response=final_response,
-        )
 
         # Clear trace after building
         if query_id in self.active_traces:
@@ -66,7 +60,7 @@ class TraceService:
             summary={"total_events": len(events)},
         )
 
-    def get_active_trace(self, query_id: str) -> List[TraceEvent]:
+    def get_active_trace(self, query_id: str) -> list[TraceEvent]:
         """Get active trace events."""
         return self.active_traces.get(query_id, [])
 
