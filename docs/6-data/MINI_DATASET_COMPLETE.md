@@ -1,5 +1,10 @@
 # 🕌 Burhan Mini-Dataset - COMPLETE ✅
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/create_mini_dataset.py` and `scripts/data/embed_all_collections.py`.
+
 **Date:** April 7, 2026  
 **Status:** ✅ **COMMITTED TO GITHUB**  
 **Commit:** `4a8b48b`
@@ -40,9 +45,9 @@ A **1.7 MB** mini-dataset with **1,623 documents** across all 10 collections, su
 | `data/mini_dataset/*.jsonl` | 1,623 docs | 10 collections of Islamic knowledge |
 | `data/mini_dataset/book_selections.json` | +211 | Book selection metadata |
 | `data/mini_dataset/collection_stats.json` | +34 | Collection statistics |
-| `scripts/create_mini_dataset.py` | +519 | Dataset creation script |
-| `scripts/seed_mvp_data.py` | +9 | MVP seeding improvements |
-| `src/knowledge/embedding_cache.py` | +91/-49 | Redis fallback fix |
+| `scripts/data/create_mini_dataset.py` | +519 | Dataset creation script |
+| `scripts/data/seed_mvp_data.py` | +9 | MVP seeding improvements |
+| `src/indexing/embeddings/embedding_cache.py` | +91/-49 | Redis fallback fix |
 
 ---
 
@@ -74,7 +79,7 @@ import json
 
 # Load any collection
 documents = []
-with open('data/mini_dataset/fiqh_passages.jsonl', 'r', encoding='utf-8') as f:
+with open("data/mini_dataset/fiqh_passages.jsonl", "r", encoding="utf-8") as f:
     for line in f:
         documents.append(json.loads(line))
 
@@ -84,10 +89,10 @@ print(f"Loaded {len(documents)} fiqh documents")
 ### 2. Embed Dataset
 ```bash
 # Embed all mini-dataset collections
-python scripts/embed_mini_dataset.py
+python scripts/data/embed_all_collections.py
 
 # Or embed specific collection
-python scripts/embed_mini_dataset.py --collection fiqh_passages
+python scripts/data/embed_all_collections.py --collection fiqh_passages
 ```
 
 ### 3. Query System
