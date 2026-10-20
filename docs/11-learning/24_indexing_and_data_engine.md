@@ -14,11 +14,6 @@ This document explains the "Heart of Knowledge" in Burhan: the Indexing Pipeline
 - **Secondary Tables**: `Translation` and `Tafsir` (Commentary) are linked via Foreign Keys to `Ayah`, allowing for granular lookup of interpretations.
 - **text_simple Column**: Crucial for search performance. It stores a normalized, diacritic-free version of the Arabic text, used for fast SQL `LIKE` queries.
 
-### 2. `src/data/models/query_log.py`
-**Purpose**: Tracking user interactions for evaluation.
-**Deep Logic**:
-- Stores the `intent_confidence` and `latency_ms` to help identify "slow" or "uncertain" query patterns for later optimization.
-
 ---
 
 ## 📁 src/indexing/ - The Transformation Engine
