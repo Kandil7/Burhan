@@ -47,8 +47,12 @@ from huggingface_hub import HfApi, InferenceClient, hf_hub_download, login
 from huggingface_hub.utils import EntryNotFoundError
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
-    Distance, FieldCondition, Filter,
-    MatchValue, PointStruct, VectorParams,
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
 )
 from sentence_transformers import SentenceTransformer
 
@@ -62,25 +66,25 @@ print("✅ All imports OK")
 
 ```python
 # Cell 02 – HF login + global constants
-login()   # paste your HF token when prompted
+login()  # paste your HF token when prompted
 
 # ── Repos ──────────────────────────────────────────────
-HF_BASE  = "Kandil7/Burhan-Datasets"
-HF_MINI  = "Kandil7/Burhan-Mini-Dataset-v2"
-HF_HUB   = "Kandil7/Burhan-RAG-Hub"
+HF_BASE = "Kandil7/Burhan-Datasets"
+HF_MINI = "Kandil7/Burhan-Mini-Dataset-v2"
+HF_HUB = "Kandil7/Burhan-RAG-Hub"
 
 # ── Models ─────────────────────────────────────────────
 EMBED_MODEL = "BAAI/bge-m3"
-LLM_MODEL   = "Qwen/Qwen2.5-7B-Instruct"
+LLM_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 # ── Chunking ───────────────────────────────────────────
-CHUNK_VER   = "agentic_v1"
-MAX_CHARS   = 1800
-BATCH_SIZE  = 3        # pre-chunks per LLM call
-LLM_SLEEP   = 1.5      # seconds between LLM calls
-FLUSH_EVERY = 25       # passages before HF upload
-TOP_K       = 10       # retrieval candidates
-TEST_MODE   = False    # set True to run only 10 passages per collection
+CHUNK_VER = "agentic_v1"
+MAX_CHARS = 1800
+BATCH_SIZE = 3  # pre-chunks per LLM call
+LLM_SLEEP = 1.5  # seconds between LLM calls
+FLUSH_EVERY = 25  # passages before HF upload
+TOP_K = 10  # retrieval candidates
+TEST_MODE = False  # set True to run only 10 passages per collection
 
 # ── Collections ────────────────────────────────────────
 COLLECTIONS = [
@@ -97,16 +101,16 @@ COLLECTIONS = [
 ]
 
 DOMAIN_CHUNK_TYPES = {
-    "seerah_passages":          "seerah_event",
-    "fiqh_passages":            "fiqh_issue",
-    "quran_tafsir":             "tafsir_segment",
-    "hadith_passages":          "hadith",
-    "aqeedah_passages":         "aqeedah_point",
+    "seerah_passages": "seerah_event",
+    "fiqh_passages": "fiqh_issue",
+    "quran_tafsir": "tafsir_segment",
+    "hadith_passages": "hadith",
+    "aqeedah_passages": "aqeedah_point",
     "islamic_history_passages": "history_event",
-    "usul_fiqh":                "usul_rule",
-    "spirituality_passages":    "spiritual_point",
+    "usul_fiqh": "usul_rule",
+    "spirituality_passages": "spiritual_point",
     "arabic_language_passages": "arabic_language_rule",
-    "general_islamic":          "general_islamic_point",
+    "general_islamic": "general_islamic_point",
 }
 
 print("✅ Constants set")
@@ -120,71 +124,102 @@ print("✅ Constants set")
 ```python
 # Cell 03 – HF-only persistent storage (no Drive needed)
 HF_TOKEN = os.environ.get("HF_TOKEN") or None
-api      = HfApi(token=HF_TOKEN)
-TMP_DIR  = Path("/tmp/Burhan"); TMP_DIR.mkdir(exist_ok=True)
+api = HfApi(token=HF_TOKEN)
+TMP_DIR = Path("/tmp/Burhan")
+TMP_DIR.mkdir(exist_ok=True)
 _buffers: dict[str, list] = {}
 
-def _hf_path(fn): return f"streaming/{fn}"
+
+def _hf_path(fn):
+    return f"streaming/{fn}"
+
 
 def load_checkpoint() -> dict:
     try:
-        local = hf_hub_download(HF_HUB, _hf_path("checkpoint.json"),
-                                repo_type="dataset", token=HF_TOKEN,
-                                force_download=True)
-        with open(local) as f: cp = json.load(f)
-        print(f"♻️  Checkpoint: {cp}"); return cp
-    except EntryNotFoundError: return {}
-    except Exception as e: print(f"⚠ checkpoint: {e}"); return {}
+        local = hf_hub_download(
+            HF_HUB, _hf_path("checkpoint.json"), repo_type="dataset", token=HF_TOKEN, force_download=True
+        )
+        with open(local) as f:
+            cp = json.load(f)
+        print(f"♻️  Checkpoint: {cp}")
+        return cp
+    except EntryNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"⚠ checkpoint: {e}")
+        return {}
+
 
 def save_checkpoint(col: str, idx: int):
     cp = load_checkpoint()
-    cp[col] = idx; cp["ts"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    cp[col] = idx
+    cp["ts"] = time.strftime("%Y-%m-%d %H:%M:%S")
     api.upload_file(
         path_or_fileobj=json.dumps(cp, ensure_ascii=False).encode(),
         path_in_repo=_hf_path("checkpoint.json"),
-        repo_id=HF_HUB, repo_type="dataset",
+        repo_id=HF_HUB,
+        repo_type="dataset",
         commit_message=f"ckpt: {col}@{idx}",
     )
 
-def is_done(col, total): return load_checkpoint().get(col,-1) >= total-1
 
-def get_tmp(col, kind): return TMP_DIR / f"{kind}_{col}.jsonl"
+def is_done(col, total):
+    return load_checkpoint().get(col, -1) >= total - 1
+
+
+def get_tmp(col, kind):
+    return TMP_DIR / f"{kind}_{col}.jsonl"
+
 
 def buffer_chunks(chunks, col, kind="agentic"):
     k = f"{kind}_{col}"
     _buffers.setdefault(k, []).extend(chunks)
 
+
 def flush_buffer(col, kind="agentic", force=False):
-    k = f"{kind}_{col}"; buf = _buffers.get(k, [])
-    if not buf or (len(buf) < FLUSH_EVERY and not force): return
+    k = f"{kind}_{col}"
+    buf = _buffers.get(k, [])
+    if not buf or (len(buf) < FLUSH_EVERY and not force):
+        return
     tmp = get_tmp(col, kind)
     with open(tmp, "a", encoding="utf-8") as f:
-        for ch in buf: f.write(json.dumps(ch, ensure_ascii=False)+"\n")
+        for ch in buf:
+            f.write(json.dumps(ch, ensure_ascii=False) + "\n")
     api.upload_file(
         path_or_fileobj=str(tmp),
         path_in_repo=_hf_path(f"{k}.jsonl"),
-        repo_id=HF_HUB, repo_type="dataset",
+        repo_id=HF_HUB,
+        repo_type="dataset",
         commit_message=f"stream: {kind} {col} +{len(buf)}",
     )
     _buffers[k] = []
     print(f"  📤 flushed {len(buf)} {kind} → {col}")
 
+
 def load_existing(col, kind="agentic") -> list:
     try:
         local = hf_hub_download(
-            HF_HUB, _hf_path(f"{kind}_{col}.jsonl"),
-            repo_type="dataset", token=HF_TOKEN,
-            force_download=True, local_dir=str(TMP_DIR),
+            HF_HUB,
+            _hf_path(f"{kind}_{col}.jsonl"),
+            repo_type="dataset",
+            token=HF_TOKEN,
+            force_download=True,
+            local_dir=str(TMP_DIR),
             local_dir_use_symlinks=False,
         )
         rows = []
         with open(local, encoding="utf-8") as f:
             for line in f:
-                if line.strip(): rows.append(json.loads(line))
+                if line.strip():
+                    rows.append(json.loads(line))
         print(f"  ♻️  restored {len(rows)} {kind} ← {col}")
         return rows
-    except EntryNotFoundError: return []
-    except Exception as e: print(f"  ⚠ restore {kind}/{col}: {e}"); return []
+    except EntryNotFoundError:
+        return []
+    except Exception as e:
+        print(f"  ⚠ restore {kind}/{col}: {e}")
+        return []
+
 
 print("✅ HF Storage Manager ready")
 ```
@@ -207,11 +242,11 @@ print("\n=== mini_ds ==="); print(mini_ds); print(mini_ds[^0])
 
 ```python
 # Cell 04b – Set field names AFTER inspecting output above
-CONTENT_FIELD       = "content"        # ← edit if different
-COLLECTION_FIELD    = "collection"
-BOOK_ID_FIELD       = "book_id"
+CONTENT_FIELD = "content"  # ← edit if different
+COLLECTION_FIELD = "collection"
+BOOK_ID_FIELD = "book_id"
 SECTION_TITLE_FIELD = "section_title"
-PAGE_FIELD          = "page_number"
+PAGE_FIELD = "page_number"
 print("✅ Fields set")
 ```
 
@@ -243,71 +278,97 @@ for col in COLLECTIONS:
 
 try:
     from camel_tools.tokenizers.sent_tokenizer import SentTokenizer
+
     _camel = SentTokenizer()
+
     def split_sentences(text: str) -> list[str]:
-        text = re.sub(r'\s+', ' ', text).strip()
+        text = re.sub(r"\s+", " ", text).strip()
         return [s.strip() for s in _camel.tokenize(text) if s.strip()]
+
     print("✅ CAMeL SentTokenizer active")
 except Exception:
+
     def split_sentences(text: str) -> list[str]:
-        return [s.strip() for s in
-                re.split(r"(?<=[.!؟\n])\s+", text) if s.strip()]
+        return [s.strip() for s in re.split(r"(?<=[.!؟\n])\s+", text) if s.strip()]
+
     print("⚠️  regex sentence split active")
 
-INDEX_KW = ["فهرس","فهارس","محتويات","index"]
+INDEX_KW = ["فهرس", "فهارس", "محتويات", "index"]
+
 
 def choose_maxchars(section_title: str) -> int:
     t = section_title or ""
-    if any(k in t for k in INDEX_KW): return 1200
-    if any(k in t for k in ["غزوة","سيرة","قصة","حياة"]): return 2200
-    if any(k in t for k in ["دروس","فوائد","أحكام","مسألة"]): return 1600
+    if any(k in t for k in INDEX_KW):
+        return 1200
+    if any(k in t for k in ["غزوة", "سيرة", "قصة", "حياة"]):
+        return 2200
+    if any(k in t for k in ["دروس", "فوائد", "أحكام", "مسألة"]):
+        return 1600
     return MAX_CHARS
+
 
 def has_unbalanced_quran(text: str) -> bool:
     return "﴿" in text and "﴾" not in text
 
+
 def repair_spans(chunks: list[str]) -> list[str]:
     out, skip = [], False
     for i, cur in enumerate(chunks):
-        if skip: skip = False; continue
-        nxt = chunks[i+1] if i+1 < len(chunks) else None
+        if skip:
+            skip = False
+            continue
+        nxt = chunks[i + 1] if i + 1 < len(chunks) else None
         if nxt and has_unbalanced_quran(cur) and "﴾" in nxt:
-            out.append((cur+" "+nxt).strip()); skip = True
-        else: out.append(cur)
+            out.append((cur + " " + nxt).strip())
+            skip = True
+        else:
+            out.append(cur)
     return out
 
-def window_chunk(sentences: list[str], max_chars: int,
-                 overlap: int = 1) -> list[str]:
+
+def window_chunk(sentences: list[str], max_chars: int, overlap: int = 1) -> list[str]:
     chunks, i = [], 0
     while i < len(sentences):
-        buf, length = [], 0; j = i
-        while j < len(sentences) and length+len(sentences[j])+1 <= max_chars:
-            buf.append(sentences[j]); length += len(sentences[j])+1; j += 1
-        if not buf: buf = [sentences[j]]; j += 1
+        buf, length = [], 0
+        j = i
+        while j < len(sentences) and length + len(sentences[j]) + 1 <= max_chars:
+            buf.append(sentences[j])
+            length += len(sentences[j]) + 1
+            j += 1
+        if not buf:
+            buf = [sentences[j]]
+            j += 1
         text = " ".join(buf).strip()
-        if len(text) >= 200: chunks.append(text)
-        i = max(j - overlap, i+1)
+        if len(text) >= 200:
+            chunks.append(text)
+        i = max(j - overlap, i + 1)
     return repair_spans(chunks)
+
 
 def pre_chunk_row(row: dict) -> list[dict]:
     content = row.get(CONTENT_FIELD, "")
-    if not content.strip(): return []
-    sec       = row.get(SECTION_TITLE_FIELD, "") or ""
-    is_index  = any(k in sec for k in INDEX_KW)
+    if not content.strip():
+        return []
+    sec = row.get(SECTION_TITLE_FIELD, "") or ""
+    is_index = any(k in sec for k in INDEX_KW)
     max_chars = choose_maxchars(sec) if not is_index else 1200
     sentences = split_sentences(content)
-    chunks    = window_chunk(sentences, max_chars)
-    return [{
-        "text":           ch,
-        "collection":     row[COLLECTION_FIELD],
-        "chunk_type":     "pre",
-        "chunk_version":  "pre_v1",
-        "book_id":        row.get(BOOK_ID_FIELD),
-        "section_title":  sec,
-        "page_number":    row.get(PAGE_FIELD),
-        "is_index_page":  is_index,
-        "metadata":       {},
-    } for ch in chunks]
+    chunks = window_chunk(sentences, max_chars)
+    return [
+        {
+            "text": ch,
+            "collection": row[COLLECTION_FIELD],
+            "chunk_type": "pre",
+            "chunk_version": "pre_v1",
+            "book_id": row.get(BOOK_ID_FIELD),
+            "section_title": sec,
+            "page_number": row.get(PAGE_FIELD),
+            "is_index_page": is_index,
+            "metadata": {},
+        }
+        for ch in chunks
+    ]
+
 
 print("✅ Pre-chunking functions ready")
 ```
@@ -377,27 +438,28 @@ print("✅ LLM client ready")
 ```python
 # Cell 08 – Shared fallback + all chunker agents
 
+
 def _fallback(batch: list[dict], chunk_type: str) -> list[dict]:
     out = []
     for ch in batch:
         fb = ch.copy()
-        fb["chunk_type"]    = chunk_type
+        fb["chunk_type"] = chunk_type
         fb["chunk_version"] = CHUNK_VER
-        fb["metadata"]      = ch.get("metadata",{}) | {"fallback": True}
+        fb["metadata"] = ch.get("metadata", {}) | {"fallback": True}
         out.append(fb)
     return out
 
-def _base_chunk(item: dict, pre: dict, collection: str,
-                chunk_type: str, extra_meta: dict) -> dict:
+
+def _base_chunk(item: dict, pre: dict, collection: str, chunk_type: str, extra_meta: dict) -> dict:
     return {
-        "text":          item.get(list(item.keys())[-1], ""),  # last key = text field
-        "collection":    collection,
-        "chunk_type":    chunk_type,
+        "text": item.get(list(item.keys())[-1], ""),  # last key = text field
+        "collection": collection,
+        "chunk_type": chunk_type,
         "chunk_version": CHUNK_VER,
-        "book_id":       pre.get("book_id"),
+        "book_id": pre.get("book_id"),
         "section_title": pre.get("section_title"),
-        "page_number":   pre.get("page_number"),
-        "metadata":      extra_meta,
+        "page_number": pre.get("page_number"),
+        "metadata": extra_meta,
     }
 ```
 
@@ -786,50 +848,58 @@ print("✅ Router ready")
 # Cell 15 – Streaming pipeline: per-passage, checkpoint, HF flush
 
 embed_model = SentenceTransformer(EMBED_MODEL)
-VECTOR_DIM  = embed_model.get_sentence_embedding_dimension()
+VECTOR_DIM = embed_model.get_sentence_embedding_dimension()
+
 
 def embed_dataset(ds: Dataset) -> Dataset:
     def _batch(batch):
         embs = embed_model.encode(
-            batch["text"], batch_size=64,
-            normalize_embeddings=True, convert_to_numpy=True,
+            batch["text"],
+            batch_size=64,
+            normalize_embeddings=True,
+            convert_to_numpy=True,
             show_progress_bar=False,
         )
         return {"embedding": [e.astype("float32") for e in embs]}
+
     return ds.map(_batch, batched=True, batch_size=64, desc="Embedding")
+
 
 checkpoint = load_checkpoint()
 
 for col in COLLECTIONS:
     total = len(passages_splits[col])
     if is_done(col, total):
-        print(f"✅ {col} done ({total}) — skip"); continue
+        print(f"✅ {col} done ({total}) — skip")
+        continue
 
     start = checkpoint.get(col, -1) + 1
-    print(f"\n{'='*55}\n  {col}  [{start}/{total}]\n{'='*55}")
+    print(f"\n{'=' * 55}\n  {col}  [{start}/{total}]\n{'=' * 55}")
 
     # Restore existing chunks if resuming
     if start > 0:
-        for kind in ("agentic","pre"):
+        for kind in ("agentic", "pre"):
             rows = load_existing(col, kind)
-            tmp  = get_tmp(col, kind)
+            tmp = get_tmp(col, kind)
             with open(tmp, "a", encoding="utf-8") as f:
-                for r in rows: f.write(json.dumps(r, ensure_ascii=False)+"\n")
+                for r in rows:
+                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     pre_buf = []
 
     for idx in tqdm(range(start, total), desc=col):
-        row        = passages_splits[col][idx]
+        row = passages_splits[col][idx]
         pre_chunks = pre_chunk_row(row)
         if not pre_chunks:
-            save_checkpoint(col, idx); continue
+            save_checkpoint(col, idx)
+            continue
 
         buffer_chunks(pre_chunks, col, "pre")
         pre_buf.extend(pre_chunks)
 
-        batches          = batch_pre_chunks(pre_buf)
+        batches = batch_pre_chunks(pre_buf)
         complete_batches = batches[:-1] if len(batches) > 1 else batches
-        pre_buf          = batches[-1]  if len(batches) > 1 else []
+        pre_buf = batches[-1] if len(batches) > 1 else []
 
         for b in complete_batches:
             agentic = route_batch(b)
@@ -844,21 +914,22 @@ for col in COLLECTIONS:
     if pre_buf:
         buffer_chunks(route_batch(pre_buf), col, "agentic")
     flush_buffer(col, "agentic", force=True)
-    flush_buffer(col, "pre",     force=True)
+    flush_buffer(col, "pre", force=True)
 
     # Push final Dataset for this collection
     agentic_rows = load_existing(col, "agentic")
-    pre_rows     = load_existing(col, "pre")
+    pre_rows = load_existing(col, "pre")
     if agentic_rows:
         emb_ds = embed_dataset(Dataset.from_list(agentic_rows))
-        DatasetDict({
-            "chunks":     emb_ds,
-            "pre_chunks": Dataset.from_list(pre_rows) if pre_rows else Dataset.from_list([]),
-        }).push_to_hub(HF_HUB, config_name=col,
-                       commit_message=f"[{col}] chunks + embeddings")
+        DatasetDict(
+            {
+                "chunks": emb_ds,
+                "pre_chunks": Dataset.from_list(pre_rows) if pre_rows else Dataset.from_list([]),
+            }
+        ).push_to_hub(HF_HUB, config_name=col, commit_message=f"[{col}] chunks + embeddings")
         print(f"  ✅ pushed config '{col}'")
 
-    save_checkpoint(col, total-1)
+    save_checkpoint(col, total - 1)
     checkpoint = load_checkpoint()
 
 print("\n🎉 All collections done!")
@@ -878,7 +949,8 @@ qdrant = QdrantClient(":memory:")
 for col in COLLECTIONS:
     rows = load_existing(col, "agentic")
     if not rows:
-        print(f"⚠ No chunks for {col}"); continue
+        print(f"⚠ No chunks for {col}")
+        continue
 
     # Create collection
     qdrant.recreate_collection(
@@ -887,23 +959,22 @@ for col in COLLECTIONS:
     )
 
     # Embed + upsert in batches
-    texts   = [r["text"] for r in rows]
-    all_emb = embed_model.encode(texts, batch_size=64,
-                                  normalize_embeddings=True,
-                                  convert_to_numpy=True,
-                                  show_progress_bar=True)
+    texts = [r["text"] for r in rows]
+    all_emb = embed_model.encode(
+        texts, batch_size=64, normalize_embeddings=True, convert_to_numpy=True, show_progress_bar=True
+    )
 
     points = [
         PointStruct(
             id=i,
             vector=all_emb[i].tolist(),
             payload={
-                "text":          rows[i]["text"],
-                "chunk_type":    rows[i]["chunk_type"],
-                "book_id":       rows[i].get("book_id"),
-                "section_title": rows[i].get("section_title",""),
-                "page_number":   rows[i].get("page_number"),
-                "metadata":      rows[i].get("metadata",{}),
+                "text": rows[i]["text"],
+                "chunk_type": rows[i]["chunk_type"],
+                "book_id": rows[i].get("book_id"),
+                "section_title": rows[i].get("section_title", ""),
+                "page_number": rows[i].get("page_number"),
+                "metadata": rows[i].get("metadata", {}),
             },
         )
         for i in range(len(rows))
@@ -925,73 +996,79 @@ print(f"\n✅ Qdrant ready — {VECTOR_DIM}d vectors")
 # Cell 17 – Agent data models + shared verifiers
 @dataclass
 class Citation:
-    text:          str
-    book_id:       Any  = None
-    section_title: str  = ""
-    page_number:   Any  = None
-    score:         float= 0.0
-    metadata:      dict = field(default_factory=dict)
+    text: str
+    book_id: Any = None
+    section_title: str = ""
+    page_number: Any = None
+    score: float = 0.0
+    metadata: dict = field(default_factory=dict)
+
 
 @dataclass
 class AgentOutput:
-    answer:               str
-    citations:            list = field(default_factory=list)
-    metadata:             dict = field(default_factory=dict)
-    confidence:           float= 1.0
-    requires_human_review: bool= False
+    answer: str
+    citations: list = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    confidence: float = 1.0
+    requires_human_review: bool = False
+
 
 class IntentLabel(str, Enum):
-    FiqhHukm            = "fiqh_hukm"
-    FiqhMasaail         = "fiqh_masaail"
-    HadithMatn          = "hadith_matn"
-    HadithSharh         = "hadith_sharh"
-    TafsirAyah          = "tafsir_ayah"
-    AqeedahTawhid       = "aqeedah_tawhid"
-    SeerahEvent         = "seerah_event"
+    FiqhHukm = "fiqh_hukm"
+    FiqhMasaail = "fiqh_masaail"
+    HadithMatn = "hadith_matn"
+    HadithSharh = "hadith_sharh"
+    TafsirAyah = "tafsir_ayah"
+    AqeedahTawhid = "aqeedah_tawhid"
+    SeerahEvent = "seerah_event"
     IslamicHistoryEvent = "islamic_history_event"
-    ArabicGrammar       = "arabic_grammar"
-    TazkiyahSuluk       = "tazkiyah_suluk"
-    UsulFiqhQiyas       = "usul_fiqh_qiyas"
-    GeneralIslamic      = "general_islamic"
+    ArabicGrammar = "arabic_grammar"
+    TazkiyahSuluk = "tazkiyah_suluk"
+    UsulFiqhQiyas = "usul_fiqh_qiyas"
+    GeneralIslamic = "general_islamic"
+
 
 SERIOUS_VIOLATIONS = {
-    "strict_grounding_violation", "source_attribution_violation",
-    "misattributed_quran_text",   "missing_requested_evidence",
+    "strict_grounding_violation",
+    "source_attribution_violation",
+    "misattributed_quran_text",
+    "missing_requested_evidence",
     "answer_truncated",
 }
-QURAN_RE = re.compile(r'﴿(.+?)﴾')
+QURAN_RE = re.compile(r"﴿(.+?)﴾")
+
 
 def verify_quotes(passages, answer=""):
     issues = []
     for m in QURAN_RE.finditer(answer):
         q = m.group(1).strip()
-        if not any(q in p.get("text","") for p in passages):
-            issues.append({"type":"misattributed_quran_text",
-                           "message":f"اقتباس غير موثّق: ﴿{q[:40]}﴾"})
+        if not any(q in p.get("text", "") for p in passages):
+            issues.append({"type": "misattributed_quran_text", "message": f"اقتباس غير موثّق: ﴿{q[:40]}﴾"})
     return issues
+
 
 def verify_sources(passages):
     un = [p for p in passages if not p.get("book_id")]
-    return [{"type":"source_attribution_violation",
-             "message":f"{len(un)} مقطع بدون مصدر"}] if un else []
+    return [{"type": "source_attribution_violation", "message": f"{len(un)} مقطع بدون مصدر"}] if un else []
+
 
 def verify_sufficiency(passages, requires=True, minimum=1):
     if requires and len(passages) < minimum:
-        return [{"type":"missing_requested_evidence",
-                 "message":"لا يوجد دليل كافٍ"}]
+        return [{"type": "missing_requested_evidence", "message": "لا يوجد دليل كافٍ"}]
     return []
 
+
 def verify_temporal(passages, intent):
-    if intent not in (IntentLabel.SeerahEvent,IntentLabel.IslamicHistoryEvent):
+    if intent not in (IntentLabel.SeerahEvent, IntentLabel.IslamicHistoryEvent):
         return []
-    years = {p["metadata"].get("year_after_hijrah") or
-              p["metadata"].get("year_hijri")
-              for p in passages if p.get("metadata")}
+    years = {
+        p["metadata"].get("year_after_hijrah") or p["metadata"].get("year_hijri") for p in passages if p.get("metadata")
+    }
     years.discard(None)
     if len(years) > 3:
-        return [{"type":"temporal_inconsistency",
-                 "message":f"تضارب في التواريخ: {years}"}]
+        return [{"type": "temporal_inconsistency", "message": f"تضارب في التواريخ: {years}"}]
     return []
+
 
 print("✅ Models + verifiers ready")
 ```
@@ -1004,24 +1081,23 @@ print("✅ Models + verifiers ready")
 ```python
 # Cell 18 – Abstract CollectionAgent base
 class CollectionAgent(ABC):
-    name:       str   = "base"
-    COLLECTION: str   = ""
-    TOP_K:      int   = TOP_K
-    THRESHOLD:  float = 0.60
+    name: str = "base"
+    COLLECTION: str = ""
+    TOP_K: int = TOP_K
+    THRESHOLD: float = 0.60
 
     def __init__(self):
         pass  # uses global qdrant, embed_model, call_llm
 
     def query_intake(self, q: str) -> str:
-        q = re.sub(r'\s+', ' ', q).strip()
-        return re.sub(r'^(أخبرني عن|اشرح لي|ما هو|ما هي)\s*','', q)
+        q = re.sub(r"\s+", " ", q).strip()
+        return re.sub(r"^(أخبرني عن|اشرح لي|ما هو|ما هي)\s*", "", q)
 
     @abstractmethod
     def classify_intent(self, q: str) -> IntentLabel: ...
 
     def retrieve(self, q: str) -> list[dict]:
-        emb = embed_model.encode(q, normalize_embeddings=True,
-                                 convert_to_numpy=True)
+        emb = embed_model.encode(q, normalize_embeddings=True, convert_to_numpy=True)
         results = qdrant.search(
             collection_name=self.COLLECTION,
             query_vector=emb.tolist(),
@@ -1029,30 +1105,37 @@ class CollectionAgent(ABC):
             score_threshold=self.THRESHOLD,
             with_payload=True,
         )
-        return [{"text": r.payload.get("text",""),
-                 "score": r.score,
-                 "book_id": r.payload.get("book_id"),
-                 "section_title": r.payload.get("section_title",""),
-                 "page_number": r.payload.get("page_number"),
-                 "chunk_type": r.payload.get("chunk_type",""),
-                 "metadata": r.payload.get("metadata",{})}
-                for r in results]
+        return [
+            {
+                "text": r.payload.get("text", ""),
+                "score": r.score,
+                "book_id": r.payload.get("book_id"),
+                "section_title": r.payload.get("section_title", ""),
+                "page_number": r.payload.get("page_number"),
+                "chunk_type": r.payload.get("chunk_type", ""),
+                "metadata": r.payload.get("metadata", {}),
+            }
+            for r in results
+        ]
 
     def rerank(self, q: str, candidates: list[dict]) -> list[dict]:
         qw = set(q.split())
+
         def boost(c):
-            overlap = len(qw & set(c["text"].split())) / max(len(qw),1)
+            overlap = len(qw & set(c["text"].split())) / max(len(qw), 1)
             return c["score"] + 0.05 * overlap
+
         # dedup
         seen, deduped = set(), []
         for c in sorted(candidates, key=boost, reverse=True):
             h = hash(c["text"][:200])
-            if h not in seen: seen.add(h); deduped.append(c)
+            if h not in seen:
+                seen.add(h)
+                deduped.append(c)
         return deduped
 
     @abstractmethod
-    def verify(self, q: str, candidates: list[dict]) \
-        -> tuple[list[dict], list[dict]]: ...
+    def verify(self, q: str, candidates: list[dict]) -> tuple[list[dict], list[dict]]: ...
 
     @abstractmethod
     def generate(self, q: str, passages: list[dict]) -> str: ...
@@ -1060,21 +1143,25 @@ class CollectionAgent(ABC):
     def cite(self, passages: list[dict]) -> list[Citation]:
         seen, out = set(), []
         for p in passages:
-            k = (p.get("book_id"), p.get("section_title",""))
+            k = (p.get("book_id"), p.get("section_title", ""))
             if k not in seen:
                 seen.add(k)
-                out.append(Citation(text=p["text"][:300],
-                                    book_id=p.get("book_id"),
-                                    section_title=p.get("section_title",""),
-                                    page_number=p.get("page_number"),
-                                    score=p.get("score",0.0),
-                                    metadata=p.get("metadata",{})))
+                out.append(
+                    Citation(
+                        text=p["text"][:300],
+                        book_id=p.get("book_id"),
+                        section_title=p.get("section_title", ""),
+                        page_number=p.get("page_number"),
+                        score=p.get("score", 0.0),
+                        metadata=p.get("metadata", {}),
+                    )
+                )
         return out
 
     def run(self, query: str) -> AgentOutput:
-        t0         = time.perf_counter()
-        q          = self.query_intake(query)
-        intent     = self.classify_intent(q)
+        t0 = time.perf_counter()
+        q = self.query_intake(query)
+        intent = self.classify_intent(q)
         candidates = self.retrieve(q)
         candidates = self.rerank(q, candidates)
         verified, issues = self.verify(q, candidates)
@@ -1082,29 +1169,42 @@ class CollectionAgent(ABC):
         if not verified:
             return AgentOutput(
                 answer="لم أجد معلومات كافية في المصادر للإجابة على سؤالك.",
-                metadata={"agent": self.name, "collection": self.COLLECTION,
-                          "intent": intent.value, "is_verified": False,
-                          "verification_issues": issues, "retrieved": len(candidates),
-                          "verified": 0,
-                          "latency_ms": int((time.perf_counter()-t0)*1000)},
-                confidence=0.0, requires_human_review=True)
+                metadata={
+                    "agent": self.name,
+                    "collection": self.COLLECTION,
+                    "intent": intent.value,
+                    "is_verified": False,
+                    "verification_issues": issues,
+                    "retrieved": len(candidates),
+                    "verified": 0,
+                    "latency_ms": int((time.perf_counter() - t0) * 1000),
+                },
+                confidence=0.0,
+                requires_human_review=True,
+            )
 
-        answer    = self.generate(q, verified)
+        answer = self.generate(q, verified)
         citations = self.cite(verified)
 
-        issue_types = {i.get("type","") for i in issues}
+        issue_types = {i.get("type", "") for i in issues}
         has_serious = bool(issue_types & SERIOUS_VIOLATIONS)
 
         return AgentOutput(
-            answer=answer, citations=citations,
-            metadata={"agent": self.name, "collection": self.COLLECTION,
-                      "intent": intent.value,
-                      "is_verified": not has_serious,
-                      "verification_issues": issues,
-                      "retrieved": len(candidates), "verified": len(verified),
-                      "latency_ms": int((time.perf_counter()-t0)*1000)},
+            answer=answer,
+            citations=citations,
+            metadata={
+                "agent": self.name,
+                "collection": self.COLLECTION,
+                "intent": intent.value,
+                "is_verified": not has_serious,
+                "verification_issues": issues,
+                "retrieved": len(candidates),
+                "verified": len(verified),
+                "latency_ms": int((time.perf_counter() - t0) * 1000),
+            },
             confidence=0.85 if not has_serious else 0.4,
-            requires_human_review=has_serious)
+            requires_human_review=has_serious,
+        )
 ```
 
 
@@ -1115,122 +1215,192 @@ class CollectionAgent(ABC):
 ```python
 # Cell 19 – All 10 Collection Agents
 
+
 class SeerahAgent(CollectionAgent):
-    name = "SeerahAgent"; COLLECTION = "seerah_passages"
-    def classify_intent(self, q):  return IntentLabel.SeerahEvent
+    name = "SeerahAgent"
+    COLLECTION = "seerah_passages"
+
+    def classify_intent(self, q):
+        return IntentLabel.SeerahEvent
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_temporal(c, IntentLabel.SeerahEvent)
         issues += verify_sufficiency(c)
-        return ([], issues) if any(i["type"]=="missing_requested_evidence" for i in issues) else (c, issues)
+        return ([], issues) if any(i["type"] == "missing_requested_evidence" for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت وكيل سيرة. أجب من النصوص فقط. اذكر الأحداث والتواريخ والأماكن."
         return call_llm(sys, f"السؤال: {q}\n\nالنصوص:\n{ctx}\n\nالإجابة:")
 
+
 class FiqhAgent(CollectionAgent):
-    name = "FiqhAgent"; COLLECTION = "fiqh_passages"
+    name = "FiqhAgent"
+    COLLECTION = "fiqh_passages"
+
     def classify_intent(self, q):
-        return IntentLabel.FiqhHukm if any(k in q for k in ["حكم","يجوز","حلال","حرام"]) else IntentLabel.FiqhMasaail
+        return IntentLabel.FiqhHukm if any(k in q for k in ["حكم", "يجوز", "حلال", "حرام"]) else IntentLabel.FiqhMasaail
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_quotes(c, "") + verify_sufficiency(c, "دليل" in q or "حكم" in q)
         return ([], issues) if any(i["type"] in SERIOUS_VIOLATIONS for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
-        mvs = "\n".join(f"- {x['metadata'].get('hukm','')}: {x['metadata'].get('madhhab_views',{})}" for x in p if x.get("metadata",{}).get("hukm"))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
+        mvs = "\n".join(
+            f"- {x['metadata'].get('hukm', '')}: {x['metadata'].get('madhhab_views', {})}"
+            for x in p
+            if x.get("metadata", {}).get("hukm")
+        )
         sys = "أنت فقيه. اذكر الحكم ثم الدليل ثم أقوال المذاهب. التزم بالنصوص فقط."
-        return call_llm(sys, f"السؤال: {q}\n\n{ctx}" + (f"\n\nأقوال المذاهب:\n{mvs}" if mvs else "") + "\n\nالإجابة الفقهية:")
+        return call_llm(
+            sys, f"السؤال: {q}\n\n{ctx}" + (f"\n\nأقوال المذاهب:\n{mvs}" if mvs else "") + "\n\nالإجابة الفقهية:"
+        )
+
 
 class TafsirAgent(CollectionAgent):
-    name = "TafsirAgent"; COLLECTION = "quran_tafsir"
-    def classify_intent(self, q): return IntentLabel.TafsirAyah
+    name = "TafsirAgent"
+    COLLECTION = "quran_tafsir"
+
+    def classify_intent(self, q):
+        return IntentLabel.TafsirAyah
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_quotes(c)
-        return ([], issues) if any(i["type"]=="strict_grounding_violation" for i in issues) else (c, issues)
+        return ([], issues) if any(i["type"] == "strict_grounding_violation" for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت مفسر. اعتمد على النصوص فقط. اذكر السورة والآية."
         return call_llm(sys, f"السؤال التفسيري: {q}\n\n{ctx}\n\nالتفسير المختصر:")
 
+
 class HadithAgent(CollectionAgent):
-    name = "HadithAgent"; COLLECTION = "hadith_passages"
+    name = "HadithAgent"
+    COLLECTION = "hadith_passages"
+
     def classify_intent(self, q):
-        return IntentLabel.HadithSharh if any(k in q for k in ["شرح","معنى"]) else IntentLabel.HadithMatn
+        return IntentLabel.HadithSharh if any(k in q for k in ["شرح", "معنى"]) else IntentLabel.HadithMatn
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_quotes(c)
         for p in c:
-            if "ضعيف" in (p.get("metadata",{}).get("grading") or ""):
-                issues.append({"type":"weak_hadith_used","message":"حديث ضعيف"})
-        return c, issues   # warn only
+            if "ضعيف" in (p.get("metadata", {}).get("grading") or ""):
+                issues.append({"type": "weak_hadith_used", "message": "حديث ضعيف"})
+        return c, issues  # warn only
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']} — {x['metadata'].get('collection_name','')} {x['metadata'].get('hadith_number','')} — {x['metadata'].get('grading','')}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(
+            f"[{i + 1}] {x['text']} — {x['metadata'].get('collection_name', '')} {x['metadata'].get('hadith_number', '')} — {x['metadata'].get('grading', '')}"
+            for i, x in enumerate(p[:5])
+        )
         sys = "أنت محدّث. اذكر الحديث بنصه وشرحه من المصادر فقط."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة:")
 
+
 class AqeedahAgent(CollectionAgent):
-    name = "AqeedahAgent"; COLLECTION = "aqeedah_passages"
-    def classify_intent(self, q): return IntentLabel.AqeedahTawhid
+    name = "AqeedahAgent"
+    COLLECTION = "aqeedah_passages"
+
+    def classify_intent(self, q):
+        return IntentLabel.AqeedahTawhid
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_quotes(c) + verify_sufficiency(c, True)
         return ([], issues) if any(i["type"] in SERIOUS_VIOLATIONS for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت عالم عقيدة. اذكر الدليل. ردّ على الشبهة إن وُجدت."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة العقدية:")
 
+
 class HistoryAgent(CollectionAgent):
-    name = "HistoryAgent"; COLLECTION = "islamic_history_passages"
-    def classify_intent(self, q): return IntentLabel.IslamicHistoryEvent
+    name = "HistoryAgent"
+    COLLECTION = "islamic_history_passages"
+
+    def classify_intent(self, q):
+        return IntentLabel.IslamicHistoryEvent
+
     def verify(self, q, c):
         return c, verify_sources(c) + verify_temporal(c, IntentLabel.IslamicHistoryEvent)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت مؤرخ إسلامي. اذكر التواريخ والأحداث بدقة."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة:")
 
+
 class UsulFiqhAgent(CollectionAgent):
-    name = "UsulFiqhAgent"; COLLECTION = "usul_fiqh"
-    def classify_intent(self, q): return IntentLabel.UsulFiqhQiyas
+    name = "UsulFiqhAgent"
+    COLLECTION = "usul_fiqh"
+
+    def classify_intent(self, q):
+        return IntentLabel.UsulFiqhQiyas
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_sufficiency(c, True)
         return ([], issues) if any(i["type"] in SERIOUS_VIOLATIONS for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت أصولي. اذكر القاعدة وتطبيقاتها."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة الأصولية:")
 
+
 class SpiritualityAgent(CollectionAgent):
-    name = "SpiritualityAgent"; COLLECTION = "spirituality_passages"
-    def classify_intent(self, q): return IntentLabel.TazkiyahSuluk
+    name = "SpiritualityAgent"
+    COLLECTION = "spirituality_passages"
+
+    def classify_intent(self, q):
+        return IntentLabel.TazkiyahSuluk
+
     def verify(self, q, c):
-        issues    = verify_sources(c)
-        flagged   = [p for p in c if any(w in p["text"] for w in ["تكفير","غلو","ضلال"])]
-        if flagged: issues.append({"type":"tone_safety_flag","message":"محتوى يحتاج مراجعة"})
+        issues = verify_sources(c)
+        flagged = [p for p in c if any(w in p["text"] for w in ["تكفير", "غلو", "ضلال"])]
+        if flagged:
+            issues.append({"type": "tone_safety_flag", "message": "محتوى يحتاج مراجعة"})
         return [p for p in c if p not in flagged], issues
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت مرشد روحي. أجب بأسلوب تزكوي هادئ من النصوص."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة:")
 
+
 class ArabicLanguageAgent(CollectionAgent):
-    name = "ArabicLanguageAgent"; COLLECTION = "arabic_language_passages"
-    def classify_intent(self, q): return IntentLabel.ArabicGrammar
-    def verify(self, q, c): return c, verify_sources(c)
+    name = "ArabicLanguageAgent"
+    COLLECTION = "arabic_language_passages"
+
+    def classify_intent(self, q):
+        return IntentLabel.ArabicGrammar
+
+    def verify(self, q, c):
+        return c, verify_sources(c)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
-        exs = "\n".join(f"- {e}" for x in p for e in x.get("metadata",{}).get("examples",[])[:2])
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
+        exs = "\n".join(f"- {e}" for x in p for e in x.get("metadata", {}).get("examples", [])[:2])
         sys = "أنت نحوي. اذكر القاعدة والأمثلة."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}" + (f"\n\nأمثلة:\n{exs}" if exs else "") + "\n\nالإجابة:")
 
+
 class GeneralIslamicAgent(CollectionAgent):
-    name = "GeneralIslamicAgent"; COLLECTION = "general_islamic"
-    def classify_intent(self, q): return IntentLabel.GeneralIslamic
+    name = "GeneralIslamicAgent"
+    COLLECTION = "general_islamic"
+
+    def classify_intent(self, q):
+        return IntentLabel.GeneralIslamic
+
     def verify(self, q, c):
         issues = verify_sources(c) + verify_sufficiency(c, len(c) < 2)
-        return ([], issues) if any(i["type"]=="missing_requested_evidence" for i in issues) else (c, issues)
+        return ([], issues) if any(i["type"] == "missing_requested_evidence" for i in issues) else (c, issues)
+
     def generate(self, q, p):
-        ctx = "\n\n".join(f"[{i+1}] {x['text']}" for i,x in enumerate(p[:5]))
+        ctx = "\n\n".join(f"[{i + 1}] {x['text']}" for i, x in enumerate(p[:5]))
         sys = "أنت مساعد إسلامي. أجب بوضوح ودقة من النصوص."
         return call_llm(sys, f"السؤال: {q}\n\n{ctx}\n\nالإجابة:")
+
 
 print("✅ All 10 agents ready")
 ```
@@ -1250,29 +1420,33 @@ aqeedah_passages|islamic_history_passages|usul_fiqh|
 spirituality_passages|arabic_language_passages|general_islamic"""
 
 AGENTS = {
-    "seerah_passages":          SeerahAgent(),
-    "fiqh_passages":            FiqhAgent(),
-    "quran_tafsir":             TafsirAgent(),
-    "hadith_passages":          HadithAgent(),
-    "aqeedah_passages":         AqeedahAgent(),
+    "seerah_passages": SeerahAgent(),
+    "fiqh_passages": FiqhAgent(),
+    "quran_tafsir": TafsirAgent(),
+    "hadith_passages": HadithAgent(),
+    "aqeedah_passages": AqeedahAgent(),
     "islamic_history_passages": HistoryAgent(),
-    "usul_fiqh":                UsulFiqhAgent(),
-    "spirituality_passages":    SpiritualityAgent(),
+    "usul_fiqh": UsulFiqhAgent(),
+    "spirituality_passages": SpiritualityAgent(),
     "arabic_language_passages": ArabicLanguageAgent(),
-    "general_islamic":          GeneralIslamicAgent(),
+    "general_islamic": GeneralIslamicAgent(),
 }
 
+
 def route(query: str) -> tuple[str, list[str]]:
-    raw    = call_llm(_ROUTER_SYS, f"السؤال: {query}")
+    raw = call_llm(_ROUTER_SYS, f"السؤال: {query}")
     parsed = {}
-    try:   parsed = json.loads(re.sub(r"```.*?```","",raw,flags=re.S).strip())
-    except Exception: pass
-    primary   = parsed.get("primary","general_islamic")
-    secondary = parsed.get("secondary",[])
-    valid     = set(AGENTS)
-    primary   = primary if primary in valid else "general_islamic"
+    try:
+        parsed = json.loads(re.sub(r"```.*?```", "", raw, flags=re.S).strip())
+    except Exception:
+        pass
+    primary = parsed.get("primary", "general_islamic")
+    secondary = parsed.get("secondary", [])
+    valid = set(AGENTS)
+    primary = primary if primary in valid else "general_islamic"
     secondary = [c for c in secondary if c in valid and c != primary][:2]
     return primary, secondary
+
 
 def ask(question: str) -> AgentOutput:
     print(f"\n❓ {question}")
@@ -1282,13 +1456,18 @@ def ask(question: str) -> AgentOutput:
     if not result.citations and secondary:
         for col in secondary:
             fb = AGENTS[col].run(question)
-            if fb.citations: result = fb; break
-    print(f"  ✅ [{result.metadata.get('agent')}] "
-          f"verified={result.metadata.get('is_verified')} | "
-          f"citations={len(result.citations)} | "
-          f"{result.metadata.get('latency_ms')}ms")
+            if fb.citations:
+                result = fb
+                break
+    print(
+        f"  ✅ [{result.metadata.get('agent')}] "
+        f"verified={result.metadata.get('is_verified')} | "
+        f"citations={len(result.citations)} | "
+        f"{result.metadata.get('latency_ms')}ms"
+    )
     print(f"  📝 {result.answer[:250]}...")
     return result
+
 
 print("✅ Router + all agents instantiated")
 ```
@@ -1313,54 +1492,75 @@ requires_evidence(bool), difficulty(easy|medium|hard)
 [{{"question":"","gold_answer":"","answer_type":"factual","requires_evidence":false,"difficulty":"medium"}}]
 النص:\n{text}"""
 
+
 def generate_qa(chunk: dict, n: int = 2) -> list[dict]:
-    raw   = call_llm(QA_SYS, QA_USR.format(text=chunk["text"], n=n))
+    raw = call_llm(QA_SYS, QA_USR.format(text=chunk["text"], n=n))
     items = parse_json_safe(raw)
-    if not isinstance(items, list): return []
+    if not isinstance(items, list):
+        return []
     out = []
     for item in items:
-        if not item.get("question","").strip(): continue
-        out.append({
-            "id":               f"{chunk.get('collection','')[:4]}_{hash(item['question'])&0xFFFF:04x}",
-            "question":         item["question"],
-            "gold_answer":      item.get("gold_answer",""),
-            "answer_type":      item.get("answer_type","factual"),
-            "requires_evidence":item.get("requires_evidence",False),
-            "difficulty":       item.get("difficulty","medium"),
-            "collection":       chunk.get("collection",""),
-            "gold_passages":    [{"book_id": chunk.get("book_id"),
-                                  "section_title": chunk.get("section_title"),
-                                  "text_snippet": chunk["text"][:200]}],
-        })
+        if not item.get("question", "").strip():
+            continue
+        out.append(
+            {
+                "id": f"{chunk.get('collection', '')[:4]}_{hash(item['question']) & 0xFFFF:04x}",
+                "question": item["question"],
+                "gold_answer": item.get("gold_answer", ""),
+                "answer_type": item.get("answer_type", "factual"),
+                "requires_evidence": item.get("requires_evidence", False),
+                "difficulty": item.get("difficulty", "medium"),
+                "collection": chunk.get("collection", ""),
+                "gold_passages": [
+                    {
+                        "book_id": chunk.get("book_id"),
+                        "section_title": chunk.get("section_title"),
+                        "text_snippet": chunk["text"][:200],
+                    }
+                ],
+            }
+        )
     return out
 
+
 # Build QA dataset
-QA_TARGET = {"seerah_passages":50,"fiqh_passages":60,"quran_tafsir":40,
-             "hadith_passages":40,"aqeedah_passages":30,"islamic_history_passages":30,
-             "usul_fiqh":25,"spirituality_passages":20,
-             "arabic_language_passages":20,"general_islamic":20}
-import random; random.seed(42)
+QA_TARGET = {
+    "seerah_passages": 50,
+    "fiqh_passages": 60,
+    "quran_tafsir": 40,
+    "hadith_passages": 40,
+    "aqeedah_passages": 30,
+    "islamic_history_passages": 30,
+    "usul_fiqh": 25,
+    "spirituality_passages": 20,
+    "arabic_language_passages": 20,
+    "general_islamic": 20,
+}
+import random
+
+random.seed(42)
 all_qa = []
 
 for col in COLLECTIONS:
-    rows    = load_existing(col, "agentic")
-    target  = QA_TARGET.get(col, 20)
-    pool    = [r for r in rows if not r.get("metadata",{}).get("fallback")]
-    sampled = random.sample(pool, min(target//2+3, len(pool)))
+    rows = load_existing(col, "agentic")
+    target = QA_TARGET.get(col, 20)
+    pool = [r for r in rows if not r.get("metadata", {}).get("fallback")]
+    sampled = random.sample(pool, min(target // 2 + 3, len(pool)))
     col_qa, seen = [], set()
 
     for chunk in tqdm(sampled, desc=f"QA {col}"):
         for p in generate_qa(chunk, n=2):
             q_key = p["question"].strip().lower()
             if q_key not in seen and len(col_qa) < target:
-                seen.add(q_key); p["id"] = f"{col[:4]}_{len(col_qa):04d}"
+                seen.add(q_key)
+                p["id"] = f"{col[:4]}_{len(col_qa):04d}"
                 col_qa.append(p)
         time.sleep(1.0)
 
     all_qa.extend(col_qa)
     Dataset.from_list(col_qa).push_to_hub(
-        HF_HUB, config_name=f"{col}_qa", split="eval",
-        commit_message=f"[QA] {col} — {len(col_qa)} pairs")
+        HF_HUB, config_name=f"{col}_qa", split="eval", commit_message=f"[QA] {col} — {len(col_qa)} pairs"
+    )
     print(f"  ✅ {col}: {len(col_qa)} QA pairs")
 
 print(f"\n📊 Total QA pairs: {len(all_qa)}")
@@ -1376,61 +1576,92 @@ print(f"\n📊 Total QA pairs: {len(all_qa)}")
 
 eval_results = []
 for row in tqdm(all_qa, desc="Evaluating"):
-    try:    resp = AGENTS.get(row["collection"], AGENTS["general_islamic"]).run(row["question"])
+    try:
+        resp = AGENTS.get(row["collection"], AGENTS["general_islamic"]).run(row["question"])
     except Exception as e:
-        resp = AgentOutput(answer="", metadata={"error":str(e),"is_verified":False,"verification_issues":[]}, requires_human_review=True)
-    eval_results.append({
-        **{k: row[k] for k in ["id","collection","question","gold_answer","gold_passages","answer_type","difficulty","requires_evidence"]},
-        "agent_name":  resp.metadata.get("agent",""),
-        "answer":      resp.answer,
-        "citations":   [{"book_id":c.book_id,"section_title":c.section_title,"score":c.score} for c in resp.citations],
-        "metadata":    resp.metadata,
-        "requires_human_review": resp.requires_human_review,
-    })
+        resp = AgentOutput(
+            answer="",
+            metadata={"error": str(e), "is_verified": False, "verification_issues": []},
+            requires_human_review=True,
+        )
+    eval_results.append(
+        {
+            **{
+                k: row[k]
+                for k in [
+                    "id",
+                    "collection",
+                    "question",
+                    "gold_answer",
+                    "gold_passages",
+                    "answer_type",
+                    "difficulty",
+                    "requires_evidence",
+                ]
+            },
+            "agent_name": resp.metadata.get("agent", ""),
+            "answer": resp.answer,
+            "citations": [
+                {"book_id": c.book_id, "section_title": c.section_title, "score": c.score} for c in resp.citations
+            ],
+            "metadata": resp.metadata,
+            "requires_human_review": resp.requires_human_review,
+        }
+    )
+
 
 # ── Metrics ──────────────────────────────────────────────────────────────
 def compute_metrics(results):
     n = len(results)
-    if not n: return {}
+    if not n:
+        return {}
 
     recall_flags, faithful_flags, violations = [], [], Counter()
     for r in results:
-        gold_set   = {(p.get("book_id"), p.get("section_title","")) for p in r.get("gold_passages",[])}
-        ret_set    = {(c.get("book_id"), c.get("section_title","")) for c in r.get("citations",[])[:TOP_K]}
+        gold_set = {(p.get("book_id"), p.get("section_title", "")) for p in r.get("gold_passages", [])}
+        ret_set = {(c.get("book_id"), c.get("section_title", "")) for c in r.get("citations", [])[:TOP_K]}
         recall_flags.append(1 if gold_set and gold_set & ret_set else 0)
 
-        meta   = r.get("metadata",{}) or {}
-        issues = meta.get("verification_issues",[])
-        types  = {i.get("type","") if isinstance(i,dict) else i for i in issues}
-        for t in types: violations[t] += 1
+        meta = r.get("metadata", {}) or {}
+        issues = meta.get("verification_issues", [])
+        types = {i.get("type", "") if isinstance(i, dict) else i for i in issues}
+        for t in types:
+            violations[t] += 1
         faithful_flags.append(1 if meta.get("is_verified") and not (types & SERIOUS_VIOLATIONS) else 0)
 
     requires_ev = [r for r in results if r.get("requires_evidence")]
     return {
         "n": n,
-        "context_recall_at_10":  round(sum(recall_flags)/len(recall_flags),4) if recall_flags else 0,
-        "faithfulness_rate":     round(sum(faithful_flags)/n,4),
-        "evidence_completeness": round(sum(1 for r in requires_ev if r.get("citations"))/len(requires_ev),4) if requires_ev else None,
-        "human_review_rate":     round(sum(1 for r in results if r.get("requires_human_review"))/n,4),
-        "answer_coverage":       round(sum(1 for r in results if r.get("answer","").strip())/n,4),
-        "violation_rates":       {k:round(v/n,4) for k,v in violations.most_common()},
+        "context_recall_at_10": round(sum(recall_flags) / len(recall_flags), 4) if recall_flags else 0,
+        "faithfulness_rate": round(sum(faithful_flags) / n, 4),
+        "evidence_completeness": round(sum(1 for r in requires_ev if r.get("citations")) / len(requires_ev), 4)
+        if requires_ev
+        else None,
+        "human_review_rate": round(sum(1 for r in results if r.get("requires_human_review")) / n, 4),
+        "answer_coverage": round(sum(1 for r in results if r.get("answer", "").strip()) / n, 4),
+        "violation_rates": {k: round(v / n, 4) for k, v in violations.most_common()},
     }
 
-by_col = defaultdict(list)
-for r in eval_results: by_col[r["collection"]].append(r)
 
-print(f"\n{'='*62}")
+by_col = defaultdict(list)
+for r in eval_results:
+    by_col[r["collection"]].append(r)
+
+print(f"\n{'=' * 62}")
 print(f"  {'Collection':<30} {'Recall@10':>9} {'Faithful':>9} {'Coverage':>9}")
-print(f"{'='*62}")
+print(f"{'=' * 62}")
 all_metrics = {}
 for col in COLLECTIONS:
-    m = compute_metrics(by_col.get(col,[]))
-    if not m: continue
+    m = compute_metrics(by_col.get(col, []))
+    if not m:
+        continue
     all_metrics[col] = m
     print(f"  {col:<30} {m['context_recall_at_10']:>9.3f} {m['faithfulness_rate']:>9.3f} {m['answer_coverage']:>9.3f}")
-print(f"{'='*62}")
+print(f"{'=' * 62}")
 overall = compute_metrics(eval_results)
-print(f"  {'OVERALL':<30} {overall['context_recall_at_10']:>9.3f} {overall['faithfulness_rate']:>9.3f} {overall['answer_coverage']:>9.3f}")
+print(
+    f"  {'OVERALL':<30} {overall['context_recall_at_10']:>9.3f} {overall['faithfulness_rate']:>9.3f} {overall['answer_coverage']:>9.3f}"
+)
 ```
 
 
@@ -1442,28 +1673,30 @@ print(f"  {'OVERALL':<30} {overall['context_recall_at_10']:>9.3f} {overall['fait
 # Cell 23 – Push eval results + metrics to HF
 
 Dataset.from_list(eval_results).push_to_hub(
-    HF_HUB, config_name="qa_eval", split="eval",
-    commit_message="[eval] all collections — agents + metrics")
+    HF_HUB, config_name="qa_eval", split="eval", commit_message="[eval] all collections — agents + metrics"
+)
 
 api.upload_file(
-    path_or_fileobj=json.dumps({"per_collection":all_metrics,"overall":overall},
-                                ensure_ascii=False,indent=2).encode(),
+    path_or_fileobj=json.dumps(
+        {"per_collection": all_metrics, "overall": overall}, ensure_ascii=False, indent=2
+    ).encode(),
     path_in_repo="eval/metrics_summary.json",
-    repo_id=HF_HUB, repo_type="dataset",
+    repo_id=HF_HUB,
+    repo_type="dataset",
     commit_message="[eval] metrics summary",
 )
 
 # Stats
 chunk_counts = Counter()
 for col in COLLECTIONS:
-    rows = load_existing(col,"agentic")
+    rows = load_existing(col, "agentic")
     chunk_counts[col] = len(rows)
 
 print("\n📊 Final Stats:")
-print(f"{'='*45}")
+print(f"{'=' * 45}")
 for col, cnt in chunk_counts.most_common():
     print(f"  {col:<35} {cnt:>6}")
-print(f"{'='*45}")
+print(f"{'=' * 45}")
 print(f"  {'TOTAL':<35} {sum(chunk_counts.values()):>6}")
 print(f"\n🔗 https://huggingface.co/datasets/{HF_HUB}")
 ```
