@@ -4,6 +4,11 @@
 **Status:** ✅ **WORKING**  
 **Hadith Embedded:** 128 (of 650,986 total)
 
+> **Status: historical record.** `SanadsetHadithAgent` (`src/agents/sanadset_hadith_agent.py`)
+> was removed in the v2 migration. Hadith questions are now answered by `HadithCollectionAgent`
+> (`src/agents/collection/hadith.py`) over the `hadith_passages` collection. Module paths below
+> refer to the layout at the time of writing.
+
 ---
 
 ## 📊 What Was Built
@@ -17,7 +22,7 @@
   - Narrator extraction
   - LLM-powered answer synthesis with citations
 
-### 2. Embedding Pipeline (`scripts/embed_sanadset_hadith.py`)
+### 2. Embedding Pipeline (`scripts/data/embed_sanadset_hadith.py`)
 - **Purpose:** Process all 650K+ hadith from CSV and embed to Qdrant
 - **Features:**
   - Batch processing (32 hadith per batch)
@@ -62,21 +67,21 @@ Answer: بناءً على النصوص المسترجاعة:
 
 ### Resume from checkpoint
 ```bash
-python scripts/embed_sanadset_hadith.py
+python scripts/data/embed_sanadset_hadith.py
 ```
 
 ### Embed specific amount
 ```bash
 # First 10,000 hadith
-python scripts/embed_sanadset_hadith.py --limit 10000
+python scripts/data/embed_sanadset_hadith.py --limit 10000
 
 # With larger batches
-python scripts/embed_sanadset_hadith.py --batch-size 64
+python scripts/data/embed_sanadset_hadith.py --batch-size 64
 ```
 
 ### Full embedding (will take ~37 days on CPU)
 ```bash
-python scripts/embed_sanadset_hadith.py
+python scripts/data/embed_sanadset_hadith.py
 ```
 
 ---
@@ -86,8 +91,8 @@ python scripts/embed_sanadset_hadith.py
 | File | Lines | Purpose |
 |------|-------|---------|
 | `src/agents/sanadset_hadith_agent.py` | 338 | Hadith retrieval agent |
-| `scripts/embed_sanadset_hadith.py` | 223 | Embedding pipeline |
-| `scripts/test_sanadset_agent.py` | 42 | Agent testing script |
+| `scripts/data/embed_sanadset_hadith.py` | 223 | Embedding pipeline |
+| `scripts/tests/test_sanadset_agent.py` | 42 | Agent testing script |
 | `docs/SANADSET_HADITH_AGENT.md` | This file | Documentation |
 
 ---
