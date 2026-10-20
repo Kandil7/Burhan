@@ -47,7 +47,7 @@ class TitleLoader:
         """
         self.titles_dir = titles_dir or Path("data/processed/lucene_pages/titles")
         self._titles_cache: dict[int, dict[int, str]] = {}  # book_id -> {page -> title}
-        self._loaded_books = set()
+        self._loaded_books: set[int] = set()
 
     def get_title_for_page(self, book_id: int, page_num: int) -> str | None:
         """
@@ -111,7 +111,7 @@ class TitleLoader:
 
         return self._titles_cache.get(book_id, {})
 
-    def _load_book_titles(self, book_id: int):
+    def _load_book_titles(self, book_id: int) -> None:
         """
         Load all titles for a book from JSONL file.
 
