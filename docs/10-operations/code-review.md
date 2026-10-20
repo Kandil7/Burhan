@@ -1,5 +1,9 @@
 # Comprehensive Code Review - Burhan Islamic QA System
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## Executive Summary
 
 **Project**: Burhan Islamic QA System  
@@ -112,6 +116,7 @@ class Intent(str, Enum):
     # Existing...
     HAJJ = "hajj"  # Just add this, no other changes needed
 
+
 INTENT_ROUTING[Intent.HAJJ] = "hajj_tool"  # Add mapping
 ```
 
@@ -168,6 +173,7 @@ class ZakatCalculator(BaseTool):
        @abstractmethod
        async def execute(self, input: AgentInput) -> AgentOutput:
            pass
+
        # All agents must implement, but some may not need:
        # - _initialize()
        # - _format_passages()
@@ -245,6 +251,7 @@ src/
 class VectorStoreError(Exception):
     pass
 
+
 class VerseNotFoundError(VerseRetrievalError):
     pass
 ```
@@ -266,6 +273,7 @@ class Settings(BaseSettings):
 # query.py - global singleton
 _orchestrator_instance: ResponseOrchestrator | None = None
 
+
 def get_orchestrator() -> ResponseOrchestrator:
     global _orchestrator_instance
     if _orchestrator_instance is None:
@@ -282,8 +290,10 @@ def get_orchestrator() -> ResponseOrchestrator:
 ```python
 from fastapi import Depends
 
+
 def get_orchestrator() -> ResponseOrchestrator:
     return ResponseOrchestrator()  # Per-request instance
+
 
 # Or use lifecycle management
 @asynccontextmanager
@@ -363,7 +373,8 @@ class FiqhAgent(BaseAgent):
 def _register_default_fallbacks(self):
     from src.tools.zakat_calculator import ZakatCalculator  # Inside method
     from src.tools.inheritance_calculator import InheritanceCalculator
-    
+
+
 # router.py
 from src.config.intents import (
     Intent,
@@ -473,6 +484,7 @@ class VectorStore:
 # query.py - Singleton for orchestrator
 _orchestrator_instance: ResponseOrchestrator | None = None
 
+
 def get_orchestrator() -> ResponseOrchestrator:
     global _orchestrator_instance
     if _orchestrator_instance is None:
@@ -528,6 +540,7 @@ def calculate(
 **Fix:**
 ```python
 from pydantic import field_validator
+
 
 @field_validator("debts")
 @classmethod
@@ -594,11 +607,7 @@ Different tools return different response structures:
 
 ```python
 # ZakatCalculator returns
-{
-    "nisab_gold": 6375,
-    "nisab_silver": ...,
-    "zakat_amount": ...
-}
+{"nisab_gold": 6375, "nisab_silver": ..., "zakat_amount": ...}
 
 # PrayerTimesTool returns
 {
@@ -619,12 +628,13 @@ LLM calls are expensive but not cached
 ```python
 from src.infrastructure.redis import get_redis
 
+
 async def generate_with_cache(prompt: str) -> str:
     cache_key = hash(prompt)
     cached = await redis.get(cache_key)
     if cached:
         return cached
-    
+
     result = await llm.generate(prompt)
     await redis.setex(cache_key, 3600, result)
     return result
@@ -745,6 +755,7 @@ As mentioned above - needs parameterized queries
 # Using synchronous SQLAlchemy in async FastAPI
 from src.infrastructure.db_sync import get_sync_session
 
+
 @router.get("/surahs")
 async def list_surahs(db_session=Depends(get_sync_session)):
     surahs = db_session.query(Surah).all()  # Blocking!
@@ -755,6 +766,7 @@ async def list_surahs(db_session=Depends(get_sync_session)):
 **Fix:** Use async SQLAlchemy or run in thread pool:
 ```python
 import asyncio
+
 
 @router.get("/surahs")
 async def list_surahs(db_session=Depends(get_sync_session)):
@@ -782,7 +794,7 @@ db_session.query(Ayah).filter(Ayah.surah_id == surah.id).all()
 **Fix:** Add index:
 ```python
 class Ayah(Base):
-    __table_args__ = (Index('idx_surah_id', 'surah_id'),)
+    __table_args__ = (Index("idx_surah_id", "surah_id"),)
 ```
 
 ---
