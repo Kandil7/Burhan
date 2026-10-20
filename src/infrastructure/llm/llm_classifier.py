@@ -9,16 +9,17 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 from openai import AsyncOpenAI
 
-from src.application.router.hybrid_classifier import (
-    _classify_quran_subintent,
-    _detect_language,
-    _infer_requires_retrieval,
+from src.application.router.hybrid_classifier import detect_language as _detect_language
+from src.domain.intents import (
+    INTENT_DESCRIPTIONS,
+    Intent,
+    QuranSubIntent,
+    classify_quran_subintent,
+    infer_requires_retrieval,
 )
-from src.domain.intents import INTENT_DESCRIPTIONS, Intent, QuranSubIntent
 from src.domain.models import ClassificationResult
 
 logger = logging.getLogger(__name__)
@@ -150,7 +151,7 @@ class LLMIntentClassifier:
             response_format={"type": "json_object"},
         )
 
-        raw_content = response.choices[0].message.content.strip()
+        raw_content = (response.choices[0].message.content or "").strip()
         logger.debug(
             "llm_classifier.response",
             extra={"preview": raw_content[:300], "model": self._model},
@@ -193,7 +194,7 @@ class LLMIntentClassifier:
         subquestions = [str(q) for q in subquestions if q]
 
         # ── Quran sub-intent (safe cast + pattern fallback) ───────────────
-        q_sub: Optional[QuranSubIntent] = None
+        q_sub: QuranSubIntent | None = None
         if intent is Intent.QURAN:
             sub_str = raw.get("sub_intent")
             if sub_str:
@@ -204,11 +205,11 @@ class LLMIntentClassifier:
                         "llm_classifier.unknown_sub_intent",
                         extra={"raw_sub_intent": sub_str},
                     )
-                    q_sub, _ = _classify_quran_subintent(query)
+                    q_sub, _ = classify_quran_subintent(query)
             else:
-                q_sub, _ = _classify_quran_subintent(query)
+                q_sub, _ = classify_quran_subintent(query)
 
-            requires_retrieval = _infer_requires_retrieval(intent, q_sub)
+            requires_retrieval = infer_requires_retrieval(intent, q_sub)
 
         return ClassificationResult(
             intent=intent,
