@@ -78,9 +78,9 @@ _GENERAL_EVIDENCE_PATTERNS = [
 # Detects a Quranic verse in the answer:
 #   ﴿...﴾  or  سورة X: Y  or  الآية رقم Y
 _QURAN_IN_ANSWER_RE = re.compile(
-    r"[﴿﴾]"                         # Quran brackets
-    r"|سورة\s+[\u0600-\u06FF]+\s*:\s*\d+"   # سورة المائدة: 82
-    r"|سورة\s+[\u0600-\u06FF]+"     # سورة + name (looser)
+    r"[﴿﴾]"  # Quran brackets
+    r"|سورة\s+[\u0600-\u06FF]+\s*:\s*\d+"  # سورة المائدة: 82
+    r"|سورة\s+[\u0600-\u06FF]+"  # سورة + name (looser)
     r"|الآية\s+(?:رقم\s+)?\d+",
     re.UNICODE,
 )
@@ -88,26 +88,20 @@ _QURAN_IN_ANSWER_RE = re.compile(
 # Detects a Hadith in the answer:
 #   «...»  or  صحيح البخاري / مسلم / رواه / أخرجه
 _HADITH_IN_ANSWER_RE = re.compile(
-    r"«.{10,200}»"                      # quoted hadith text
-    r"|صحيح\s+(?:البخاري|مسلم)"        # major collections
-    r"|رواه\s+[\u0600-\u06FF]+"        # رواه X
-    r"|أخرجه\s+[\u0600-\u06FF]+"       # أخرجه X
-    r"|حديث\s+رقم\s+\d+"               # حديث رقم N
-    r"|ﷺ[^.]{5,100}قال",              # النبي ﷺ ... قال (attribution)
+    r"«.{10,200}»"  # quoted hadith text
+    r"|صحيح\s+(?:البخاري|مسلم)"  # major collections
+    r"|رواه\s+[\u0600-\u06FF]+"  # رواه X
+    r"|أخرجه\s+[\u0600-\u06FF]+"  # أخرجه X
+    r"|حديث\s+رقم\s+\d+"  # حديث رقم N
+    r"|ﷺ[^.]{5,100}قال",  # النبي ﷺ ... قال (attribution)
     re.UNICODE | re.DOTALL,
 )
 
 # ── Compiled request regexes ─────────────────────────────────────────────────
 
-_QURAN_REQUEST_RE = re.compile(
-    "|".join(_QURAN_REQUEST_PATTERNS), re.UNICODE
-)
-_HADITH_REQUEST_RE = re.compile(
-    "|".join(_HADITH_REQUEST_PATTERNS), re.UNICODE
-)
-_GENERAL_EVIDENCE_RE = re.compile(
-    "|".join(_GENERAL_EVIDENCE_PATTERNS), re.UNICODE
-)
+_QURAN_REQUEST_RE = re.compile("|".join(_QURAN_REQUEST_PATTERNS), re.UNICODE)
+_HADITH_REQUEST_RE = re.compile("|".join(_HADITH_REQUEST_PATTERNS), re.UNICODE)
+_GENERAL_EVIDENCE_RE = re.compile("|".join(_GENERAL_EVIDENCE_PATTERNS), re.UNICODE)
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
@@ -163,10 +157,7 @@ def detect_missing_requested_evidence(
         violations.append(
             {
                 "type": "missing_quran_evidence",
-                "message": (
-                    "User requested a Quranic verse but none was found "
-                    "in the generated answer."
-                ),
+                "message": ("User requested a Quranic verse but none was found in the generated answer."),
                 "details": {
                     "trigger_pattern": match.group(0) if match else "",
                     "has_quran_in_answer": False,
@@ -183,10 +174,7 @@ def detect_missing_requested_evidence(
         violations.append(
             {
                 "type": "missing_hadith_evidence",
-                "message": (
-                    "User requested a Hadith but none was found "
-                    "in the generated answer."
-                ),
+                "message": ("User requested a Hadith but none was found in the generated answer."),
                 "details": {
                     "trigger_pattern": match.group(0) if match else "",
                     "has_hadith_in_answer": False,
