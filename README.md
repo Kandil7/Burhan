@@ -29,7 +29,7 @@
 **April 19, 2026:** Successfully completed **legacy code cleanup**:
 
 - ✅ **Removed 20+ orphaned files** - test_*.py, debug_*.py, *.log
-- ✅ **Fixed missing modules** - Created `src/agents/base.py` and `src/agents/collection_agent.py` 
+- ✅ **Fixed missing modules** - Created `src/agents/base.py` and `src/agents/collection/base.py` 
 - ✅ **Migrated imports** - All imports now use canonical paths
 - ✅ **Complete documentation** - File-by-file guide in docs/11-learning/
 
@@ -107,7 +107,7 @@ See [v2 Migration Notes](./docs/8-development/refactoring/V2_MIGRATION_NOTES.md)
 | **Collections** | 10 vector collections |
 | **Test Coverage** | ~92% |
 | **API Endpoints** | 20+ |
-| **Verification Checks** | 8 (in src/verifiers/) |
+| **Verification Checks** | in `src/verification/checks/` |
 | **Retrieval Strategies** | Per-agent matrix |
 | **Agent Configs** | 10 YAML files |
 | **System Prompts** | 11 prompt files |
@@ -452,14 +452,12 @@ from datasets import load_dataset
 dataset = load_dataset("Kandil7/Athar-Datasets", split="train")
 
 # Load specific collection
-dataset = load_dataset("Kandil7/Athar-Datasets", 
-                      split="train",
-                      filters=[("collection", "fiqh_passages")])
+dataset = load_dataset("Kandil7/Athar-Datasets", split="train", filters=[("collection", "fiqh_passages")])
 ```
 
 ---
 
-#### 2. [Kandil7/Burhan-Embeddings](https://huggingface.co/datasets/Kandil7/Athar-Embeddings)
+#### 2. [Kandil7/Athar-Embeddings](https://huggingface.co/datasets/Kandil7/Athar-Embeddings)
 
 > **Pre-computed Embeddings** - BGE-M3 embeddings for semantic search
 
@@ -499,7 +497,7 @@ from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 
 # Load embeddings
-embeddings_dataset = load_dataset("Kandil7/Burhan-Embeddings", split="train")
+embeddings_dataset = load_dataset("Kandil7/Athar-Embeddings", split="train")
 
 # Or generate new embeddings
 model = SentenceTransformer("BGE-M3")
@@ -686,52 +684,32 @@ Burhan/
 │   │       ├── collections.py    # Collection configs
 │   │       └── payload_indexes.py
 │   │
-│   ├── agents/                      # 16+ specialized agents
-│   │   ├── legacy/                # Legacy agents (deprecated)
-│   │   ├── collection/            # v2 canonical agents (NEW)
-│   │   │   ├── base.py            # CollectionAgent base
-│   │   │   ├── fiqh.py            # FiqhCollectionAgent
-│   │   │   ├── hadith.py          # HadithCollectionAgent
-│   │   │   ├── tafsir.py          # TafsirCollectionAgent
-│   │   │   ├── aqeedah.py         # AqeedahCollectionAgent
-│   │   │   ├── seerah.py          # SeerahCollectionAgent
-│   │   │   ├── usul_fiqh.py       # UsulFiqhCollectionAgent
-│   │   │   ├── history.py         # HistoryCollectionAgent
-│   │   │   ├── language.py        # LanguageCollectionAgent
-│   │   │   ├── tazkiyah.py        # TazkiyahCollectionAgent
-│   │   │   └── general.py          # GeneralCollectionAgent
+│   ├── agents/                      # Base agent + v2 collection agents
 │   │   ├── base.py                 # BaseAgent, Citation
-│   │   ├── base_rag_agent.py       # BaseRAGAgent (legacy)
-│   │   ├── collection_agent.py    # CollectionAgent (deprecated)
-│   │   ├── fiqh_collection_agent.py   # FiqhCollectionAgent (deprecated)
-│   │   ├── aqeedah_collection_agent.py # AqeedahCollectionAgent (NEW)
-│   │   ├── seerah_collection_agent.py  # SeerahCollectionAgent (NEW)
-│   │   ├── usul_fiqh_collection_agent.py # UsulFiqhCollectionAgent (NEW)
-│   │   ├── history_collection_agent.py  # HistoryCollectionAgent (NEW)
-│   │   ├── language_collection_agent.py  # LanguageCollectionAgent (NEW)
-│   │   ├── registry.py             # AgentRegistry
 │   │   ├── chatbot_agent.py        # Greeting/small talk
-│   │   ├── fiqh_agent.py           # Fiqh rulings (legacy)
-│   │   ├── hadith_agent.py         # Hadith (legacy)
-│   │   ├── seerah_agent.py         # Seerah (legacy)
-│   │   └── general_islamic_agent.py # General knowledge (legacy)
+│   │   └── collection/            # v2 canonical agents
+│   │       ├── base.py            # CollectionAgent base
+│   │       ├── fiqh.py            # FiqhCollectionAgent
+│   │       ├── hadith.py          # HadithCollectionAgent
+│   │       ├── tafsir.py          # TafsirCollectionAgent
+│   │       ├── aqeedah.py         # AqeedahCollectionAgent
+│   │       ├── seerah.py          # SeerahCollectionAgent
+│   │       ├── usul_fiqh.py       # UsulFiqhCollectionAgent
+│   │       ├── history.py         # HistoryCollectionAgent
+│   │       ├── language.py        # LanguageCollectionAgent
+│   │       ├── tazkiyah.py        # TazkiyahCollectionAgent
+│   │       └── general.py         # GeneralCollectionAgent
 │   │
-│   ├── knowledge/                    # RAG pipeline (Phase 9 enhanced)
-│   │   ├── embedding_model.py      # BGE-M3 embeddings
-│   │   ├── vector_store.py         # Qdrant operations
-│   │   ├── hybrid_search.py       # Semantic + keyword
-│   │   ├── embedding_cache.py     # Redis cache (Phase 9)
-│   │   ├── bm25_retriever.py      # BM25 search (Phase 9)
-│   │   ├── query_expander.py      # Islamic synonyms (Phase 9)
-│   │   ├── reranker.py            # Cross-encoder (Phase 9)
-│   │   ├── hierarchical_retriever.py
-│   │   ├── title_loader.py
-│   │   ├── hadith_grader.py
-│   │   └── book_weighter.py
+│   ├── indexing/                    # RAG pipeline
+│   │   ├── embeddings/             # embedding_model (BGE-M3), embedding_cache, bge_m3, e5
+│   │   ├── lexical/                # bm25_index, tantivy_index
+│   │   ├── metadata/               # author/master catalogs, enrichment, title_loader
+│   │   ├── pipelines/              # ingest_athar, build_collection_indexes
+│   │   └── vectorstores/           # qdrant_store, hybrid_client, hybrid_config, factory
 │   │
 │   ├── tools/                       # 5 deterministic tools
 │   │   ├── base.py
-│   │   ├── zak_at_calculator.py
+│   │   ├── zakat_calculator.py
 │   │   ├── inheritance_calculator.py
 │   │   ├── prayer_times_tool.py
 │   │   ├── hijri_calendar_tool.py
