@@ -158,7 +158,7 @@ async def get_redis() -> redis.Redis:
     return redis_client
 
 
-async def init_redis():
+async def init_redis() -> None:
     """
     Initialize Redis connection.
 
@@ -176,7 +176,7 @@ async def init_redis():
         logger.warning("redis.running_without_redis")
 
 
-async def close_redis():
+async def close_redis() -> None:
     """Close Redis connection."""
     global redis_client
     if redis_client:
@@ -197,7 +197,7 @@ async def cache_get(key: str) -> str | None:
     """
     try:
         client = await get_redis()
-        value = await client.get(key)
+        value: str | None = await client.get(key)
         if value:
             logger.debug("cache.hit", key=key)
         return value
@@ -206,7 +206,7 @@ async def cache_get(key: str) -> str | None:
         return None
 
 
-async def cache_set(key: str, value: str, ttl: int = 3600):
+async def cache_set(key: str, value: str, ttl: int = 3600) -> None:
     """
     Set value in cache with TTL.
 
@@ -223,7 +223,7 @@ async def cache_set(key: str, value: str, ttl: int = 3600):
         logger.error("cache.set_error", key=key, error=str(e))
 
 
-async def cache_delete(key: str):
+async def cache_delete(key: str) -> None:
     """
     Delete value from cache.
 
