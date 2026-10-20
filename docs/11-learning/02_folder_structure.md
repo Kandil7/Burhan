@@ -103,21 +103,22 @@ config/
 ```python
 INTENT_ROUTING = {
     "fiqh": "fiqh_agent",
-    "quran": "quran_pipeline",
+    "quran": "tafsir_agent",
     "islamic_knowledge": "general_islamic_agent",
     "greeting": "chatbot_agent",
     "zakat": "zakat_tool",
     "inheritance": "inheritance_tool",
-    "dua": "dua_tool",
+    "duas": "dua_tool",
     "hijri_calendar": "hijri_tool",
-    "prayer_times": "prayer_times_tool",
+    "prayer_times": "prayer_tool",
     "hadith": "hadith_agent",
     "tafsir": "tafsir_agent",
     "aqeedah": "aqeedah_agent",
     "seerah": "seerah_agent",
     "usul_fiqh": "usul_fiqh_agent",
-    "islamic_history": "islamic_history_agent",
-    "arabic_language": "arabic_language_agent",
+    "islamic_history": "history_agent",
+    "arabic_language": "language_agent",
+    "islamic_tazkiyah": "tazkiyah_agent",
 }
 ```
 
@@ -170,6 +171,7 @@ registry.register("fiqh_agent", FiqhAgent())
 registry.register("zakat_tool", ZakatCalculator())
 # ...
 
+
 def get_for_intent(intent: str) -> BaseAgent:
     return registry.get(intent)
 ```
@@ -196,14 +198,20 @@ def get_for_intent(intent: str) -> BaseAgent:
 
 ```
 agents/
-├── base.py                     # BaseAgent, AgentInput, AgentOutput
-├── base_rag_agent.py           # BaseRAGAgent (منطق RAG مشترك)
+├── base.py                     # BaseAgent, AgentInput, AgentOutput, Citation
 ├── chatbot_agent.py            # للترحيب والتحيات
-├── fiqh_agent.py               # للفتاوى والأحكام
-├── hadith_agent.py             # للأحاديث
-├── general_islamic_agent.py    # للمعارف الإسلامية العامة
-├── seerah_agent.py             # للسيرة النبوية
-└── (_agents محذوفة)            # fallback إلى general_islamic_agent
+└── collection/                 # وكلاء v2 القياسيون (config-backed)
+    ├── base.py                 # CollectionAgent (منطق RAG مشترك)
+    ├── fiqh.py                 # للفتاوى والأحكام
+    ├── usul_fiqh.py            # لأصول الفقه
+    ├── hadith.py               # للأحاديث
+    ├── tafsir.py               # للتفسير والقرآن
+    ├── aqeedah.py              # للعقيدة
+    ├── seerah.py               # للسيرة النبوية
+    ├── history.py              # للتاريخ الإسلامي
+    ├── language.py             # للغة العربية
+    ├── tazkiyah.py             # للتزكية
+    └── general.py              # للمعارف الإسلامية العامة
 ```
 
 ### 🏗️ التسلسل الهرمي
@@ -211,22 +219,25 @@ agents/
 ```
 BaseAgent (abstract)
     ├── ChatbotAgent (template-based)
-    ├── FiqhAgent (standalone RAG)
-    ├── HadithAgent (standalone RAG)
-    ├── GeneralIslamicAgent (standalone RAG)
-    └── BaseRAGAgent (shared RAG logic)
-        └── SeerahAgent
+    └── CollectionAgent (v2 القياسي: retrieval + verification + generation)
+        ├── FiqhCollectionAgent
+        ├── HadithCollectionAgent
+        ├── TafsirCollectionAgent
+        ├── AqeedahCollectionAgent
+        ├── SeerahCollectionAgent
+        ├── UsulFiqhCollectionAgent
+        ├── HistoryCollectionAgent
+        ├── LanguageCollectionAgent
+        ├── TazkiyahCollectionAgent
+        └── GeneralCollectionAgent
 ```
 
-### 🎯 لماذا بعض الوكلاء standalone والبعض يرث BaseRAGAgent؟
+### 🎯 لماذا كل الوكلاء يرثون CollectionAgent؟
 
-**الوكلاء المستقلة** (Fiqh, Hadith, General):
-- كُتبت أولاً، كل واحد بنى راج خاص به
-- تحتوي على تكرار في الكود
-
-**BaseRAGAgent**:
-- محاولة لاحقاً لتقليل التكرار
-- فقط SeerahAgent يستخدمه حالياً
+**CollectionAgent (base):**
+- صنف أساسي واحد يوحّد الاسترجاع والتحقق والتوليد والاقتباسات
+- كل وكيل مجال يحدد الإعدادات فقط (المجموعات، الاستراتيجية، فحوصات التحقق)
+- الإعدادات في `config/agents/*.yaml` والبرومبتات في `prompts/`
 
 ---
 
@@ -295,7 +306,7 @@ QuranSubIntent = {
     "VERSE_LOOKUP": "ما هي الآية رقم 255 من البقرة؟",
     "INTERPRETATION": "ما تفسير هذه الآية؟",
     "ANALYTICS": "كم مرة ذكرت كلمة الرحمة في القرآن؟",
-    "QUOTATION_VALIDATION": "هل هذا الاقتباس من القرآن صحيح؟"
+    "QUOTATION_VALIDATION": "هل هذا الاقتباس من القرآن صحيح؟",
 }
 ```
 
@@ -313,24 +324,30 @@ SELECT COUNT(*) FROM quran_verses WHERE text LIKE '%الرحمة%'
 
 ---
 
-## 7️⃣ مجلد `src/knowledge/` - بنية الـ RAG
+## 7️⃣ مجلدات `src/indexing/` و `src/retrieval/` - بنية الـ RAG
 
 ### 📍 الوظيفة
-**كل ما يتعلق بالـ RAG**: التضمين، المتجهات، البحث، الاسترجاع.
+**كل ما يتعلق بالـ RAG**: التضمين، المتجهات، الفهرسة المعجمية، والاسترجاع.
+تم تقسيم المجلد القديم `src/knowledge/` إلى `src/indexing/` و `src/retrieval/`.
 
 ### 📁 الملفات
 
 ```
-knowledge/
-├── embedding_model.py          # BAAI/bge-m3 wrapper
-├── embedding_cache.py          # Redis caching للمتجهات
-├── vector_store.py             # Qdrant integration
-├── hybrid_search.py            # Semantic + BM25 + RRF
-├── hierarchical_retriever.py   # Book-level retrieval
-├── hierarchical_chunker.py     # Document chunking
-├── title_loader.py             # Title/chapter metadata
-├── hadith_grader.py            # Hadith authenticity grading
-└── book_weighter.py            # Book importance scoring
+indexing/
+├── embeddings/
+│   ├── embedding_model.py      # BAAI/bge-m3 wrapper
+│   └── embedding_cache.py      # Redis caching للمتجهات
+├── lexical/
+│   └── bm25_index.py           # فهرس BM25
+└── vectorstores/
+    ├── qdrant_store.py         # Qdrant integration
+    └── hybrid_client.py        # Semantic + BM25 + RRF
+
+retrieval/
+├── retrievers/
+│   └── hierarchical_retriever.py  # Book-level retrieval
+└── ranking/
+    └── book_weighter.py        # Book importance scoring
 ```
 
 ### 🔄 تدفق الـ RAG
@@ -338,18 +355,18 @@ knowledge/
 ```
 مستند جديد (كتاب فقه)
     ↓
-hierarchical_chunker.py         → تقسيم إلى فقرات
+scripts/ingestion/chunk_all_books.py   → تقسيم إلى فقرات
     ↓
-embedding_model.py              → توليد متجه 1024-dim
+indexing/embeddings/embedding_model.py → توليد متجه (BAAI/bge-m3)
     ↓
-embedding_cache.py              → حفظ في Redis
+indexing/embeddings/embedding_cache.py → حفظ في Redis
     ↓
-vector_store.py                 → استيراد إلى Qdrant
+indexing/vectorstores/qdrant_store.py  → استيراد إلى Qdrant
     ↓
-5.7 مليون متجه في 10 مجموعات
+المتجهات موزعة على مجموعات Qdrant
 ```
 
-### 🔍 `hybrid_search.py` - البحث المختلط
+### 🔍 `indexing/vectorstores/hybrid_client.py` - البحث المختلط
 
 ```
 سؤال: "ما حكم صلاة العيد؟"
@@ -392,6 +409,7 @@ infrastructure/
 # Sync (للمهاجرين والعمليات البسيطة)
 def get_sync_session():
     return SessionLocal()
+
 
 # Async (لـ FastAPI endpoints)
 async def get_async_session():
@@ -695,16 +713,16 @@ prompts/
 
 1. **كل مجلد له مسؤولية واحدة** (Single Responsibility)
 2. **التدفق**: API → Core → Agent/Tool → Knowledge → Infrastructure
-3. **RAG موجود في `knowledge/`** وليس في `agents/`
+3. **RAG موجود في `indexing/` و `retrieval/`** وليس في `agents/`
 4. **الإعدادات في `config/`** ولا توجد hardcoded values
 5. **الوكلاء في `agents/`** والأدوات الحتمية في `tools/`
 
 ### 📝 تمرين صغير
 
 افتح المجلد `src/agents/` وأجب:
-1. كم ملف موجود؟
-2. ما الفرق بين `base.py` و `base_rag_agent.py`؟
-3. لماذا بعض الوكلاء standalone والبعض يرث BaseRAGAgent؟
+1. كم وكيل مجال موجود داخل `collection/`؟
+2. ما الفرق بين `base.py` و `collection/base.py`؟
+3. لماذا كل وكلاء المجالات يرثون CollectionAgent؟
 
 ### 🔜 الخطوة التالية المنطقية
 
