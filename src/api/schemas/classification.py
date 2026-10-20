@@ -6,7 +6,7 @@ Provides request/response models for the /classify endpoint.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,8 +31,8 @@ class ClassificationResultSchema(BaseModel):
     reasoning: str
     requires_retrieval: bool
     method: str
-    quran_subintent: Optional[str] = None
-    subquestions: List[str] = []
+    quran_subintent: str | None = None
+    subquestions: list[str] = []
 
 
 class RoutingDecisionSchema(BaseModel):
@@ -40,7 +40,7 @@ class RoutingDecisionSchema(BaseModel):
 
     result: ClassificationResultSchema
     route: str
-    agent_metadata: Dict[str, Any] = {}
+    agent_metadata: dict[str, Any] = {}
 
 
 class HealthResponse(BaseModel):
