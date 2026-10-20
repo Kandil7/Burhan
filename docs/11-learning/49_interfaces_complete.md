@@ -11,9 +11,10 @@
 ```python
 # src/application/interfaces.py
 
+
 class IIntentClassifier(ABC):
     """واجهة المصنف."""
-    
+
     @abstractmethod
     async def classify(self, query: str) -> ClassificationResult:
         """تصنيف."""
@@ -78,15 +79,16 @@ class ILLMClient(ABC):
 ```python
 # src/agents/collection/base.py
 
+
 class ICollectionAgent(ABC):
     """واجهة الوكيل."""
-    
+
     @property
     @abstractmethod
     def config(self) -> CollectionAgentConfig:
         """التكوين."""
         pass
-    
+
     @abstractmethod
     async def execute(self, input: AgentInput) -> AgentOutput:
         """تنفيذ."""
@@ -102,21 +104,22 @@ class ICollectionAgent(ABC):
 ```python
 # src/tools/base.py
 
+
 class ITool(ABC):
     """واجهة الأداة."""
-    
+
     @property
     @abstractmethod
     def name(self) -> str:
         """الاسم."""
         pass
-    
+
     @property
     @abstractmethod
     def description(self) -> str:
         """الوصف."""
         pass
-    
+
     @abstractmethod
     async def execute(self, parameters: dict) -> dict:
         """تنفيذ."""
