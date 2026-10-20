@@ -28,7 +28,7 @@
 | **5** | `src/core/citation.py` | 350 | 📝 قريباً |
 | **6** | `src/agents/base.py` | 90 | 📝 قريباً |
 | **7** | `src/agents/chatbot_agent.py` | 160 | 📝 قريباً |
-| **8** | `src/agents/fiqh_agent.py` | 280 | 📝 قريباً |
+| **8** | `src/agents/collection/fiqh.py` | 280 | 📝 قريباً |
 | **9** | `src/tools/base.py` | 70 | 📝 قريباً |
 | **10** | `src/tools/zakat_calculator.py` | 350 | 📝 قريباً |
 
