@@ -1,8 +1,8 @@
 # Decisions Domain Module
 """Domain model for query routing and agent selection decisions."""
 
-from typing import Optional, List, Dict, Any
 from enum import Enum
+from typing import Any
 
 
 class DecisionType(str, Enum):
@@ -31,7 +31,7 @@ class Decision:
         decision_type: DecisionType,
         value: Any,
         confidence: float = 1.0,
-        reasoning: Optional[str] = None,
+        reasoning: str | None = None,
     ):
         self.decision_type = decision_type
         self.value = value
@@ -49,7 +49,7 @@ class AgentDecision(Decision):
         self,
         agent_id: str,
         confidence: float = 1.0,
-        reasoning: Optional[str] = None,
+        reasoning: str | None = None,
     ):
         super().__init__(
             decision_type=DecisionType.AGENT_SELECTION,
@@ -64,9 +64,9 @@ class CollectionDecision(Decision):
 
     def __init__(
         self,
-        collection_ids: List[str],
+        collection_ids: list[str],
         confidence: float = 1.0,
-        reasoning: Optional[str] = None,
+        reasoning: str | None = None,
     ):
         super().__init__(
             decision_type=DecisionType.COLLECTION_SELECTION,
@@ -83,7 +83,7 @@ class ResponseModeDecision(Decision):
         self,
         mode: ResponseMode,
         confidence: float = 1.0,
-        reasoning: Optional[str] = None,
+        reasoning: str | None = None,
     ):
         super().__init__(
             decision_type=DecisionType.RESPONSE_MODE,
