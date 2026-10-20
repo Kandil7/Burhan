@@ -1,62 +1,72 @@
-from src.retrieval.multi_collection_retriever import MultiCollectionRetriever
-from src.retrieval.collection_hybrid_retriever import CollectionHybridRetriever
-from src.indexing.vectorstores.qdrant_store import vector_store
-from src.indexing.embeddings.embedding_model import EmbeddingModel
-from src.config.constants import CollectionNames  # اللي فيه *_passages
+"""Hybrid retrieval adapters for one or more collections.
 
-embedding_model = EmbeddingModel()
-multi_retriever = MultiCollectionRetriever()
+The previous version of this module imported classes that no longer exist,
+used undefined names, and built a global retriever at import time. It is
+replaced by an explicit adapter over the current HybridSearcher API.
+"""
 
-for coll in [
-    CollectionNames.FIQH,
-    CollectionNames.HADITH,
-    CollectionNames.DUA,
-    CollectionNames.GENERAL,
-    CollectionNames.QURAN_TAFSIR,
-    CollectionNames.AQEEDAH,
-    CollectionNames.SEERAH,
-    CollectionNames.ISLAMIC_HISTORY,
-    CollectionNames.ARABIC_LANGUAGE,
-    CollectionNames.SPIRITUALITY,
-    CollectionNames.USUL_FIQH,
-]:
-    retr = CollectionHybridRetriever(
-        collection=coll,
-        vector_store=vector_store,
-        embedding_model=embedding_model,
-    )
-    multi_retriever.register_retriever(coll, retr)
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Any
+
+from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
+from src.retrieval.retrievers.multi_collection_retriever import MultiCollectionRetriever
+
+__all__ = ["CollectionHybridRetriever", "build_multi_collection_retriever"]
+
 
 class CollectionHybridRetriever:
-    """
-    Adapter to use HybridSearcher as a retriever for a single collection.
+    """Expose :class:`HybridSearcher` as a single-collection retriever.
 
     Usage:
-        retr = CollectionHybridRetriever(collection="fiqh_passages", ...)
-        results = await retr.retrieve(query="زكاة المال", top_k=10)
+        retriever = CollectionHybridRetriever(
+            collection="fiqh_passages",
+            vector_store=vector_store,
+            embedding_model=embedding_model,
+        )
+        results = await retriever.retrieve("زكاة المال", top_k=10)
     """
 
-    def __init__(self, collection: str, vector_store: VectorStore, embedding_model: Any):
+    def __init__(
+        self,
+        collection: str,
+        vector_store: Any,
+        embedding_model: Any,
+        k: int = 60,
+    ) -> None:
         self.collection = collection
+        self.vector_store = vector_store
         self.embedding_model = embedding_model
-        self.searcher = HybridSearcher(vector_store)
+        self.searcher = HybridSearcher(vector_store, k=k)
 
-    async def retrieve(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        # 1) Embed query
-        query_embedding: np.ndarray = await self.embedding_model.encode_query(query)
-
-        # 2) Run hybrid search on the given collection
-        results = await self.searcher.search(
+    async def retrieve(self, query: str, top_k: int = 10) -> list[dict[str, Any]]:
+        """Embed the query and run hybrid search on this collection."""
+        query_embedding = await self.embedding_model.encode_query(query)
+        return await self.searcher.search(
             query=query,
             query_embedding=query_embedding,
             collection=self.collection,
             top_k=top_k,
         )
 
-        # 3) Ensure collection is present in metadata
-        for r in results:
-            meta = r.get("metadata", {}) or {}
-            meta.setdefault("collection", self.collection)
-            r["metadata"] = meta
 
-        return results
+def build_multi_collection_retriever(
+    collections: Iterable[str],
+    vector_store: Any,
+    embedding_model: Any,
+    k: int = 60,
+) -> MultiCollectionRetriever:
+    """Build a :class:`MultiCollectionRetriever` with one adapter per collection."""
+    multi = MultiCollectionRetriever()
+    for collection in collections:
+        multi.register_retriever(
+            collection,
+            CollectionHybridRetriever(
+                collection=collection,
+                vector_store=vector_store,
+                embedding_model=embedding_model,
+                k=k,
+            ),
+        )
+    return multi
