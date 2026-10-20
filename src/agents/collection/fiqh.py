@@ -12,7 +12,9 @@ Phase 2: FiqhAgent with full verification pipeline.
 from __future__ import annotations
 
 import re
+from typing import Any
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -21,7 +23,6 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
-from src.agents.base import strip_cot_leakage
 from src.domain.intents import Intent
 
 # =============================================================================
@@ -114,9 +115,9 @@ class FiqhCollectionAgent(CollectionAgent):
     def __init__(
         self,
         config: CollectionAgentConfig | None = None,
-        embedding_model=None,
-        vector_store=None,
-        llm_client=None,
+        embedding_model: Any = None,
+        vector_store: Any = None,
+        llm_client: Any = None,
     ) -> None:
         # Build config from defaults if not provided
         if config is None:
@@ -199,24 +200,11 @@ class FiqhCollectionAgent(CollectionAgent):
         self,
         query: str,
         candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
     ) -> VerificationReport:
-        """Verify candidates against the query."""
-        from src.verification.suite_builder import run_verification_suite
-
-        suite = self.config.verification_suite if self.config else None
-
-        if suite:
-            return run_verification_suite(
-                suite=suite,
-                query=query,
-                candidates=candidates,
-            )
-
-        return VerificationReport.from_passages(
-            passages=candidates,
-            is_verified=True,
-            confidence=0.8,
-        )
+        """Verify evidence before generation and the answer after it."""
+        return self._verify(query, candidates, answer=answer, stage=stage)
 
     async def generate_answer(
         self,
