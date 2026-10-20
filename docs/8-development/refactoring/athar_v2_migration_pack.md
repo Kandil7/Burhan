@@ -1,5 +1,9 @@
 # Burhan v2 Migration Pack
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## 1) PR Review Checklist for `refactor/Burhan-v2-architecture`
 
 ### Architecture correctness
