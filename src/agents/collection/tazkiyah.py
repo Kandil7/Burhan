@@ -34,7 +34,7 @@ class TazkiyahCollectionAgent(CollectionAgent):
     """Tazkiyah (Spiritual Development) Collection Agent."""
 
     name = "tazkiyah"
-    COLLECTION = "tazkiyah_passages"
+    COLLECTION = "spirituality_passages"
 
     DEFAULT_STRATEGY = RetrievalStrategy(
         dense_weight=0.5,

@@ -54,7 +54,13 @@ except ImportError:
 # Qdrant
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, HnswConfigDiff, VectorParams, PointStruct
+    from qdrant_client.models import (
+        Distance,
+        HnswConfigDiff,
+        OptimizersConfigDiff,
+        PointStruct,
+        VectorParams,
+    )
 
     HAS_QDRANT = True
 except ImportError:
@@ -215,6 +221,31 @@ def list_collection_shards(collection_name: str) -> tuple[list[str], list[str]]:
     return emb_files, meta_files
 
 
+def shard_row_counts(collection_name: str, emb_files: list[str]) -> list[int]:
+    """Return the row count of every embedding shard from its published size.
+
+    The same rounding rule as get_hf_counts() keeps the per-shard counts
+    aligned with the collection total, so a resume can start at an exact row.
+    """
+    row_bytes = VECTOR_DIM * 4
+    prefix = f"{collection_name}/"
+    sizes: dict[str, int] = {}
+    api = HfApi()
+    for entry in api.list_repo_tree(repo_id=HF_REPO, repo_type="dataset", recursive=True):
+        path = getattr(entry, "path", "") or ""
+        size = getattr(entry, "size", None)
+        if size is None or not path.startswith(prefix):
+            continue
+        if "_emb_" in path and path.endswith(".npy"):
+            sizes[path] = size
+
+    counts: list[int] = []
+    for name in emb_files:
+        size = sizes.get(name, 0)
+        counts.append((size + row_bytes // 2) // row_bytes if size else 0)
+    return counts
+
+
 def read_meta_file(path: str) -> list[dict]:
     """Read one gzipped JSONL metadata shard into a list of dicts."""
     rows: list[dict] = []
@@ -230,12 +261,14 @@ def read_meta_file(path: str) -> list[dict]:
     return rows
 
 
-def iter_collection_shards(collection_name: str):
+def iter_collection_shards(collection_name: str, first_shard: int = 0, end_shard: int | None = None):
     """Download a collection one shard at a time, prefetching in parallel.
 
     Yields (shard_index, shard_count, vectors, passages) in shard order.
     Holding one shard keeps the process near 40 MB instead of several
     gigabytes, and a small thread pool overlaps network waits with upload.
+    first_shard skips shards that a previous run already uploaded, so a
+    resume does not re-download the whole collection.
     """
     emb_files, meta_files = list_collection_shards(collection_name)
     if not emb_files:
@@ -247,6 +280,10 @@ def iter_collection_shards(collection_name: str):
         print(f"  [warn] {len(emb_files)} embedding shards vs {len(meta_files)} metadata shards")
 
     total = min(len(emb_files), len(meta_files))
+    first = max(0, min(first_shard, total))
+    last = total if end_shard is None else max(first, min(end_shard, total))
+    if first or last < total:
+        print(f"  Using shards {first + 1} to {last} of {total}")
 
     def fetch(index: int) -> tuple[int, str, str]:
         last_error: Exception | None = None
@@ -276,8 +313,8 @@ def iter_collection_shards(collection_name: str):
         raise RuntimeError(f"shard {index + 1} download failed: {last_error}") from last_error
 
     with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as pool:
-        futures = {index: pool.submit(fetch, index) for index in range(total)}
-        for index in range(total):
+        futures = {index: pool.submit(fetch, index) for index in range(first, last)}
+        for index in range(first, last):
             _, emb_path, meta_path = futures[index].result()
             vectors = np.load(emb_path, mmap_mode="r")
             passages = read_meta_file(meta_path)
@@ -298,12 +335,19 @@ def upload_to_qdrant(
     shards,
     batch_size: int = QDRANT_BATCH_SIZE,
     force: bool = False,
+    base_rows: int = 0,
+    row_start: int | None = None,
+    row_end: int | None = None,
+    defer_index: bool = False,
 ) -> dict:
     """Upload shards to Qdrant with on-disk storage and a deferred HNSW index.
 
     Vectors and payload stay on disk so a bulk load does not grow RAM in step
     with the collection, and HNSW is disabled during the upload so every batch
     does not build its own index. The index is built once at the end.
+    base_rows is the number of rows in the shards skipped by first_shard.
+    Point ids are absolute row numbers, so row_start and row_end select the
+    exact rows to write and a repeated run rewrites instead of appending.
     """
     print(f"\n{'=' * 70}")
     print(f"Uploading to Qdrant: {collection_name}")
@@ -336,14 +380,24 @@ def upload_to_qdrant(
             on_disk_payload=True,
             hnsw_config=HnswConfigDiff(m=0),
         )
-        start_id = 0
+        default_row_start = 0
     else:
         print(f"  Appending after {existing_count:,} existing points...")
-        start_id = existing_count
+        default_row_start = existing_count
+
+    if row_start is None:
+        row_start = default_row_start
+
+    # Segment merges copy every vector in the merged segments. During a bulk
+    # append that rewrite can exceed the free space on the Docker volume, so
+    # optimization is paused until the upload finishes.
+    client.update_collection(
+        collection_name=collection_name,
+        optimizers_config=OptimizersConfigDiff(max_optimization_threads=0),
+    )
 
     total_points = 0
     rows_seen = 0
-    next_id = start_id
     started = time.time()
 
     def upsert(points: list) -> None:
@@ -363,17 +417,17 @@ def upload_to_qdrant(
                 f"{collection_name}: shard {shard_index} has {vectors.shape[1]} dimensions, expected {VECTOR_DIM}"
             )
 
-        if rows_seen + len(passages) <= start_id:
-            rows_seen += len(passages)
-            continue
-
-        skip = max(0, start_id - rows_seen)
-        for start in range(skip, len(passages), batch_size):
+        for start in range(0, len(passages), batch_size):
             end = min(start + batch_size, len(passages))
             batch_vectors = vectors[start:end].tolist()
 
             points = []
             for idx in range(end - start):
+                # Point ids are absolute row numbers, so re-running a range
+                # rewrites the same rows instead of appending duplicates.
+                row_index = base_rows + rows_seen + start + idx
+                if row_index < row_start or (row_end is not None and row_index >= row_end):
+                    continue
                 pas = passages[start + idx]
                 payload = {
                     "content": pas.get("content", ""),
@@ -391,27 +445,32 @@ def upload_to_qdrant(
                     "page_number": pas.get("page_number"),
                     "section_title": pas.get("section_title"),
                 }
-                points.append(PointStruct(id=next_id, vector=batch_vectors[idx], payload=payload))
-                next_id += 1
+                points.append(PointStruct(id=row_index, vector=batch_vectors[idx], payload=payload))
 
-            upsert(points)
-            total_points += len(points)
+            if points:
+                upsert(points)
+                total_points += len(points)
 
         rows_seen += len(passages)
         elapsed = time.time() - started
         rate = total_points / elapsed if elapsed else 0.0
         print(
-            f"  shard {shard_index + 1}/{shard_count}: {rows_seen:,} rows, {total_points:,} uploaded ({rate:.0f} pts/s)"
+            f"  shard {shard_index + 1}/{shard_count}: rows to {base_rows + rows_seen:,}, "
+            f"{total_points:,} uploaded ({rate:.0f} pts/s)"
         )
 
     elapsed = time.time() - started
     print(f"  Uploaded {total_points:,} points in {elapsed:.1f}s")
 
-    print("  Enabling HNSW index...")
-    client.update_collection(
-        collection_name=collection_name,
-        hnsw_config=HnswConfigDiff(m=16, ef_construct=100),
-    )
+    if defer_index:
+        print("  Deferring HNSW index (--defer-index)")
+    else:
+        print("  Enabling HNSW index...")
+        client.update_collection(
+            collection_name=collection_name,
+            hnsw_config=HnswConfigDiff(m=16, ef_construct=100),
+            optimizers_config=OptimizersConfigDiff(max_optimization_threads=1),
+        )
 
     return {
         "collection": collection_name,
@@ -458,6 +517,35 @@ def main():
     parser.add_argument("--batch-size", type=int, default=QDRANT_BATCH_SIZE, help="Qdrant upload batch size")
     parser.add_argument("--force", action="store_true", help="Force reupload even if collection exists")
     parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
+    parser.add_argument(
+        "--start-shard",
+        type=int,
+        default=0,
+        help="Resume a single collection at this 0-based shard index without re-downloading earlier shards",
+    )
+    parser.add_argument(
+        "--end-shard",
+        type=int,
+        default=None,
+        help="Stop before this 0-based shard index (exclusive)",
+    )
+    parser.add_argument(
+        "--row-start",
+        type=int,
+        default=None,
+        help="First absolute row index to write (default: existing point count)",
+    )
+    parser.add_argument(
+        "--row-end",
+        type=int,
+        default=None,
+        help="Stop before this absolute row index (exclusive)",
+    )
+    parser.add_argument(
+        "--defer-index",
+        action="store_true",
+        help="Keep HNSW disabled and optimization paused, for a run followed by another pass",
+    )
 
     args = parser.parse_args()
 
@@ -526,13 +614,27 @@ def main():
 
         coll_start = time.time()
         result = None
+        first_shard = args.start_shard if args.start_shard > 0 else 0
+        end_shard = args.end_shard
+        base_rows = 0
+        if first_shard:
+            emb_files, _ = list_collection_shards(coll)
+            counts = shard_row_counts(coll, emb_files)
+            base_rows = sum(counts[:first_shard])
+            print(
+                f"\nStarting {coll} at shard {first_shard + 1}/{len(emb_files)} ({base_rows:,} rows in skipped shards)"
+            )
         for attempt in range(1, 4):
             try:
                 result = upload_to_qdrant(
                     coll,
-                    iter_collection_shards(coll),
+                    iter_collection_shards(coll, first_shard, end_shard),
                     batch_size,
                     force=args.force and attempt == 1,
+                    base_rows=base_rows,
+                    row_start=args.row_start,
+                    row_end=args.row_end,
+                    defer_index=args.defer_index,
                 )
                 break
             except Exception as exc:  # noqa: BLE001 - resume from the current count and retry

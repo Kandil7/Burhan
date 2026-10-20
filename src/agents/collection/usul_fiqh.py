@@ -38,7 +38,7 @@ class UsulFiqhCollectionAgent(CollectionAgent):
     """Usul Fiqh (Principles of Jurisprudence) Collection Agent."""
 
     name = "usul_fiqh"
-    COLLECTION = "usul_fiqh_passages"
+    COLLECTION = "usul_fiqh"
 
     DEFAULT_STRATEGY = RetrievalStrategy(
         dense_weight=0.4,

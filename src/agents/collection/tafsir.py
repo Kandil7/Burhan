@@ -43,7 +43,7 @@ class TafsirCollectionAgent(CollectionAgent):
     """Tafsir (Quran Interpretation) Collection Agent."""
 
     name = "tafsir"
-    COLLECTION = "tafsir_passages"
+    COLLECTION = "quran_tafsir"
 
     DEFAULT_STRATEGY = RetrievalStrategy(
         dense_weight=0.7,

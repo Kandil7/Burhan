@@ -34,7 +34,7 @@ class LanguageCollectionAgent(CollectionAgent):
     """Arabic Language Collection Agent."""
 
     name = "language"
-    COLLECTION = "language_passages"
+    COLLECTION = "arabic_language_passages"
 
     DEFAULT_STRATEGY = RetrievalStrategy(
         dense_weight=0.5,

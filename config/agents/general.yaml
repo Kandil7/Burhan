@@ -3,7 +3,7 @@
 
 name: GeneralIslamicAgent
 domain: general
-collection_name: general_passages
+collection_name: general_islamic
 
 retrieval:
   primary: hybrid

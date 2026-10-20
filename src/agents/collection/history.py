@@ -34,7 +34,7 @@ class HistoryCollectionAgent(CollectionAgent):
     """Islamic History Collection Agent."""
 
     name = "history"
-    COLLECTION = "history_passages"
+    COLLECTION = "islamic_history_passages"
 
     DEFAULT_STRATEGY = RetrievalStrategy(
         dense_weight=0.6,

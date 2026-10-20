@@ -3,7 +3,7 @@
 
 name: TazkiyahAgent
 domain: tazkiyah
-collection_name: tazkiyah_passages
+collection_name: spirituality_passages
 
 retrieval:
   primary: hybrid

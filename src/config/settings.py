@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     qdrant_api_key: str | None = None
     qdrant_collection_fiqh: str = "fiqh_passages"
     qdrant_collection_hadith: str = "hadith_passages"
-    qdrant_collection_dua: str = "dua_passages"
+    qdrant_collection_dua: str = "duas_adhkar"
     qdrant_collection_general: str = "general_islamic"
 
     # ==========================================

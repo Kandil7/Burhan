@@ -3,7 +3,7 @@
 
 name: LanguageAgent
 domain: language
-collection_name: language_passages
+collection_name: arabic_language_passages
 
 retrieval:
   primary: hybrid

@@ -3,7 +3,7 @@
 
 name: TafsirAgent
 domain: tafsir
-collection_name: tafsir_passages
+collection_name: quran_tafsir
 
 retrieval:
   primary: hybrid

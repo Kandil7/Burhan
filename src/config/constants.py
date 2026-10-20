@@ -606,7 +606,7 @@ class CollectionNames:
 
     FIQH: Final[str] = "fiqh_passages"
     HADITH: Final[str] = "hadith_passages"
-    DUA: Final[str] = "dua_passages"
+    DUA: Final[str] = "duas_adhkar"
     GENERAL: Final[str] = "general_islamic"
     QURAN_TAFSIR: Final[str] = "quran_tafsir"
     AQEEDAH: Final[str] = "aqeedah_passages"

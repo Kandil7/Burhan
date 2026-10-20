@@ -113,7 +113,7 @@ class TestTafsirCollectionAgentInstantiation:
         agent = TafsirCollectionAgent()
 
         assert agent.name == "tafsir"
-        assert agent.COLLECTION == "tafsir_passages"
+        assert agent.COLLECTION == "quran_tafsir"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -218,7 +218,7 @@ class TestUsulFiqhCollectionAgentInstantiation:
         agent = UsulFiqhCollectionAgent()
 
         assert agent.name == "usul_fiqh"
-        assert agent.COLLECTION == "usul_fiqh_passages"
+        assert agent.COLLECTION == "usul_fiqh"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -253,7 +253,7 @@ class TestHistoryCollectionAgentInstantiation:
         agent = HistoryCollectionAgent()
 
         assert agent.name == "history"
-        assert agent.COLLECTION == "history_passages"
+        assert agent.COLLECTION == "islamic_history_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -288,7 +288,7 @@ class TestLanguageCollectionAgentInstantiation:
         agent = LanguageCollectionAgent()
 
         assert agent.name == "language"
-        assert agent.COLLECTION == "language_passages"
+        assert agent.COLLECTION == "arabic_language_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -561,7 +561,7 @@ class TestCollectionAgentFullPipeline:
         )
 
         assert result is not None
-        assert result.metadata.get("collection") == "tafsir_passages"
+        assert result.metadata.get("collection") == "quran_tafsir"
 
     @pytest.mark.asyncio
     async def test_aqeedah_full_run(self):

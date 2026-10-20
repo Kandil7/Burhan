@@ -3,7 +3,7 @@
 
 name: HistoryAgent
 domain: history
-collection_name: history_passages
+collection_name: islamic_history_passages
 
 retrieval:
   primary: hybrid
