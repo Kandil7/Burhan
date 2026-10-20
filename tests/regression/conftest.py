@@ -8,16 +8,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
-
 
 # Base path for regression test data
 REGRESSION_DATA_DIR = Path(__file__).parent
 
 
-def load_jsonl(file_path: Path) -> List[Dict[str, Any]]:
+def load_jsonl(file_path: Path) -> list[dict[str, Any]]:
     """
     Load test cases from a JSONL file.
 
@@ -37,25 +36,25 @@ def load_jsonl(file_path: Path) -> List[Dict[str, Any]]:
 
 
 @pytest.fixture(scope="session")
-def fiqh_cases() -> List[Dict[str, Any]]:
+def fiqh_cases() -> list[dict[str, Any]]:
     """Load FiQH golden test cases."""
     return load_jsonl(REGRESSION_DATA_DIR / "fiqh_cases.jsonl")
 
 
 @pytest.fixture(scope="session")
-def hadith_cases() -> List[Dict[str, Any]]:
+def hadith_cases() -> list[dict[str, Any]]:
     """Load Hadith golden test cases."""
     return load_jsonl(REGRESSION_DATA_DIR / "hadith_cases.jsonl")
 
 
 @pytest.fixture(scope="session")
-def quran_cases() -> List[Dict[str, Any]]:
+def quran_cases() -> list[dict[str, Any]]:
     """Load Quran golden test cases."""
     return load_jsonl(REGRESSION_DATA_DIR / "quran_cases.jsonl")
 
 
 @pytest.fixture(scope="session")
-def all_regression_cases() -> List[Dict[str, Any]]:
+def all_regression_cases() -> list[dict[str, Any]]:
     """Load all regression test cases from all categories."""
     all_cases = []
     all_cases.extend(load_jsonl(REGRESSION_DATA_DIR / "fiqh_cases.jsonl"))
