@@ -1,5 +1,10 @@
 # 🚀 Burhan - Complete Action Plan: From Upload to Production
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/upload_mini_dataset_v2.py` and `scripts/backup_embeddings_and_qdrant.py`.
+
 **Created:** April 8, 2026  
 **HF Repo:** https://huggingface.co/datasets/Kandil7/Burhan-Datasets  
 **Status:** Ready for upload + embedding + deployment
@@ -102,8 +107,8 @@ QDRANT_API_KEY=your-key
 poetry run pytest tests/ -v
 
 # Test specific agents
-poetry run pytest tests/test_fiqh_agent.py -v
-poetry run pytest tests/test_hadith_agent.py -v
+poetry run pytest tests/test_agents/test_fiqh_collection_agent.py -v
+poetry run pytest tests/test_agents/test_collection_agents.py -v
 ```
 
 ### Step 3: Manual Testing
@@ -122,7 +127,7 @@ curl -X POST http://localhost:8002/api/v1/query \
 
 ## 📋 PHASE 4: Migrate Remaining Agents (1 day)
 
-### Agents to Migrate to BaseRAGAgent
+### Agents to Migrate to CollectionAgent
 
 1. HadithAgent
 2. TafsirAgent
@@ -146,7 +151,7 @@ class HadithAgent(BaseAgent):
         # ... generation logic
 
 # After (30 lines):
-class HadithAgent(BaseRAGAgent):
+class HadithCollectionAgent(CollectionAgent):
     COLLECTION = "hadith_passages"
     TOP_K_RETRIEVAL = 15
     SCORE_THRESHOLD = 0.65
