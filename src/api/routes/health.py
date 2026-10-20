@@ -5,11 +5,13 @@ Provides endpoints for monitoring service health and readiness.
 Phase 9: Added metrics endpoint.
 """
 
-from fastapi import APIRouter, Response
+from typing import Any
+
+from fastapi import APIRouter
 
 from src.api.schemas.common import HealthResponse
-from src.config.settings import settings
 from src.config.logging_config import metrics
+from src.config.settings import settings
 
 router = APIRouter(tags=["Health"])
 
@@ -54,7 +56,7 @@ async def check_qdrant() -> str:
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health_check():
+async def health_check() -> Any:
     """
     Basic health check endpoint.
     Returns 200 OK if the API service is running.
@@ -69,7 +71,7 @@ async def health_check():
 
 
 @router.get("/ready", response_model=HealthResponse)
-async def readiness_check():
+async def readiness_check() -> Any:
     """
     Readiness probe - checks all service connections.
     Returns status of PostgreSQL, Redis, and Qdrant.
@@ -92,7 +94,7 @@ async def readiness_check():
 
 
 @router.get("/metrics")
-async def get_metrics():
+async def get_metrics() -> Any:
     """
     Metrics endpoint for monitoring.
 
@@ -105,19 +107,18 @@ async def get_metrics():
 
 
 @router.get("/metrics/counters")
-async def get_counters():
+async def get_counters() -> Any:
     """Get counter metrics only."""
     return metrics.get_metrics()["counters"]
 
 
 @router.get("/metrics/timings")
-async def get_timings():
+async def get_timings() -> Any:
     """Get timing metrics only."""
     return metrics.get_metrics()["timings"]
 
 
 @router.get("/metrics/reset", status_code=204)
-async def reset_metrics():
+async def reset_metrics() -> None:
     """Reset all metrics."""
     metrics.reset()
-    return None
