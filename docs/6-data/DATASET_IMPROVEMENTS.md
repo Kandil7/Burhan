@@ -41,8 +41,8 @@ Level 4: Content-based splitting (hadith numbers, section headers)
 - ✅ Better citations (page numbers preserved)
 
 **Files:**
-- `src/knowledge/hierarchical_chunker.py` - Main chunking engine
-- `scripts/chunk_all_books.py` - Batch processing
+- `scripts/ingestion/chunk_all_books.py` - Main chunking engine
+- `scripts/ingestion/chunk_all_books.py` - Batch processing
 
 ---
 
@@ -99,7 +99,7 @@ Medicine/Science (40 books) ← 2 categories
 ```
 
 **Files:**
-- `scripts/create_category_mapping.py`
+- `scripts/data/create_category_mapping.py`
 
 ---
 
@@ -159,7 +159,7 @@ Medicine/Science (40 books) ← 2 categories
 
 ### 6. **Dataset Preparation v2** ⚡ HIGH IMPACT
 
-**New Script:** `scripts/prepare_datasets_for_upload_v2.py`
+**New Script:** `scripts/data/prepare_datasets_for_upload_v2.py`
 
 **What Changed:**
 - Uses hierarchical chunking instead of raw tar.gz
@@ -206,30 +206,30 @@ Medicine/Science (40 books) ← 2 categories
 
 ### Step 1: Create Category Mapping
 ```bash
-python scripts/create_category_mapping.py
+python scripts/data/create_category_mapping.py
 ```
 
 ### Step 2: Chunk All Books
 ```bash
 # Full processing (supports resume)
-python scripts/chunk_all_books.py
+python scripts/ingestion/chunk_all_books.py
 
 # Or process specific books
-python scripts/chunk_all_books.py --book-id 27107
+python scripts/ingestion/chunk_all_books.py --book-id 27107
 ```
 
 ### Step 3: Analyze Quality
 ```bash
-python scripts/analyze_chunk_quality.py
+python src/indexing/pipelines/analyze_chunks.py
 ```
 
 ### Step 4: Prepare for Upload
 ```bash
 # Use v2 script (hierarchical chunks)
-python scripts/prepare_datasets_for_upload_v2.py
+python scripts/data/prepare_datasets_for_upload_v2.py
 
 # Or use v1 script (raw books only)
-python scripts/prepare_datasets_for_upload.py
+python scripts/data/prepare_datasets_for_upload.py
 ```
 
 ### Step 5: Upload to Hugging Face
@@ -244,11 +244,11 @@ notebooks/04_upload_to_huggingface.ipynb
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `src/knowledge/hierarchical_chunker.py` | Hierarchical chunking engine | ~450 |
-| `scripts/chunk_all_books.py` | Batch chunking with resume | ~250 |
-| `scripts/create_category_mapping.py` | 41→11 category mapping | ~200 |
-| `scripts/analyze_chunk_quality.py` | Quality analysis & reporting | ~300 |
-| `scripts/prepare_datasets_for_upload_v2.py` | v2 dataset preparation | ~400 |
+| `scripts/ingestion/chunk_all_books.py` | Hierarchical chunking engine | ~450 |
+| `scripts/ingestion/chunk_all_books.py` | Batch chunking with resume | ~250 |
+| `scripts/data/create_category_mapping.py` | 41→11 category mapping | ~200 |
+| `src/indexing/pipelines/analyze_chunks.py` | Quality analysis & reporting | ~300 |
+| `scripts/data/prepare_datasets_for_upload_v2.py` | v2 dataset preparation | ~400 |
 
 **Total:** 1,600+ lines of production-ready code
 
