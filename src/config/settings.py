@@ -8,9 +8,10 @@ Phase 8: Added ClassifierBackend for intent classifier selection.
 """
 
 from enum import Enum
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class ClassifierBackend(str, Enum):
@@ -128,6 +129,7 @@ class Settings(BaseSettings):
     # Security
     # ==========================================
     api_key_enabled: bool = False  # Enable in production
+    api_key: str | None = None  # Dedicated client key; falls back to secret_key
     cors_max_age: int = 600
 
     # ==========================================
@@ -140,12 +142,16 @@ class Settings(BaseSettings):
     # ==========================================
     # CORS
     # ==========================================
-    cors_origins: list[str] = ["http://localhost:3000"]
-    cors_methods: list[str] = Field(default=["GET", "POST"], alias="CORS_METHODS")
-    cors_headers: list[str] = Field(
+    # NoDecode disables pydantic-settings' JSON decoding for this field, which
+    # otherwise rejects the comma-separated form documented in .env.example
+    # before the validator below can run.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+    cors_methods: Annotated[list[str], NoDecode] = Field(default=["GET", "POST"], alias="CORS_ALLOW_METHODS")
+    cors_headers: Annotated[list[str], NoDecode] = Field(
         default=["Content-Type", "X-API-Key", "Authorization"],
-        alias="CORS_HEADERS",
+        alias="CORS_ALLOW_HEADERS",
     )
+    cors_allow_credentials: bool = Field(default=False, alias="CORS_ALLOW_CREDENTIALS")
 
     # ==========================================
     # Logging
@@ -158,17 +164,36 @@ class Settings(BaseSettings):
     # ==========================================
     app_version: str = Field(default="0.5.0", alias="APP_VERSION")
 
-    @field_validator("cors_origins", mode="before")
+    @field_validator("cors_origins", "cors_methods", "cors_headers", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins from comma-separated string or list."""
+    def parse_comma_separated_list(cls, v: Any) -> Any:
+        """Accept a JSON array, a comma-separated string, or a list.
+
+        .env files document `A,B,C`; pydantic-settings normally demands JSON.
+        NoDecode on the fields routes both forms here.
+        """
+        import json
+
+        if v is None:
+            return []
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            raw = v.strip()
+            if not raw:
+                return []
+            if raw.startswith("["):
+                try:
+                    decoded = json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"Invalid JSON list: {raw!r}") from exc
+                return [str(item).strip() for item in decoded if str(item).strip()]
+            if raw == "*":
+                return ["*"]
+            return [item.strip() for item in raw.split(",") if item.strip()]
         return v
 
     @field_validator("log_level")
     @classmethod
-    def validate_log_level(cls, v):
+    def validate_log_level(cls, v: Any) -> Any:
         """Validate log level is valid."""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
@@ -177,7 +202,7 @@ class Settings(BaseSettings):
 
     @field_validator("secret_key")
     @classmethod
-    def validate_secret_key(cls, v):
+    def validate_secret_key(cls, v: Any) -> Any:
         """Ensure secret key is changed from default."""
         if v == "change-this-in-production-please-use-random-string":
             import warnings
