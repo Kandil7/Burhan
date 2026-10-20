@@ -1,9 +1,9 @@
 # Abstention Composer Module
 """Compose abstention responses."""
 
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class AbstentionReason(str, Enum):
@@ -27,15 +27,15 @@ class AbstentionConfig:
 class AbstentionComposer:
     """Composes abstention responses."""
 
-    def __init__(self, config: Optional[AbstentionConfig] = None):
+    def __init__(self, config: AbstentionConfig | None = None):
         self.config = config or AbstentionConfig()
 
     def compose(
         self,
         reason: AbstentionReason,
         query: str,
-        message: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        message: str | None = None,
+    ) -> dict[str, Any]:
         """Compose an abstention response."""
         # Get template for reason
         template = self._get_template(reason)
@@ -88,7 +88,7 @@ class AbstentionComposer:
         self,
         reason: AbstentionReason,
         query: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get alternative suggestion based on reason."""
         if reason == AbstentionReason.OUT_OF_SCOPE:
             return "You might try asking about Quran, hadith, fiqh, Islamic history, or other Islamic topics."
