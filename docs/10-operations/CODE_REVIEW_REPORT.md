@@ -5,6 +5,13 @@
 **Reviewer:** Tech Lead AI Engineer Agent  
 **Overall Score:** **6.5 / 10**
 
+> **Status: RESOLVED (kept as a historical record).** This review describes the codebase as of April 2026.
+> Its critical issues have since been remediated: the per-agent modules were consolidated into the v2
+> `CollectionAgent` architecture (`src/agents/collection/`), bare `except:` clauses were removed, the
+> inheritance calculator now implements the fara'id shares, and model names come from configuration.
+> Module paths named below refer to the April 2026 layout and are preserved as history, not as the
+> current structure.
+
 ---
 
 ## Executive Summary
@@ -57,13 +64,13 @@ The Burhan codebase demonstrates **solid architectural thinking** with a well-st
 # src/agents/base_rag_agent.py
 class BaseRAGAgent(BaseAgent):
     """Base class for all RAG-based agents."""
-    
+
     COLLECTION: str = ""
     TOP_K_RETRIEVAL: int = 12
     TOP_K_RERANK: int = 5
     SCORE_THRESHOLD: float = 0.65
     SYSTEM_PROMPT: str = ""
-    
+
     async def _initialize(self):
         """Shared initialization logic."""
         if self.embedding_model is None:
@@ -72,7 +79,7 @@ class BaseRAGAgent(BaseAgent):
         if self.vector_store is None:
             self.vector_store = VectorStore()
             await self.vector_store.initialize()
-    
+
     async def execute(self, input: AgentInput) -> AgentOutput:
         """Shared RAG pipeline execution."""
         await self._initialize()
@@ -80,11 +87,11 @@ class BaseRAGAgent(BaseAgent):
         answer = await self._generate(input.query, passages, input.language)
         confidence = self._calculate_confidence(passages)
         return AgentOutput(answer=answer, passages=passages, confidence=confidence)
-    
+
     def _format_passages(self, passages: list) -> str:
         """Shared passage formatting."""
-        return "\n\n".join([f"[{i+1}] {p['content']}" for i, p in enumerate(passages)])
-    
+        return "\n\n".join([f"[{i + 1}] {p['content']}" for i, p in enumerate(passages)])
+
     async def _generate(self, query: str, passages: list, language: str) -> str:
         """Shared LLM generation."""
         system_prompt = self.SYSTEM_PROMPT
@@ -191,7 +198,7 @@ def _get_madhhab_note(self, madhhab: str) -> str:
 ```python
 response = self.llm_client.chat.completions.create(
     model="gpt-4o-mini",  # Hardcoded!
-    messages=[...]
+    messages=[...],
 )
 ```
 
@@ -201,7 +208,7 @@ from src.config.settings import settings
 
 response = self.llm_client.chat.completions.create(
     model=settings.openai_model,  # From .env!
-    messages=[...]
+    messages=[...],
 )
 ```
 
@@ -252,7 +259,7 @@ async def lifespan(app: FastAPI):
 response = self.llm_client.chat.completions.create(
     model=settings.openai_model,
     messages=[...],
-    timeout=settings.llm_timeout  # From .env
+    timeout=settings.llm_timeout,  # From .env
 )
 ```
 
