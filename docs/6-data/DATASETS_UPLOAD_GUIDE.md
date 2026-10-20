@@ -5,7 +5,7 @@
 ### 1. Prepare Datasets
 
 ```bash
-python scripts/prepare_datasets_for_upload.py
+python scripts/data/prepare_datasets_for_upload.py
 ```
 
 **What it does:**
