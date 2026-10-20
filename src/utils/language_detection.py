@@ -13,7 +13,6 @@ Usage:
 
 from typing import Literal
 
-
 # Type aliases for language codes
 LanguageCode = Literal["ar", "en", "mixed"]
 
@@ -63,7 +62,8 @@ def detect_language(text: str, threshold: float = 0.3) -> LanguageCode:
     # Calculate ratio
     arabic_ratio = arabic_chars / total_chars
 
-    return "ar" if arabic_ratio > threshold else "en"
+    # "Minimum ratio" is inclusive: exactly at the threshold counts as Arabic.
+    return "ar" if arabic_ratio >= threshold else "en"
 
 
 def is_mostly_arabic(text: str, threshold: float = 0.5) -> bool:
