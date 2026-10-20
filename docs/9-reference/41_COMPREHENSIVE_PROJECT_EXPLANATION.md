@@ -60,7 +60,7 @@ The user interface layer encompasses both the Next.js web application and the Sw
 
 The API gateway layer, implemented in src/api/main.py, handles HTTP request processing, applies CORS policies, manages middleware stack, and dispatches requests to appropriate route handlers. This layer performs input validation using Pydantic models, ensuring that only well-formed requests reach core business logic.
 
-The orchestration layer, centered on the ResponseOrchestrator class in src/core/orchestrator.py, coordinates the flow of queries through the system. It receives classified intents from the router, selects appropriate agents or tools for processing, assembles responses, and adds citations. The orchestrator maintains registries of available agents and tools, enabling dynamic addition of new capabilities without modifying core logic.
+The orchestration layer, centered on the ResponseOrchestrator class in src/application/router/orchestration.py, coordinates the flow of queries through the system. It receives classified intents from the router, selects appropriate agents or tools for processing, assembles responses, and adds citations. The orchestrator maintains registries of available agents and tools, enabling dynamic addition of new capabilities without modifying core logic.
 
 The domain layer contains the specialized components that actually process queries. This includes the HybridQueryClassifier for intent classification, various agent implementations for question-answering, and tool implementations for deterministic calculations. Each component in this layer focuses on a specific type of processing, enabling clear separation of concerns.
 
@@ -68,7 +68,7 @@ The knowledge layer provides data access services abstraction, including databas
 
 ### 3.2 Query Processing Flow
 
-Understanding the query processing flow reveals how the system transforms user questions into structured answers. The journey begins when a user submits a question through the POST /api/v1/query endpoint defined in src/api/routes/query.py. The endpoint validates the incoming QueryRequest, extracting the question text, optional language preference, location data for prayer times calculations, and madhhab selection for jurisprudential queries.
+Understanding the query processing flow reveals how the system transforms user questions into structured answers. The journey begins when a user submits a question through the POST /api/v1/query endpoint defined in src/api/routes/ask.py. The endpoint validates the incoming QueryRequest, extracting the question text, optional language preference, location data for prayer times calculations, and madhhab selection for jurisprudential queries.
 
 Once validated, the query enters the classification phase. The system instantiates a HybridQueryClassifier with the LLM client and passes the question through its three-tier classification pipeline. The first tier examines the query against KEYWORD_PATTERNS defined in src/config/intents.py, checking for explicit indicators like "زكاة" (zakat), "ميراث" (inheritance), or "صلاة" (prayer). If a keyword match achieves confidence of 0.90 or higher, the system skips the more expensive LLM classification and proceeds directly with the identified intent.
 
@@ -112,7 +112,7 @@ The API module implements the FastAPI application and all route handlers. **src/
 
 The lifespan context manager handles startup and shutdown events, enabling database connection pooling initialization and graceful cleanup. The root endpoint at GET / provides API metadata including available endpoints and version information, serving as a discovery mechanism for API consumers.
 
-**src/api/routes/query.py** implements the primary query endpoint at POST /api/v1/query. The endpoint accepts QueryRequest objects with the question text and optional parameters, then orchestrates the complete query processing pipeline. A singleton ResponseOrchestrator instance ensures that agents and tools are initialized once and reused across requests, avoiding the overhead of repeated initialization.
+**src/api/routes/ask.py** implements the primary query endpoint at POST /api/v1/query. The endpoint accepts QueryRequest objects with the question text and optional parameters, then orchestrates the complete query processing pipeline. A singleton ResponseOrchestrator instance ensures that agents and tools are initialized once and reused across requests, avoiding the overhead of repeated initialization.
 
 The route handler measures processing time for performance monitoring, generates unique query IDs for tracking, logs all operations for debugging, and transforms agent outputs into QueryResponse objects. Error handling catches validation errors for user-friendly error messages and unexpected exceptions for logging and generic error responses.
 
@@ -120,7 +120,7 @@ The route handler measures processing time for performance monitoring, generates
 
 **src/api/routes/quran.py** exposes Quran-related functionality through specialized endpoints. GET /api/v1/quran/surahs returns the list of all 114 Quranic chapters with metadata. GET /api/v1/quran/ayah/{ref} retrieves specific verses using the surah:ayah notation. POST /api/v1/quran/search enables natural language searching through the Quran text. POST /api/v1/quran/validate checks whether provided text matches Quranic verses. GET /api/v1/quran/analytics provides statistical information about the Quran. GET /api/v1/quran/tafsir/{ref} retrieves commentary for specific verses.
 
-**src/api/routes/rag.py** provides endpoints for direct RAG pipeline interaction. POST /api/v1/rag/fiqh sends queries directly to the fiqh agent, bypassing the classification step. POST /api/v1/rag/general similarly enables direct access to the general Islamic knowledge agent. GET /api/v1/rag/stats returns information about indexed collections and document counts.
+**src/api/routes/search.py** provides endpoints for direct RAG pipeline interaction. POST /api/v1/rag/fiqh sends queries directly to the fiqh agent, bypassing the classification step. POST /api/v1/rag/general similarly enables direct access to the general Islamic knowledge agent. GET /api/v1/rag/stats returns information about indexed collections and document counts.
 
 **src/api/routes/health.py** implements health check endpoints. GET /health returns a simple status indicating the application is running. GET /ready extends health checking to include database connectivity verification, enabling orchestration systems to confirm full readiness before routing traffic.
 
@@ -138,7 +138,7 @@ The _keyword_match() method iterates through KEYWORD_PATTERNS looking for matche
 
 The RouterResult model captures classification output including intent, confidence score, classification method (keyword, llm, or embedding), detected language, retrieval requirement flag, sub-intent for Quran queries, and reasoning for the classification decision.
 
-**src/core/orchestrator.py** implements the ResponseOrchestrator class that coordinates query processing. The orchestrator maintains registries of agents and tools, initializing default tools and agents during construction. The _register_default_fallbacks() method imports and registers the five deterministic tools (ZakatCalculator, InheritanceCalculator, PrayerTimesTool, HijriCalendarTool, DuaRetrievalTool) and the ChatbotAgent.
+**src/application/router/orchestration.py** implements the ResponseOrchestrator class that coordinates query processing. The orchestrator maintains registries of agents and tools, initializing default tools and agents during construction. The _register_default_fallbacks() method imports and registers the five deterministic tools (ZakatCalculator, InheritanceCalculator, PrayerTimesTool, HijriCalendarTool, DuaRetrievalTool) and the ChatbotAgent.
 
 The _register_rag_agents() method conditionally initializes RAG components, checking for the availability of PyTorch and Transformers before attempting to load embedding models and vector stores. This conditional initialization ensures that the system runs even when heavy ML dependencies are unavailable, falling back to the chatbot agent for queries that would normally require RAG processing.
 
@@ -152,9 +152,9 @@ The route_query() method implements the main routing logic, looking up the targe
 
 **src/agents/chatbot_agent.py** implements simple greeting and chitchat handling. The agent recognizes greetings like "السلام عليكم" (peace be upon you) and "hello" and responds with appropriate Islamic greetings. This agent serves as the fallback for queries that cannot be handled by more specialized components.
 
-**src/agents/fiqh_agent.py** implements the Fiqh RAG Agent for Islamic jurisprudence questions. The agent uses the embedding model and vector store to retrieve relevant passages from fiqh texts, then uses the LLM to generate grounded answers. The agent includes madhhab awareness for schools with differing rulings.
+**src/agents/collection/fiqh.py** implements the Fiqh RAG Agent for Islamic jurisprudence questions. The agent uses the embedding model and vector store to retrieve relevant passages from fiqh texts, then uses the LLM to generate grounded answers. The agent includes madhhab awareness for schools with differing rulings.
 
-**src/agents/general_islamic_agent.py** handles general Islamic knowledge questions using the RAG pipeline. The agent searches general Islamic collections and generates answers with citations from retrieved sources.
+**src/agents/collection/general.py** (`GeneralCollectionAgent`) handles general Islamic knowledge questions using the RAG pipeline. The agent searches general Islamic collections and generates answers with citations from retrieved sources.
 
 ### 4.6 Tools Module (src/tools/)
 
@@ -182,23 +182,23 @@ The _calculate_qibla() method determines direction to Mecca using great-circle b
 
 **src/tools/dua_retrieval_tool.py** retrieves supplications from the Hisn al-Muslim collection. The tool supports multiple categories including morning/evening duas, sleep-related duas, travel supplications, food-related prayers, rain prayers, and eclipse prayers.
 
-### 4.7 Knowledge Module (src/knowledge/)
+### 4.7 Knowledge Module (src/indexing/ + src/retrieval/)
 
-**src/knowledge/embedding_model.py** wraps the Qwen3-Embedding model for generating vector embeddings. The EmbeddingModel class provides encode() and encode_batch() methods for single and batch text embedding generation. The model produces 1024-dimensional vectors stored in Qdrant for similarity search.
+**src/indexing/embeddings/embedding_model.py** wraps the BAAI/bge-m3 model for generating vector embeddings. The EmbeddingModel class provides encode() and encode_batch() methods for single and batch text embedding generation. The model produces 1024-dimensional vectors stored in Qdrant for similarity search.
 
-**src/knowledge/embedding_cache.py** implements Redis caching for embedding vectors. The cache uses SHA256 hashes of input text as keys, storing vectors with 7-day TTL to reduce redundant embedding generation for frequently queried text.
+**src/indexing/embeddings/embedding_cache.py** implements Redis caching for embedding vectors. The cache uses SHA256 hashes of input text as keys, storing vectors with 7-day TTL to reduce redundant embedding generation for frequently queried text.
 
-**src/knowledge/vector_store.py** manages Qdrant operations for document storage and retrieval. The VectorStore class provides methods for adding documents with embeddings, searching by query embedding with configurable limit and score threshold, deleting collections, and listing available collections. The class supports multiple named collections for different Islamic text categories.
+**src/indexing/vectorstores/qdrant_store.py** manages Qdrant operations for document storage and retrieval. The VectorStore class provides methods for adding documents with embeddings, searching by query embedding with configurable limit and score threshold, deleting collections, and listing available collections. The class supports multiple named collections for different Islamic text categories.
 
-**src/knowledge/hybrid_search.py** combines semantic (embedding-based) and keyword (BM25) search results using reciprocal rank fusion. The hybrid approach improves recall by capturing both semantic similarity and exact term matching.
+**src/indexing/vectorstores/hybrid_client.py** combines semantic (embedding-based) and keyword (BM25) search results using reciprocal rank fusion. The hybrid approach improves recall by capturing both semantic similarity and exact term matching.
 
-**src/knowledge/chunker.py** implements text splitting strategies for document preprocessing. The chunker supports fixed-size overlapping chunks, paragraph-based splitting, heading-based splitting, and semantic splitting using embeddings.
+**scripts/ingestion/chunk_all_books.py** implements text splitting strategies for document preprocessing. The chunker supports fixed-size overlapping chunks, paragraph-based splitting, heading-based splitting, and semantic splitting using embeddings.
 
 ### 4.8 Infrastructure Module (src/infrastructure/)
 
-**src/infrastructure/db.py** manages async PostgreSQL connections using SQLAlchemy async support and asyncpg driver. The module provides get_async_session() for obtaining database sessions and includes initialization and cleanup functions.
+**src/infrastructure/database.py** manages async PostgreSQL connections using SQLAlchemy async support and asyncpg driver. The module provides get_async_session() for obtaining database sessions and includes initialization and cleanup functions.
 
-**src/infrastructure/db_sync.py** provides synchronous PostgreSQL access using psycopg2 for scripts and one-off operations that don't benefit from async processing. The sync connection is used by seed scripts that load initial data.
+**src/infrastructure/database.py** provides both async (asyncpg) and synchronous (psycopg2) PostgreSQL access. The sync engine is used by scripts and one-off operations that do not benefit from async processing, such as seed scripts that load initial data.
 
 **src/infrastructure/redis.py** manages Redis connections through connection pooling. The module provides get_redis() returning a configured Redis client with appropriate decoding and connection handling.
 
@@ -216,7 +216,7 @@ The _calculate_qibla() method determines direction to Mecca using great-circle b
 
 **src/quran/quran_router.py** routes Quran-related queries to appropriate sub-handlers based on the classified sub-intent.
 
-**src/quran/quran_agent.py** implements the Quran QA Agent combining retrieval and generation for answering Quran-related questions.
+**src/quran/quran_router.py** classifies Quran sub-intents (verse lookup, tafsir, quotation validation) and routes them to the matching Quran tool.
 
 **src/quran/named_verses.json** contains a reference mapping of famous Quranic verses by their descriptive names (e.g., "Ayat al-Kursi" for 2:255).
 
@@ -306,19 +306,19 @@ alembic upgrade head
 Seed the Quran database with initial verses:
 
 ```
-poetry run python scripts/seed_quran_data.py
+poetry run python scripts/data/seed_quran_data.py
 ```
 
 Process Islamic books for the RAG pipeline:
 
 ```
-poetry run python scripts/complete_ingestion.py
+poetry run python scripts/ingestion/complete_ingestion.py
 ```
 
 Generate embeddings for semantic search:
 
 ```
-poetry run python scripts/generate_embeddings.py
+poetry run python scripts/data/generate_embeddings.py
 ```
 
 ### 5.7 Running the Application
