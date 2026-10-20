@@ -24,8 +24,11 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 from openai import (
-    APIConnectionError, APITimeoutError, AsyncOpenAI,
-    InternalServerError, RateLimitError,
+    APIConnectionError,
+    APITimeoutError,
+    AsyncOpenAI,
+    InternalServerError,
+    RateLimitError,
 )
 from sentence_transformers import SentenceTransformer
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -50,6 +53,7 @@ class ChunkingStrategy(Enum):
     SEMANTIC = "semantic"
     DISCOURSE = "discourse"
 
+
 class EntityType(Enum):
     PERSON = "person"
     PLACE = "place"
@@ -66,6 +70,7 @@ class EntityType(Enum):
     SAHABA = "sahaba"
     TABI = "tabi"
 
+
 class RelationType(Enum):
     CONTINUES_INTO = "CONTINUES_INTO"
     CONTINUES_FROM = "CONTINUES_FROM"
@@ -80,7 +85,7 @@ class RelationType(Enum):
     FIQH_OF = "FIQH_OF"
     NARRATED_BY = "NARRATED_BY"
     MENTIONS = "MENTIONS"
-    SAME_CONCEPT = "SAME_CONCEPT"   # ← NEW: for EHRAG semantic bridging
+    SAME_CONCEPT = "SAME_CONCEPT"  # ← NEW: for EHRAG semantic bridging
 
 
 # ---------------------------------------------------------------------------
@@ -91,17 +96,22 @@ _MULTI_SPACE_RE = re.compile(r"[ \t]{2,}")
 _MULTI_NL_RE = re.compile(r"\n{3,}")
 _DIACRITICS_RE = re.compile(r"[\u064B-\u065F\u0670]", re.UNICODE)
 
+
 def strip_html(text: str) -> str:
     text = _HTML_TAG_RE.sub(" ", text)
     text = _MULTI_SPACE_RE.sub(" ", text)
     text = _MULTI_NL_RE.sub("\n\n", text)
     return text.strip()
 
+
 def remove_diacritics(text: str) -> str:
     return _DIACRITICS_RE.sub("", text)
 
+
 # ← NEW: Arabic sentence splitter respecting Islamic text patterns
 _SENT_END_RE = re.compile(r"(?<=[.!?؟।])\s+|(?<=\n)")
+
+
 def split_sentences_arabic(text: str) -> List[str]:
     sents = _SENT_END_RE.split(text)
     return [s.strip() for s in sents if s.strip()]
@@ -111,7 +121,11 @@ def split_sentences_arabic(text: str) -> List[str]:
 # Entity Tables (unchanged from original — kept complete)
 # ---------------------------------------------------------------------------
 PERSON_TABLE: List[Tuple[str, str, EntityType]] = [
-    (r"محمد ﷺ|رسول الله|النبي|صلى الله عليه وسلم|المصطفى|خاتم الأنبياء", "Prophet Muhammad ﷺ", EntityType.PROPHET),  # ← Added aliases
+    (
+        r"محمد ﷺ|رسول الله|النبي|صلى الله عليه وسلم|المصطفى|خاتم الأنبياء",
+        "Prophet Muhammad ﷺ",
+        EntityType.PROPHET,
+    ),  # ← Added aliases
     (r"إبراهيم عليه السلام|إبراهيم الخليل", "Prophet Ibrahim (Abraham)", EntityType.PROPHET),
     (r"موسى عليه السلام|كليم الله", "Prophet Musa (Moses)", EntityType.PROPHET),
     (r"عيسى عليه السلام|المسيح|روح الله", "Prophet Isa (Jesus)", EntityType.PROPHET),
@@ -314,12 +328,12 @@ TEMPORAL_EPOCHS: List[Tuple[int, str, str]] = [
 
 # ← NEW: Pre-compile ALL regex patterns at module load for 10x speed
 _COMPILED_PATTERNS: Dict[str, List[Tuple[re.Pattern, str, EntityType]]] = {
-    "person":  [(re.compile(p, re.UNICODE), c, e) for p, c, e in PERSON_TABLE],
-    "place":   [(re.compile(p, re.UNICODE), c, e) for p, c, e in PLACE_TABLE],
-    "event":   [(re.compile(p, re.UNICODE), c, e) for p, c, e in EVENT_TABLE],
+    "person": [(re.compile(p, re.UNICODE), c, e) for p, c, e in PERSON_TABLE],
+    "place": [(re.compile(p, re.UNICODE), c, e) for p, c, e in PLACE_TABLE],
+    "event": [(re.compile(p, re.UNICODE), c, e) for p, c, e in EVENT_TABLE],
     "concept": [(re.compile(p, re.UNICODE), c, e) for p, c, e in CONCEPT_TABLE],
     "madhhab": [(re.compile(p, re.UNICODE), c, e) for p, c, e in MADHHAB_TABLE],
-    "book":    [(re.compile(p, re.UNICODE), c, e) for p, c, e in BOOK_TABLE],
+    "book": [(re.compile(p, re.UNICODE), c, e) for p, c, e in BOOK_TABLE],
 }
 _COMPILED_TEMPORAL = [(order, re.compile(p, re.UNICODE), label) for order, p, label in TEMPORAL_EPOCHS]
 
@@ -329,6 +343,7 @@ _COMPILED_TEMPORAL = [(order, re.compile(p, re.UNICODE), label) for order, p, la
 # ---------------------------------------------------------------------------
 class MasterCatalog:
     """Loads master_catalog.json and provides O(1) book lookups."""
+
     def __init__(self, path: Optional[Path] = None):
         self._books: Dict[int, Dict] = {}
         self._collection_to_domain: Dict[str, str] = {
@@ -432,6 +447,7 @@ class ExtractedEntity:
     confidence: float = 1.0
     source_text: str = ""
 
+
 @dataclass
 class Passage:
     idx: int
@@ -446,6 +462,7 @@ class Passage:
     page_number: int
     section_title: str
     hierarchy: List[str]
+
 
 @dataclass
 class HierarchicalChunk:
@@ -479,7 +496,7 @@ class HierarchicalChunk:
     quranic_refs: List[str] = field(default_factory=list)
     hadith_collections: List[str] = field(default_factory=list)
     isnad_chain: List[str] = field(default_factory=list)
-    hadith_grade: Optional[str] = None   # ← NEW
+    hadith_grade: Optional[str] = None  # ← NEW
     temporal_context: str = ""
     temporal_order: int = 99
     narrative_role: str = "General"
@@ -540,7 +557,7 @@ class HierarchicalChunk:
             "ehrag": {
                 "entity_ids": self.entity_ids,
                 "structural_hyperedge": self.structural_hyperedge,
-            }
+            },
         }
 
 
@@ -560,12 +577,12 @@ def regex_extract_entities(text: str, hierarchy: List[str]) -> List[ExtractedEnt
         for compiled_pat, canonical, etype in _COMPILED_PATTERNS[table_key]:
             if compiled_pat.search(combined):
                 if canonical not in seen:
-                    entities.append(ExtractedEntity(
-                        name=canonical, entity_type=etype,
-                        canonical_name=canonical, confidence=0.85
-                    ))
+                    entities.append(
+                        ExtractedEntity(name=canonical, entity_type=etype, canonical_name=canonical, confidence=0.85)
+                    )
                     seen.add(canonical)
     return entities
+
 
 def regex_extract_quran_refs(text: str) -> List[str]:
     pattern = re.compile(r"\[([^\:\]]+):(\d+)\]|﴿([^﴾]+)﴾")
@@ -576,6 +593,7 @@ def regex_extract_quran_refs(text: str) -> List[str]:
         elif m.group(3):
             refs.append(f"﴿{m.group(3).strip()[:80]}﴾")
     return list(dict.fromkeys(refs))[:8]
+
 
 def regex_extract_hadith_collections(text: str) -> List[str]:
     """FIX: Now uses compiled regex instead of string `in` match."""
@@ -590,13 +608,14 @@ def regex_extract_hadith_collections(text: str) -> List[str]:
                     seen.add(book_name)
     return found[:6]
 
+
 def regex_extract_isnad(text: str) -> List[str]:
     # ← IMPROVED: broader isnad pattern
     narrators = re.findall(
-        r"(?:حدثنا|أخبرنا|حدثني|روى|رواه|قال)\s+([\u0600-\u06FF]{3,20}(?:\s+[\u0600-\u06FF]{3,20}){0,2})",
-        text
+        r"(?:حدثنا|أخبرنا|حدثني|روى|رواه|قال)\s+([\u0600-\u06FF]{3,20}(?:\s+[\u0600-\u06FF]{3,20}){0,2})", text
     )
     return list(dict.fromkeys(narrators))[:5]
+
 
 def regex_temporal(text: str, hier: List[str]) -> Tuple[str, int]:
     combined = " ".join(hier) + " " + text[:4000]
@@ -604,6 +623,7 @@ def regex_temporal(text: str, hier: List[str]) -> Tuple[str, int]:
         if compiled_pat.search(combined):
             return label, order
     return "General / Unspecified", 99
+
 
 def regex_narrative_role(text: str, hier: List[str], domain: str = "general") -> str:
     combined = " ".join(hier) + " " + text[:4000]
@@ -638,6 +658,7 @@ _TRANSIENT_ERRORS = (RateLimitError, APIConnectionError, APITimeoutError, Intern
 
 from openai import AsyncOpenAI
 
+
 class LLMMetadataExtractor:
     def __init__(
         self,
@@ -654,6 +675,7 @@ class LLMMetadataExtractor:
         )
         self._semaphore = asyncio.Semaphore(batch_size)
         self._stats = Counter()
+
     @retry(
         retry=retry_if_exception_type(_TRANSIENT_ERRORS),
         wait=wait_exponential(multiplier=1, min=2, max=60),
@@ -694,8 +716,11 @@ class LLMMetadataExtractor:
                 self._stats["llm_fallback"] += 1
 
     def _apply_llm_fields(self, chunk: HierarchicalChunk, data: dict) -> None:
-        def safe_str(v, default): return str(v).strip() if v else default
-        def safe_list(v, n): return [str(x).strip() for x in (v or []) if str(x).strip()][:n]
+        def safe_str(v, default):
+            return str(v).strip() if v else default
+
+        def safe_list(v, n):
+            return [str(x).strip() for x in (v or []) if str(x).strip()][:n]
 
         chunk.temporal_context = safe_str(data.get("temporal_context"), chunk.temporal_context)
         chunk.temporal_order = int(data.get("temporal_order", chunk.temporal_order))
@@ -719,15 +744,13 @@ class LLMMetadataExtractor:
             if isinstance(rel, dict) and "type" in rel and "target" in rel:
                 chunk.relations.append(rel)
 
-    async def enrich_all(self, chunks: List[HierarchicalChunk],
-                         catalog: MasterCatalog) -> Counter:
+    async def enrich_all(self, chunks: List[HierarchicalChunk], catalog: MasterCatalog) -> Counter:
         children = [c for c in chunks if c.level == "child"]
         log.info("LLM enriching %d child chunks", len(children))
         tasks = [self._enrich_one(c, catalog) for c in children]
         for coro in atqdm.as_completed(tasks, total=len(tasks), desc="LLM enrichment"):
             await coro
-        log.info("LLM done: success=%d, fallback=%d",
-                 self._stats["llm_success"], self._stats["llm_fallback"])
+        log.info("LLM done: success=%d, fallback=%d", self._stats["llm_success"], self._stats["llm_fallback"])
         return self._stats
 
 
@@ -753,8 +776,8 @@ class BayanAgenticChunker:
         embedder_model: str = "BAAI/bge-m3",
         resume_path: Optional[Path] = None,
         compute_entity_embeddings: bool = True,  # ← NEW: EHRAG semantic hyperedges
-        birch_threshold: float = 0.5,            # ← NEW: EHRAG clustering param
-        birch_top_d: int = 100,                  # ← NEW: top-D entities per cluster
+        birch_threshold: float = 0.5,  # ← NEW: EHRAG clustering param
+        birch_top_d: int = 100,  # ← NEW: top-D entities per cluster
     ):
         self.input_path = input_path
         self.output_path = output_path
@@ -779,7 +802,8 @@ class BayanAgenticChunker:
 
         self._extractor = (
             LLMMetadataExtractor(api_key or os.getenv("OPENAI_API_KEY", ""), model, base_url, batch_size)
-            if not skip_llm else None
+            if not skip_llm
+            else None
         )
 
         self._done_ids: Set[str] = set()
@@ -841,20 +865,22 @@ class BayanAgenticChunker:
                 book_id = int(rec.get("book_id", 0))
                 # ← NEW: Enrich from catalog
                 cat_book = self._catalog.get_book(book_id)
-                self._passages.append(Passage(
-                    idx=idx,
-                    content=strip_html(rec.get("content", "")),
-                    content_type=rec.get("content_type", "page"),
-                    book_id=book_id,
-                    book_title=rec.get("book_title", "") or cat_book.get("title", ""),
-                    category=rec.get("category", "") or cat_book.get("category_name", ""),
-                    author=rec.get("author", "") or cat_book.get("author_name", ""),
-                    author_death=int(rec.get("author_death", 0)) or self._catalog.get_author_death(book_id),
-                    collection=rec.get("collection", "") or cat_book.get("collection", ""),
-                    page_number=int(rec.get("page_number", 0)),
-                    section_title=rec.get("section_title", ""),
-                    hierarchy=rec.get("hierarchy", []),
-                ))
+                self._passages.append(
+                    Passage(
+                        idx=idx,
+                        content=strip_html(rec.get("content", "")),
+                        content_type=rec.get("content_type", "page"),
+                        book_id=book_id,
+                        book_title=rec.get("book_title", "") or cat_book.get("title", ""),
+                        category=rec.get("category", "") or cat_book.get("category_name", ""),
+                        author=rec.get("author", "") or cat_book.get("author_name", ""),
+                        author_death=int(rec.get("author_death", 0)) or self._catalog.get_author_death(book_id),
+                        collection=rec.get("collection", "") or cat_book.get("collection", ""),
+                        page_number=int(rec.get("page_number", 0)),
+                        section_title=rec.get("section_title", ""),
+                        hierarchy=rec.get("hierarchy", []),
+                    )
+                )
         log.info("Loaded %d passages", len(self._passages))
 
     def _deduplicate(self):
@@ -866,8 +892,7 @@ class BayanAgenticChunker:
             if fp not in seen:
                 seen.add(fp)
                 self._deduped.append(p)
-        log.info("Kept %d after dedup (removed %d)", len(self._deduped),
-                 len(self._passages) - len(self._deduped))
+        log.info("Kept %d after dedup (removed %d)", len(self._deduped), len(self._passages) - len(self._deduped))
 
     def _group_sections(self):
         raw: Dict[Tuple, List[Passage]] = defaultdict(list)
@@ -883,7 +908,7 @@ class BayanAgenticChunker:
             return []
         windows = []
         for start in range(0, len(pages), step):
-            win = pages[start:start + size]
+            win = pages[start : start + size]
             if win:
                 windows.append(win)
         # ← FIX: Only merge last window if it's a small orphan AND we have > 1 window
@@ -893,7 +918,7 @@ class BayanAgenticChunker:
             # Merge only if last window is less than 1/3 of target size
             if len(last) < max(1, size // 3):
                 extra = [p for p in last if p.idx not in {x.idx for x in second_last}]
-                windows[-2] = second_last + extra[:size - len(second_last)]
+                windows[-2] = second_last + extra[: size - len(second_last)]
                 windows.pop()
         return windows
 
@@ -917,9 +942,16 @@ class BayanAgenticChunker:
             return "seerah"
         return "general"
 
-    def _make_chunk(self, pages: List[Passage], chunk_id: str,
-                    parent_id: Optional[str], level: str, chunk_type: str,
-                    book_id: int, hier: List[str]) -> HierarchicalChunk:
+    def _make_chunk(
+        self,
+        pages: List[Passage],
+        chunk_id: str,
+        parent_id: Optional[str],
+        level: str,
+        chunk_type: str,
+        book_id: int,
+        hier: List[str],
+    ) -> HierarchicalChunk:
         text = "\n\n".join(p.content for p in pages if p.content.strip())
         first = pages[0]
         page_nums = [p.page_number for p in pages]
@@ -973,9 +1005,11 @@ class BayanAgenticChunker:
         for chunk in self._chunks:
             entities = regex_extract_entities(chunk.text, chunk.section_hierarchy)
             chunk.entities = entities
-            chunk.persons = [e.canonical_name for e in entities
-                             if e.entity_type in (EntityType.PERSON, EntityType.PROPHET,
-                                                  EntityType.SAHABA, EntityType.TABI)]
+            chunk.persons = [
+                e.canonical_name
+                for e in entities
+                if e.entity_type in (EntityType.PERSON, EntityType.PROPHET, EntityType.SAHABA, EntityType.TABI)
+            ]
             chunk.places = [e.canonical_name for e in entities if e.entity_type == EntityType.PLACE]
             chunk.events = [e.canonical_name for e in entities if e.entity_type == EntityType.EVENT]
             chunk.concepts = [e.canonical_name for e in entities if e.entity_type == EntityType.CONCEPT]
@@ -995,9 +1029,15 @@ class BayanAgenticChunker:
                 if not child:
                     continue
                 for attr, limit in [
-                    ("persons", 15), ("places", 10), ("events", 8),
-                    ("concepts", 10), ("fiqh_rulings", 8), ("madhahib", 4),
-                    ("books", 8), ("topics", 8), ("quranic_refs", 10),
+                    ("persons", 15),
+                    ("places", 10),
+                    ("events", 8),
+                    ("concepts", 10),
+                    ("fiqh_rulings", 8),
+                    ("madhahib", 4),
+                    ("books", 8),
+                    ("topics", 8),
+                    ("quranic_refs", 10),
                     ("hadith_collections", 8),
                 ]:
                     merged = list(dict.fromkeys(getattr(parent, attr) + getattr(child, attr)))[:limit]
@@ -1048,14 +1088,16 @@ class BayanAgenticChunker:
                 sorted_c = sorted(clist, key=lambda x: x.temporal_order)
                 for i, chunk in enumerate(sorted_c):
                     # Only connect to MAX_SHARE nearest temporal neighbors
-                    neighbours = sorted_c[max(0, i - MAX_SHARE):i] + sorted_c[i + 1:i + 1 + MAX_SHARE]
+                    neighbours = sorted_c[max(0, i - MAX_SHARE) : i] + sorted_c[i + 1 : i + 1 + MAX_SHARE]
                     for nb in neighbours:
                         if len(chunk.relations) < 20:  # ← NEW: cap relations per chunk
-                            chunk.relations.append({
-                                "type": rel_type,
-                                "target_chunk_id": nb.chunk_id,
-                                "shared_entity": ent,
-                            })
+                            chunk.relations.append(
+                                {
+                                    "type": rel_type,
+                                    "target_chunk_id": nb.chunk_id,
+                                    "shared_entity": ent,
+                                }
+                            )
 
         # FIQH_OF
         fiqh_chunks = [c for c in children if "Fiqh" in c.narrative_role]
@@ -1094,13 +1136,12 @@ class BayanAgenticChunker:
 
         # 3. Compute batch embeddings if embedder available
         if self._embedder and self.compute_entity_embeddings and self._global_entity_index:
-            entity_names = [k.split(":", 1)[1] for k in sorted(
-                self._global_entity_index, key=self._global_entity_index.get
-            )]
+            entity_names = [
+                k.split(":", 1)[1] for k in sorted(self._global_entity_index, key=self._global_entity_index.get)
+            ]
             log.info("EHRAG: computing embeddings for %d entities", len(entity_names))
             embeddings = self._embedder.encode(
-                entity_names, batch_size=512, show_progress_bar=True,
-                normalize_embeddings=True
+                entity_names, batch_size=512, show_progress_bar=True, normalize_embeddings=True
             )
 
             # 4. BIRCH clustering → semantic hyperedges
@@ -1156,9 +1197,9 @@ class BayanAgenticChunker:
         children = sum(1 for c in self._chunks if c.level == "child")
         llm_enriched = sum(1 for c in self._chunks if c.enriched_by_llm)
         return f"""
-{'='*60}
+{"=" * 60}
   BayanAgenticChunker Report
-{'='*60}
+{"=" * 60}
   Input passages   : {len(self._passages)}
   After dedup      : {len(self._deduped)}
   Sections         : {len(self._sections)}
@@ -1169,7 +1210,7 @@ class BayanAgenticChunker:
   Semantic hyperedges: {len(self._semantic_hyperedges)}
   Output file      : {self.output_path}
   Elapsed          : {elapsed:.1f}s
-{'='*60}
+{"=" * 60}
 """
 
 
@@ -1178,12 +1219,14 @@ class BayanAgenticChunker:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description="BayanAgenticChunker - SOTA Islamic Corpus Chunker")
     parser.add_argument("--input", required=True, help="Input JSONL file")
     parser.add_argument("--output", required=True, help="Output JSONL file")
     parser.add_argument("--catalog", default=None, help="Path to master_catalog.json")  # ← NEW
-    parser.add_argument("--domain", default="auto",
-                        choices=["auto", "seerah", "fiqh", "hadith", "tafsir", "aqeedah", "general"])
+    parser.add_argument(
+        "--domain", default="auto", choices=["auto", "seerah", "fiqh", "hadith", "tafsir", "aqeedah", "general"]
+    )
     parser.add_argument("--api-key")
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--base-url")
@@ -1192,8 +1235,7 @@ if __name__ == "__main__":
     parser.add_argument("--child-pages", type=int, default=2)
     parser.add_argument("--child-overlap", type=int, default=1)
     parser.add_argument("--skip-llm", action="store_true")
-    parser.add_argument("--no-embeddings", action="store_true",
-                        help="Skip EHRAG entity embedding computation")  # ← NEW
+    parser.add_argument("--no-embeddings", action="store_true", help="Skip EHRAG entity embedding computation")  # ← NEW
     parser.add_argument("--birch-threshold", type=float, default=0.5)  # ← NEW
     parser.add_argument("--resume")
     args = parser.parse_args()
