@@ -1,10 +1,11 @@
 # Verifier Pipeline Module
 """Pipeline for running multiple verifiers."""
 
-from typing import List, Optional, Dict, Any
-from .schemas import CheckResult, VerificationReport, VerificationStatus, VerifierType
+from typing import Any
+
 from .base import BaseVerifier
-from .policies import VerificationPolicy, VerificationLevel
+from .policies import VerificationLevel, VerificationPolicy
+from .schemas import CheckResult, VerificationReport, VerificationStatus, VerifierType
 
 # Alias for backward compatibility
 VerificationResult = CheckResult
@@ -23,8 +24,8 @@ class VerifierPipeline:
         register_verifier(verifier_type, verifier) -> None
     """
 
-    def __init__(self, policy: Optional[VerificationPolicy] = None):
-        self.verifiers: Dict[VerifierType, BaseVerifier] = {}
+    def __init__(self, policy: VerificationPolicy | None = None):
+        self.verifiers: dict[VerifierType, BaseVerifier] = {}
         self.policy = policy or VerificationPolicy()
 
     def register_verifier(
@@ -44,8 +45,8 @@ class VerifierPipeline:
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Verify a claim using all applicable verifiers.
 
         Args:
@@ -61,7 +62,7 @@ class VerifierPipeline:
             - summary: Summary with total, passed, failed, confidence
             - report: VerificationReport with aggregated results
         """
-        results = []
+        results: list[CheckResult] = []
         enabled_types = self.policy.get_enabled_types()
 
         for verifier_type, verifier in self.verifiers.items():
@@ -73,13 +74,20 @@ class VerifierPipeline:
                 result = await verifier.verify(claim, evidence, context)
                 results.append(result)
 
-        # Create aggregated report
-        report = VerificationReport.from_results(results)
-
-        # Get summary
+        # Aggregate results
         passed = sum(1 for r in results if r.passed)
         failed = sum(1 for r in results if not r.passed)
         avg_confidence = sum(r.confidence for r in results) / len(results) if results else 0.0
+        all_passed = bool(results) and failed == 0
+
+        # Create aggregated report
+        report = VerificationReport(
+            query=claim,
+            is_verified=all_passed,
+            confidence=avg_confidence,
+            status=VerificationStatus.PASSED if all_passed else VerificationStatus.FAILED,
+            check_results={r.check_name: r.model_dump() for r in results},
+        )
 
         return {
             "results": results,
@@ -98,10 +106,10 @@ class VerifierPipeline:
 
     async def verify_claim_chain(
         self,
-        claims: List[str],
+        claims: list[str],
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Verify multiple claims in sequence.
 
         Args:
@@ -120,7 +128,7 @@ class VerifierPipeline:
 
         return results
 
-    def get_enabled_verifiers(self) -> List[VerifierType]:
+    def get_enabled_verifiers(self) -> list[VerifierType]:
         """Get list of enabled verifier types."""
         return [v for v in self.verifiers.keys() if self.policy.is_enabled(v)]
 
@@ -153,14 +161,14 @@ def create_verification_pipeline(
     Returns:
         Configured VerifierPipeline
     """
-    from .checks.exact_quote import exact_quote_verifier
-    from .checks.hadith_grade import hadith_grade_verifier
-    from .checks.source_attribution import source_attribution_verifier
-    from .checks.evidence_sufficiency import evidence_sufficiency_verifier
     from .checks.contradiction import contradiction_verifier
-    from .checks.school_consistency import school_consistency_verifier
-    from .checks.temporal_consistency import temporal_consistency_verifier
+    from .checks.evidence_sufficiency import evidence_sufficiency_verifier
+    from .checks.exact_quote import exact_quote_verifier
     from .checks.groundedness_judge import groundedness_judge
+    from .checks.hadith_grade import hadith_grade_verifier
+    from .checks.school_consistency import school_consistency_verifier
+    from .checks.source_attribution import source_attribution_verifier
+    from .checks.temporal_consistency import temporal_consistency_verifier
 
     pipeline = VerifierPipeline(policy=VerificationPolicy(level=level))
 
