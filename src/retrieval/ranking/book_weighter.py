@@ -76,7 +76,7 @@ class BookImportanceWeighter:
         self._books: dict[int, dict[str, Any]] = {}
         self._loaded = False
 
-    def load_catalog(self):
+    def load_catalog(self) -> None:
         """Load master catalog."""
         if self._loaded:
             return
