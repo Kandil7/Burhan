@@ -35,7 +35,7 @@ class ResponseTrace(BaseModel):
     spans: list[TraceSpan] = Field(default_factory=list, description="Trace spans")
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    def add_span(self, span: TraceSpan):
+    def add_span(self, span: TraceSpan) -> None:
         """Add a span to the trace."""
         self.spans.append(span)
 
