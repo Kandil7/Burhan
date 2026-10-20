@@ -211,7 +211,7 @@ def safe_run(
                 on_error(e, attempt)
 
             if attempt < retry_count:
-                delay = retry_delay * (2 ** attempt)
+                delay = retry_delay * (2**attempt)
                 time.sleep(delay)
 
     if last_error:
@@ -238,7 +238,7 @@ def retry_async(
                 except exceptions as e:
                     last_error = e
                     if attempt < max_retries - 1:
-                        delay = backoff_base * (2 ** attempt)
+                        delay = backoff_base * (2**attempt)
                         logger = get_script_logger()
                         logger.warning(
                             "retry.async",
@@ -282,12 +282,12 @@ def format_size(size_bytes: int) -> str:
     """Format byte size into human-readable string."""
     if size_bytes < 1024:
         return f"{size_bytes} B"
-    elif size_bytes < 1024 ** 2:
+    elif size_bytes < 1024**2:
         return f"{size_bytes / 1024:.1f} KB"
-    elif size_bytes < 1024 ** 3:
-        return f"{size_bytes / 1024 ** 2:.1f} MB"
+    elif size_bytes < 1024**3:
+        return f"{size_bytes / 1024**2:.1f} MB"
     else:
-        return f"{size_bytes / 1024 ** 3:.2f} GB"
+        return f"{size_bytes / 1024**3:.2f} GB"
 
 
 def format_duration(seconds: float) -> str:
@@ -308,8 +308,8 @@ def sanitize_filename(filename: str) -> str:
     """Sanitize a filename for safe file system usage."""
     import re
 
-    sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
-    sanitized = sanitized.strip('. ')
+    sanitized = re.sub(r'[<>:"/\\|?*]', "_", filename)
+    sanitized = sanitized.strip(". ")
     if len(sanitized) > 200:
         name, ext = os.path.splitext(sanitized)
         sanitized = name[:195] + ext
