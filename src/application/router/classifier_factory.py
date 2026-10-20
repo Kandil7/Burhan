@@ -13,17 +13,20 @@ Note: EmbeddingClassifier is in src/application/router/embedding_classifier.py
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from src.application.interfaces import IntentClassifier
 from src.config.logging_config import get_logger
 from src.domain.intents import (
+    INTENT_PRIORITY,
     Intent,
-    INTENT_DESCRIPTIONS,
-    KEYWORD_PATTERNS as INTENT_KEYWORDS,
-    normalize_arabic,
     detect_language,
+    normalize_arabic,
+)
+from src.domain.intents import (
+    KEYWORD_PATTERNS as INTENT_KEYWORDS,
 )
 from src.domain.models import ClassificationResult
 
@@ -56,7 +59,7 @@ class KeywordBasedClassifier(QueryClassifier):
     Uses robust Arabic normalization and match counting for classification.
     """
 
-    def __init__(self, keywords: Optional[Dict[Intent, List[str]]] = None):
+    def __init__(self, keywords: dict[Intent, list[str]] | None = None):
         """
         Initialize the classifier with keywords.
 
@@ -64,57 +67,118 @@ class KeywordBasedClassifier(QueryClassifier):
             keywords: Optional custom keywords dict. Uses INTENT_KEYWORDS if not provided.
         """
         self.keywords = keywords or INTENT_KEYWORDS
-        # Pre-normalize keywords for performance
-        self._norm_keywords: Dict[Intent, List[str]] = {
-            intent: [normalize_arabic(kw) for kw in kws] for intent, kws in self.keywords.items()
-        }
+        # Pre-normalize and compile keywords for performance.
+        # Word-boundary matching stops short keywords such as "علي" from
+        # matching inside "عليكم", while still allowing Arabic proclitics.
+        # Variants that normalize to the same string (e.g. "صلاة" and "صلاه")
+        # are collapsed so they cannot double-count for one intent.
+        self._norm_keywords: dict[Intent, list[re.Pattern[str]]] = {}
+        for intent, kws in self.keywords.items():
+            seen: set[str] = set()
+            compiled: list[re.Pattern[str]] = []
+            for kw in kws:
+                normalized = normalize_arabic(kw)
+                if not normalized or normalized in seen:
+                    continue
+                seen.add(normalized)
+                compiled.append(self._compile_keyword(kw))
+            self._norm_keywords[intent] = compiled
 
-    async def classify(self, query: str) -> ClassificationResult:
-        """Classify based on keyword density and priority."""
+    @staticmethod
+    def _compile_keyword(keyword: str) -> re.Pattern[str]:
+        normalized = normalize_arabic(keyword)
+        if not normalized:
+            return re.compile(r"(?!x)x")  # never matches
+        body = re.escape(normalized)
+        # Boundary class is letters and digits only. The wider Arabic block
+        # \u0600-\u06FF also contains punctuation such as "؟" (U+061F), which
+        # made keywords at the end of a sentence fail to match.
+        letters = r"A-Za-z\u0621-\u064A\u0660-\u0669\u06F0-\u06F9"
+        return re.compile(
+            r"(?<![" + letters + r"])"
+            r"(?:ال|و|ف|ب|ل|ك)?" + body + r"(?![" + letters + r"])"
+        )
+
+    def match_counts(self, query: str) -> dict[Intent, int]:
+        """Return how many keywords matched for each intent."""
+        norm_query = normalize_arabic(query or "")
+        counts: dict[Intent, int] = {}
+        for intent, patterns in self._norm_keywords.items():
+            count = sum(1 for p in patterns if p.search(norm_query))
+            if count > 0:
+                counts[intent] = count
+        return counts
+
+    @staticmethod
+    def best_intent(counts: dict[Intent, int]) -> Intent | None:
+        """Pick the winning intent.
+
+        Match count decides first, so a query that mentions several fiqh terms
+        beats a single incidental tool keyword. Priority only breaks ties,
+        which is where specific tool intents outrank the general FIQH bucket.
+        """
+        if not counts:
+            return None
+        return max(counts, key=lambda intent: (counts[intent], INTENT_PRIORITY.get(intent, 0)))
+
+    def classify_sync(self, query: str) -> ClassificationResult:
+        """Synchronous keyword classification.
+
+        Kept separate from :meth:`classify` so synchronous callers, such as
+        the legacy ``core.router`` wrapper, can reuse the same logic.
+        """
         if not query or not query.strip():
             return ClassificationResult(
                 intent=Intent.ISLAMIC_KNOWLEDGE,
-                confidence=0.0,
+                confidence=0.50,
                 language="ar",
                 reasoning="Empty query.",
                 requires_retrieval=True,
                 method="keyword",
             )
 
-        norm_query = normalize_arabic(query)
-
-        # Count matches per intent
-        matches: Dict[Intent, int] = {}
-        for intent, patterns in self._norm_keywords.items():
-            count = sum(1 for p in patterns if p in norm_query)
-            if count > 0:
-                matches[intent] = count
-
+        matches = self.match_counts(query)
         if not matches:
+            # A zero confidence here used to disable the embedding tier in
+            # MasterHybridClassifier, so nothing ever fell back.
             return ClassificationResult(
                 intent=Intent.ISLAMIC_KNOWLEDGE,
-                confidence=0.0,
-                language="ar",
-                reasoning="No keywords matched.",
+                confidence=0.30,
+                language=detect_language(query),
+                reasoning="No keywords matched; defaulted to general Islamic knowledge.",
                 requires_retrieval=True,
                 method="keyword",
             )
 
-        # Pick highest match count
-        best_intent = max(matches, key=matches.get)
-        count = matches[best_intent]
+        intent = self.best_intent(matches)
+        assert intent is not None  # matches is non-empty
+        count = matches[intent]
 
         # Confidence based on match count
         confidence = 0.7 if count == 1 else (0.85 if count == 2 else 0.95)
 
+        from src.domain.intents import (
+            classify_quran_subintent,
+            infer_requires_retrieval,
+        )
+
+        quran_subintent = None
+        if intent is Intent.QURAN:
+            quran_subintent, _ = classify_quran_subintent(query)
+
         return ClassificationResult(
-            intent=best_intent,
+            intent=intent,
             confidence=confidence,
             language=detect_language(query),
-            reasoning=f"Matched {count} keywords for {best_intent.value}.",
-            requires_retrieval=True,
+            reasoning=f"Matched {count} keywords for {intent.value}.",
+            requires_retrieval=infer_requires_retrieval(intent, quran_subintent),
+            quran_subintent=quran_subintent,
             method="keyword",
         )
+
+    async def classify(self, query: str) -> ClassificationResult:
+        """Classify based on keyword density and priority."""
+        return self.classify_sync(query)
 
 
 # ============================================================================
@@ -150,8 +214,9 @@ class MasterHybridClassifier(IntentClassifier):
         kw_result = await self._keyword_classifier.classify(query)
         logger.debug("hybrid_classifier.keyword_result", intent=kw_result.intent.value, confidence=kw_result.confidence)
 
-        # If keyword match exists, use it
-        if kw_result.confidence > 0.0:
+        # Confident keyword match wins without a semantic pass.
+        # A weak or absent match falls through to the embedding tier.
+        if kw_result.confidence >= self._low_conf:
             logger.info("hybrid_classifier.keyword_win", intent=kw_result.intent.value)
             return kw_result
 
@@ -164,7 +229,8 @@ class MasterHybridClassifier(IntentClassifier):
                     intent=emb_result.intent.value,
                     confidence=emb_result.confidence,
                 )
-                return emb_result
+                if emb_result.confidence >= kw_result.confidence:
+                    return emb_result
             except Exception as e:
                 logger.error("hybrid_classifier.embedding_failed", error=str(e))
 
