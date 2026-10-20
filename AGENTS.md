@@ -114,12 +114,11 @@ def process_query(
     query: str,
     top_k: int = 10,
     filters: Optional[Dict[str, Any]] = None,
-) -> List[RetrievalResult]:
-    ...
+) -> List[RetrievalResult]: ...
+
 
 # Avoid
-def process_query(query, top_k=10, filters=None):
-    ...
+def process_query(query, top_k=10, filters=None): ...
 ```
 
 ### Pydantic Models
@@ -128,13 +127,14 @@ def process_query(query, top_k=10, filters=None):
 from pydantic import BaseModel, Field
 from typing import Optional
 
+
 class AgentConfig(BaseModel):
     """Agent configuration model."""
-    
+
     name: str = Field(description="Agent name")
     collection: str = Field(default="default")
     top_k: int = Field(default=10, ge=1, le=100)
-    
+
     model_config = {"extra": "forbid"}  # No extra fields
 ```
 
@@ -145,9 +145,7 @@ class AgentConfig(BaseModel):
 from src.core.exceptions import BurhanError, ConfigurationError
 
 # Raise with context
-raise ConfigurationError(
-    f"Config not found for agent: {agent_name}"
-) from None
+raise ConfigurationError(f"Config not found for agent: {agent_name}") from None
 
 # Handle gracefully
 try:
@@ -163,6 +161,7 @@ except BurhanError as e:
 # Use async for I/O operations
 async def get_embeddings(texts: List[str]) -> List[List[float]]:
     return await embedding_model.encode(texts)
+
 
 # Don't block in async functions - use await
 async def process():
@@ -211,10 +210,10 @@ agent = FiqhCollectionAgent(config=config)
 
 ### Legacy vs v2
 
-- **v2 (recommended)**: `src/agents/collection/fiqh.py`
-- **Legacy (deprecated)**: `src/agents/fiqh_agent.py`
+- **v2 (canonical)**: `src/agents/collection/fiqh.py`
+- **v1 (removed)**: the flat `src/agents/*_agent.py` modules were deleted in the v2 migration.
 
-Use v2 paths for new code. Legacy imports still work with warnings.
+Use v2 paths for new code. No v1 compatibility shims remain.
 
 ---
 
@@ -225,6 +224,7 @@ Use v2 paths for new code. Legacy imports still work with warnings.
 ```python
 # Routes should only validate and delegate
 ask_router = APIRouter(prefix="/ask")
+
 
 @ask_router.post("", response_model=AskResponse)
 async def ask_question(request: AskRequest) -> AskResponse:
@@ -256,8 +256,7 @@ class AnswerQueryUseCase:
 src/
 ├── agents/collection/     # v2 CollectionAgents (use this)
 ├── application/           # Use cases, routing, services
-├── config/               # Agent config manager, YAML loader
-├── config_runtime/      # Settings, runtime config
+├── config/               # Agent config manager, YAML loader, settings
 ├── domain/              # Domain models (intents, etc.)
 ├── retrieval/            # Hybrid, BM25, dense retrievers
 ├── verification/         # Quote validation, hadith grading
@@ -272,7 +271,7 @@ src/
 ## Important Notes
 
 1. **Configuration**: All agent configs are in YAML (`config/agents/*.yaml`), prompts in `prompts/`
-2. **Lazy Deprecation**: Legacy imports show warnings but still work
+2. **v2 Only**: The v1 flat agent modules were removed; use `src/agents/collection/`
 3. **Verification First**: Generation only consumes verified evidence
 4. **Async First**: Use async/await for all I/O operations
 5. **Type Safety**: Enable mypy checks before committing
