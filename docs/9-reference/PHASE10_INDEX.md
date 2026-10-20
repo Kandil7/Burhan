@@ -32,7 +32,7 @@ The abstract base class providing a 7-stage RAG pipeline:
 class CollectionAgent(ABC):
     async def run(self, raw_question: str, meta: dict) -> AgentOutput:
         # 1. query_intake    - Normalize query
-        # 2. classify_intent - Classify to IntentLabel
+        # 2. classify_intent - Classify to Intent
         # 3. retrieve_candidates - Get passages
         # 4. rerank_candidates - Apply reranking
         # 5. run_verification  - Verify candidates
@@ -40,7 +40,7 @@ class CollectionAgent(ABC):
         # 7. assemble_citations - Build citations
 ```
 
-**Location**: `src/agents/collection_agent.py`
+**Location**: `src/agents/collection/base.py`
 
 ### 2. Retrieval Strategy Matrix
 
@@ -64,11 +64,11 @@ VerificationSuite(
         VerificationCheck(name="quote_validator", fail_policy="abstain"),
         VerificationCheck(name="evidence_sufficiency", fail_policy="abstain"),
     ],
-    fail_fast=True
+    fail_fast=True,
 )
 ```
 
-**Location**: `src/verifiers/suite_builder.py`
+**Location**: `src/verification/suite_builder.py`
 
 ---
 
@@ -78,23 +78,26 @@ VerificationSuite(
 
 ```
 src/agents/
-├── collection_agent.py              # Base class + IntentLabel
-├── fiqh_collection_agent.py        # FiqhCollectionAgent
-├── hadith_collection_agent.py      # HadithCollectionAgent
-├── tafsir_collection_agent.py      # TafsirCollectionAgent
-├── aqeedah_collection_agent.py     # AqeedahCollectionAgent
-├── seerah_collection_agent.py      # SeerahCollectionAgent
-├── usul_fiqh_collection_agent.py   # UsulFiqhCollectionAgent
-├── history_collection_agent.py     # HistoryCollectionAgent
-└── language_collection_agent.py    # LanguageCollectionAgent
+└── collection/                      # Base class + Intent
+    ├── base.py                     # CollectionAgent base
+    ├── fiqh.py                     # FiqhCollectionAgent
+    ├── hadith.py                   # HadithCollectionAgent
+    ├── tafsir.py                   # TafsirCollectionAgent
+    ├── aqeedah.py                  # AqeedahCollectionAgent
+    ├── seerah.py                   # SeerahCollectionAgent
+    ├── usul_fiqh.py                # UsulFiqhCollectionAgent
+    ├── history.py                  # HistoryCollectionAgent
+    ├── language.py                 # LanguageCollectionAgent
+    ├── tazkiyah.py                 # TazkiyahCollectionAgent
+    └── general.py                  # GeneralCollectionAgent
 
 src/retrieval/
 ├── __init__.py                     # Module exports
 └── strategies.py                   # Retrieval strategy matrix
 
-src/verifiers/
+src/verification/
 ├── suite_builder.py                # Verification suite builder
-└── fiqh_checks.py                  # Fiqh verification stubs
+└── checks/fiqh_checks.py           # Fiqh verification stubs
 
 src/application/router/
 ├── orchestration.py                # Multi-agent orchestration
@@ -140,16 +143,9 @@ src/config/
 ```python
 from src.agents.fiqh_collection_agent import FiqhCollectionAgent
 
-agent = FiqhCollectionAgent(
-    embedding_model=embedding_model,
-    llm_client=llm_client,
-    vector_store=vector_store
-)
+agent = FiqhCollectionAgent(embedding_model=embedding_model, llm_client=llm_client, vector_store=vector_store)
 
-result = await agent.run(
-    raw_question="ما حكم صلاة الجمعة؟",
-    meta={"language": "ar"}
-)
+result = await agent.run(raw_question="ما حكم صلاة الجمعة؟", meta={"language": "ar"})
 
 print(result.answer)
 print(result.citations)
@@ -180,10 +176,7 @@ print(f"Checks: {[c.name for c in suite.checks]}")
 from src.application.router.orchestration import create_orchestration_plan
 from src.domain.intents import Intent
 
-plan = create_orchestration_plan(
-    query="ما حكم الزكاة؟",
-    intent=Intent.FIQH
-)
+plan = create_orchestration_plan(query="ما حكم الزكاة؟", intent=Intent.FIQH)
 print(f"Pattern: {plan.pattern}")
 print(f"Tasks: {[t.agent_name for t in plan.tasks]}")
 ```
@@ -314,11 +307,13 @@ Located in `src/config/constants.py`:
 ```python
 # OLD WAY (still works)
 from src.agents.fiqh_agent import FiqhAgent
+
 agent = FiqhAgent()
 result = await agent.execute(AgentInput(query="..."))
 
 # NEW WAY (recommended)
 from src.agents.fiqh_collection_agent import FiqhCollectionAgent
+
 agent = FiqhCollectionAgent()
 result = await agent.run(raw_question="...")
 ```
@@ -364,9 +359,9 @@ result = await agent.run(raw_question="...")
 
 | Topic | File |
 |-------|------|
-| Agent implementation | `src/agents/collection_agent.py` |
+| Agent implementation | `src/agents/collection/base.py` |
 | Retrieval configuration | `src/retrieval/strategies.py` |
-| Verification logic | `src/verifiers/suite_builder.py` |
+| Verification logic | `src/verification/suite_builder.py` |
 | Orchestration patterns | `src/application/router/orchestration.py` |
 | API endpoints | `src/api/routes/fiqh.py` |
 
