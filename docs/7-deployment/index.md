@@ -216,17 +216,17 @@ server {
 ```bash
 # Run migration script
 psql -U Burhan -d Burhan_db -f migrations/001_initial_schema.sql
-psql -U Burhan -d Burhan_db -f migrations/002_quran_translations_tafsir.sql
+psql -U Burhan -d Burhan_db -f migrations/versions/002_quran_translations_tafsir.sql
 ```
 
 ### Seed Quran Data
 
 ```bash
 # Option 1: Sample data (4 surahs)
-python scripts/seed_quran_data.py --sample
+python scripts/data/seed_quran_data.py --sample
 
 # Option 2: Full data from API
-python scripts/seed_quran_data.py --source api
+python scripts/data/seed_quran_data.py --source api
 ```
 
 ### Verify Database
