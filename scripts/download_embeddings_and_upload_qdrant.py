@@ -13,7 +13,8 @@ Usage:
     poetry run python scripts/download_embeddings_and_upload_qdrant.py --collections hadith_passages
     poetry run python scripts/download_embeddings_and_upload_qdrant.py --verify-only
     poetry run python scripts/download_embeddings_and_upload_qdrant.py --dry-run
-    poetry run python scripts/download_embeddings_and_upload_qdrant.py --force-reupload
+    poetry run python scripts/download_embeddings_and_upload_qdrant.py --force
+    poetry run python scripts/download_embeddings_and_upload_qdrant.py --collections seerah_passages --yes
 """
 
 import os
@@ -50,7 +51,7 @@ except ImportError:
 # Qdrant
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, VectorParams, PointStruct
+    from qdrant_client.models import Distance, HnswConfigDiff, VectorParams, PointStruct
 
     HAS_QDRANT = True
 except ImportError:
@@ -59,7 +60,7 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-HF_REPO = "Kandil7/Burhan-Embeddings"
+HF_REPO = "Kandil7/Athar-Embeddings"
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
@@ -81,6 +82,7 @@ COLLECTIONS = [
 
 DOWNLOAD_DIR = Path("data/processed/hf_embeddings")
 QDRANT_BATCH_SIZE = 500  # Points per upload batch
+VECTOR_DIM = 1024  # BAAI/bge-m3 output size
 
 
 def format_size(size_bytes: int) -> str:
@@ -110,41 +112,36 @@ def get_qdrant_counts() -> Dict[str, int]:
 
 
 def get_hf_counts() -> Dict[str, int]:
-    """Get expected point counts from HuggingFace metadata files."""
-    print("📡 Checking HuggingFace for expected counts...")
+    """Estimate expected point counts from the embedding shard sizes on HF.
+
+    Each shard stores float32 vectors of VECTOR_DIM, so one row is
+    VECTOR_DIM * 4 bytes. Using the published file sizes avoids downloading
+    every shard just to count rows.
+    """
+    print("Checking HuggingFace for expected counts...")
     api = HfApi()
+    row_bytes = VECTOR_DIM * 4
+    rows_by_collection: Dict[str, int] = {coll: 0 for coll in COLLECTIONS}
 
-    counts = {}
-    for coll in COLLECTIONS:
-        try:
-            all_files = api.list_repo_files(repo_id=HF_REPO, repo_type="dataset")
-            coll_files = [f for f in all_files if f.startswith(f"{coll}/")]
-            meta_files = [f for f in coll_files if "_meta_" in f and f.endswith(".jsonl.gz")]
+    for entry in api.list_repo_tree(repo_id=HF_REPO, repo_type="dataset", recursive=True):
+        path = getattr(entry, "path", "") or ""
+        size = getattr(entry, "size", None)
+        if size is None or "_emb_" not in path or not path.endswith(".npy"):
+            continue
+        collection = path.split("/")[0]
+        if collection not in rows_by_collection:
+            continue
+        # Each .npy carries a small header, so round per file instead of
+        # summing bytes, which would accumulate one row per shard.
+        rows = (size + row_bytes // 2) // row_bytes
+        if abs(size - rows * row_bytes) > row_bytes:
+            print(f"  [warn] {path}: size {size} does not fit the expected row layout")
+        rows_by_collection[collection] += rows
 
-            if not meta_files:
-                print(f"  ⚠️  No metadata files for {coll}")
-                counts[coll] = 0
-                continue
-
-            # Only download first metadata file to get count estimate
-            meta_file = meta_files[0]
-            filepath = hf_hub_download(
-                repo_id=HF_REPO,
-                filename=meta_file,
-                repo_type="dataset",
-                local_dir=str(DOWNLOAD_DIR / coll),
-                force_download=False,
-            )
-
-            with gzip.open(filepath, "rt", encoding="utf-8") as f:
-                count = sum(1 for line in f if line.strip())
-
-            counts[coll] = count
-            print(f"  ✅ {coll}: {count:,} expected")
-        except Exception as e:
-            print(f"  ⚠️  Error for {coll}: {e}")
-            counts[coll] = 0
-
+    counts: Dict[str, int] = {}
+    for collection, rows in rows_by_collection.items():
+        counts[collection] = rows
+        print(f"  {collection}: {rows:,} expected")
     return counts
 
 
@@ -203,184 +200,186 @@ def print_sync_plan(status: Dict[str, dict]):
     print("═" * 80)
 
 
-def download_embeddings_for_collection(collection_name: str, skip_existing: bool = True) -> Optional[tuple]:
-    """
-    Download all embedding chunks and metadata for a collection from HuggingFace.
-    Returns: (embeddings_array, passages_list)
-    """
-    print(f"\n{'=' * 70}")
-    print(f"📥 Downloading: {collection_name}")
-    print(f"{'=' * 70}")
-
-    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    coll_dir = DOWNLOAD_DIR / collection_name
-    coll_dir.mkdir(exist_ok=True)
-
-    # List files in collection directory on HF
+def list_collection_shards(collection_name: str) -> tuple[list[str], list[str]]:
+    """Return the sorted embedding and metadata shard paths for a collection."""
     api = HfApi()
     all_files = api.list_repo_files(repo_id=HF_REPO, repo_type="dataset")
-    coll_files = [f for f in all_files if f.startswith(f"{collection_name}/")]
+    prefix = f"{collection_name}/"
+    coll_files = [f for f in all_files if f.startswith(prefix)]
+    emb_files = sorted(f for f in coll_files if "_emb_" in f and f.endswith(".npy"))
+    meta_files = sorted(f for f in coll_files if "_meta_" in f and f.endswith(".jsonl.gz"))
+    return emb_files, meta_files
 
-    emb_files = sorted([f for f in coll_files if "_emb_" in f and f.endswith(".npy")])
-    meta_files = sorted([f for f in coll_files if "_meta_" in f and f.endswith(".jsonl.gz")])
 
-    print(f"  Found {len(emb_files)} embedding files")
-    print(f"  Found {len(meta_files)} metadata files")
+def read_meta_file(path: str) -> list[dict]:
+    """Read one gzipped JSONL metadata shard into a list of dicts."""
+    rows: list[dict] = []
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return rows
 
-    # Check for cached local files
-    cached_emb = list(coll_dir.glob("*_emb_*.npy"))
-    if skip_existing and cached_emb:
-        print(f"  💾 Found {len(cached_emb)} cached embedding files, using cache")
-        all_embeddings = []
-        for f in cached_emb:
-            emb = np.load(f)
-            all_embeddings.append(emb)
-        embeddings_array = np.concatenate(all_embeddings, axis=0) if all_embeddings else None
-    else:
-        # Download and concatenate all embedding chunks
-        all_embeddings = []
-        for i, emb_file in enumerate(emb_files, 1):
-            filepath = hf_hub_download(
-                repo_id=HF_REPO,
-                filename=emb_file,
-                repo_type="dataset",
-                local_dir=str(DOWNLOAD_DIR),
-                force_download=False,
-            )
 
-            embeddings = np.load(filepath)
-            all_embeddings.append(embeddings)
+def iter_collection_shards(collection_name: str):
+    """Download a collection one shard at a time.
 
-            if i % 10 == 0 or i == len(emb_files):
-                print(f"    Downloaded {i}/{len(emb_files)} embedding files")
+    Yields (shard_index, shard_count, vectors, passages). Holding one shard
+    keeps the process near 40 MB instead of several gigabytes.
+    """
+    emb_files, meta_files = list_collection_shards(collection_name)
+    if not emb_files:
+        print(f"  [warn] no embedding shards found for {collection_name}")
+        return
 
-        # Concatenate all embedding chunks
-        if all_embeddings:
-            embeddings_array = np.concatenate(all_embeddings, axis=0)
-        else:
-            print(f"  ⚠️  No embeddings found for {collection_name}")
-            return None
+    print(f"  Found {len(emb_files)} embedding shards, {len(meta_files)} metadata shards")
+    if len(emb_files) != len(meta_files):
+        print(f"  [warn] {len(emb_files)} embedding shards vs {len(meta_files)} metadata shards")
 
-    print(f"  ✅ Embeddings shape: {embeddings_array.shape}")
-
-    # Download metadata (always download as it's smaller)
-    passages = []
-    for i, meta_file in enumerate(meta_files, 1):
-        filepath = hf_hub_download(
-            repo_id=HF_REPO, filename=meta_file, repo_type="dataset", local_dir=str(DOWNLOAD_DIR), force_download=False
+    total = min(len(emb_files), len(meta_files))
+    for index in range(total):
+        emb_path = hf_hub_download(
+            repo_id=HF_REPO,
+            filename=emb_files[index],
+            repo_type="dataset",
+            local_dir=str(DOWNLOAD_DIR),
+            force_download=False,
+        )
+        meta_path = hf_hub_download(
+            repo_id=HF_REPO,
+            filename=meta_files[index],
+            repo_type="dataset",
+            local_dir=str(DOWNLOAD_DIR),
+            force_download=False,
         )
 
-        with gzip.open(filepath, "rt", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        passages.append(json.loads(line))
-                    except json.JSONDecodeError:
-                        continue
+        vectors = np.load(emb_path, mmap_mode="r")
+        passages = read_meta_file(meta_path)
+        if vectors.shape[0] != len(passages):
+            count = min(vectors.shape[0], len(passages))
+            print(
+                f"  [warn] {emb_files[index]}: {vectors.shape[0]} vectors vs {len(passages)} rows, trimming to {count}"
+            )
+            vectors = vectors[:count]
+            passages = passages[:count]
 
-        if i % 10 == 0 or i == len(meta_files):
-            print(f"    Downloaded {i}/{len(meta_files)} metadata files ({len(passages):,} passages)")
-
-    print(f"  ✅ Total passages: {len(passages):,}")
-
-    # Sanity check
-    if len(embeddings_array) != len(passages):
-        print(f"  ⚠️  MISMATCH: {len(embeddings_array)} embeddings vs {len(passages)} passages")
-        print(f"  Using minimum count: {min(len(embeddings_array), len(passages))}")
-        min_count = min(len(embeddings_array), len(passages))
-        embeddings_array = embeddings_array[:min_count]
-        passages = passages[:min_count]
-
-    return embeddings_array, passages
+        yield index, total, vectors, passages
 
 
 def upload_to_qdrant(
     collection_name: str,
-    embeddings: np.ndarray,
-    passages: list,
+    shards,
     batch_size: int = QDRANT_BATCH_SIZE,
     force: bool = False,
 ) -> dict:
-    """Upload embeddings and passages to Qdrant."""
+    """Upload shards to Qdrant with on-disk storage and a deferred HNSW index.
+
+    Vectors and payload stay on disk so a bulk load does not grow RAM in step
+    with the collection, and HNSW is disabled during the upload so every batch
+    does not build its own index. The index is built once at the end.
+    """
     print(f"\n{'=' * 70}")
-    print(f"📤 Uploading to Qdrant: {collection_name}")
+    print(f"Uploading to Qdrant: {collection_name}")
     print(f"{'=' * 70}")
 
-    # Connect to Qdrant
-    print(f"  Connecting to Qdrant: {QDRANT_URL}")
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY, timeout=120)
 
-    # Create collection if not exists
-    vector_size = embeddings.shape[1]
     existing_count = 0
+    collection_exists = client.collection_exists(collection_name)
+    if collection_exists:
+        existing_count = client.get_collection(collection_name).points_count or 0
+        print(f"  Collection exists ({existing_count:,} existing points)")
 
-    if client.collection_exists(collection_name):
-        info = client.get_collection(collection_name)
-        existing_count = info.points_count or 0
-        print(f"  ℹ️  Collection exists ({existing_count:,} existing points)")
-
-        if not force and existing_count > 0:
-            print(f"  🔄 Appending {len(passages)} new points...")
-            # Use offset to continue from existing
-            start_id = existing_count
-        else:
-            print(f"  🗑️  Recreating collection (force mode)...")
+    recreate = force or not collection_exists or existing_count == 0
+    if recreate:
+        if collection_exists:
+            print("  Recreating collection (force mode)...")
             client.delete_collection(collection_name)
-            client.create_collection(
-                collection_name=collection_name, vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
-            )
-            start_id = 0
-    else:
-        print(f"  Creating collection: {collection_name} (dim={vector_size})")
+        else:
+            print(f"  Creating collection: {collection_name} (dim={VECTOR_DIM})")
         client.create_collection(
-            collection_name=collection_name, vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=VECTOR_DIM, distance=Distance.COSINE, on_disk=True),
+            on_disk_payload=True,
+            hnsw_config=HnswConfigDiff(m=0),
         )
         start_id = 0
+    else:
+        print(f"  Appending after {existing_count:,} existing points...")
+        start_id = existing_count
 
-    # Upload in batches
-    total_points = len(passages)
-    t0 = time.time()
-    uploaded = 0
+    total_points = 0
+    rows_seen = 0
+    next_id = start_id
+    started = time.time()
 
-    for start in range(0, total_points, batch_size):
-        end = min(start + batch_size, total_points)
-        batch_emb = embeddings[start:end]
-        batch_pas = passages[start:end]
+    for shard_index, shard_count, vectors, passages in shards:
+        if vectors.shape[1] != VECTOR_DIM:
+            raise ValueError(
+                f"{collection_name}: shard {shard_index} has {vectors.shape[1]} dimensions, expected {VECTOR_DIM}"
+            )
 
-        points = []
-        for idx, pas in enumerate(batch_pas):
-            payload = {
-                "content": pas.get("content", ""),
-                "book_id": pas.get("book_id"),
-                "title": pas.get("title", ""),
-                "author": pas.get("author", ""),
-                "author_death": pas.get("author_death"),
-                "page": pas.get("page"),
-                "chapter": pas.get("chapter", ""),
-                "section": pas.get("section", ""),
-                "category": pas.get("category", ""),
-                "collection": collection_name,
-                "content_type": pas.get("content_type"),
-                "book_title": pas.get("book_title"),
-                "page_number": pas.get("page_number"),
-                "section_title": pas.get("section_title"),
-            }
+        if rows_seen + len(passages) <= start_id:
+            rows_seen += len(passages)
+            continue
 
-            points.append(PointStruct(id=start_id + start + idx, vector=batch_emb[idx].tolist(), payload=payload))
+        skip = max(0, start_id - rows_seen)
+        for start in range(skip, len(passages), batch_size):
+            end = min(start + batch_size, len(passages))
+            batch_vectors = vectors[start:end].tolist()
 
-        client.upsert(collection_name=collection_name, points=points)
+            points = []
+            for idx in range(end - start):
+                pas = passages[start + idx]
+                payload = {
+                    "content": pas.get("content", ""),
+                    "book_id": pas.get("book_id"),
+                    "title": pas.get("title", ""),
+                    "author": pas.get("author", ""),
+                    "author_death": pas.get("author_death"),
+                    "page": pas.get("page"),
+                    "chapter": pas.get("chapter", ""),
+                    "section": pas.get("section", ""),
+                    "category": pas.get("category", ""),
+                    "collection": collection_name,
+                    "content_type": pas.get("content_type"),
+                    "book_title": pas.get("book_title"),
+                    "page_number": pas.get("page_number"),
+                    "section_title": pas.get("section_title"),
+                }
+                points.append(PointStruct(id=next_id, vector=batch_vectors[idx], payload=payload))
+                next_id += 1
 
-        uploaded += len(points)
-        if uploaded % 5000 == 0 or uploaded == total_points:
-            elapsed = time.time() - t0
-            speed = uploaded / elapsed
-            print(f"    Uploaded {uploaded:,}/{total_points:,} points ({elapsed:.1f}s, {speed:.0f} pts/sec)")
+            client.upsert(collection_name=collection_name, points=points)
+            total_points += len(points)
 
-    elapsed = time.time() - t0
-    print(f"\n  ✅ Uploaded {uploaded:,} points in {elapsed:.1f}s ({uploaded / elapsed:.0f} pts/sec)")
+        rows_seen += len(passages)
+        elapsed = time.time() - started
+        rate = total_points / elapsed if elapsed else 0.0
+        print(
+            f"  shard {shard_index + 1}/{shard_count}: {rows_seen:,} rows, {total_points:,} uploaded ({rate:.0f} pts/s)"
+        )
 
-    return {"collection": collection_name, "points": uploaded, "existing": existing_count, "elapsed": elapsed}
+    elapsed = time.time() - started
+    print(f"  Uploaded {total_points:,} points in {elapsed:.1f}s")
+
+    print("  Enabling HNSW index...")
+    client.update_collection(
+        collection_name=collection_name,
+        hnsw_config=HnswConfigDiff(m=16, ef_construct=100),
+    )
+
+    return {
+        "collection": collection_name,
+        "points": total_points,
+        "existing": existing_count,
+        "elapsed": elapsed,
+    }
 
 
 def verify_qdrant(collections: list) -> dict:
@@ -419,9 +418,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without actually doing it")
     parser.add_argument("--batch-size", type=int, default=QDRANT_BATCH_SIZE, help="Qdrant upload batch size")
     parser.add_argument("--force", action="store_true", help="Force reupload even if collection exists")
-    parser.add_argument(
-        "--skip-cached", action="store_true", default=True, help="Skip downloading if files are cached locally"
-    )
+    parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
 
     args = parser.parse_args()
 
@@ -464,7 +461,7 @@ def main():
 
     # Ask for confirmation if there are uploads/updates
     upload_count = sum(1 for s in status.values() if s["action"] in ["upload", "update"])
-    if upload_count > 0:
+    if upload_count > 0 and not args.yes:
         confirm = input(f"\nProceed with {upload_count} collections? [Y/n]: ")
         if confirm.lower() not in ["", "y", "Y"]:
             print("❌ Aborted")
@@ -484,41 +481,25 @@ def main():
     for coll in collections:
         coll_status = status.get(coll, {"action": "skip"})
 
-        if coll_status["action"] == "skip":
-            print(f"\n⏭️  Skipping {coll} ({coll_status['reason']})")
+        if coll_status["action"] == "skip" and not args.force:
+            print(f"\nSkipping {coll} ({coll_status['reason']})")
             continue
 
         coll_start = time.time()
-
-        # Download
-        data = download_embeddings_for_collection(coll, skip_existing=args.skip_cached)
-
-        if data is None:
-            print(f"  ⚠️  No data for {coll}, skipping")
+        try:
+            result = upload_to_qdrant(
+                coll,
+                iter_collection_shards(coll),
+                batch_size,
+                force=args.force,
+            )
+        except Exception as exc:
+            print(f"  [error] {coll}: {exc}")
             continue
 
-        embeddings, passages = data
-        download_time = time.time() - coll_start
-        print(f"  ⏱️  Download time: {download_time:.1f}s")
-
-        # Upload to Qdrant
-        upload_start = time.time()
-        result = upload_to_qdrant(coll, embeddings, passages, batch_size, force=args.force)
-        upload_time = time.time() - upload_start
-
-        result["download_time"] = download_time
-        result["upload_time"] = upload_time
+        result["total_time"] = time.time() - coll_start
         results.append(result)
-
-        # Clean up memory
-        del embeddings
-        del passages
-        import gc
-
-        gc.collect()
-
-        coll_total = time.time() - coll_start
-        print(f"  ⏱️  Total time for {coll}: {coll_total:.1f}s")
+        print(f"  Total time for {coll}: {result['total_time']:.1f}s")
 
     # Summary
     total_elapsed = time.time() - total_start
