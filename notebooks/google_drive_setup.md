@@ -152,7 +152,8 @@ Google Drive/
 
 ```python
 from google.colab import drive
-drive.mount('/content/drive', force_remount=True)
+
+drive.mount("/content/drive", force_remount=True)
 ```
 
 ### Step 2: Verify Access
@@ -273,6 +274,7 @@ CHUNKED_DIR.mkdir(parents=True, exist_ok=True)
    ```python
    # Delete old embeddings
    import shutil
+
    shutil.rmtree("/content/drive/MyDrive/Burhan/output/embeddings")
    ```
 
