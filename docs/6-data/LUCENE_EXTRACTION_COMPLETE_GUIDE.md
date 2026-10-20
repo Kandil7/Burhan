@@ -1,5 +1,10 @@
 # Lucene Extraction - Complete Guide
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/lucene/run_pipeline.py` for steps A-D and `scripts/data/lucene/extract_lucene_pages.py --indexes` for raw extraction.
+
 ## ✅ STATUS: FULLY WORKING
 
 As of April 7, 2026 - Lucene extraction pipeline is production-ready!
@@ -236,7 +241,7 @@ lib/lucene/lucene-backward-codecs-9.12.0.jar
 Increase Java heap:
 ```python
 # In extract_all_lucene_pipeline.py, change:
-JAVA_OPTS="-Xmx4g"  # from -Xmx2g
+JAVA_OPTS = "-Xmx4g"  # from -Xmx2g
 ```
 
 ### "Extraction too slow"
@@ -272,7 +277,7 @@ This joins Lucene content with master_catalog.json to add:
 ### Step 3: Build Hierarchical Chunks
 
 ```bash
-python scripts/data/lucene/run_pipeline.py
+python scripts/extract_all_lucene_pipeline.py
 ```
 
 Creates RAG-ready chunks with:
@@ -297,7 +302,7 @@ notebooks/01_embed_all_collections.ipynb
 ### Step 6: Import to Qdrant
 
 ```bash
-python scripts/import_to_qdrant.py
+python scripts/download_embeddings_and_upload_qdrant.py
 ```
 
 ---
