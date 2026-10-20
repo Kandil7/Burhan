@@ -1,12 +1,13 @@
 # Hadith Grade Verifier Module
 """Verifier for hadith grading and authenticity with esnad support."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 
 class HadithGrade(str, Enum):
@@ -40,8 +41,8 @@ class HadithGradingResult:
     """
 
     grade: HadithGrade
-    details: Optional[str] = None
-    scholars: List[str] = None
+    details: str | None = None
+    scholars: list[str] = field(default_factory=list)
 
 
 # Known hadith collections and their default grades
@@ -76,13 +77,13 @@ class HadithGradeVerifier(BaseVerifier):
         """
         self.verifier_type = VerifierType.HADITH_GRADE
         self._esnad_dir = esnad_dir
-        self._original_grader = None
+        self._original_grader: Any = None
 
     async def verify(
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify hadith grade.
 
@@ -100,6 +101,7 @@ class HadithGradeVerifier(BaseVerifier):
         if not hadith_ref:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=1.0,
                 message="No hadith reference found",
@@ -107,8 +109,8 @@ class HadithGradeVerifier(BaseVerifier):
 
         # Get context for grading
         collection = context.get("collection", "") if context else ""
-        book_id = context.get("book_id")
-        page = context.get("page")
+        book_id = context.get("book_id") if context else None
+        page = context.get("page") if context else None
 
         # Use original grader if available
         if self._original_grader and book_id and page:
@@ -120,6 +122,7 @@ class HadithGradeVerifier(BaseVerifier):
         if grade == HadithGrade.DAIF or grade == HadithGrade.MOWDU:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.9,
                 message=f"Hadith is {grade.value}",
@@ -128,6 +131,7 @@ class HadithGradeVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.95,
             message=f"Hadith is {grade.value}",
@@ -162,6 +166,7 @@ class HadithGradeVerifier(BaseVerifier):
 
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.PASSED if passed else VerificationStatus.FAILED,
                 passed=passed,
                 confidence=confidence,
                 message=f"Hadith grade: {grade} (weight: {weight})",
@@ -176,6 +181,7 @@ class HadithGradeVerifier(BaseVerifier):
         except Exception as e:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.WARNING,
                 passed=True,
                 confidence=0.5,
                 message=f"Could not verify with esnad: {str(e)}",
@@ -195,7 +201,7 @@ class HadithGradeVerifier(BaseVerifier):
         hadith_keywords = ["hadith", "حديث", "صحيح", "ضعيف", "رسول"]
         return any(kw in claim.lower() for kw in hadith_keywords)
 
-    def _extract_hadith_reference(self, claim: str) -> Optional[str]:
+    def _extract_hadith_reference(self, claim: str) -> str | None:
         """Extract hadith reference from claim.
 
         Args:
@@ -249,7 +255,7 @@ class HadithGradeVerifier(BaseVerifier):
         # Unknown - return default
         return HadithGrade.DAIF
 
-    def enrich_passages_with_authenticity(self, passages: List[Dict]) -> List[Dict]:
+    def enrich_passages_with_authenticity(self, passages: list[dict]) -> list[dict]:
         """Enrich passages with hadith authenticity grades.
 
         Args:
@@ -259,7 +265,8 @@ class HadithGradeVerifier(BaseVerifier):
             Passages with added authenticity metadata
         """
         if self._original_grader:
-            return self._original_grader.enrich_passages_with_authenticity(passages)
+            graded: list[dict] = self._original_grader.enrich_passages_with_authenticity(passages)
+            return graded
         return passages
 
 
