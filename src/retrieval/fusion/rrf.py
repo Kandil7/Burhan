@@ -7,7 +7,6 @@ RRF combines multiple ranked lists into a single ranked list.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any
 
 from src.retrieval.schemas import RetrievalPassage
 
@@ -121,7 +120,7 @@ class ReciprocalRankFusion:
         doc_scores: dict[str, float] = defaultdict(float)
         doc_data: dict[str, RetrievalPassage] = {}
 
-        for rank_list, weight in zip(rank_lists, weights):
+        for rank_list, weight in zip(rank_lists, weights, strict=False):
             for rank, passage in enumerate(rank_list, 1):
                 doc_id = self._get_doc_id(passage)
                 doc_scores[doc_id] += weight * (1.0 / (self.k + rank))
