@@ -54,7 +54,7 @@ class CitationMapper:
         Returns:
             List of Citation objects
         """
-        citations = []
+        citations: list[Citation] = []
 
         for i, p in enumerate(passages, start_index):
             # Create citation with custom type
@@ -62,12 +62,12 @@ class CitationMapper:
 
             citations.append(
                 Citation(
-                    id=f"C{i}",
-                    type=citation_type,
-                    source=meta.get("book_title") or meta.get("author") or "مصدر إسلامي",
-                    reference=meta.get("reference", ""),
+                    source_id=f"C{i}",
+                    text=p.get("content", "")[:300],
+                    book_title=meta.get("book_title") or meta.get("author"),
+                    page=meta.get("page"),
                     url=meta.get("url"),
-                    text_excerpt=p.get("content", "")[:300] or None,
+                    metadata={**meta, "citation_type": citation_type},
                 )
             )
 
