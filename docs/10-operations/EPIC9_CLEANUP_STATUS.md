@@ -1,5 +1,9 @@
 # Epic 9 Cleanup Summary - Deferred Due to Test Failures
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## Current Status: Tests Failing - Cleanup Deferred
 
 The regression tests fail with critical import errors, so the cleanup cannot proceed. 
