@@ -49,7 +49,7 @@ class HierarchicalRetriever:
         )
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize hierarchical retriever."""
         pass
 
@@ -229,7 +229,7 @@ class HierarchicalRetriever:
 
     def _get_page_range(self, passages: list[dict[str, Any]]) -> dict[str, int | None]:
         """Get page range for a set of passages."""
-        pages = [p.get("page") for p in passages if p.get("page") is not None]
+        pages: list[int] = [int(p["page"]) for p in passages if p.get("page") is not None]
         if pages:
             return {"min": min(pages), "max": max(pages)}
         return {"min": None, "max": None}
