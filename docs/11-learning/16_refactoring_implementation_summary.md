@@ -1,5 +1,9 @@
 # ✅ Phase 6 Refactoring - Implementation Complete
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## 📋 ملخص التنفيذ
 
 تم تنفيذ **7 من 11 تحسين حرج وعالي الأولوية** بنجاح كامل.
@@ -26,6 +30,7 @@
 _chatbot = None
 _chatbot_lock = threading.Lock()
 
+
 def get_chatbot():
     global _chatbot
     with _chatbot_lock:
@@ -50,9 +55,11 @@ chatbot = _chatbot.get()
 # Bug: متغير واحد لكلا الوكيلين
 _agents_loaded = False
 
+
 async def get_fiqh_agent():
     global _agents_loaded
     _agents_loaded = True  # ← يضبط للوكيلين!
+
 
 async def get_general_agent():
     global _agents_loaded
@@ -79,11 +86,13 @@ async def get_general_agent():
 ```python
 # قبل
 import redis  # Sync - يحجب event loop!
+
 self._redis = redis.Redis(...)
 data = self._redis.get(key)  # Blocking!
 
 # بعد
 import redis.asyncio as redis  # Async - لا يحجب!
+
 self._redis = redis.Redis(...)
 data = await self._redis.get(key)  # Non-blocking!
 ```
@@ -107,7 +116,7 @@ data = await self._redis.get(key)  # Non-blocking!
 **المشكلة:**
 ```python
 # قبل
-id=str(uuid.uuid4())  # ← جديد كل مرة!
+id = str(uuid.uuid4())  # ← جديد كل مرة!
 # إعادة الفهرسة = تضاعف المتجهات
 ```
 
@@ -115,9 +124,10 @@ id=str(uuid.uuid4())  # ← جديد كل مرة!
 ```python
 # بعد
 import hashlib
+
 content = doc.get("content", "")
 doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]  # ← ثابت!
-id=doc_id
+id = doc_id
 ```
 
 **التأثير:**
@@ -211,6 +221,7 @@ _registry.register_agent("seerah_agent", SeerahAgent())
 ```python
 try:
     from src.agents.fiqh_agent import FiqhAgent
+
     _registry.register_agent("fiqh_agent", FiqhAgent())
 except Exception as e:
     logger.warning("registry.fiqh_agent_registration_failed", error=str(e))
