@@ -1,8 +1,6 @@
 # Collections Domain Module
 """Domain model for Burhan collections."""
 
-from typing import List, Optional
-
 
 class Collection:
     """Represents an Burhan collection."""
@@ -12,7 +10,7 @@ class Collection:
         id: str,
         name: str,
         category: str,
-        description: Optional[str] = None,
+        description: str | None = None,
         authority_weight: float = 1.0,
     ):
         self.id = id
@@ -40,7 +38,7 @@ CATEGORY_GENERAL = "general"
 
 
 # Predefined collections
-PREDEFINED_COLLECTIONS: List[Collection] = [
+PREDEFINED_COLLECTIONS: list[Collection] = [
     Collection(
         id="quran",
         name="Quran",
