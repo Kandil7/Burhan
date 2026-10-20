@@ -277,14 +277,18 @@ class QueryCache:
     ):
         """Initialize cache with async Redis connection pool."""
         self.ttl = ttl or settings.llm_cache_ttl
-        self._redis = None
-        self._redis_pool = None
+        self._redis: Any = None
+        self._redis_pool: Any = None
         self._initialized = False
         self._hits = 0
         self._misses = 0
         self._local_cache: dict[str, dict] = {}  # In-memory fallback
 
         # Initialize async Redis connection pool
+        self._connect(max_connections)
+
+    def _connect(self, max_connections: int = 10) -> None:
+        """Create the async Redis connection pool (best effort)."""
         try:
             self._redis_pool = redis.ConnectionPool.from_url(
                 settings.redis_url,
@@ -311,7 +315,7 @@ class QueryCache:
             return
         # Re-initialize if not done in __init__
         if not self._redis_pool:
-            self.__init__()
+            self._connect()
 
     def _make_key(self, query: str, params: dict | None = None) -> str:
         """Generate cache key from query and parameters."""
@@ -352,7 +356,7 @@ class QueryCache:
             if cached:
                 import json
 
-                result = json.loads(cached)
+                result: dict = json.loads(cached)
                 self._local_cache[key] = result
                 self._hits += 1
                 logger.debug("query_cache.hit", key=key[:16])
