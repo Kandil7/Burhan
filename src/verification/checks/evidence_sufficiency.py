@@ -1,10 +1,11 @@
 # Evidence Sufficiency Verifier Module
 """Verifier for evidence sufficiency assessment."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 from dataclasses import dataclass
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 
 @dataclass
@@ -21,7 +22,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
 
     def __init__(
         self,
-        criteria: Optional[SufficiencyCriteria] = None,
+        criteria: SufficiencyCriteria | None = None,
     ):
         self.verifier_type = VerifierType.EVIDENCE_SUFFICIENCY
         self.criteria = criteria or SufficiencyCriteria()
@@ -30,7 +31,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify evidence sufficiency."""
         evidences = self._extract_evidences(evidence)
@@ -39,6 +40,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
         if len(evidences) < self.criteria.min_evidences:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.8,
                 message=f"Insufficient evidences: {len(evidences)} < {self.criteria.min_evidences}",
@@ -52,6 +54,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
         if avg_authority < self.criteria.min_authority_score:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.8,
                 message=f"Authority score too low: {avg_authority:.2f}",
@@ -60,10 +63,11 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
 
         # Check multiple sources if required
         if self.criteria.require_multiple_sources:
-            sources = set(e.get("source_id") for e in evidences)
+            sources = {e.get("source_id") for e in evidences}
             if len(sources) < 2:
                 return CheckResult(
                     check_name=self.verifier_type.value,
+                    status=VerificationStatus.FAILED,
                     passed=False,
                     confidence=0.8,
                     message="Multiple sources required",
@@ -74,6 +78,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.85,
             message="Evidence is sufficient",
@@ -88,7 +93,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return evidence is not None
 
-    def _extract_evidences(self, evidence: Any) -> List[Dict[str, Any]]:
+    def _extract_evidences(self, evidence: Any) -> list[dict[str, Any]]:
         """Extract evidences from evidence object."""
         # Placeholder - would implement actual extraction
         if isinstance(evidence, list):
@@ -97,7 +102,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
 
     def _calculate_sufficiency_score(
         self,
-        evidences: List[Dict[str, Any]],
+        evidences: list[dict[str, Any]],
     ) -> float:
         """Calculate a sufficiency score."""
         if not evidences:
@@ -105,7 +110,7 @@ class EvidenceSufficiencyVerifier(BaseVerifier):
 
         count_score = min(len(evidences) / self.criteria.min_evidences, 1.0)
 
-        authority_scores = [e.get("authority_score", 0.5) for e in evidences]
+        authority_scores: list[float] = [float(e.get("authority_score", 0.5)) for e in evidences]
         authority_score = sum(authority_scores) / len(authority_scores)
 
         return (count_score + authority_score) / 2
