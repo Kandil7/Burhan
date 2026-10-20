@@ -100,7 +100,7 @@ Burhan follows a clean 4-layer architecture with strict separation of concerns. 
 │                                                                      │
 │  ┌────────────────────────┐  ┌─────────────────────────────┐        │
 │  │  HybridQueryClassifier │  │  Response Orchestrator       │        │
-│  │  (src/core/router.py)  │  │  (src/api/routes/query.py)   │        │
+│  │  (src/core/router.py)  │  │  (src/api/routes/ask.py)   │        │
 │  │                        │  │                              │        │
 │  │  Tier 1: Keywords      │  │  Routes intent → agent/tool  │        │
 │  │  Tier 2: LLM           │  │  Builds AgentInput           │        │
@@ -129,8 +129,8 @@ Burhan follows a clean 4-layer architecture with strict separation of concerns. 
 │  │ Tool       │ Tool       │                                        │
 │  └────────────┴────────────┘                                        │
 │                                                                      │
-│  6 Active Agents + 5 Deterministic Tools                            │
-│  Base classes: BaseAgent, BaseRAGAgent, BaseTool                    │
+│  11 Collection Agents + Chatbot + 5 Deterministic Tools             │
+│  Base classes: BaseAgent, CollectionAgent, BaseTool                 │
 └────────────────────────────┬────────────────────────────────────────┘
                              │
                              ▼
@@ -138,7 +138,7 @@ Burhan follows a clean 4-layer architecture with strict separation of concerns. 
 │                       Knowledge Layer                                │
 │                                                                      │
 │  ┌──────────────────────┐  ┌──────────────────────────────────┐     │
-│  │ PostgreSQL 16        │  │ Qdrant (10 collections)          │     │
+│  │ PostgreSQL 16        │  │ Qdrant (14 collections)          │     │
 │  │ - Quran text (6,236) │  │ - fiqh_passages (10,132 vectors) │     │
 │  │ - Translations       │  │ - hadith_passages (160+ vectors) │     │
 │  │ - Tafsir             │  │ - general_islamic, + 7 more      │     │
@@ -161,7 +161,7 @@ Burhan follows a clean 4-layer architecture with strict separation of concerns. 
 | **API** | HTTP handling, validation, serialization, middleware | `src/api/routes/*.py`, `src/api/schemas/*.py` | Factory pattern (`create_app()`) |
 | **Orchestration** | Intent classification, agent routing, citation normalization | `src/core/router.py`, `src/core/citation.py` | Strategy pattern (3-tier classification) |
 | **Agents/Tools** | Domain-specific logic, retrieval, generation, calculation | `src/agents/*.py`, `src/tools/*.py` | Command pattern (`execute()` method) |
-| **Knowledge** | Data storage, embedding, search, caching | `src/knowledge/*.py`, `src/quran/*.py`, `src/infrastructure/db.py` | Repository pattern |
+| **Knowledge** | Data storage, embedding, search, caching | `src/indexing/*`, `src/retrieval/*`, `src/verification/*`, `src/quran/*.py`, `src/infrastructure/database.py` | Repository pattern |
 
 ### Why 4 Layers?
 
@@ -169,7 +169,7 @@ The 4-layer design enables:
 1. **Testability**: Each layer can be unit-tested in isolation (e.g., test classifier without LLM)
 2. **Replaceability**: Swap Qdrant for Weaviate without changing agent logic
 3. **Scalability**: Deploy API layer separately from knowledge layer (different resource needs)
-4. **Maintainability**: Clear boundaries prevent spaghetti code; new agents inherit from `BaseRAGAgent`
+4. **Maintainability**: Clear boundaries prevent spaghetti code; new agents inherit from `CollectionAgent`
 
 ---
 
@@ -185,7 +185,7 @@ User Query: "ما حكم صلاة الجمعة؟"
          ▼
 ┌─────────────────────────────────┐
 │  POST /api/v1/query              │
-│  src/api/routes/query.py:128     │
+│  src/api/routes/ask.py:128     │
 │                                  │
 │  1. Validate request (Pydantic)  │
 │  2. Generate query_id (UUID)     │
@@ -223,21 +223,21 @@ User Query: "ما حكم صلاة الجمعة؟"
              │
              ▼
 ┌─────────────────────────────────┐
-│  FiqhAgent.execute()             │
-│  src/agents/fiqh_agent.py:130    │
+│  FiqhCollectionAgent.execute()   │
+│  src/agents/collection/fiqh.py   │
 │                                  │
 │  Step 1: Initialize deps         │
 │  Step 2: Embed query (bge-m3)    │
 │  Step 3: Hybrid search           │
-│    - Semantic: 15 passages       │
+│  - Semantic: 80 passages         │
 │    - Keyword: BM25 fusion        │
-│  Step 4: Filter by score >= 0.65 │
+│  Step 4: Filter by score >= 0.45 │
 │  Step 5: Format passages [C1]..  │
 │  Step 6: LLM generation          │
 │    - System: Fiqh prompt         │
 │    - User: query + passages      │
 │    - Model: qwen/qwen3-32B       │
-│    - Temp: 0.1                   │
+│  - Temp: 0.15                    │
 │  Step 7: Normalize citations     │
 │  Step 8: Add disclaimer          │
 │                                  │
@@ -323,17 +323,17 @@ After classification, the orchestrator routes to the appropriate component:
 ```python
 # From src/config/intents.py: INTENT_ROUTING
 INTENT_ROUTING = {
-    Intent.FIQH: "fiqh_agent",              # RAG-based
-    Intent.QURAN: "quran_agent",            # Pipeline (NL2SQL, verse retrieval)
+    Intent.FIQH: "fiqh_agent",  # RAG-based
+    Intent.QURAN: "quran_agent",  # Pipeline (NL2SQL, verse retrieval)
     Intent.ISLAMIC_KNOWLEDGE: "general_islamic_agent",  # RAG-based
-    Intent.GREETING: "chatbot_agent",       # Template-based
-    Intent.ZAKAT: "zakat_tool",             # Deterministic
-    Intent.INHERITANCE: "inheritance_tool", # Deterministic
-    Intent.DUA: "dua_tool",                 # Retrieval
-    Intent.HIJRI_CALENDAR: "hijri_tool",    # Deterministic
-    Intent.PRAYER_TIMES: "prayer_tool",     # Deterministic
-    Intent.HADITH: "hadith_agent",          # RAG-based
-    Intent.SEERAH: "seerah_agent",          # RAG-based
+    Intent.GREETING: "chatbot_agent",  # Template-based
+    Intent.ZAKAT: "zakat_tool",  # Deterministic
+    Intent.INHERITANCE: "inheritance_tool",  # Deterministic
+    Intent.DUA: "dua_tool",  # Retrieval
+    Intent.HIJRI_CALENDAR: "hijri_tool",  # Deterministic
+    Intent.PRAYER_TIMES: "prayer_tool",  # Deterministic
+    Intent.HADITH: "hadith_agent",  # RAG-based
+    Intent.SEERAH: "seerah_agent",  # RAG-based
     # Fallthrough intents (use general_islamic_agent):
     Intent.TAFSIR: "general_islamic_agent",
     Intent.AQEEDAH: "general_islamic_agent",
@@ -538,9 +538,9 @@ router_fallback_enabled: bool = True
 
 ---
 
-## 5. Active Agents (6)
+## 5. Active Agents (11 Collection Agents + Chatbot)
 
-Burhan has 6 active agents implementing the `BaseAgent` interface. All RAG-based agents inherit from `BaseRAGAgent` to share retrieval, citation, and generation logic.
+Burhan registers 11 collection agents plus a template-based chatbot. Each collection agent implements the `BaseAgent` interface and inherits from `CollectionAgent`, which provides retrieval, verification, citation assembly, and generation. Per-agent behaviour lives in `config/agents/*.yaml`; prompts live in `prompts/*.txt`.
 
 ### Agent Hierarchy
 
@@ -549,128 +549,101 @@ BaseAgent (src/agents/base.py)
 ├── execute() → AgentOutput
 ├── AgentInput, AgentOutput, Citation dataclasses
 │
-├── BaseRAGAgent (src/agents/base_rag_agent.py)
-│   ├── _initialize() → embedding, vector store, LLM
-│   ├── execute() → full RAG pipeline
-│   ├── _format_passages() → [C1], [C2] markers
-│   ├── _generate() → LLM answer generation
-│   ├── _calculate_confidence() → avg passage scores
+├── CollectionAgent (src/agents/collection/base.py)
+│   ├── config: CollectionAgentConfig (config/agents/*.yaml)
+│   ├── query_intake() → normalized query
+│   ├── classify_intent() → Intent
+│   ├── retrieve_candidates() → hybrid retrieval
+│   ├── rerank_candidates() → ranking
+│   ├── run_verification() → VerificationReport
+│   ├── generate_answer() → LLM answer
+│   ├── assemble_citations() → [C1], [C2] markers
 │   │
-│   ├── FiqhAgent (src/agents/fiqh_agent.py)
-│   ├── HadithAgent (src/agents/hadith_agent.py)
-│   ├── SeerahAgent (src/agents/seerah_agent.py)
-│   └── GeneralIslamicAgent (src/agents/general_islamic_agent.py)
+│   ├── FiqhCollectionAgent (src/agents/collection/fiqh.py)
+│   ├── HadithCollectionAgent (src/agents/collection/hadith.py)
+│   ├── TafsirCollectionAgent (src/agents/collection/tafsir.py)
+│   ├── AqeedahCollectionAgent (src/agents/collection/aqeedah.py)
+│   ├── SeerahCollectionAgent (src/agents/collection/seerah.py)
+│   ├── UsulFiqhCollectionAgent (src/agents/collection/usul_fiqh.py)
+│   ├── HistoryCollectionAgent (src/agents/collection/history.py)
+│   ├── LanguageCollectionAgent (src/agents/collection/language.py)
+│   ├── TazkiyahCollectionAgent (src/agents/collection/tazkiyah.py)
+│   └── GeneralCollectionAgent (src/agents/collection/general.py)
 │
 └── ChatbotAgent (src/agents/chatbot_agent.py)
     └── Template-based responses (no RAG)
 ```
 
-### 5.1 FiqhAgent
+### Agent Registry
 
-**File:** `src/agents/fiqh_agent.py`  
-**Purpose:** Answer Islamic jurisprudence questions using verified fiqh texts  
-**Collection:** `fiqh_passages` (10,132+ vectors)
+Registered names (`src/core/registry.py`) and their configuration:
 
-| Parameter | Value | Reason |
-|-----------|-------|--------|
-| TOP_K_RETRIEVAL | 15 | Comprehensive coverage of fiqh opinions |
-| TOP_K_RERANK | 5 | Focus on most relevant passages |
-| SCORE_THRESHOLD | 0.65 | Balance precision and recall |
-| TEMPERATURE | 0.1 | Very deterministic for legal rulings |
-| MAX_TOKENS | 2048 | Sufficient for detailed fiqh answers |
+| Agent name | Class | Config | Collection |
+|-----------|-------|--------|-----------|
+| fiqh_agent | FiqhCollectionAgent | config/agents/fiqh.yaml | fiqh_passages |
+| hadith_agent | HadithCollectionAgent | config/agents/hadith.yaml | hadith_passages |
+| tafsir_agent | TafsirCollectionAgent | config/agents/tafsir.yaml | tafsir_passages |
+| aqeedah_agent | AqeedahCollectionAgent | config/agents/aqeedah.yaml | aqeedah_passages |
+| seerah_agent | SeerahCollectionAgent | config/agents/seerah.yaml | seerah_passages |
+| usul_fiqh_agent | UsulFiqhCollectionAgent | config/agents/usul_fiqh.yaml | usul_fiqh_passages |
+| history_agent | HistoryCollectionAgent | config/agents/history.yaml | history_passages |
+| language_agent | LanguageCollectionAgent | config/agents/language.yaml | language_passages |
+| tazkiyah_agent | TazkiyahCollectionAgent | config/agents/tazkiyah.yaml | tazkiyah_passages |
+| general_islamic_agent | GeneralCollectionAgent | config/agents/general.yaml | general_passages |
+| chatbot_agent | ChatbotAgent | — | none |
 
-**System Prompt (Arabic):**
-```
-أنت مساعد إسلامي متخصص في الفقه الإسلامي.
-المهم:
-- أجب بناءً ONLY على النصوص المسترجاعة المقدمة
-- لا تختلق أي معلومات غير موجودة في النصوص
-- استخدم المراجع [C1]، [C2]، إلخ لكل مصدر تستشهد به
-- إذا لم تكن هناك نص sufficiently يجيب على السؤال، قل ذلك صراحة
-- أضف تنبيه باستشارة عالم متخصص للحالات الخاصة
-- اذكر المذهب الإسلامي إن وُجد في النصوص
-```
+### Per-Agent Retrieval and Verification
 
-**Key Features:**
-- Faceted search support (author, era, book, category, death year range)
-- Hierarchical retrieval (book → chapter → passage)
-- Madhhab-aware responses (Hanafi, Maliki, Shafi'i, Hanbali)
-- Fiqh disclaimer appended to all answers
-- Fallback to top-3 passages if threshold not met
+All agents use hybrid retrieval (dense + BM25). Values are read from each YAML config.
 
-### 5.2 HadithAgent
+| Agent | topk_initial | topk_reranked | min_relevance | Verification checks (fail_policy) |
+|-------|-------------|---------------|---------------|-----------------------------------|
+| fiqh_agent | 80 | 12 | 0.45 | quote_validator (abstain), source_attributor (warn), contradiction_detector (proceed), evidence_sufficiency (abstain) |
+| hadith_agent | 120 | 20 | 0.50 | quote_validator (abstain), source_attributor (warn), grade_checker (warn), evidence_sufficiency (abstain) |
+| tafsir_agent | 50 | 10 | 0.55 | quote_validator (abstain), source_attributor (warn), tafsir_maqasid_checker (proceed), evidence_sufficiency (abstain) |
+| aqeedah_agent | 40 | 8 | 0.60 | quote_validator (abstain), source_attributor (abstain), aqeedah_orthodoxy_checker (abstain), evidence_sufficiency (abstain) |
+| seerah_agent | 60 | 12 | 0.45 | quote_validator (warn), source_attributor (warn), chronology_checker (warn), evidence_sufficiency (proceed) |
+| usul_fiqh_agent | 40 | 10 | 0.55 | quote_validator (abstain), source_attributor (warn), usul_methodology_checker (proceed), evidence_sufficiency (abstain) |
+| history_agent | 60 | 12 | 0.45 | quote_validator (warn), source_attributor (warn), chronology_checker (warn), evidence_sufficiency (proceed) |
+| language_agent | 40 | 10 | 0.50 | quote_validator (warn), source_attributor (warn), arabic_grammar_checker (proceed), evidence_sufficiency (proceed) |
+| tazkiyah_agent | 50 | 10 | 0.50 | quote_validator (warn), source_attributor (warn), tazkiyah_balance_checker (proceed), evidence_sufficiency (proceed) |
+| general_islamic_agent | 30 | 8 | 0.40 | quote_validator (warn), source_attributor (warn), evidence_sufficiency (proceed) |
 
-**File:** `src/agents/hadith_agent.py`  
-**Purpose:** Retrieve and authenticate Prophetic traditions  
-**Collection:** `hadith_passages` (160+ vectors)
+### 5.1 ChatbotAgent
 
-**Key Features:**
-- Hadith authenticity grading (Sahih, Hasan, Da'if)
-- Sanad (chain of narration) analysis
-- Matn (text) verification
-- Source attribution to 6 major collections
-
-### 5.3 SeerahAgent
-
-**File:** `src/agents/seerah_agent.py`  
-**Purpose:** Answer questions about Prophet Muhammad's biography  
-**Collection:** `seerah_passages` (100+ vectors)
-
-**Key Features:**
-- Chronological event retrieval
-- Battle and treaty details
-- Companion interactions
-- Historical context enrichment
-
-### 5.4 GeneralIslamicAgent
-
-**File:** `src/agents/general_islamic_agent.py`  
-**Purpose:** Handle general Islamic knowledge questions  
-**Collection:** `general_islamic` (5+ vectors)
-
-**Key Features:**
-- Fallback agent for 7 intent types (tafsir, aqeedah, usul_fiqh, etc.)
-- Broad knowledge coverage
-- Template-based responses for common questions
-
-### 5.5 ChatbotAgent
-
-**File:** `src/agents/chatbot_agent.py`  
-**Purpose:** Handle greetings, small talk, and conversational queries  
+**File:** `src/agents/chatbot_agent.py`
+**Purpose:** Handle greetings, small talk, and conversational queries
 **Retrieval:** None (template-based)
 
 **Key Features:**
 - Arabic and English greeting responses
 - Ramadan/Eid seasonal greetings
 - Polite fallback for out-of-scope queries
-- No LLM call required (fast <10ms response)
+- No LLM call required (fast response)
 
-### 5.6 BaseRAGAgent (Shared Base Class)
+### 5.2 CollectionAgent (Shared Base Class)
 
-**File:** `src/agents/base_rag_agent.py`  
-**Purpose:** Eliminate code duplication across RAG agents
+**File:** `src/agents/collection/base.py`
+**Purpose:** Share retrieval, verification, citation, and generation across all domain agents
 
-**Why this exists:** Before BaseRAGAgent, each of the 7 RAG agents had ~800 lines of duplicated code (initialization, retrieval, formatting, generation, citation normalization). BaseRAGAgent reduces this to class-level constants:
+**Why this exists:** The v1 architecture duplicated a ~800-line RAG pipeline across several per-agent modules. `CollectionAgent` replaces them with one base class plus per-domain YAML configuration.
 
 ```python
-class MyAgent(BaseRAGAgent):
-    COLLECTION = "my_collection"
-    SYSTEM_PROMPT = "أنت متخصص في..."
-    USER_PROMPT = "السؤال: {query}\nالنصوص:\n{passages}"
-    TOP_K_RETRIEVAL = 12
-    TEMPERATURE = 0.15
+# Config-driven domain agent
+class FiqhCollectionAgent(CollectionAgent):
+    def __init__(self, config: CollectionAgentConfig) -> None:
+        super().__init__(config)
 ```
 
 **Shared Pipeline Steps:**
-1. Initialize embedding model, vector store, LLM client
-2. Encode query → 1024-dim vector
-3. Retrieve passages (with optional faceted filtering or hierarchical retrieval)
-4. Enrich passages (title context, hadith grading, book weighting)
-5. Format passages with [C1], [C2] markers
-6. Generate answer via LLM
-7. Normalize citations
-8. Calculate confidence score
-9. Return AgentOutput
+1. Intake and normalize the query
+2. Classify to an `Intent`
+3. Retrieve candidates (hybrid dense + BM25, with faceted filtering)
+4. Rerank candidates
+5. Run the configured verification suite
+6. Generate the answer from verified passages
+7. Assemble citations ([C1], [C2])
+8. Compute confidence and return `AgentOutput`
 
 ---
 
@@ -773,7 +746,7 @@ Deterministic tools produce identical outputs for identical inputs — no LLM, n
 
 ### 7.1 Embedding Model
 
-**File:** `src/knowledge/embedding_model.py`  
+**File:** `src/indexing/embeddings/embedding_model.py`  
 **Model:** BAAI/bge-m3 (replaced Qwen3-Embedding-0.6B)
 
 | Parameter | Value | Why |
@@ -802,23 +775,27 @@ Query: "ما حكم صلاة الجمعة؟"
 
 ### 7.2 Vector Store
 
-**File:** `src/knowledge/vector_store.py`  
+**File:** `src/indexing/vectorstores/qdrant_store.py`  
 **Database:** Qdrant (self-hosted)
 
-| Collection | Dimension | Vectors | Description | Status |
-|------------|-----------|---------|-------------|--------|
-| fiqh_passages | 1024 | 10,132+ | Fiqh books and fatwas | ✅ Active |
-| hadith_passages | 1024 | 160+ | Hadith collections | 🔄 Growing |
-| general_islamic | 1024 | 5+ | General knowledge | ⏳ Seeded |
-| quran_tafsir | 1024 | — | Tafsir passages | ⏳ Ready |
-| duas_adhkar | 1024 | 10+ | Duas and adhkar | ✅ Seeded |
-| aqeedah_passages | 1024 | 90+ | Creed and theology | ✅ Active |
-| seerah_passages | 1024 | 100+ | Prophet biography | ✅ Active |
-| islamic_history_passages | 1024 | 270+ | Islamic history | ✅ Active |
-| arabic_language_passages | 1024 | 240+ | Arabic language | ✅ Active |
-| spirituality_passages | 1024 | 150+ | Spirituality and ethics | ✅ Active |
+| Collection | Dimension | Description |
+|------------|-----------|-------------|
+| fiqh_passages | 1024 | Fiqh books and fatwas |
+| hadith_passages | 1024 | Hadith collections |
+| tafsir_passages | 1024 | Tafsir passages |
+| quran_tafsir | 1024 | Quran tafsir collection |
+| aqeedah_passages | 1024 | Creed and theology |
+| seerah_passages | 1024 | Prophet biography |
+| history_passages | 1024 | Islamic history |
+| islamic_history_passages | 1024 | Islamic history (alias of history_passages) |
+| language_passages | 1024 | Arabic language |
+| arabic_language_passages | 1024 | Arabic language (alias of language_passages) |
+| tazkiyah_passages | 1024 | Spirituality and ethics |
+| spirituality_passages | 1024 | Spirituality (alias of tazkiyah_passages) |
+| usul_fiqh_passages | 1024 | Principles of jurisprudence |
+| general_islamic | 1024 | General knowledge |
 
-**Total:** 11,147+ vectors across 10 collections
+Collection names are declared in `src/domain/collections.py`. Vector counts depend on the ingested dataset and are not tracked here.
 
 **Initialization Flow:**
 1. Connect to Qdrant (`http://localhost:6333`)
@@ -828,7 +805,7 @@ Query: "ما حكم صلاة الجمعة؟"
 
 ### 7.3 Hybrid Search
 
-**File:** `src/knowledge/hybrid_search.py`  
+**File:** `src/indexing/vectorstores/hybrid_client.py`  
 **Approach:** Reciprocal Rank Fusion (RRF) combining semantic and keyword search
 
 ```
@@ -848,7 +825,7 @@ Final: Top-12 results returned to agent
 ```python
 filters = {
     "author": "Imam Bukhari",
-    "era": "classical",          # prophetic, tabiun, classical, medieval, ottoman, modern
+    "era": "classical",  # prophetic, tabiun, classical, medieval, ottoman, modern
     "book_id": 123,
     "category": "hanafi",
     "author_death_min": 200,
@@ -859,7 +836,7 @@ results = await searcher.search_with_facets(query, embedding, collection, top_k,
 
 ### 7.4 Hierarchical Retriever
 
-**File:** `src/knowledge/hierarchical_retriever.py`  
+**File:** `src/retrieval/retrievers/hierarchical_retriever.py`  
 **Purpose:** Retrieve coherent book-level context instead of scattered passages
 
 **Problem:** Standard RAG retrieves top-15 individual passages, which may come from 15 different books with no coherent context. For fiqh questions, it's better to retrieve 3-5 complete chapters from the most relevant books.
@@ -875,7 +852,7 @@ results = await searcher.search_with_facets(query, embedding, collection, top_k,
 
 ### 7.5 Book Weighter
 
-**File:** `src/knowledge/book_weighter.py`  
+**File:** `src/retrieval/ranking/book_weighter.py`  
 **Purpose:** Score passages by book importance and author authority
 
 **Scoring Factors:**
@@ -891,7 +868,7 @@ weighted_score = semantic_score * book_importance_multiplier
 
 ### 7.6 Hadith Grader
 
-**File:** `src/knowledge/hadith_grader.py`  
+**File:** `src/verification/checks/hadith_grade.py`  
 **Purpose:** Grade hadith authenticity for retrieved passages
 
 **Grades:**
@@ -908,7 +885,7 @@ passages = hadith_grader.enrich_passages_with_authenticity(passages)
 
 ### 7.7 Title Loader
 
-**File:** `src/knowledge/title_loader.py`  
+**File:** `src/indexing/metadata/title_loader.py`  
 **Purpose:** Enrich passages with chapter/section context
 
 **Problem:** A passage may be "صلاة الجمعة فرض عين" without context of which book, chapter, or section it's from.
@@ -998,7 +975,7 @@ Scholars are classified into 6 eras based on death year (Hijri):
 ```
 ElShamela Database (books.db, SQLite)
   → Extract books as .txt files (Lucene-based extraction)
-  → Chunk into passages (hierarchical_chunker.py)
+  → Chunk into passages (scripts/ingestion/chunk_all_books.py)
      → Book → Chapter → Section → Passage
   → Enrich with metadata
      → book_id, title, author, author_death, page, chapter, section
@@ -1058,11 +1035,11 @@ Sanadset JSON files
 | spirituality_passages.jsonl | 150 | 170 KB |
 | seerah_passages.jsonl | 100 | 120 KB |
 
-**Creation:** `python scripts/create_mini_dataset.py`
+**Creation:** `python scripts/data/create_mini_dataset.py`
 
 ### 9.3 Chunking Strategy
 
-**File:** `src/knowledge/hierarchical_chunker.py`
+**File:** `scripts/ingestion/chunk_all_books.py`
 
 **Approach:** Hierarchical chunking preserves book structure:
 
@@ -1087,10 +1064,10 @@ Book: صحيح البخاري
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/generate_embeddings.py` | Batch embedding generator |
-| `scripts/create_mini_dataset.py` | Mini-dataset creator |
-| `scripts/embed_sanadset_hadith.py` | Hadith embedding pipeline |
-| `scripts/seed_mvp_data.py` | MVP data seeder |
+| `scripts/data/generate_embeddings.py` | Batch embedding generator |
+| `scripts/data/create_mini_dataset.py` | Mini-dataset creator |
+| `scripts/data/embed_sanadset_hadith.py` | Hadith embedding pipeline |
+| `scripts/data/seed_mvp_data.py` | MVP data seeder |
 
 ---
 
@@ -1193,11 +1170,13 @@ def validate_secret_key(cls, v):
         warnings.warn("Using default secret key! Change this in production.", UserWarning)
     return v
 
+
 @field_validator("cors_origins", mode="before")
 def parse_cors_origins(cls, v):
     if isinstance(v, str):
         return [origin.strip() for origin in v.split(",") if origin.strip()]
     return v
+
 
 @property
 def is_production(self) -> bool:
@@ -1215,6 +1194,7 @@ class RetrievalConfig:
     TOP_K_FIQH = 15
     TOP_K_GENERAL = 12
     SEMANTIC_SCORE_THRESHOLD = 0.65
+
 
 class LLMConfig:
     FIQH_TEMPERATURE = 0.1
@@ -1450,6 +1430,7 @@ app.add_middleware(
 API_KEY_HEADER = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_HEADER, auto_error=False)
 
+
 async def verify_api_key(api_key: str = Depends(api_key_header)):
     if api_key not in settings.valid_api_keys:
         raise HTTPException(status_code=401, detail="Invalid API key")
@@ -1469,17 +1450,11 @@ async def error_handler_middleware(request: Request, call_next):
         return await call_next(request)
     except HTTPException as e:
         # Standard HTTP errors (400, 401, 404, 429, 500)
-        return JSONResponse(
-            status_code=e.status_code,
-            content={"error": e.detail, "status": e.status_code}
-        )
+        return JSONResponse(status_code=e.status_code, content={"error": e.detail, "status": e.status_code})
     except Exception as e:
         # Unexpected errors
         logger.error("unhandled_error", error=str(e), exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Internal server error", "status": 500}
-        )
+        return JSONResponse(status_code=500, content={"error": "Internal server error", "status": 500})
 ```
 
 ---
@@ -1795,13 +1770,20 @@ K:\business\projects_v2\Burhan\
 │   │   └── citation.py           # CitationNormalizer
 │   │
 │   ├── agents/
-│   │   ├── base.py               # BaseAgent, AgentInput, AgentOutput
-│   │   ├── base_rag_agent.py     # BaseRAGAgent (shared RAG logic)
-│   │   ├── fiqh_agent.py         # FiqhAgent (RAG, fiqh_passages)
-│   │   ├── hadith_agent.py       # HadithAgent (RAG, hadith_passages)
-│   │   ├── seerah_agent.py       # SeerahAgent (RAG, seerah_passages)
-│   │   ├── general_islamic_agent.py  # GeneralIslamicAgent (RAG)
-│   │   └── chatbot_agent.py      # ChatbotAgent (template-based)
+│   │   ├── base.py               # BaseAgent, AgentInput, AgentOutput, Citation
+│   │   ├── chatbot_agent.py      # ChatbotAgent (template-based)
+│   │   └── collection/           # v2 config-backed agents
+│   │       ├── base.py           # CollectionAgent (shared RAG pipeline)
+│   │       ├── fiqh.py           # FiqhCollectionAgent (fiqh_passages)
+│   │       ├── hadith.py         # HadithCollectionAgent (hadith_passages)
+│   │       ├── tafsir.py         # TafsirCollectionAgent (tafsir_passages)
+│   │       ├── aqeedah.py        # AqeedahCollectionAgent
+│   │       ├── seerah.py         # SeerahCollectionAgent
+│   │       ├── usul_fiqh.py      # UsulFiqhCollectionAgent
+│   │       ├── history.py        # HistoryCollectionAgent
+│   │       ├── language.py       # LanguageCollectionAgent
+│   │       ├── tazkiyah.py       # TazkiyahCollectionAgent
+│   │       └── general.py        # GeneralCollectionAgent
 │   │
 │   ├── tools/
 │   │   ├── base.py               # BaseTool, ToolInput, ToolOutput
@@ -1811,16 +1793,22 @@ K:\business\projects_v2\Burhan\
 │   │   ├── hijri_calendar_tool.py # HijriCalendarTool (Umm al-Qura)
 │   │   └── dua_retrieval_tool.py # DuaRetrievalTool (Hisn al-Muslim)
 │   │
-│   ├── knowledge/
-│   │   ├── embedding_model.py    # BAAI/bge-m3 wrapper + cache
-│   │   ├── embedding_cache.py    # Redis caching layer
-│   │   ├── vector_store.py       # Qdrant client
-│   │   ├── hybrid_search.py      # HybridSearcher (semantic + BM25)
-│   │   ├── hierarchical_retriever.py  # Book-level retrieval
-│   │   ├── title_loader.py       # Chapter/context enrichment
-│   │   ├── hadith_grader.py      # Authenticity grading
-│   │   ├── book_weighter.py      # Importance scoring
-│   │   └── hierarchical_chunker.py    # Book → Chapter → Passage
+│   ├── indexing/                 # Embedding, vector, and lexical indexing
+│   │   ├── embeddings/           # embedding_model (BGE-M3), embedding_cache, bge_m3, e5
+│   │   ├── lexical/              # bm25_index, tantivy_index
+│   │   ├── metadata/             # author/master catalogs, enrichment, title_loader
+│   │   ├── pipelines/            # ingest_athar, build_collection_indexes, sync_metadata
+│   │   └── vectorstores/         # qdrant_store, hybrid_client, hybrid_config, factory
+│   │
+│   ├── retrieval/                # Hybrid retrieval (dense + BM25 + fusion)
+│   │   ├── retrievers/           # bm25, dense, hybrid, hierarchical, multi_collection
+│   │   ├── ranking/              # reranker, book_weighter, scholarly_reranker
+│   │   ├── fusion/, filters/, expanders/, planning/, mapping/, policies/
+│   │   └── schemas.py, strategies.py
+│   │
+│   ├── verification/             # Verification suite
+│   │   ├── checks/               # exact_quote, hadith_grade, misattribution, ...
+│   │   └── suite_builder.py, policies.py, trace.py, pipeline.py
 │   │
 │   ├── quran/
 │   │   ├── verse_retrieval.py    # Verse lookup engine
@@ -1829,14 +1817,15 @@ K:\business\projects_v2\Burhan\
 │   │   └── tafsir_retrieval.py   # Tafsir lookup
 │   │
 │   ├── data/
-│   │   ├── models/               # SQLAlchemy models
-│   │   └── ingestion/            # Data loaders
+│   │   └── models/               # SQLAlchemy models (Quran)
 │   │
 │   └── infrastructure/
-│       ├── db.py                 # PostgreSQL async connection
-│       ├── db_sync.py            # PostgreSQL sync connection
+│       ├── database.py           # PostgreSQL async connection
 │       ├── redis.py              # Redis connection
-│       └── llm_client.py         # Groq/OpenAI client factory
+│       ├── llm_client.py         # Groq/OpenAI client factory
+│       ├── llm/                  # llm_classifier, openai_client
+│       ├── qdrant/               # client, collections, payload_indexes
+│       └── logging/              # logger
 │
 ├── data/
 │   ├── mini_dataset/             # 1.7 MB, 1,623 documents
@@ -1880,11 +1869,13 @@ class BaseAgent(ABC):
     async def execute(self, input: AgentInput) -> AgentOutput:
         pass
 
+
 @dataclass
 class AgentInput:
     query: str
     language: str = "ar"
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class AgentOutput:
@@ -1917,6 +1908,7 @@ def create_app() -> FastAPI:
     # Add middleware
     # Register routes
     return app
+
 
 app = create_app()
 ```
