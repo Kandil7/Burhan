@@ -113,9 +113,7 @@ def main():
     """Main pipeline runner."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Run complete Lucene extraction pipeline"
-    )
+    parser = argparse.ArgumentParser(description="Run complete Lucene extraction pipeline")
     parser.add_argument(
         "--step",
         choices=list(STEPS.keys()),
