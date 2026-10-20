@@ -22,7 +22,6 @@ from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 
-
 logger = get_logger()
 fiqh_router = APIRouter(prefix="/fiqh", tags=["Fiqh"])
 
@@ -105,12 +104,29 @@ class FiqhResponse(BaseModel):
 # ── Dependencies ────────────────────────────────────────────────────────────
 
 
-def get_fiqh_agent(request: Request):
-    """Get FiQH agent from app state."""
+def get_fiqh_agent(request: Request) -> Any:
+    """Get FiQH agent from app state, falling back to the registry."""
     agent = getattr(request.app.state, "fiqh_agent", None)
+    if agent is None:
+        registry = getattr(request.app.state, "registry", None)
+        if registry is not None:
+            agent = registry.get_agent("fiqh_agent")
     if agent is None:
         raise HTTPException(503, detail="FiqhAgent is not initialized.")
     return agent
+
+
+def _serialize_citation(citation: Any) -> dict[str, Any]:
+    """Map the canonical Citation model to the API response shape."""
+    metadata = citation.metadata or {}
+    return {
+        "id": citation.source_id,
+        "type": metadata.get("content_type") or metadata.get("collection"),
+        "source": citation.book_title,
+        "reference": metadata.get("section_title") or citation.page,
+        "url": citation.url,
+        "text_excerpt": citation.text,
+    }
 
 
 # ── Helper Functions ────────────────────────────────────────────────────────
@@ -201,7 +217,7 @@ async def handle_fiqh_question(
         ge=1,
         description="Filter by book ID",
     ),
-    agent=Depends(get_fiqh_agent),
+    agent: Any = Depends(get_fiqh_agent),
 ) -> FiqhResponse:
     """
     Submit a Fiqh (Islamic Jurisprudence) question to the Burhan system.
@@ -250,7 +266,7 @@ async def handle_fiqh_question(
                 agent.execute(agent_input),
                 timeout=timeout,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(
                 "fiqh.agent_timeout",
                 trace_id=trace_id,
@@ -264,7 +280,7 @@ async def handle_fiqh_question(
                     "message": "The query took too long. Please try again.",
                     "trace_id": trace_id,
                 },
-            )
+            ) from None
 
         # Calculate timing
         processing_time_ms = int((time.time() - start_time) * 1000)
@@ -272,7 +288,7 @@ async def handle_fiqh_question(
         # Detect ikhtilaf from agent metadata
         ikhtilaf_detected = agent_result.metadata.get("ikhtilaf_detected", False) or (
             len(agent_result.citations) > 1
-            and any(c.source != agent_result.citations[0].source for c in agent_result.citations[1:])
+            and any(c.book_title != agent_result.citations[0].book_title for c in agent_result.citations[1:])
         )
 
         logger.info(
@@ -287,17 +303,7 @@ async def handle_fiqh_question(
         # Build response
         return FiqhResponse(
             answer=_strip_thinking(agent_result.answer),
-            citations=[
-                {
-                    "id": c.id,
-                    "type": c.type,
-                    "source": c.source,
-                    "reference": c.reference,
-                    "url": c.url,
-                    "text_excerpt": c.text_excerpt,
-                }
-                for c in agent_result.citations
-            ],
+            citations=[_serialize_citation(c) for c in agent_result.citations],
             confidence=agent_result.confidence,
             ikhtilaf_detected=ikhtilaf_detected,
             metadata=_build_response_metadata(
@@ -348,7 +354,7 @@ async def handle_fiqh_question(
 
 
 @fiqh_router.get("/test")
-async def test_fiqh(request: Request, agent=Depends(get_fiqh_agent)):
+async def test_fiqh(request: Request, agent: Any = Depends(get_fiqh_agent)) -> Any:
     """Test endpoint for the fiqh router."""
     result = await agent.execute(
         AgentInput(
