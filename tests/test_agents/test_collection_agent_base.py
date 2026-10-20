@@ -4,63 +4,24 @@ Tests for CollectionAgent base abstraction.
 Tests:
 - CollectionAgent can be subclassed
 - Abstract methods are properly defined
-- IntentLabel enum values work correctly
+- Agents classify to domain Intents
 - Pydantic models work as expected
 """
 
-
 import pytest
+from pydantic import ValidationError
 
 from src.agents.base import Citation
 from src.agents.collection import (
     CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
-    IntentLabel,
     RetrievalStrategy,
     VerificationCheck,
     VerificationReport,
     VerificationSuite,
 )
-
-
-class TestIntentLabel:
-    """Tests for IntentLabel enum."""
-
-    def test_fiqh_intents(self):
-        """Test Fiqh-related intent labels."""
-        assert IntentLabel.FiqhHukm.value == "fiqh_hukm"
-        assert IntentLabel.FiqhMasaail.value == "fiqh_masaail"
-
-    def test_hadith_intents(self):
-        """Test Hadith-related intent labels."""
-        assert IntentLabel.HadithTakhrij.value == "hadith_takhrij"
-        assert IntentLabel.HadithSanad.value == "hadith_sanad"
-        assert IntentLabel.HadithMatn.value == "hadith_matn"
-
-    def test_tafsir_intents(self):
-        """Test Tafsir-related intent labels."""
-        assert IntentLabel.TafsirAyah.value == "tafsir_ayah"
-        assert IntentLabel.TafsirMaqasid.value == "tafsir_maqasid"
-
-    def test_aqeedah_intents(self):
-        """Test Aqeedah-related intent labels."""
-        assert IntentLabel.AqeedahTawhid.value == "aqeedah_tawhid"
-        assert IntentLabel.AqeedahIman.value == "aqeedah_iman"
-
-    def test_seerah_intents(self):
-        """Test Seerah-related intent labels."""
-        assert IntentLabel.SeerahEvent.value == "seerah_event"
-        assert IntentLabel.SeerahMilad.value == "seerah_milad"
-
-    def test_usul_fiqh_intents(self):
-        """Test Usul Fiqh-related intent labels."""
-        assert IntentLabel.UsulFiqhIjtihad.value == "usul_fiqh_ijtihad"
-        assert IntentLabel.UsulFiqhQiyas.value == "usul_fiqh_qiyas"
-
-    def test_unknown_intent(self):
-        """Test Unknown intent label."""
-        assert IntentLabel.Unknown.value == "unknown"
+from src.domain.intents import Intent
 
 
 class TestRetrievalStrategy:
@@ -94,10 +55,10 @@ class TestRetrievalStrategy:
 
     def test_weight_validation(self):
         """Test that weights are validated (0-1 range)."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RetrievalStrategy(dense_weight=1.5)  # > 1.0 should fail
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RetrievalStrategy(sparse_weight=-0.1)  # < 0 should fail
 
 
@@ -249,13 +210,13 @@ class ConcreteCollectionAgent(CollectionAgent):
         """Normalize query - strip and lowercase for test."""
         return query.strip()
 
-    def classify_intent(self, query: str) -> IntentLabel:
+    def classify_intent(self, query: str) -> Intent:
         """Simple classification for test."""
         # Check for common fiqh keywords
         fiqh_keywords = ["حكم", "حلال", "حرام", "فقيه", "فتوى"]
         if any(kw in query for kw in fiqh_keywords):
-            return IntentLabel.FiqhHukm
-        return IntentLabel.Unknown
+            return Intent.FIQH
+        return Intent.ISLAMIC_KNOWLEDGE
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         """Return mock candidates."""
@@ -273,6 +234,8 @@ class ConcreteCollectionAgent(CollectionAgent):
         self,
         query: str,
         candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
     ) -> VerificationReport:
         """Return verification report from candidates."""
         return VerificationReport.from_passages(
@@ -332,12 +295,12 @@ class TestCollectionAgentSubclass:
 
         assert result.answer == "Test answer"
         assert len(result.citations) >= 0
-        assert result.metadata["intent"] == "fiqh_hukm"
+        assert result.metadata["intent"] == "fiqh"
         assert result.metadata["collection"] == "test_collection"
 
     @pytest.mark.asyncio
-    async def test_run_with_unknown_intent(self):
-        """Test run with non-matching query."""
+    async def test_run_with_fallback_intent(self):
+        """Test run with a non-matching query falls back to a general intent."""
         agent = ConcreteCollectionAgent()
 
         result = await agent.run(
@@ -345,7 +308,7 @@ class TestCollectionAgentSubclass:
             meta={"language": "ar"},
         )
 
-        assert result.metadata["intent"] == "unknown"
+        assert result.metadata["intent"] == "islamic_knowledge"
 
 
 class TestCollectionAgentCannotInstantiate:
@@ -396,6 +359,6 @@ class TestCitationIntegration:
         citations = agent.assemble_citations(passages)
 
         assert len(citations) == 1
-        assert citations[0].type == "hadith"
-        assert citations[0].source == "صحيح البخاري"
-        assert citations[0].id == "C1"
+        assert citations[0].metadata["collection"] == "hadith"
+        assert citations[0].book_title == "صحيح البخاري"
+        assert citations[0].source_id == "C1"
