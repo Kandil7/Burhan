@@ -28,22 +28,22 @@ This document explores how Burhan connects to the "Outside World" (Infrastructur
 
 ---
 
-## 📁 src/knowledge/ - The Legacy Facades (v1)
+## 📁 Indexing, Retrieval, and Verification (replacing src/knowledge/)
 
-### 1. `src/knowledge/embedding_model.py`
+### 1. `src/indexing/embeddings/embedding_model.py`
 **Purpose**: Wrapper for the **BGE-M3** model.
 **Deep Logic**:
 - **Order-Preserving Cache**: When encoding a batch, it checks Redis for each text. If some are missing, it encodes *only* the missing ones but reassembles the final list in the exact original order.
 - **Hardware Acceleration**: Automatically detects `cuda` -> `mps` (Mac) -> `cpu`.
 - **Dimension Consistency**: Hardcoded to `1024`, matching the Qdrant collection schemas.
 
-### 2. `src/knowledge/vector_store.py`
+### 2. `src/indexing/vectorstores/qdrant_store.py`
 **Purpose**: High-level wrapper for Qdrant.
 **Deep Logic**:
 - **Deterministic IDs**: Uses `hashlib.sha256` of document content to generate point IDs. This ensures that re-indexing the same data doesn't create duplicate vectors.
 - **Faceted Search**: Implements `FieldCondition` and `Filter` logic to allow agents to search within specific Madhhabs or historical eras.
 
-### 3. `src/knowledge/hadith_grader.py`
+### 3. `src/verification/checks/hadith_grade.py`
 **Purpose**: Re-exports logic from the verifiers module to provide a consistent "Grade" for every retrieved Hadith.
 **Deep Logic**:
 - **Weighted Relevance**: Authentic Hadiths (*Sahih*) get a multiplier of `1.0`, while weak Hadiths (*Da'if*) are penalized with `0.5`, effectively pushing them to the bottom of the answer context.
