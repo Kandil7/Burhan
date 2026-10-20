@@ -5,9 +5,12 @@ This module provides the main routing entrypoint for the application.
 It combines intent classification with routing decisions.
 """
 
-from typing import Any, Dict, Optional
 import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.application.models import RoutingDecision
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +40,34 @@ class RouterAgent:
         Returns:
             RoutingDecision with intent, route, and metadata
         """
+        from dataclasses import replace
+
         from src.application.models import RoutingDecision
-        from src.domain.intents import get_agent_for_intent
+        from src.domain.intents import (
+            DEFAULT_QURAN_ROUTE,
+            QURAN_SUBINTENT_ROUTES,
+            Intent,
+            get_agent_for_intent,
+        )
 
         result = await self._classifier.classify(query)
-        route = get_agent_for_intent(result.intent) or "chatbot_agent"
+
+        # Confidence gating: below the threshold, fall back to the general
+        # agent instead of routing on a weak guess.
+        if result.confidence < self._conf_threshold:
+            result = replace(
+                result,
+                intent=Intent.ISLAMIC_KNOWLEDGE,
+                reasoning=(
+                    f"Confidence {result.confidence:.2f} is below threshold "
+                    f"{self._conf_threshold:.2f}; routing to the general agent."
+                ),
+            )
+
+        if result.intent is Intent.QURAN:
+            route = QURAN_SUBINTENT_ROUTES.get(result.quran_subintent, DEFAULT_QURAN_ROUTE)
+        else:
+            route = get_agent_for_intent(result.intent) or "chatbot_agent"
 
         return RoutingDecision(result=result, route=route, agent_metadata={})
 
@@ -59,8 +85,8 @@ class SimpleRoutingDecision:
     collections: list[str]
     response_mode: str  # answer, clarify, abstain
     confidence: float
-    reasoning: Optional[str] = None
-    agents: Optional[list[str]] = None  # Multiple agents for multi-agent routing
+    reasoning: str | None = None
+    agents: list[str] | None = None  # Multiple agents for multi-agent routing
 
 
 def create_router_agent(classifier: Any) -> RouterAgent:
@@ -77,7 +103,7 @@ def create_router_agent(classifier: Any) -> RouterAgent:
 
 
 # Default singleton instance - will be configured during app startup
-router_agent: Optional[RouterAgent] = None
+router_agent: RouterAgent | None = None
 
 
 def get_router_agent() -> RouterAgent:
@@ -92,7 +118,7 @@ def init_router_agent(classifier: Any) -> RouterAgent:
     """Initialize the global router agent."""
     global router_agent
     router_agent = RouterAgent(classifier=classifier)
-    logger.info("router_agent_initialized", classifier=type(classifier).__name__)
+    logger.info("router_agent_initialized classifier=%s", type(classifier).__name__)
     return router_agent
 
 
