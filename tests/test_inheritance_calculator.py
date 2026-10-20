@@ -13,9 +13,10 @@ Comprehensive test suite covering:
 """
 
 import pytest
+
 from src.tools.inheritance_calculator import (
-    InheritanceCalculator,
     Heirs,
+    InheritanceCalculator,
 )
 
 
