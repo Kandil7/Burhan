@@ -13,9 +13,10 @@ RUN pip install --no-cache-dir poetry==1.8.3
 # Copy dependency files
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies (without dev packages for production)
+# Install dependencies (production). The rag group provides torch/transformers,
+# which lifespan requires to build the in-process BGE-M3 embedding model.
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-dev --without rag
+    && poetry install --no-interaction --no-ansi --no-dev --no-root --with rag
 
 # Copy application code
 COPY . .
