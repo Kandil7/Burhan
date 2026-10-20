@@ -1,5 +1,10 @@
 # Lucene Extraction Guide
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/lucene/run_pipeline.py` for steps A-D and `scripts/data/lucene/extract_lucene_pages.py --indexes` for raw extraction.
+
 ## 🎯 What We're Extracting
 
 The Lucene indexes contain **ALL the Arabic text content** from 8,425 books:
