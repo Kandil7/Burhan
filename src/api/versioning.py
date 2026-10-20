@@ -6,10 +6,8 @@ Phase 10: Added API versioning support.
 """
 
 from enum import Enum
-from typing import Callable
 
 from fastapi import APIRouter, FastAPI, Request
-from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class APIVersion(str, Enum):
@@ -36,24 +34,24 @@ class APIRouterManager:
         self.v2_router = APIRouter(prefix="/v2")
 
         # Track registered routes
-        self._v1_routes = set()
-        self._v2_routes = set()
+        self._v1_routes: set[str] = set()
+        self._v2_routes: set[str] = set()
 
-    def include_v1_router(self, router: APIRouter, tags: list[str] | None = None):
+    def include_v1_router(self, router: APIRouter, tags: list[str | Enum] | None = None) -> None:
         """Include router in v1."""
         self.v1_router.include_router(router, tags=tags)
         for route in router.routes:
             if hasattr(route, "path"):
                 self._v1_routes.add(route.path)
 
-    def include_v2_router(self, router: APIRouter, tags: list[str] | None = None):
+    def include_v2_router(self, router: APIRouter, tags: list[str | Enum] | None = None) -> None:
         """Include router in v2."""
         self.v2_router.include_router(router, tags=tags)
         for route in router.routes:
             if hasattr(route, "path"):
                 self._v2_routes.add(route.path)
 
-    def register(self):
+    def register(self) -> None:
         """Register all routers to the app."""
         self.app.include_router(self.v1_router, prefix="/api")
         self.app.include_router(self.v2_router, prefix="/api")
@@ -90,11 +88,11 @@ class VersionedAPIRouter:
         self.v1 = APIRouter(prefix=f"{prefix}/v1")
         self.v2 = APIRouter(prefix=f"{prefix}/v2")
 
-    def include_v1_router(self, router: APIRouter, tags: list[str] | None = None):
+    def include_v1_router(self, router: APIRouter, tags: list[str | Enum] | None = None) -> None:
         """Include a router in v1."""
         self.v1.include_router(router, tags=tags)
 
-    def include_v2_router(self, router: APIRouter, tags: list[str] | None = None):
+    def include_v2_router(self, router: APIRouter, tags: list[str | Enum] | None = None) -> None:
         """Include a router in v2."""
         self.v2.include_router(router, tags=tags)
 
