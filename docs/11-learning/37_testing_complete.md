@@ -11,12 +11,15 @@
 ```python
 # tests/test_zakat_calculator.py
 
+
 def test_zakat_calculation():
     calc = ZakatCalculator()
-    result = calc.calculate({
-        "gold_amount_grams": 100,
-        "gold_price_per_gram": 300,
-    })
+    result = calc.calculate(
+        {
+            "gold_amount_grams": 100,
+            "gold_price_per_gram": 300,
+        }
+    )
     assert result["is_zakat_due"] == True
     assert result["total_zakat"] == 1112.5
 ```
@@ -24,13 +27,12 @@ def test_zakat_calculation():
 ### 1.2 Integration Tests
 
 ```python
-# tests/test_ask_endpoint.py
+# tests/test_api.py
+
 
 @pytest.mark.asyncio
 async def test_ask_endpoint():
-    response = await client.post("/api/v1/ask", json={
-        "query": "ما حكم الصلاة؟"
-    })
+    response = await client.post("/api/v1/ask", json={"query": "ما حكم الصلاة؟"})
     assert response.status_code == 200
 ```
 
