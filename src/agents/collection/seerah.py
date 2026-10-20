@@ -6,6 +6,9 @@ Uses YAML config from config/agents/seerah.yaml
 
 from __future__ import annotations
 
+from typing import Any
+
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -14,7 +17,6 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
-from src.agents.base import strip_cot_leakage
 from src.domain.intents import Intent
 
 
@@ -51,9 +53,9 @@ class SeerahCollectionAgent(CollectionAgent):
     def __init__(
         self,
         config: CollectionAgentConfig | None = None,
-        embedding_model=None,
-        vector_store=None,
-        llm_client=None,
+        embedding_model: Any = None,
+        vector_store: Any = None,
+        llm_client: Any = None,
     ) -> None:
         if config is None:
             from src.verification.suite_builder import build_verification_suite_for
@@ -116,24 +118,15 @@ class SeerahCollectionAgent(CollectionAgent):
         top_k = self.strategy.top_k if self.strategy else 10
         return filtered[:top_k]
 
-    async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        """Verify candidates using configured verification suite."""
-        from src.verification.suite_builder import run_verification_suite
-
-        suite = self.config.verification_suite if self.config else None
-
-        if suite:
-            return run_verification_suite(
-                suite=suite,
-                query=query,
-                candidates=candidates,
-            )
-
-        return VerificationReport.from_passages(
-            passages=candidates,
-            is_verified=True,
-            confidence=0.8,
-        )
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        """Verify evidence before generation and the answer after it."""
+        return self._verify(query, candidates, answer=answer, stage=stage)
 
     async def generate_answer(self, query: str, verified_passages: list[dict], language: str) -> str:
         if not verified_passages:
@@ -176,9 +169,14 @@ class SeerahCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
-        # Load shared preamble + agent-specific prompt
+        # Load shared preamble + agent-specific prompt from file, with a
+        # built-in fallback if the prompt file is missing.
         preamble = self._load_shared_preamble()
-        agent_prompt = """أنت باحث متفحص في السيرة النبوية، مهمتك كتابة إجابات سردية موثقة.
+        try:
+            with open("prompts/seerah_agent.txt", encoding="utf-8") as f:
+                agent_prompt = f.read()
+        except FileNotFoundError:
+            agent_prompt = """أنت باحث متفحص في السيرة النبوية، مهمتك كتابة إجابات سردية موثقة.
 يجب أن يكون أسلوبك سردياً متصلاً (Narrative) كما في كتب السير الكبرى، بعيداً عن أسلوب النقاط أو القوائم.
 توقف عن الكتابة فور انتهاء المعلومات المستقاة من النصوص.
 لا تقدم ملخصات أو استنتاجات شخصية."""
