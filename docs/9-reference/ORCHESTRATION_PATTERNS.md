@@ -29,7 +29,7 @@ plan = OrchestrationPlan(
         AgentTask(agent_name="usul_fiqh_agent", priority=2),
     ],
     primary_agent="fiqh_agent",
-    fallback_agent="general_islamic_agent"
+    fallback_agent="general_islamic_agent",
 )
 ```
 
@@ -59,7 +59,7 @@ plan = OrchestrationPlan(
         AgentTask(agent_name="aqeedah_agent", priority=1),
     ],
     primary_agent="fiqh_agent",
-    fallback_agent="general_islamic_agent"
+    fallback_agent="general_islamic_agent",
 )
 ```
 
@@ -88,7 +88,7 @@ plan = OrchestrationPlan(
         AgentTask(agent_name="hadith_agent", priority=2, is_secondary=True),
     ],
     primary_agent="general_islamic_agent",
-    fallback_agent="general_islamic_agent"
+    fallback_agent="general_islamic_agent",
 )
 ```
 
@@ -99,8 +99,8 @@ plan = OrchestrationPlan(
 ### Confidence Thresholds
 
 ```python
-PRIMARY_THRESHOLD = 0.7       # Direct routing to single agent
-SECONDARY_THRESHOLD = 0.4     # Multi-agent orchestration
+PRIMARY_THRESHOLD = 0.7  # Direct routing to single agent
+SECONDARY_THRESHOLD = 0.4  # Multi-agent orchestration
 LOW_CONFIDENCE_THRESHOLD = 0.2  # Fallback to general agent
 ```
 
@@ -126,24 +126,14 @@ Simple rule-based routing by keyword detection:
 ### Creating an Orchestration Plan
 
 ```python
-from src.application.router.orchestration import (
-    create_orchestration_plan,
-    OrchestrationPattern,
-    AgentTask
-)
+from src.application.router.orchestration import create_orchestration_plan, OrchestrationPattern, AgentTask
 
 # For simple query - sequential
-plan = create_orchestration_plan(
-    query="ما حكم صلاة الجمعة؟",
-    intent=Intent.FIQH
-)
+plan = create_orchestration_plan(query="ما حكم صلاة الجمعة؟", intent=Intent.FIQH)
 # Returns: SEQUENTIAL with single task
 
 # For complex query - parallel
-plan = create_orchestration_plan(
-    query="ما حكم الزكاة ومتى فرضت؟",
-    intent=Intent.FIQH
-)
+plan = create_orchestration_plan(query="ما حكم الزكاة ومتى فرضت؟", intent=Intent.FIQH)
 # Returns: PARALLEL with multiple relevant tasks
 ```
 
@@ -155,10 +145,7 @@ from src.application.router.orchestration import MultiAgentOrchestrator
 orchestrator = MultiAgentOrchestrator(registry=agent_registry)
 
 # Execute plan
-result = await orchestrator.execute_plan(
-    plan=plan,
-    query="ما حكم صلاة الجماعة في الإسلام؟"
-)
+result = await orchestrator.execute_plan(plan=plan, query="ما حكم صلاة الجماعة في الإسلام؟")
 
 print(result.answer)
 print(result.citations)
@@ -187,7 +174,7 @@ router = MultiAgentRouter(classifier=classifier)
 # Route to multiple agents
 decision = router.route_multi("ما حكم الصلاة وما صحة هذا الحديث؟")
 
-print(f"Agents: {decision.agents}")       # ["fiqh_agent", "hadith_agent"]
+print(f"Agents: {decision.agents}")  # ["fiqh_agent", "hadith_agent"]
 print(f"Collections: {decision.collections}")  # ["fiqh", "hadith"]
 print(f"Response Mode: {decision.response_mode}")  # "answer"
 
@@ -241,6 +228,7 @@ Examples:
 
 ```python
 from src.domain.intents import INTENT_ROUTING
+
 
 def get_agent_for_intent(intent: Intent) -> str:
     return INTENT_ROUTING.get(intent)
@@ -367,7 +355,7 @@ Query → GeneralIslamicAgent (orchestrator)
 # In router configuration
 router = RouterAgent(
     classifier=classifier,
-    conf_threshold=0.6  # Custom threshold
+    conf_threshold=0.6,  # Custom threshold
 )
 ```
 
@@ -375,10 +363,7 @@ router = RouterAgent(
 
 ```python
 # Force parallel for all multi-domain queries
-orchestrator = MultiAgentOrchestrator(
-    registry=registry,
-    force_parallel=True
-)
+orchestrator = MultiAgentOrchestrator(registry=registry, force_parallel=True)
 ```
 
 ---
@@ -391,10 +376,12 @@ async def test_sequential_pattern():
     plan = create_orchestration_plan("ما حكم الصلاة؟", Intent.FIQH)
     assert plan.pattern == OrchestrationPattern.SEQUENTIAL
 
+
 @pytest.mark.asyncio
 async def test_parallel_pattern():
     plan = create_orchestration_plan("ما حكم الزكاة ومتى فرضت؟", Intent.FIQH)
     assert plan.pattern == OrchestrationPattern.PARALLEL
+
 
 @pytest.mark.asyncio
 async def test_fallback():
