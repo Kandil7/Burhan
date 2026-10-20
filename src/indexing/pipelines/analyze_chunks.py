@@ -1,17 +1,16 @@
 import json
-from pathlib import Path
-from typing import Dict, Any, List, Tuple
-import re
 import statistics as stats
+from pathlib import Path
+from typing import Any
 
 INPUT_PATH = Path("data/mini_dataset_v2/seerah_chunks_v3.jsonl")  # seerah_chunks_v2.jsonl
 
 
 def analyze_file(path: Path) -> None:
-    sizes: List[int] = []
-    sizes_non_index: List[int] = []
-    per_book_counts: Dict[str, int] = {}
-    per_section_counts: Dict[Tuple[int, str], int] = {}
+    sizes: list[int] = []
+    sizes_non_index: list[int] = []
+    per_book_counts: dict[str, int] = {}
+    per_section_counts: dict[tuple[int, str], int] = {}
     index_pages = 0
     total = 0
 
@@ -25,7 +24,7 @@ def analyze_file(path: Path) -> None:
             if not line:
                 continue
             try:
-                rec: Dict[str, Any] = json.loads(line)
+                rec: dict[str, Any] = json.loads(line)
             except json.JSONDecodeError:
                 continue
 
