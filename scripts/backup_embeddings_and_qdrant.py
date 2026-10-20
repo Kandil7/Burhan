@@ -30,10 +30,12 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 try:
     from huggingface_hub import HfApi, login
+
     HAS_HF = True
 except ImportError:
     print("❌ huggingface_hub not installed")
@@ -46,7 +48,7 @@ EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 BACKUP_DIR = PROJECT_ROOT / "data" / "processed" / "hf_backup"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [
@@ -65,7 +67,7 @@ COLLECTIONS = [
 
 def format_size(size_bytes: int) -> str:
     """Format bytes to human-readable size."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024.0
@@ -81,8 +83,8 @@ def compress_file(input_path: Path, output_path: Path) -> int:
     print(f"  📦 Compressing {input_path.name}...")
     start = time.time()
 
-    with open(input_path, 'rb') as f_in:
-        with gzip.open(output_path, 'wb', compresslevel=6) as f_out:
+    with open(input_path, "rb") as f_in:
+        with gzip.open(output_path, "wb", compresslevel=6) as f_out:
             shutil.copyfileobj(f_in, f_out)
 
     original_size = input_path.stat().st_size
@@ -159,6 +161,7 @@ Embedded using BAAI/bge-m3 model (1024 dimensions) on Colab GPU.
         if npy_file.exists():
             # Load to get document count
             import numpy as np
+
             embeddings = np.load(npy_file)
             size = npy_file.stat().st_size
             print(f"| {collection} | {format_size(size)} | - | {len(embeddings):,} |")
@@ -169,7 +172,7 @@ Embedded using BAAI/bge-m3 model (1024 dimensions) on Colab GPU.
 
 - **Original Size:** {format_size(total_original)}
 - **Compressed Size:** {format_size(total_compressed)}
-- **Savings:** {(1 - total_compressed/max(total_original,1))*100:.1f}%
+- **Savings:** {(1 - total_compressed / max(total_original, 1)) * 100:.1f}%
 - **Collections:** {files_processed}/10
 
 ## How to Restore
@@ -204,19 +207,19 @@ print(f"Shape: {embeddings.shape}")
 
 ---
 
-Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Generated: {time.strftime("%Y-%m-%d %H:%M:%S")}
 """
 
-    with open(embeddings_backup_dir / "README.md", 'w', encoding='utf-8') as f:
+    with open(embeddings_backup_dir / "README.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"📊 EMBEDDINGS BACKUP SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  Files processed: {files_processed}")
     print(f"  Original size: {format_size(total_original)}")
     print(f"  Compressed size: {format_size(total_compressed)}")
-    print(f"  Savings: {(1 - total_compressed/max(total_original,1))*100:.1f}%")
+    print(f"  Savings: {(1 - total_compressed / max(total_original, 1)) * 100:.1f}%")
     print(f"  Output: {embeddings_backup_dir}")
 
     return True
@@ -269,45 +272,41 @@ def backup_qdrant_collections():
             offset = None
             while True:
                 batch = client.scroll(
-                    collection_name=collection,
-                    limit=1000,
-                    offset=offset,
-                    with_payload=True,
-                    with_vectors=True
+                    collection_name=collection, limit=1000, offset=offset, with_payload=True, with_vectors=True
                 )
 
                 for point in batch[0]:
-                    points.append({
-                        "id": point.id,
-                        "vector": point.vector,
-                        "payload": point.payload
-                    })
+                    points.append({"id": point.id, "vector": point.vector, "payload": point.payload})
 
                 if len(batch[0]) < 1000:
                     break
                 offset = batch[-1][0].id
 
             # Save to JSON
-            with open(export_file, 'w', encoding='utf-8') as f:
-                json.dump({
-                    "collection": collection,
-                    "points_count": len(points),
-                    "exported_at": time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "points": points
-                }, f, ensure_ascii=False)
+            with open(export_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "collection": collection,
+                        "points_count": len(points),
+                        "exported_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "points": points,
+                    },
+                    f,
+                    ensure_ascii=False,
+                )
 
             elapsed = time.time() - start
             file_size = export_file.stat().st_size
             total_points += len(points)
 
-            print(f"  ✅ Exported {len(points):,} points ({format_size(file_size)}) [{elapsed/60:.1f} min]")
+            print(f"  ✅ Exported {len(points):,} points ({format_size(file_size)}) [{elapsed / 60:.1f} min]")
 
         except Exception as e:
             print(f"  ❌ Failed to export {collection}: {e}")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"📊 QDRANT BACKUP SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  Total points exported: {total_points:,}")
     print(f"  Output: {QDRANT_EXPORT_DIR}")
 
@@ -405,21 +404,13 @@ def main():
     if args.embeddings_only or args.all:
         success = backup_embeddings()
         if success and args.upload:
-            upload_to_huggingface(
-                api,
-                BACKUP_DIR / "embeddings",
-                "embeddings"
-            )
+            upload_to_huggingface(api, BACKUP_DIR / "embeddings", "embeddings")
 
     # Backup Qdrant
     if args.qdrant_only or args.all:
         success = backup_qdrant_collections()
         if success and args.upload:
-            upload_to_huggingface(
-                api,
-                QDRANT_EXPORT_DIR,
-                "qdrant_exports"
-            )
+            upload_to_huggingface(api, QDRANT_EXPORT_DIR, "qdrant_exports")
 
     print("\n" + "=" * 70)
     print("✅ BACKUP COMPLETE")
