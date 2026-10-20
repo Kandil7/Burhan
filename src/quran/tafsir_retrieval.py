@@ -7,6 +7,7 @@ Fixes:
   - source validation: clear error before DB query
   - available_sources: deterministic order via dict.fromkeys()
 """
+
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
@@ -17,7 +18,7 @@ from src.quran.verse_retrieval import VerseRetrievalEngine
 
 logger = get_logger()
 
-_TRUNCATE_AYAH   = 100
+_TRUNCATE_AYAH = 100
 _TRUNCATE_TAFSIR = 300
 
 
@@ -40,25 +41,25 @@ class TafsirRetrievalEngine:
         "ibn-kathir": {
             "name_ar": "تفسير ابن كثير",
             "name_en": "Ibn Kathir",
-            "author":  "Ismail ibn Kathir",
+            "author": "Ismail ibn Kathir",
             "language": "ar",
         },
         "al-jalalayn": {
             "name_ar": "تفسير الجلالين",
             "name_en": "Al-Jalalayn",
-            "author":  "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
+            "author": "Jalal ad-Din al-Mahalli and Jalal ad-Din as-Suyuti",
             "language": "ar",
         },
         "al-qurtubi": {
             "name_ar": "تفسير القرطبي",
             "name_en": "Al-Qurtubi",
-            "author":  "Abu 'Abdullah Al-Qurtubi",
+            "author": "Abu 'Abdullah Al-Qurtubi",
             "language": "ar",
         },
     }
 
     def __init__(self, session: Session) -> None:
-        self.session      = session
+        self.session = session
         self.verse_engine = VerseRetrievalEngine(session)
 
     # ── Public API ─────────────────────────────────────────────────────────────
@@ -88,23 +89,19 @@ class TafsirRetrievalEngine:
 
         try:
             # verse_engine.lookup() may return dict OR list[dict]
-            lookup_result = await self.verse_engine.lookup(
-                ayah_reference, include_translation=True
-            )
+            lookup_result = await self.verse_engine.lookup(ayah_reference, include_translation=True)
 
             # Normalise to a single ayah dict
             if isinstance(lookup_result, list):
                 if not lookup_result:
-                    raise TafsirNotFoundError(
-                        f"No verses returned for reference: {ayah_reference!r}"
-                    )
+                    raise TafsirNotFoundError(f"No verses returned for reference: {ayah_reference!r}")
                 # For ranges (e.g. Al-Fatihah), use the first ayah as anchor
                 ayah_dict = lookup_result[0]
             else:
                 ayah_dict = lookup_result
 
             surah_num = ayah_dict["surah_number"]
-            ayah_num  = ayah_dict["ayah_number"]
+            ayah_num = ayah_dict["ayah_number"]
 
             # Build DB query
             q = (
@@ -123,21 +120,18 @@ class TafsirRetrievalEngine:
             tafsirs = q.all()
 
             if source and not tafsirs:
-                raise TafsirNotFoundError(
-                    f"No tafsir from '{source}' found for {ayah_reference!r}."
-                )
+                raise TafsirNotFoundError(f"No tafsir from '{source}' found for {ayah_reference!r}.")
 
             # Deterministic source order (dict.fromkeys preserves insertion order)
             seen_sources = list(dict.fromkeys(t.source_name for t in tafsirs))
 
             result = {
-                "ayah":              ayah_dict,
-                "tafsirs":           [self._format_tafsir(t) for t in tafsirs],
+                "ayah": ayah_dict,
+                "tafsirs": [self._format_tafsir(t) for t in tafsirs],
                 "available_sources": seen_sources,
             }
 
-            logger.info("tafsir.retrieved",
-                        reference=ayah_reference, sources=seen_sources)
+            logger.info("tafsir.retrieved", reference=ayah_reference, sources=seen_sources)
             return result
 
         except TafsirNotFoundError:
@@ -167,12 +161,7 @@ class TafsirRetrievalEngine:
             self._validate_source(source)
 
         try:
-            q = (
-                self.session.query(Tafsir)
-                .join(Ayah)
-                .join(Surah)
-                .filter(Tafsir.text.contains(query))
-            )
+            q = self.session.query(Tafsir).join(Ayah).join(Surah).filter(Tafsir.text.contains(query))
 
             if source:
                 q = q.filter(Tafsir.source_name == source)
@@ -202,47 +191,34 @@ class TafsirRetrievalEngine:
         """
         if source not in self.AVAILABLE_SOURCES:
             valid = ", ".join(self.AVAILABLE_SOURCES)
-            raise TafsirRetrievalError(
-                f"Unknown source {source!r}. Available: {valid}"
-            )
+            raise TafsirRetrievalError(f"Unknown source {source!r}. Available: {valid}")
 
     # ── Formatters ────────────────────────────────────────────────────────────
 
     def _format_tafsir(self, t: Tafsir) -> dict:
         """Full tafsir entry (used in get_tafsir)."""
         return {
-            "source":   t.source_name,
-            "author":   self.AVAILABLE_SOURCES.get(t.source_name, {}).get(
-                            "author", getattr(t, "author", "Unknown")),
-            "text":     t.text,
+            "source": t.source_name,
+            "author": self.AVAILABLE_SOURCES.get(str(t.source_name), {}).get("author", getattr(t, "author", "Unknown")),
+            "text": t.text,
             "language": getattr(t, "language", "ar"),
         }
 
     def _format_search_result(self, t: Tafsir) -> dict:
         """Compact tafsir entry for search results with safe truncation."""
-        ayah_text   = t.ayah.text_uthmani or ""
+        ayah_text = t.ayah.text_uthmani or ""
         tafsir_text = t.text or ""
 
         return {
-            "surah_number":  t.ayah.surah.number,
+            "surah_number": t.ayah.surah.number,
             "surah_name_en": t.ayah.surah.name_en,
-            "ayah_number":   t.ayah.number_in_surah,
+            "ayah_number": t.ayah.number_in_surah,
             # Only append "…" when the text is actually truncated
-            "ayah_text":    (
-                ayah_text[:_TRUNCATE_AYAH] + "…"
-                if len(ayah_text) > _TRUNCATE_AYAH
-                else ayah_text
+            "ayah_text": (ayah_text[:_TRUNCATE_AYAH] + "…" if len(ayah_text) > _TRUNCATE_AYAH else ayah_text),
+            "source": t.source_name,
+            "author": self.AVAILABLE_SOURCES.get(str(t.source_name), {}).get("author", getattr(t, "author", "Unknown")),
+            "tafsir_text": (
+                tafsir_text[:_TRUNCATE_TAFSIR] + "…" if len(tafsir_text) > _TRUNCATE_TAFSIR else tafsir_text
             ),
-            "source":       t.source_name,
-            "author":       self.AVAILABLE_SOURCES.get(t.source_name, {}).get(
-                                "author", getattr(t, "author", "Unknown")),
-            "tafsir_text":  (
-                tafsir_text[:_TRUNCATE_TAFSIR] + "…"
-                if len(tafsir_text) > _TRUNCATE_TAFSIR
-                else tafsir_text
-            ),
-            "quran_url":    (
-                f"https://quran.com/"
-                f"{t.ayah.surah.number}/{t.ayah.number_in_surah}"
-            ),
+            "quran_url": (f"https://quran.com/{t.ayah.surah.number}/{t.ayah.number_in_surah}"),
         }
