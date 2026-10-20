@@ -193,8 +193,7 @@ class InheritanceCalculator:
                 # Give remainder to asabah
                 remainder = 1 - total_furood
                 asabah_shares = self._calculate_asabah_shares(
-                    asabah_heirs, remainder, net_estate,
-                    daughters_count=active_heirs.daughters
+                    asabah_heirs, remainder, net_estate, daughters_count=active_heirs.daughters
                 )
                 distribution.extend(asabah_shares)
             else:
@@ -304,7 +303,12 @@ class InheritanceCalculator:
             percentage = round(float(fraction) * 100, 2)
             shares.append(
                 InheritanceShare(
-                    heir_name="Husband", fraction=fraction, percentage=percentage, amount=amount, basis="fard", notes="Quran 4:12"
+                    heir_name="Husband",
+                    fraction=fraction,
+                    percentage=percentage,
+                    amount=amount,
+                    basis="fard",
+                    notes="Quran 4:12",
                 )
             )
 
@@ -349,7 +353,12 @@ class InheritanceCalculator:
                 percentage = round(float(fraction) * 100, 2)
                 shares.append(
                     InheritanceShare(
-                        heir_name="Father", fraction=fraction, percentage=percentage, amount=amount, basis="fard", notes="Quran 4:11"
+                        heir_name="Father",
+                        fraction=fraction,
+                        percentage=percentage,
+                        amount=amount,
+                        basis="fard",
+                        notes="Quran 4:11",
                     )
                 )
             # If no descendants, father gets everything as asabah (handled later)
@@ -372,7 +381,12 @@ class InheritanceCalculator:
             percentage = round(float(fraction) * 100, 2)
             shares.append(
                 InheritanceShare(
-                    heir_name="Mother", fraction=fraction, percentage=percentage, amount=amount, basis="fard", notes="Quran 4:11"
+                    heir_name="Mother",
+                    fraction=fraction,
+                    percentage=percentage,
+                    amount=amount,
+                    basis="fard",
+                    notes="Quran 4:11",
                 )
             )
 
@@ -380,12 +394,14 @@ class InheritanceCalculator:
         if heirs.paternal_grandfather and not heirs.father:
             if heirs.sons > 0:
                 fraction = self.PATERNAL_GRANDFATHER_WITH_MALE_DESCENDANTS
+                amount = round(float(fraction) * net_estate, 2)
+                percentage = round(float(fraction) * 100, 2)
                 shares.append(
                     InheritanceShare(
                         heir_name="Paternal Grandfather",
                         fraction=fraction,
-                        percentage=0,
-                        amount=0,
+                        percentage=percentage,
+                        amount=amount,
                         basis="fard",
                         notes="Same ruling as father when father absent",
                     )
@@ -397,56 +413,44 @@ class InheritanceCalculator:
                 # Daughters get fard
                 if heirs.daughters == 1:
                     fraction = self.DAUGHTER_SINGLE
-                    shares.append(
-                        InheritanceShare(
-                            heir_name="Daughter",
-                            fraction=fraction,
-                            percentage=0,
-                            amount=0,
-                            basis="fard",
-                            notes="Quran 4:11",
-                        )
-                    )
+                    heir_name = "Daughter"
                 else:
                     fraction = self.DAUGHTER_MULTIPLE
-                    shares.append(
-                        InheritanceShare(
-                            heir_name=f"Daughters ({heirs.daughters})",
-                            fraction=fraction,
-                            percentage=0,
-                            amount=0,
-                            basis="fard",
-                            notes="Quran 4:11 (shared among daughters)",
-                        )
+                    heir_name = f"Daughters ({heirs.daughters})"
+                amount = round(float(fraction) * net_estate, 2)
+                percentage = round(float(fraction) * 100, 2)
+                shares.append(
+                    InheritanceShare(
+                        heir_name=heir_name,
+                        fraction=fraction,
+                        percentage=percentage,
+                        amount=amount,
+                        basis="fard",
+                        notes="Quran 4:11",
                     )
+                )
             # If sons present, daughters become asabah bil-ghayr (handled in asabah)
 
         # Full sisters (only when no descendants, no father, no full brothers as asabah)
         if heirs.full_sisters > 0 and not has_descendants and not heirs.father and heirs.full_brothers == 0:
             if heirs.full_sisters == 1:
                 fraction = self.FULL_SISTER_SINGLE
-                shares.append(
-                    InheritanceShare(
-                        heir_name="Full Sister",
-                        fraction=fraction,
-                        percentage=0,
-                        amount=0,
-                        basis="fard",
-                        notes="Quran 4:12",
-                    )
-                )
+                heir_name = "Full Sister"
             else:
                 fraction = self.FULL_SISTER_MULTIPLE
-                shares.append(
-                    InheritanceShare(
-                        heir_name=f"Full Sisters ({heirs.full_sisters})",
-                        fraction=fraction,
-                        percentage=0,
-                        amount=0,
-                        basis="fard",
-                        notes="Quran 4:12",
-                    )
+                heir_name = f"Full Sisters ({heirs.full_sisters})"
+            amount = round(float(fraction) * net_estate, 2)
+            percentage = round(float(fraction) * 100, 2)
+            shares.append(
+                InheritanceShare(
+                    heir_name=heir_name,
+                    fraction=fraction,
+                    percentage=percentage,
+                    amount=amount,
+                    basis="fard",
+                    notes="Quran 4:12",
                 )
+            )
 
         # Uterine (maternal) siblings
         total_uterine = heirs.uterine_brothers + heirs.uterine_sisters
@@ -456,12 +460,14 @@ class InheritanceCalculator:
             else:
                 fraction = self.UTERINE_MULTIPLE
 
+            amount = round(float(fraction) * net_estate, 2)
+            percentage = round(float(fraction) * 100, 2)
             shares.append(
                 InheritanceShare(
                     heir_name=f"Uterine Sibling{'s' if total_uterine > 1 else ''}",
                     fraction=fraction,
-                    percentage=0,
-                    amount=0,
+                    percentage=percentage,
+                    amount=amount,
                     basis="fard",
                     notes="Quran 4:12",
                 )
@@ -507,8 +513,7 @@ class InheritanceCalculator:
         return asabah
 
     def _calculate_asabah_shares(
-        self, asabah_heirs: list[tuple[str, int]], remainder: Fraction, estate_value: float,
-        daughters_count: int = 0
+        self, asabah_heirs: list[tuple[str, int]], remainder: Fraction, estate_value: float, daughters_count: int = 0
     ) -> list[InheritanceShare]:
         """Calculate shares for residuary heirs."""
         shares = []
@@ -532,7 +537,10 @@ class InheritanceCalculator:
                         percentage=son_percentage,
                         amount=son_amount,
                         basis="asabah",
-                        notes=f"Residuary heir (2:1 ratio with {daughters_count} daughter{'s' if daughters_count > 1 else ''})",
+                        notes=(
+                            "Residuary heir (2:1 ratio with "
+                            f"{daughters_count} daughter{'s' if daughters_count > 1 else ''})"
+                        ),
                     )
                 )
 
