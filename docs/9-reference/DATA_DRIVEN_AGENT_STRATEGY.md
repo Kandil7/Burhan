@@ -182,7 +182,7 @@
 
 1. **Resume Sanadset embedding** (highest ROI)
    ```bash
-   python scripts/embed_sanadset_hadith.py --limit 10000
+   python scripts/data/embed_sanadset_hadith.py --limit 10000
    ```
 
 2. **Create proper hadith chunker** for Shamela books
