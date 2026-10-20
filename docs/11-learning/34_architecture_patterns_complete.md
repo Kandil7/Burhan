@@ -23,6 +23,7 @@
 
 _registry: Optional[AgentRegistry] = None
 
+
 def get_registry() -> AgentRegistry:
     """الحصول على instance الوحيد."""
     global _registry
@@ -40,12 +41,13 @@ def get_registry() -> AgentRegistry:
 ```python
 # src/indexing/vectorstores/factory.py
 
+
 def create_vector_store(
     provider: str,
     **config,
 ) -> VectorStore:
     """Factory لـ Vector Stores."""
-    
+
     if provider == "qdrant":
         return QdrantVectorStore(**config)
     elif provider == "weaviate":
@@ -59,19 +61,20 @@ def create_vector_store(
 ```python
 # src/application/classifier_factory.py
 
+
 def build_classifier(
     embedding_model=None,
 ) -> FallbackChainClassifier:
     """Factory لـ Classifiers."""
-    
+
     keyword = KeywordBasedClassifier()
-    
+
     if embedding_model:
         return FallbackChainClassifier(
             primary=keyword,
             fallback=EmbeddingClassifier(embedding_model),
         )
-    
+
     return keyword
 ```
 
@@ -97,6 +100,7 @@ RETRIEVAL_MATRIX = {
     ),
 }
 
+
 def get_strategy(agent_name: str) -> RetrievalStrategy:
     """الحصول على strategy."""
     return RETRIEVAL_MATRIX.get(agent_name, DEFAULT_STRATEGY)
@@ -109,18 +113,19 @@ def get_strategy(agent_name: str) -> RetrievalStrategy:
 ### 4.1 Citation Repository
 
 ```python
-# src/services/citation_service.py
+# src/application/services/citation_service.py
+
 
 class CitationRepository:
     """Repository للاقتباسات."""
-    
+
     def __init__(self, db):
         self._db = db
-    
+
     async def get_by_ids(self, ids: list[str]) -> list[Citation]:
         """الحصول على الاقتباسات."""
         pass
-    
+
     async def save(self, citation: Citation) -> None:
         """حفظ الاقتباس."""
         pass
@@ -135,16 +140,17 @@ class CitationRepository:
 ```python
 # src/application/container.py
 
+
 class Container:
     """Service Locator."""
-    
+
     def __init__(self):
         self._services: dict = {}
-    
+
     def register(self, name: str, service: Any) -> None:
         """تسجيل الخدمة."""
         self._services[name] = service
-    
+
     def get(self, name: str) -> Any:
         """الحصول على الخدمة."""
         return self._services[name]
