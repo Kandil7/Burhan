@@ -6,23 +6,23 @@ Tests for:
 - Fallback behavior
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
+import pytest
+
+from src.agents.base import AgentOutput
 from src.application.router.orchestration import (
-    OrchestrationPattern,
-    AgentTask,
-    OrchestrationPlan,
-    create_orchestration_plan,
-    MultiAgentOrchestrator,
-    route_via_decision_tree,
+    LOW_CONFIDENCE_THRESHOLD,
     PRIMARY_THRESHOLD,
     SECONDARY_THRESHOLD,
-    LOW_CONFIDENCE_THRESHOLD,
+    AgentTask,
+    MultiAgentOrchestrator,
+    OrchestrationPattern,
+    OrchestrationPlan,
+    create_orchestration_plan,
+    route_via_decision_tree,
 )
 from src.domain.intents import Intent
-from src.agents.base import AgentOutput, AgentInput
-
 
 # ============================================================================
 # Test: Orchestration Plan Creation
