@@ -32,8 +32,10 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     # Cap Qdrant so a bulk load cannot exhaust the shared WSL2 VM and kill
-    # the whole Docker session on this 32 GB workstation.
-    mem_limit: 4g
+    # the whole Docker session on this 32 GB workstation. Windows logged low
+    # virtual memory at 6.5 GB in vmmemWSL with a 4g cap, so 3g keeps the
+    # container from driving the VM into the host commit limit.
+    mem_limit: 3g
     environment:
       QDRANT__SERVICE__GRPC_PORT: 6334
     healthcheck:

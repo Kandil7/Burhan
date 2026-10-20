@@ -23,6 +23,7 @@ import json
 import gzip
 import time
 import argparse
+import traceback
 import numpy as np
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -83,7 +84,7 @@ COLLECTIONS = [
 ]
 
 DOWNLOAD_DIR = Path("data/processed/hf_embeddings")
-QDRANT_BATCH_SIZE = 500  # Points per upload batch
+QDRANT_BATCH_SIZE = 256  # Points per upload batch
 VECTOR_DIM = 1024  # BAAI/bge-m3 output size
 DOWNLOAD_WORKERS = 4  # Parallel shard downloads
 
@@ -248,21 +249,31 @@ def iter_collection_shards(collection_name: str):
     total = min(len(emb_files), len(meta_files))
 
     def fetch(index: int) -> tuple[int, str, str]:
-        emb_path = hf_hub_download(
-            repo_id=HF_REPO,
-            filename=emb_files[index],
-            repo_type="dataset",
-            local_dir=str(DOWNLOAD_DIR),
-            force_download=False,
-        )
-        meta_path = hf_hub_download(
-            repo_id=HF_REPO,
-            filename=meta_files[index],
-            repo_type="dataset",
-            local_dir=str(DOWNLOAD_DIR),
-            force_download=False,
-        )
-        return index, emb_path, meta_path
+        last_error: Exception | None = None
+        for attempt in range(1, 5):
+            try:
+                emb_path = hf_hub_download(
+                    repo_id=HF_REPO,
+                    filename=emb_files[index],
+                    repo_type="dataset",
+                    local_dir=str(DOWNLOAD_DIR),
+                    force_download=False,
+                )
+                meta_path = hf_hub_download(
+                    repo_id=HF_REPO,
+                    filename=meta_files[index],
+                    repo_type="dataset",
+                    local_dir=str(DOWNLOAD_DIR),
+                    force_download=False,
+                )
+                return index, emb_path, meta_path
+            except Exception as exc:  # noqa: BLE001 - transient network and rate-limit errors
+                last_error = exc
+                if attempt == 4:
+                    break
+                print(f"  [retry] shard {index + 1} attempt {attempt} failed: {type(exc).__name__}: {exc}")
+                time.sleep(3 * attempt)
+        raise RuntimeError(f"shard {index + 1} download failed: {last_error}") from last_error
 
     with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as pool:
         futures = {index: pool.submit(fetch, index) for index in range(total)}
@@ -298,7 +309,13 @@ def upload_to_qdrant(
     print(f"Uploading to Qdrant: {collection_name}")
     print(f"{'=' * 70}")
 
-    client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY, timeout=120)
+    client = QdrantClient(
+        url=QDRANT_URL,
+        api_key=QDRANT_API_KEY,
+        timeout=120,
+        grpc_port=6334,
+        prefer_grpc=True,
+    )
 
     existing_count = 0
     collection_exists = client.collection_exists(collection_name)
@@ -328,6 +345,17 @@ def upload_to_qdrant(
     rows_seen = 0
     next_id = start_id
     started = time.time()
+
+    def upsert(points: list) -> None:
+        for attempt in range(1, 4):
+            try:
+                client.upsert(collection_name=collection_name, points=points)
+                return
+            except Exception as exc:  # noqa: BLE001 - transient transport errors
+                if attempt == 3:
+                    raise
+                print(f"  [retry] upsert attempt {attempt} failed: {type(exc).__name__}: {exc}")
+                time.sleep(3 * attempt)
 
     for shard_index, shard_count, vectors, passages in shards:
         if vectors.shape[1] != VECTOR_DIM:
@@ -366,7 +394,7 @@ def upload_to_qdrant(
                 points.append(PointStruct(id=next_id, vector=batch_vectors[idx], payload=payload))
                 next_id += 1
 
-            client.upsert(collection_name=collection_name, points=points)
+            upsert(points)
             total_points += len(points)
 
         rows_seen += len(passages)
@@ -497,15 +525,25 @@ def main():
             continue
 
         coll_start = time.time()
-        try:
-            result = upload_to_qdrant(
-                coll,
-                iter_collection_shards(coll),
-                batch_size,
-                force=args.force,
-            )
-        except Exception as exc:
-            print(f"  [error] {coll}: {type(exc).__name__}: {exc}")
+        result = None
+        for attempt in range(1, 4):
+            try:
+                result = upload_to_qdrant(
+                    coll,
+                    iter_collection_shards(coll),
+                    batch_size,
+                    force=args.force and attempt == 1,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 - resume from the current count and retry
+                print(f"  [error] {coll} attempt {attempt}: {type(exc).__name__}: {exc}")
+                traceback.print_exc()
+                if attempt == 3:
+                    break
+                time.sleep(5 * attempt)
+
+        if result is None:
+            print(f"  [failed] {coll} after 3 attempts")
             continue
 
         result["total_time"] = time.time() - coll_start
