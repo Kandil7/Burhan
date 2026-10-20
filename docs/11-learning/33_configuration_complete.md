@@ -112,30 +112,31 @@ keywords:
 ```python
 # src/config/settings.py
 
+
 class Settings(BaseSettings):
     """إعدادات التطبيق."""
-    
+
     # API
     api_v1_prefix: str = "/api/v1"
-    
+
     # Database
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     postgres_url: str = "postgresql://user:pass@localhost:5432"
     redis_url: str = "redis://localhost:6379"
-    
+
     # LLM
     openai_api_key: str
     groq_api_key: str
     default_llm: str = "gpt-4"
-    
+
     # Embeddings
     embedding_model: str = "BAAI/bge-m3"
-    
+
     # Agent Config
     agent_config_dir: str = "config/agents"
     prompt_dir: str = "prompts"
-    
+
     class Config:
         env_file = ".env"
 ```
