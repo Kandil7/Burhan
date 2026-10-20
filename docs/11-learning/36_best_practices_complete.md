@@ -54,7 +54,8 @@ def validate_input(query: str) -> bool:
 ```python
 from fastapi_limiter import Limiter
 
-@ limiter.limit("10/minute")
+
+@limiter.limit("10/minute")
 async def ask_question(request):
     pass
 ```
@@ -77,7 +78,7 @@ logger.info("question_answered", query=query)
 ```python
 from prometheus_client import Counter
 
-questions_total = Counter('questions_total', 'Total questions')
+questions_total = Counter("questions_total", "Total questions")
 ```
 
 ---
