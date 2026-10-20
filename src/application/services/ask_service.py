@@ -7,7 +7,7 @@ Bridges the API transport layer and the AnswerQueryUseCase.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from src.application.use_cases.answer_query import (
     AnswerQueryInput,
@@ -27,17 +27,17 @@ class AskService:
     API-level metadata/context.
     """
 
-    def __init__(self, answer_query_use_case: Optional[Any] = None):
+    def __init__(self, answer_query_use_case: Any | None = None):
         """
         Initialize the ask service.
-        
+
         Args:
             answer_query_use_case: Injected use case instance
         """
         self._use_case = answer_query_use_case
 
     @property
-    def use_case(self):
+    def use_case(self) -> Any:
         """Get or initialize use case instance."""
         if self._use_case is None:
             self._use_case = get_answer_query_use_case()
@@ -47,9 +47,9 @@ class AskService:
         self,
         query: str,
         language: str = "ar",
-        madhhab: Optional[str] = None,
-        user_id: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
+        madhhab: str | None = None,
+        user_id: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> AnswerQueryOutput:
         """
         Process an ask query.
@@ -80,7 +80,8 @@ class AskService:
         )
 
         # Execute the core use case
-        return await self.use_case.execute(input_data)
+        result: AnswerQueryOutput = await self.use_case.execute(input_data)
+        return result
 
 
 # Global service instance
@@ -93,7 +94,6 @@ def get_ask_service(answer_query_use_case: Any = None) -> AskService:
     if _ask_service is None:
         _ask_service = AskService(answer_query_use_case=answer_query_use_case)
     return _ask_service
-
 
 
 # For backward compatibility with lifespan.py
