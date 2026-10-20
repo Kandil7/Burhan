@@ -32,11 +32,11 @@ CREATE TABLE IF NOT EXISTS ayahs (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_ayah_surah_number ON ayahs(surah_id, number_in_surah);
-CREATE INDEX idx_ayah_juz ON ayahs(juz);
-CREATE INDEX idx_ayah_page ON ayahs(page);
-CREATE INDEX idx_ayah_text_search ON ayahs USING GIN (to_tsvector('simple', text_uthmani));
-CREATE INDEX idx_ayah_text_trgm ON ayahs USING GIN (text_uthmani gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_ayah_surah_number ON ayahs(surah_id, number_in_surah);
+CREATE INDEX IF NOT EXISTS idx_ayah_juz ON ayahs(juz);
+CREATE INDEX IF NOT EXISTS idx_ayah_page ON ayahs(page);
+CREATE INDEX IF NOT EXISTS idx_ayah_text_search ON ayahs USING GIN (to_tsvector('simple', text_uthmani));
+CREATE INDEX IF NOT EXISTS idx_ayah_text_trgm ON ayahs USING GIN (text_uthmani gin_trgm_ops);
 
 -- ============================================
 -- TRANSLATIONS (Multi-language support)
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS translations (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_translation_ayah ON translations(ayah_id);
-CREATE INDEX idx_translation_lang ON translations(language);
+CREATE INDEX IF NOT EXISTS idx_translation_ayah ON translations(ayah_id);
+CREATE INDEX IF NOT EXISTS idx_translation_lang ON translations(language);
 
 -- ============================================
 -- TAFSIR (Commentaries)
@@ -70,8 +70,8 @@ CREATE TABLE IF NOT EXISTS tafsirs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_tafsir_ayah ON tafsirs(ayah_id);
-CREATE INDEX idx_tafsir_source ON tafsirs(source_name);
+CREATE INDEX IF NOT EXISTS idx_tafsir_ayah ON tafsirs(ayah_id);
+CREATE INDEX IF NOT EXISTS idx_tafsir_source ON tafsirs(source_name);
 
 -- ============================================
 -- QUERY LOGGING (Analytics)
@@ -90,9 +90,9 @@ CREATE TABLE IF NOT EXISTS query_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_query_intent ON query_logs(intent);
-CREATE INDEX idx_query_created ON query_logs(created_at);
-CREATE INDEX idx_query_language ON query_logs(language);
+CREATE INDEX IF NOT EXISTS idx_query_intent ON query_logs(intent);
+CREATE INDEX IF NOT EXISTS idx_query_created ON query_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_query_language ON query_logs(language);
 
 -- ============================================
 -- CREATED_AT/UPDATED_AT TRIGGER
@@ -105,6 +105,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_surahs_updated_at ON surahs;
 
 CREATE TRIGGER update_surahs_updated_at
     BEFORE UPDATE ON surahs
