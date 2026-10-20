@@ -51,7 +51,7 @@ def strip_cot_leakage(text: str) -> str:
 
 ---
 
-#### `src/agents/collection_agent.py` (ALIAS)
+#### `src/agents/collection/base.py` (ALIAS)
 **Purpose**: Legacy alias for backward compatibility.
 
 **Exports**:
@@ -112,7 +112,7 @@ class VerificationCheck(BaseModel):
 class VerificationSuite(BaseModel):
     checks: list[VerificationCheck]
 
-class IntentLabel(str, Enum):
+class Intent(str, Enum):
     # Domain-specific intents
 ```
 
@@ -163,15 +163,11 @@ FastAPI application and routes - the HTTP interface.
 
 **Key Code**:
 ```python
-app = FastAPI(
-    title="Burhan Islamic QA API",
-    version="0.5.0",
-    docs_url="/docs"
-)
+app = FastAPI(title="Burhan Islamic QA API", version="0.5.0", docs_url="/docs")
 
 # Include routers
 app.include_router(ask_router, prefix="/api/v1")  # /api/v1/ask
-app.include_router(search_router, prefix="/api/v1") # /api/v1/search
+app.include_router(search_router, prefix="/api/v1")  # /api/v1/search
 app.include_router(tools_router, prefix="/api/v1")  # /api/v1/tools
 app.include_router(quran_router, prefix="/api/v1")  # /api/v1/quran
 ```
@@ -397,6 +393,7 @@ class RetrievalResult(BaseModel):
     collection: str
     metadata: dict
 
+
 class QueryType(str, Enum):
     SEMANTIC = "semantic"
     KEYWORD = "keyword"
@@ -405,13 +402,12 @@ class QueryType(str, Enum):
 
 ---
 
-## 📁 src/verification/ vs src/verifiers/
+## 📁 src/verification/
 
 ### Purpose
-Two verification modules exist for historical reasons.
+The single verification package. Base classes and every check live here.
 
-#### `src/verification/` (Wrapper - New)
-**Purpose**: Empty wrapper - placeholder for future v2 verification layer.
+#### `src/verification/` (Active Implementation)
 
 **Exports**:
 ```python
@@ -427,42 +423,43 @@ from src.verification.trace import (
 )
 ```
 
-#### `src/verifiers/` (Active Implementation)
-**Purpose**: Full verification implementation with deprecation warning.
-
 **Files**:
 
 | File | Checks |
 |------|-------|
-| `suite_builder.py` | Build verification suites |
-| `exact_quote.py` | Quote validation |
-| `source_attribution.py` | Source verification |
-| `hadith_grade.py` | Hadith authenticity |
-| `contradiction.py` | Check contradictions |
-| `evidence_sufficiency.py` | Evidence check |
-| `temporal_consistency.py` | Time-based checks |
-| `school_consistency.py` | Madhhab consistency |
-| `groundedness_judge.py` | Grounding check |
+| `suite_builder.py` | Build verification suites from agent config |
+| `checks/exact_quote.py` | Quote validation |
+| `checks/source_attribution.py` | Source verification |
+| `checks/hadith_grade.py` | Hadith authenticity |
+| `checks/contradiction.py` | Check contradictions |
+| `checks/evidence_sufficiency.py` | Evidence check |
+| `checks/temporal_consistency.py` | Time-based checks |
+| `checks/school_consistency.py` | Madhhab consistency |
+| `checks/groundedness_judge.py` | Grounding check |
 
-**Usage Note**: All collection agents import from `src.verification/`.
+**Usage Note**: All collection agents import from `src.verification`. The former `src/verifiers/` package no longer exists.
 
 ---
 
-## 📁 src/knowledge/ (Legacy Wrapper)
+## 📁 Retrieval and Indexing (replacing src/knowledge/)
 
 ### Purpose
-Legacy facade that wraps `src/retrieval/`. Kept for backward compatibility.
+The former `src/knowledge/` package was split into `src/indexing/` and `src/retrieval/`.
 
-**Files**:
-- `embedding_model.py` - Embedding generation
-- `vector_store.py` - Qdrant operations
-- `hybrid_search.py` - Hybrid search
-- `bm25_retriever.py` - BM25 search
-- `query_expander.py` - Query expansion
-- `hierarchical_retriever.py` - Hierarchical retrieval
-- `hadith_grader.py` - Hadith grading
-
-**Note**: Many of these wrap `src/retrieval/` modules.
+| Former path | Current path |
+|-------------|--------------|
+| `embedding_model.py` | `src/indexing/embeddings/embedding_model.py` |
+| `embedding_cache.py` | `src/indexing/embeddings/embedding_cache.py` |
+| `vector_store.py` | `src/indexing/vectorstores/qdrant_store.py` |
+| `hybrid_search.py` | `src/indexing/vectorstores/hybrid_client.py` |
+| `bm25_retriever.py` | `src/retrieval/retrievers/bm25_retriever.py` |
+| `query_expander.py` | `src/retrieval/expanders/query_expander.py` |
+| `hierarchical_retriever.py` | `src/retrieval/retrievers/hierarchical_retriever.py` |
+| `reranker.py` | `src/retrieval/ranking/reranker.py` |
+| `hadith_grader.py` | `src/verification/checks/hadith_grade.py` |
+| `book_weighter.py` | `src/retrieval/ranking/book_weighter.py` |
+| `title_loader.py` | `src/indexing/metadata/title_loader.py` |
+| `chunker.py` | `scripts/ingestion/chunk_all_books.py` |
 
 ---
 
@@ -481,7 +478,7 @@ External service integrations.
 
 ---
 
-## 📁 src/config/ & src/config_runtime/
+## 📁 src/config/ & src/config/
 
 ### Purpose
 Configuration management.
@@ -528,7 +525,7 @@ Configuration management.
 
 4. **Advanced**:
    - `src/application/router/hybrid_classifier.py` - Intent classification
-   - `src/verifiers/` - Verification
+   - `src/verification/` - Verification
 
 ---
 
