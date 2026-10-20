@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
@@ -49,8 +49,8 @@ class EmbeddingModel:
     BATCH_SIZE = 32
 
     def __init__(self, cache_enabled: bool = True) -> None:
-        self.model: AutoModel | None = None
-        self.tokenizer: AutoTokenizer | None = None
+        self.model: Any = None
+        self.tokenizer: Any = None
         self.device: str = self._get_device()
         self.cache_enabled = cache_enabled
         self.cache: EmbeddingCache | None = None
@@ -149,7 +149,7 @@ class EmbeddingModel:
 
         if len(embeddings) == 0:
             raise EmbeddingModelError(f"encode() returned empty array for query: '{clean[:50]}'")
-        return embeddings[0]
+        return np.asarray(embeddings[0])
 
     async def encode(
         self,
@@ -199,10 +199,10 @@ class EmbeddingModel:
 
         # 1. Compute hashes and check cache for each position
         hashes = [self._get_hash(t) for t in texts]
-        result = [None] * len(texts)  # positional slots
+        result: list[Any] = [None] * len(texts)  # positional slots
         uncached_idx = []  # positions needing encode
 
-        for pos, (text, h) in enumerate(zip(texts, hashes)):
+        for pos, (_text, h) in enumerate(zip(texts, hashes, strict=True)):
             cached_emb = await self.cache.get(h)
             if cached_emb is not None:
                 result[pos] = cached_emb
@@ -215,11 +215,11 @@ class EmbeddingModel:
             new_embs = await self._encode_batch_executor(uncached_texts)
 
             # 3. Store in cache and place in correct position
-            for pos, emb in zip(uncached_idx, new_embs):
+            for pos, emb in zip(uncached_idx, new_embs, strict=True):
                 await self.cache.set(hashes[pos], emb)
                 result[pos] = emb
 
-        return result  # type: ignore[return-value]  # all slots filled
+        return result  # all slots filled
 
     # ── Non-blocking inference ────────────────────────────────────────────────
 
