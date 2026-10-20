@@ -15,7 +15,6 @@ from qdrant_client.models import Distance
 
 from src.indexing.vectorstores.hybrid_config import (
     COLLECTION_CONFIGS,
-    CollectionConfig,
     DenseVectorConfig,
     HNSWConfig,
     HNSWPreset,
@@ -193,14 +192,14 @@ class TestHybridSearchParameters:
 
     def test_all_collections_same_weights(self):
         """Test all collections use same hybrid weights."""
-        for name, config in COLLECTION_CONFIGS.items():
+        for _name, config in COLLECTION_CONFIGS.items():
             assert config.dense_weight == 0.6
             assert config.sparse_weight == 0.4
             assert config.dense_weight + config.sparse_weight == pytest.approx(1.0)
 
     def test_alpha_parameter_range(self):
         """Test alpha parameter is in valid range for all collections."""
-        for name, config in COLLECTION_CONFIGS.items():
+        for _name, config in COLLECTION_CONFIGS.items():
             alpha = config.dense_weight
             assert 0.0 <= alpha <= 1.0
 
@@ -211,7 +210,6 @@ class TestCollectionManagement:
     def test_recreate_collection_requires_client(self):
         """Test recreate_collection needs QdrantClient."""
         # Mock the client - actual Qdrant not needed for unit test
-        mock_client = None
         # This would fail with real Qdrant but passes type check
         # In integration tests, actual Qdrant would be used
         assert recreate_collection is not None
@@ -231,12 +229,12 @@ class TestQuantizationSettings:
 
     def test_all_collections_use_int8(self):
         """Test all collections use INT8 quantization."""
-        for name, config in COLLECTION_CONFIGS.items():
+        for _name, config in COLLECTION_CONFIGS.items():
             assert config.quantization.type == QuantizationType.INT8
 
     def test_all_collections_keep_vectors_in_ram(self):
         """Test all collections keep quantized vectors in RAM."""
-        for name, config in COLLECTION_CONFIGS.items():
+        for _name, config in COLLECTION_CONFIGS.items():
             assert config.quantization.always_ram is True
 
 
@@ -245,7 +243,7 @@ class TestBM25Parameters:
 
     def test_all_collections_use_bm25(self):
         """Test all collections use BM25 sparse vectors."""
-        for name, config in COLLECTION_CONFIGS.items():
+        for _name, config in COLLECTION_CONFIGS.items():
             assert config.sparse.type == SparseVectorType.BM25
 
     def test_bm25_default_parameters(self):
