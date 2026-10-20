@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from src.verification.checks.exact_quote import ExactQuoteVerifier
@@ -75,14 +75,14 @@ def _is_quran_citation(source_id: str, citations: list[dict]) -> bool:
 
 def _find_citation_after(answer: str, end_pos: int) -> str | None:
     """Return CX id if [CX] appears within 60 chars after end_pos."""
-    tail = answer[end_pos: end_pos + 60]
+    tail = answer[end_pos : end_pos + 60]
     m = _CITATION_TAG_RE.search(tail)
     return f"C{m.group(1)}" if m else None
 
 
 def _find_narrative_attribution_before(answer: str, start_pos: int) -> bool:
     """Return True if a narrative attribution pattern appears within 120 chars before start_pos."""
-    prefix = answer[max(0, start_pos - 120): start_pos]
+    prefix = answer[max(0, start_pos - 120) : start_pos]
     return bool(_NARRATIVE_ATTRIBUTION_RE.search(prefix))
 
 
@@ -93,7 +93,7 @@ def _extract_all_quoted_segments(answer: str) -> list[dict]:
     Returns list of dicts:
       {quote, delimiter_type, start, end, citation_id, has_narrative_attribution}
     """
-    results = []
+    results: list[dict[str, Any]] = []
 
     for pattern, dtype in (
         (_QURAN_BRACKETS_RE, "quran"),
@@ -124,7 +124,7 @@ def _extract_all_quoted_segments(answer: str) -> list[dict]:
 async def detect_misattributed_quran(
     answer: str,
     citations: list[dict],
-    exact_quote_verifier: "ExactQuoteVerifier",
+    exact_quote_verifier: ExactQuoteVerifier,
     min_length: int = 10,
 ) -> list[dict]:
     """
@@ -192,11 +192,7 @@ async def detect_misattributed_quran(
             (c for c in citations if c.get("source_id") == citation_id),
             None,
         )
-        book_title = (
-            matched_citation.get("book_title", "unknown")
-            if matched_citation
-            else "unknown"
-        )
+        book_title = matched_citation.get("book_title", "unknown") if matched_citation else "unknown"
 
         # MODE A: Explicit [CX] → non-Quran book
         if citation_id and not _is_quran_citation(citation_id, citations):
@@ -211,7 +207,9 @@ async def detect_misattributed_quran(
             )
             logger.warning(
                 "misattributed_quran [mode=explicit] quote='%s…' cited_as=%s book='%s'",
-                quote[:40], citation_id, book_title,
+                quote[:40],
+                citation_id,
+                book_title,
             )
 
         # MODE B: «» + narrative attribution (e.g. attributed to Torah/person)
@@ -226,8 +224,7 @@ async def detect_misattributed_quran(
                 }
             )
             logger.warning(
-                "misattributed_quran [mode=implicit] quote='%s…' — "
-                "Quran verse attributed via narrative (Torah/person)",
+                "misattributed_quran [mode=implicit] quote='%s…' — Quran verse attributed via narrative (Torah/person)",
                 quote[:40],
             )
 
@@ -243,8 +240,7 @@ async def detect_misattributed_quran(
                 }
             )
             logger.warning(
-                "misattributed_quran [mode=delimiter_confusion] quote='%s…' — "
-                "Quran verse should use ﴿﴾ not «»",
+                "misattributed_quran [mode=delimiter_confusion] quote='%s…' — Quran verse should use ﴿﴾ not «»",
                 quote[:40],
             )
 
