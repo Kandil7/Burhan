@@ -17,7 +17,7 @@
 | **5** | `src/core/citation.py` | 350 | تطبيع الاقتباسات | 📝 قريباً |
 | **6** | `src/agents/base.py` | 90 | الفئات الأساسية للوكلاء | 📝 قريباً |
 | **7** | `src/agents/chatbot_agent.py` | 160 | وكيل الترحيب (أبسط وكيل) | 📝 قريباً |
-| **8** | `src/agents/fiqh_agent.py` | 280 | وكيل الفقه (RAG كامل) | 📝 قريباً |
+| **8** | `src/agents/collection/fiqh.py` | 280 | وكيل الفقه (RAG كامل) | 📝 قريباً |
 | **9** | `src/tools/base.py` | 70 | فئة الأدوات الحتمية | 📝 قريباً |
 | **10** | `src/tools/zakat_calculator.py` | 350 | حاسبة الزكاة | 📝 قريباً |
 
@@ -67,6 +67,7 @@ class Intent(str, Enum):
     QURAN = "quran"
     ZAKAT = "zakat"
     # ... (16 نوع)
+
 
 INTENT_ROUTING = {
     Intent.FIQH: "fiqh_agent",
@@ -357,6 +358,7 @@ result = calculator.calculate(assets, debts=5000, madhhab="shafii")
 class Intent(str, Enum):
     FATWA = "fatwa"
 
+
 INTENT_ROUTING = {
     Intent.FATWA: "fatwa_agent",
 }
@@ -368,10 +370,11 @@ KEYWORD_PATTERNS = {
 # 2. registry.py
 registry.register_agent("fatwa_agent", FatwaAgent())
 
+
 # 3. agents/fatwa_agent.py (جديد)
 class FatwaAgent(BaseAgent):
     name = "fatwa_agent"
-    
+
     async def execute(self, input: AgentInput) -> AgentOutput:
         # Implementation
         pass
