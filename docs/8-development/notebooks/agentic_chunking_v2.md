@@ -27,17 +27,17 @@ import os
 HF_TOKEN = userdata.get("HF_TOKEN")
 login(token=HF_TOKEN)
 
-HF_USERNAME        = "Kandil7"
-HF_DATASET_REPO    = f"{HF_USERNAME}/Burhan-RAG-Hub"
-INPUT_JSON         = "/content/seerah_passages.json"
-CATALOG_JSON       = "/content/master_catalog.json"
-LLM_MODEL_ID       = "Qwen/Qwen3-4B-Instruct-2507"
-EMBEDDER_MODEL_ID  = "BAAI/bge-m3"
-PARENT_MAX_PAGES   = 12
-CHILD_PAGES        = 2
-CHILD_OVERLAP      = 1
-PUSH_EVERY_N       = 500
-SKIP_LLM           = False
+HF_USERNAME = "Kandil7"
+HF_DATASET_REPO = f"{HF_USERNAME}/Burhan-RAG-Hub"
+INPUT_JSON = "/content/seerah_passages.json"
+CATALOG_JSON = "/content/master_catalog.json"
+LLM_MODEL_ID = "Qwen/Qwen3-4B-Instruct-2507"
+EMBEDDER_MODEL_ID = "BAAI/bge-m3"
+PARENT_MAX_PAGES = 12
+CHILD_PAGES = 2
+CHILD_OVERLAP = 1
+PUSH_EVERY_N = 500
+SKIP_LLM = False
 COMPUTE_EMBEDDINGS = True
 
 api = HfApi()
@@ -95,31 +95,53 @@ print("✅ Imports done")
 ```python
 # ── Enums ──────────────────────────────────────────────────
 class ChunkingStrategy(Enum):
-    FIXED = "fixed"; SENTENCE = "sentence"
-    SEMANTIC = "semantic"; DISCOURSE = "discourse"
+    FIXED = "fixed"
+    SENTENCE = "sentence"
+    SEMANTIC = "semantic"
+    DISCOURSE = "discourse"
+
 
 class EntityType(Enum):
-    PERSON = "person"; PLACE = "place"; EVENT = "event"
-    CONCEPT = "concept"; FIQH_RULING = "fiqh_ruling"
-    HADITH_NARRATOR = "hadith_narrator"; TAFSIR_METHOD = "tafsir_method"
-    MADHHAB = "madhhab"; BOOK = "book"; QURAN_SURA = "quran_sura"
-    ANGEL = "angel"; PROPHET = "prophet"; SAHABA = "sahaba"; TABI = "tabi"
+    PERSON = "person"
+    PLACE = "place"
+    EVENT = "event"
+    CONCEPT = "concept"
+    FIQH_RULING = "fiqh_ruling"
+    HADITH_NARRATOR = "hadith_narrator"
+    TAFSIR_METHOD = "tafsir_method"
+    MADHHAB = "madhhab"
+    BOOK = "book"
+    QURAN_SURA = "quran_sura"
+    ANGEL = "angel"
+    PROPHET = "prophet"
+    SAHABA = "sahaba"
+    TABI = "tabi"
+
 
 class RelationType(Enum):
-    CONTINUES_INTO = "CONTINUES_INTO"; CONTINUES_FROM = "CONTINUES_FROM"
-    SHARES_PERSON = "SHARES_PERSON"; SHARES_PLACE = "SHARES_PLACE"
-    SHARES_EVENT = "SHARES_EVENT"; CITES_HADITH = "CITES_HADITH"
-    CITES_QURAN = "CITES_QURAN"; DERIVES_FROM = "DERIVES_FROM"
-    SUPPORTS = "SUPPORTS"; OPPOSES = "OPPOSES"; FIQH_OF = "FIQH_OF"
-    NARRATED_BY = "NARRATED_BY"; MENTIONS = "MENTIONS"
+    CONTINUES_INTO = "CONTINUES_INTO"
+    CONTINUES_FROM = "CONTINUES_FROM"
+    SHARES_PERSON = "SHARES_PERSON"
+    SHARES_PLACE = "SHARES_PLACE"
+    SHARES_EVENT = "SHARES_EVENT"
+    CITES_HADITH = "CITES_HADITH"
+    CITES_QURAN = "CITES_QURAN"
+    DERIVES_FROM = "DERIVES_FROM"
+    SUPPORTS = "SUPPORTS"
+    OPPOSES = "OPPOSES"
+    FIQH_OF = "FIQH_OF"
+    NARRATED_BY = "NARRATED_BY"
+    MENTIONS = "MENTIONS"
     SAME_CONCEPT = "SAME_CONCEPT"
 
+
 # ── Text Cleaning ───────────────────────────────────────────
-_HTML_TAG_RE  = re.compile(r"<[^>]+>", re.UNICODE)
-_MULTI_SPACE  = re.compile(r"[ \t]{2,}")
-_MULTI_NL     = re.compile(r"\n{3,}")
-_DIACRITICS   = re.compile(r"[\u064B-\u065F\u0670]", re.UNICODE)
-_SENT_END_RE  = re.compile(r"(?<=[.!?؟।])\s+|(?<=\n)")
+_HTML_TAG_RE = re.compile(r"<[^>]+>", re.UNICODE)
+_MULTI_SPACE = re.compile(r"[ \t]{2,}")
+_MULTI_NL = re.compile(r"\n{3,}")
+_DIACRITICS = re.compile(r"[\u064B-\u065F\u0670]", re.UNICODE)
+_SENT_END_RE = re.compile(r"(?<=[.!?؟।])\s+|(?<=\n)")
+
 
 def strip_html(text: str) -> str:
     text = _HTML_TAG_RE.sub(" ", text)
@@ -127,11 +149,14 @@ def strip_html(text: str) -> str:
     text = _MULTI_NL.sub("\n\n", text)
     return text.strip()
 
+
 def remove_diacritics(text: str) -> str:
     return _DIACRITICS.sub("", text)
 
+
 def split_sentences_arabic(text: str) -> List[str]:
     return [s.strip() for s in _SENT_END_RE.split(text) if s.strip()]
+
 
 # ── Entity Tables ───────────────────────────────────────────
 PERSON_TABLE: List[Tuple[str, str, EntityType]] = [
@@ -275,84 +300,99 @@ print("✅ Enums + Entity Tables ready")
 ```python
 @dataclass
 class Passage:
-    idx:           int
-    content:       str
-    content_type:  str
-    book_id:       int
-    book_title:    str
-    category:      str
-    author:        str
-    author_death:  int
-    collection:    str
-    page_number:   int
+    idx: int
+    content: str
+    content_type: str
+    book_id: int
+    book_title: str
+    category: str
+    author: str
+    author_death: int
+    collection: str
+    page_number: int
     section_title: str
-    hierarchy:     List[str]
+    hierarchy: List[str]
+
 
 @dataclass
 class Chunk:
-    chunk_id:         str
-    parent_chunk_id:  Optional[str]
-    level:            str
+    chunk_id: str
+    parent_chunk_id: Optional[str]
+    level: str
     source_passage_ids: List[int]
-    book_id:          int
-    book_title:       str
-    author:           str
+    book_id: int
+    book_title: str
+    author: str
     author_death_year: int
-    category:         str
-    collection:       str
+    category: str
+    collection: str
     section_hierarchy: List[str]
-    section_leaf:     str
-    page_range:       Tuple[int, int]
-    page_count:       int
-    text:             str
-    chunk_type:       str
-    domain:           str
-    enriched_by_llm:  bool = False
-    summary:          str = ""
-    narrative_role:   str = ""
-    key_lessons:      List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=lambda: {
-        "topics": [], "entities": {
-            "persons": [], "places": [], "events": [],
-            "concepts": [], "fiqh_rulings": [], "madhahib": [], "books": []
-        },
-        "quranic_refs": [], "hadith_collections": [], "isnad_chain": [],
-        "hadith_grade": None, "temporal_context": "General / Unspecified",
-        "temporal_order": 99, "narrative_role": "", "summary": "",
-        "key_lessons": [], "relations": [],
-        "child_chunk_ids": [], "sibling_chunk_ids": [],
-    })
-    ehrag: Dict[str, Any] = field(default_factory=lambda: {
-        "entity_ids": [], "structural_hyperedge": []
-    })
+    section_leaf: str
+    page_range: Tuple[int, int]
+    page_count: int
+    text: str
+    chunk_type: str
+    domain: str
+    enriched_by_llm: bool = False
+    summary: str = ""
+    narrative_role: str = ""
+    key_lessons: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "topics": [],
+            "entities": {
+                "persons": [],
+                "places": [],
+                "events": [],
+                "concepts": [],
+                "fiqh_rulings": [],
+                "madhahib": [],
+                "books": [],
+            },
+            "quranic_refs": [],
+            "hadith_collections": [],
+            "isnad_chain": [],
+            "hadith_grade": None,
+            "temporal_context": "General / Unspecified",
+            "temporal_order": 99,
+            "narrative_role": "",
+            "summary": "",
+            "key_lessons": [],
+            "relations": [],
+            "child_chunk_ids": [],
+            "sibling_chunk_ids": [],
+        }
+    )
+    ehrag: Dict[str, Any] = field(default_factory=lambda: {"entity_ids": [], "structural_hyperedge": []})
 
     def to_dict(self) -> dict:
         d = {
-            "chunk_id":           self.chunk_id,
-            "parent_chunk_id":    self.parent_chunk_id,
-            "level":              self.level,
+            "chunk_id": self.chunk_id,
+            "parent_chunk_id": self.parent_chunk_id,
+            "level": self.level,
             "source_passage_ids": self.source_passage_ids,
-            "book_id":            self.book_id,
-            "book_title":         self.book_title,
-            "author":             self.author,
-            "author_death_year":  self.author_death_year,
-            "category":           self.category,
-            "collection":         self.collection,
-            "section_hierarchy":  self.section_hierarchy,
-            "section_leaf":       self.section_leaf,
-            "page_range":         list(self.page_range),
-            "page_count":         self.page_count,
-            "text":               self.text,
-            "chunk_type":         self.chunk_type,
-            "domain":             self.domain,
-            "enriched_by_llm":    self.enriched_by_llm,
-            "metadata":           self.metadata,
-            "ehrag":              self.ehrag,
+            "book_id": self.book_id,
+            "book_title": self.book_title,
+            "author": self.author,
+            "author_death_year": self.author_death_year,
+            "category": self.category,
+            "collection": self.collection,
+            "section_hierarchy": self.section_hierarchy,
+            "section_leaf": self.section_leaf,
+            "page_range": list(self.page_range),
+            "page_count": self.page_count,
+            "text": self.text,
+            "chunk_type": self.chunk_type,
+            "domain": self.domain,
+            "enriched_by_llm": self.enriched_by_llm,
+            "metadata": self.metadata,
+            "ehrag": self.ehrag,
         }
-        d["metadata"]["summary"]        = self.summary
+        d["metadata"]["summary"] = self.summary
         d["metadata"]["narrative_role"] = self.narrative_role
-        d["metadata"]["key_lessons"]    = self.key_lessons
+        d["metadata"]["key_lessons"] = self.key_lessons
         return d
+
 
 print("✅ Dataclasses ready")
 ```
@@ -375,20 +415,23 @@ class HFLocalLLM:
         self.inference_batch_size = inference_batch_size
         self._inference_lock = asyncio.Lock()
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_id, trust_remote_code=True, padding_side="left"
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, padding_side="left")
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=use_4bit,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.float16,
-        ) if use_4bit else None
+        bnb_config = (
+            BitsAndBytesConfig(
+                load_in_4bit=use_4bit,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16,
+            )
+            if use_4bit
+            else None
+        )
 
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_id, device_map="auto",
+            model_id,
+            device_map="auto",
             quantization_config=bnb_config,
             trust_remote_code=True,
         )
@@ -411,22 +454,19 @@ class HFLocalLLM:
             {"role": "user", "content": text},
         ]
         return self.tokenizer.apply_chat_template(
-            messages, tokenize=False,
+            messages,
+            tokenize=False,
             add_generation_prompt=True,
             enable_thinking=False,
         )
 
     def generate_batch(self, prompts: List[str], chunk_ids: List[str]) -> List[str]:
         formatted = [self._build_prompt(p) for p in prompts]
-        encoded = [
-            self.tokenizer.encode(p, truncation=True, max_length=1024)
-            for p in formatted
-        ]
+        encoded = [self.tokenizer.encode(p, truncation=True, max_length=1024) for p in formatted]
         max_len = max(len(e) for e in encoded)
-        input_ids = torch.tensor([
-            [self.tokenizer.pad_token_id] * (max_len - len(e)) + e
-            for e in encoded
-        ]).to(self.model.device)
+        input_ids = torch.tensor([[self.tokenizer.pad_token_id] * (max_len - len(e)) + e for e in encoded]).to(
+            self.model.device
+        )
         attention_mask = (input_ids != self.tokenizer.pad_token_id).long()
 
         with torch.no_grad():
@@ -459,9 +499,9 @@ class HFLocalLLM:
         s, e = raw.find("{"), raw.rfind("}")
         if s != -1 and e > s:
             try:
-                return json.loads(raw[s:e+1])
+                return json.loads(raw[s : e + 1])
             except json.JSONDecodeError:
-                cleaned = re.sub(r",\s*([}\]])", r"\1", raw[s:e+1])
+                cleaned = re.sub(r",\s*([}\]])", r"\1", raw[s : e + 1])
                 try:
                     return json.loads(cleaned)
                 except json.JSONDecodeError:
@@ -478,6 +518,7 @@ class HFLocalLLM:
             loop = asyncio.get_event_loop()
             raws = await loop.run_in_executor(None, self.generate_batch, prompts, chunk_ids)
         return [self.extract_json(r) for r in raws]
+
 
 print("✅ HFLocalLLM ready")
 ```
@@ -524,18 +565,16 @@ class HFLLMMetadataExtractor:
 
         def safe_list(v, n):
             return [
-                str(x).strip() for x in (v or [])
-                if str(x).strip()
-                and not re.search(r"[\u4e00-\u9fff]", str(x))
-                and len(str(x)) < 200
+                str(x).strip()
+                for x in (v or [])
+                if str(x).strip() and not re.search(r"[\u4e00-\u9fff]", str(x)) and len(str(x)) < 200
             ][:n]
 
-        chunk.summary        = safe_str(data.get("summary"), chunk.summary)
+        chunk.summary = safe_str(data.get("summary"), chunk.summary)
         chunk.narrative_role = safe_str(data.get("narrative_role"), chunk.narrative_role)
-        chunk.key_lessons    = safe_list(data.get("key_lessons"), 3)
+        chunk.key_lessons = safe_list(data.get("key_lessons"), 3)
 
-    async def enrich_all(self, chunks: List[Chunk], catalog: dict,
-                         ckpt_mgr=None) -> Counter:
+    async def enrich_all(self, chunks: List[Chunk], catalog: dict, ckpt_mgr=None) -> Counter:
         children = [c for c in chunks if c.level == "child"]
         done_ids = ckpt_mgr.load_done_ids() if ckpt_mgr else set()
         children = [c for c in children if c.chunk_id not in done_ids]
@@ -548,8 +587,8 @@ class HFLLMMetadataExtractor:
             desc="🔬 Enriching",
             total=(total + self.batch_size - 1) // self.batch_size,
         ):
-            batch     = children[batch_start:batch_start + self.batch_size]
-            prompts   = [self._build_prompt_text(c, catalog) for c in batch]
+            batch = children[batch_start : batch_start + self.batch_size]
+            prompts = [self._build_prompt_text(c, catalog) for c in batch]
             chunk_ids = [c.chunk_id for c in batch]
 
             try:
@@ -567,6 +606,7 @@ class HFLLMMetadataExtractor:
 
         print(f"\n🎉 Enrichment done: ✅ {self._stats['llm_success']} | ❌ {self._stats['llm_fallback']}")
         return self._stats
+
 
 print("✅ HFLLMMetadataExtractor ready")
 ```
@@ -591,26 +631,26 @@ class BayanAgenticChunker:
         embedder_model: str = "BAAI/bge-m3",
         birch_threshold: float = 0.5,
     ):
-        self.input_path    = input_path
-        self.output_path   = output_path
-        self.catalog_path  = catalog_path
-        self.domain        = domain
+        self.input_path = input_path
+        self.output_path = output_path
+        self.catalog_path = catalog_path
+        self.domain = domain
         self.parent_max_pages = parent_max_pages
-        self.child_pages   = child_pages
+        self.child_pages = child_pages
         self.child_overlap = child_overlap
-        self.skip_llm      = skip_llm
+        self.skip_llm = skip_llm
         self.birch_threshold = birch_threshold
         self.compute_entity_embeddings = compute_entity_embeddings
         self.embedder_model = embedder_model
 
-        self._passages:   List[Passage] = []
-        self._deduped:    List[Passage] = []
-        self._sections:   Dict         = {}
-        self._chunks:     List[Chunk]  = []
-        self._catalog:    Dict         = {}
-        self._done_ids:   Set[str]     = set()
-        self._parent_ctr  = 0
-        self._child_ctr   = 0
+        self._passages: List[Passage] = []
+        self._deduped: List[Passage] = []
+        self._sections: Dict = {}
+        self._chunks: List[Chunk] = []
+        self._catalog: Dict = {}
+        self._done_ids: Set[str] = set()
+        self._parent_ctr = 0
+        self._child_ctr = 0
 
         self._embedder = None
         if compute_entity_embeddings:
@@ -618,11 +658,11 @@ class BayanAgenticChunker:
             self._embedder = SentenceTransformer(embedder_model)
             print("✅ Embedder ready")
 
-        self._compiled_persons  = [(re.compile(p, re.UNICODE), n, t) for p, n, t in PERSON_TABLE]
-        self._compiled_places   = [(re.compile(p, re.UNICODE), n, t) for p, n, t in PLACE_TABLE]
-        self._compiled_events   = [(re.compile(p, re.UNICODE), n, t) for p, n, t in EVENT_TABLE]
+        self._compiled_persons = [(re.compile(p, re.UNICODE), n, t) for p, n, t in PERSON_TABLE]
+        self._compiled_places = [(re.compile(p, re.UNICODE), n, t) for p, n, t in PLACE_TABLE]
+        self._compiled_events = [(re.compile(p, re.UNICODE), n, t) for p, n, t in EVENT_TABLE]
         self._compiled_concepts = [(re.compile(p, re.UNICODE), n, t) for p, n, t in CONCEPT_TABLE]
-        self._compiled_hadith   = [(re.compile(p, re.UNICODE), n) for p, n in HADITH_BOOK_TABLE]
+        self._compiled_hadith = [(re.compile(p, re.UNICODE), n) for p, n in HADITH_BOOK_TABLE]
 
     # ── Stage 1: Load ───────────────────────────────────────
     def _load_passages(self):
@@ -639,20 +679,22 @@ class BayanAgenticChunker:
             if len(content.split()) < 10:
                 skipped += 1
                 continue
-            self._passages.append(Passage(
-                idx=len(self._passages),
-                content=content,
-                content_type=item.get("content_type", "page"),
-                book_id=item.get("book_id", 0),
-                book_title=item.get("book_title", ""),
-                category=item.get("category", ""),
-                author=item.get("author", ""),
-                author_death=item.get("author_death", 99999),
-                collection=item.get("collection", ""),
-                page_number=item.get("page_number", 0),
-                section_title=item.get("section_title", ""),
-                hierarchy=item.get("hierarchy", []),
-            ))
+            self._passages.append(
+                Passage(
+                    idx=len(self._passages),
+                    content=content,
+                    content_type=item.get("content_type", "page"),
+                    book_id=item.get("book_id", 0),
+                    book_title=item.get("book_title", ""),
+                    category=item.get("category", ""),
+                    author=item.get("author", ""),
+                    author_death=item.get("author_death", 99999),
+                    collection=item.get("collection", ""),
+                    page_number=item.get("page_number", 0),
+                    section_title=item.get("section_title", ""),
+                    hierarchy=item.get("hierarchy", []),
+                )
+            )
 
         if self.catalog_path.exists():
             with open(self.catalog_path, encoding="utf-8") as f:
@@ -688,15 +730,21 @@ class BayanAgenticChunker:
             return []
         windows = []
         for i in range(0, len(pages), step):
-            w = pages[i:i+size]
+            w = pages[i : i + size]
             if w:
                 windows.append(w)
         return windows
 
-    def _make_chunk(self, pages: List[Passage], chunk_id: str,
-                    parent_id: Optional[str], level: str,
-                    chunk_type: str, book_id: int,
-                    hier: List[str]) -> Chunk:
+    def _make_chunk(
+        self,
+        pages: List[Passage],
+        chunk_id: str,
+        parent_id: Optional[str],
+        level: str,
+        chunk_type: str,
+        book_id: int,
+        hier: List[str],
+    ) -> Chunk:
         p0 = pages[0]
         text = "\n\n".join(p.content for p in pages)
         domain = self.domain if self.domain != "auto" else p0.category.lower()
@@ -744,19 +792,24 @@ class BayanAgenticChunker:
     # ── Stage 5: Regex Entity Extraction ───────────────────
     def _extract_entities_from_text(self, text: str) -> dict:
         nd = remove_diacritics(text)
-        persons  = list({n for p, n, _ in self._compiled_persons  if p.search(nd)})
-        places   = list({n for p, n, _ in self._compiled_places   if p.search(nd)})
-        events   = list({n for p, n, _ in self._compiled_events   if p.search(nd)})
+        persons = list({n for p, n, _ in self._compiled_persons if p.search(nd)})
+        places = list({n for p, n, _ in self._compiled_places if p.search(nd)})
+        events = list({n for p, n, _ in self._compiled_events if p.search(nd)})
         concepts = list({n for p, n, _ in self._compiled_concepts if p.search(nd)})
-        books    = list({n for p, n   in self._compiled_hadith    if p.search(nd)})
-        quran    = [m.group(0) for m in QURAN_REF_RE.finditer(text)]
-        isnad    = [next(g for g in m.groups() if g) for m in ISNAD_RE.finditer(nd)]
-        grade_m  = HADITH_GRADE_RE.search(nd)
-        grade    = grade_m.group(1) if grade_m else None
+        books = list({n for p, n in self._compiled_hadith if p.search(nd)})
+        quran = [m.group(0) for m in QURAN_REF_RE.finditer(text)]
+        isnad = [next(g for g in m.groups() if g) for m in ISNAD_RE.finditer(nd)]
+        grade_m = HADITH_GRADE_RE.search(nd)
+        grade = grade_m.group(1) if grade_m else None
         return {
             "entities": {
-                "persons": persons, "places": places, "events": events,
-                "concepts": concepts, "fiqh_rulings": [], "madhahib": [], "books": books,
+                "persons": persons,
+                "places": places,
+                "events": events,
+                "concepts": concepts,
+                "fiqh_rulings": [],
+                "madhahib": [],
+                "books": books,
             },
             "quranic_refs": quran[:5],
             "hadith_collections": books,
@@ -786,8 +839,11 @@ class BayanAgenticChunker:
             if chunk.level != "parent":
                 continue
             children = child_map.get(chunk.chunk_id, [])
-            all_persons = set(); all_places = set(); all_events = set()
-            all_concepts = set(); all_books = set()
+            all_persons = set()
+            all_places = set()
+            all_events = set()
+            all_concepts = set()
+            all_books = set()
             for ch in children:
                 all_persons.update(ch.metadata["entities"]["persons"])
                 all_places.update(ch.metadata["entities"]["places"])
@@ -795,9 +851,13 @@ class BayanAgenticChunker:
                 all_concepts.update(ch.metadata["entities"]["concepts"])
                 all_books.update(ch.metadata["entities"]["books"])
             chunk.metadata["entities"] = {
-                "persons": list(all_persons), "places": list(all_places),
-                "events": list(all_events), "concepts": list(all_concepts),
-                "fiqh_rulings": [], "madhahib": [], "books": list(all_books),
+                "persons": list(all_persons),
+                "places": list(all_places),
+                "events": list(all_events),
+                "concepts": list(all_concepts),
+                "fiqh_rulings": [],
+                "madhahib": [],
+                "books": list(all_books),
             }
             ids = set()
             for etype, names in chunk.metadata["entities"].items():
@@ -816,36 +876,40 @@ class BayanAgenticChunker:
         for siblings in parent_map.values():
             for i, cid in enumerate(siblings):
                 ch = id_to_chunk[cid]
-                ch.metadata["sibling_chunk_ids"] = [
-                    s for s in siblings if s != cid
-                ]
+                ch.metadata["sibling_chunk_ids"] = [s for s in siblings if s != cid]
                 if i > 0:
-                    ch.metadata.setdefault("relations", []).append({
-                        "type": RelationType.CONTINUES_FROM.value,
-                        "target": siblings[i-1],
-                    })
+                    ch.metadata.setdefault("relations", []).append(
+                        {
+                            "type": RelationType.CONTINUES_FROM.value,
+                            "target": siblings[i - 1],
+                        }
+                    )
                 if i < len(siblings) - 1:
-                    ch.metadata.setdefault("relations", []).append({
-                        "type": RelationType.CONTINUES_INTO.value,
-                        "target": siblings[i+1],
-                    })
+                    ch.metadata.setdefault("relations", []).append(
+                        {
+                            "type": RelationType.CONTINUES_INTO.value,
+                            "target": siblings[i + 1],
+                        }
+                    )
 
     def _infer_cross_chunk_relations(self):
         id_to_chunk = {c.chunk_id: c for c in self._chunks if c.level == "child"}
         chunks_list = list(id_to_chunk.values())
         for i, c in enumerate(chunks_list):
             cp = set(c.metadata["entities"]["persons"])
-            for j in range(max(0, i-5), min(len(chunks_list), i+5)):
+            for j in range(max(0, i - 5), min(len(chunks_list), i + 5)):
                 if i == j:
                     continue
                 other = chunks_list[j]
                 shared = cp & set(other.metadata["entities"]["persons"])
                 if shared:
-                    c.metadata.setdefault("relations", []).append({
-                        "type": RelationType.SHARES_PERSON.value,
-                        "target": other.chunk_id,
-                        "shared": list(shared)[:3],
-                    })
+                    c.metadata.setdefault("relations", []).append(
+                        {
+                            "type": RelationType.SHARES_PERSON.value,
+                            "target": other.chunk_id,
+                            "shared": list(shared)[:3],
+                        }
+                    )
 
     # ── Stage 9: EHRAG ──────────────────────────────────────
     def _precompute_ehrag_structures(self):
@@ -855,9 +919,7 @@ class BayanAgenticChunker:
         if not children:
             return
         texts = [c.text[:512] for c in children]
-        embs  = self._embedder.encode(texts, batch_size=64,
-                                       show_progress_bar=True,
-                                       normalize_embeddings=True)
+        embs = self._embedder.encode(texts, batch_size=64, show_progress_bar=True, normalize_embeddings=True)
         birch = Birch(n_clusters=None, threshold=self.birch_threshold)
         labels = birch.fit_predict(embs)
         cluster_map: Dict[int, List[str]] = defaultdict(list)
@@ -872,18 +934,19 @@ class BayanAgenticChunker:
         log.info("EHRAG: %d semantic clusters", len(cluster_map))
 
     def _report(self, elapsed: float) -> str:
-        parents  = sum(1 for c in self._chunks if c.level == "parent")
+        parents = sum(1 for c in self._chunks if c.level == "parent")
         children = sum(1 for c in self._chunks if c.level == "child")
         enriched = sum(1 for c in self._chunks if c.enriched_by_llm)
         return (
-            f"\n{'='*50}\n"
+            f"\n{'=' * 50}\n"
             f"✅ BayanChunker Report\n"
             f"   Parents:  {parents}\n"
             f"   Children: {children}\n"
             f"   Enriched: {enriched}\n"
-            f"   Time:     {elapsed/60:.1f} min\n"
-            f"{'='*50}"
+            f"   Time:     {elapsed / 60:.1f} min\n"
+            f"{'=' * 50}"
         )
+
 
 print("✅ BayanAgenticChunker ready")
 ```
@@ -895,12 +958,12 @@ print("✅ BayanAgenticChunker ready")
 ```python
 class HFDatasetPusher:
     def __init__(self, repo_id: str, hf_token: str, push_every: int = 500):
-        self._repo_id    = repo_id
-        self._hf_token   = hf_token
+        self._repo_id = repo_id
+        self._hf_token = hf_token
         self._push_every = push_every
-        self._buffer:    List[dict] = []
-        self._shard      = 0
-        self._api        = HfApi(token=hf_token)
+        self._buffer: List[dict] = []
+        self._shard = 0
+        self._api = HfApi(token=hf_token)
 
     def add(self, record: dict):
         self._buffer.append(record)
@@ -912,8 +975,10 @@ class HFDatasetPusher:
             return
         ds = Dataset.from_list(self._buffer)
         ds.push_to_hub(
-            self._repo_id, split=f"train_shard_{self._shard:04d}",
-            token=self._hf_token, private=True,
+            self._repo_id,
+            split=f"train_shard_{self._shard:04d}",
+            token=self._hf_token,
+            private=True,
         )
         print(f"\n  ⬆️ Pushed shard {self._shard:04d} ({len(self._buffer)} records)")
         self._shard += 1
@@ -926,22 +991,24 @@ class HFDatasetPusher:
 
 
 class HFCheckpointManager:
-    def __init__(self, repo_id: str, hf_token: str,
-                 local_path: str = "/content/chunks_done.jsonl",
-                 save_every: int = 100):
-        self.repo_id    = repo_id
-        self.hf_token   = hf_token
+    def __init__(
+        self, repo_id: str, hf_token: str, local_path: str = "/content/chunks_done.jsonl", save_every: int = 100
+    ):
+        self.repo_id = repo_id
+        self.hf_token = hf_token
         self.local_path = Path(local_path)
         self.save_every = save_every
-        self._api       = HfApi(token=hf_token)
-        self._total     = 0
+        self._api = HfApi(token=hf_token)
+        self._total = 0
         self._file_handle = None
 
     def load_done_ids(self) -> set:
         try:
             path = hf_hub_download(
-                repo_id=self.repo_id, filename="chunks_done.jsonl",
-                repo_type="dataset", token=self.hf_token,
+                repo_id=self.repo_id,
+                filename="chunks_done.jsonl",
+                repo_type="dataset",
+                token=self.hf_token,
                 local_dir="/content/ckpt",
             )
             done = set()
@@ -958,8 +1025,10 @@ class HFCheckpointManager:
     def load_progress(self) -> dict:
         try:
             path = hf_hub_download(
-                repo_id=self.repo_id, filename="progress.json",
-                repo_type="dataset", token=self.hf_token,
+                repo_id=self.repo_id,
+                filename="progress.json",
+                repo_type="dataset",
+                token=self.hf_token,
                 local_dir="/content/ckpt",
             )
             with open(path) as f:
@@ -972,9 +1041,7 @@ class HFCheckpointManager:
 
     def write_chunk(self, chunk_dict: dict):
         if self._file_handle:
-            self._file_handle.write(
-                json.dumps(chunk_dict, ensure_ascii=False) + "\n"
-            )
+            self._file_handle.write(json.dumps(chunk_dict, ensure_ascii=False) + "\n")
             self._file_handle.flush()
         self._total += 1
         if self._total % self.save_every == 0:
@@ -987,7 +1054,8 @@ class HFCheckpointManager:
             self._api.upload_file(
                 path_or_fileobj=str(self.local_path),
                 path_in_repo="chunks_done.jsonl",
-                repo_id=self.repo_id, repo_type="dataset",
+                repo_id=self.repo_id,
+                repo_type="dataset",
                 commit_message=f"Checkpoint: {self._total} chunks",
             )
             print(f"\n  💾 HF checkpoint → {self._total} chunks")
@@ -995,16 +1063,20 @@ class HFCheckpointManager:
             print(f"\n  ⚠️ Checkpoint push failed: {ex}")
 
     def save_progress(self, batch_idx: int, stats: dict):
-        p = {"last_batch": batch_idx,
-             "success": stats.get("llm_success", 0),
-             "fallback": stats.get("llm_fallback", 0),
-             "total_chunks": self._total}
+        p = {
+            "last_batch": batch_idx,
+            "success": stats.get("llm_success", 0),
+            "fallback": stats.get("llm_fallback", 0),
+            "total_chunks": self._total,
+        }
         prog = Path("/content/progress.json")
         prog.write_text(json.dumps(p, ensure_ascii=False, indent=2))
         try:
             self._api.upload_file(
-                path_or_fileobj=str(prog), path_in_repo="progress.json",
-                repo_id=self.repo_id, repo_type="dataset",
+                path_or_fileobj=str(prog),
+                path_in_repo="progress.json",
+                repo_id=self.repo_id,
+                repo_type="dataset",
                 commit_message=f"Progress: batch {batch_idx}",
             )
         except Exception as ex:
@@ -1015,6 +1087,7 @@ class HFCheckpointManager:
             self._file_handle.close()
         self._push_to_hf()
         print(f"\n🎉 Final checkpoint: {self._total} chunks on HF")
+
 
 print("✅ HFDatasetPusher + HFCheckpointManager ready")
 ```
@@ -1027,11 +1100,9 @@ print("✅ HFDatasetPusher + HFCheckpointManager ready")
 class BayanColabChunker(BayanAgenticChunker):
     def __init__(self, hf_llm, hf_pusher, **kwargs):
         super().__init__(skip_llm=True, **kwargs)
-        self._hf_llm    = hf_llm
+        self._hf_llm = hf_llm
         self._hf_pusher = hf_pusher
-        self._extractor = HFLLMMetadataExtractor(
-            hf_llm, batch_size=hf_llm.inference_batch_size
-        )
+        self._extractor = HFLLMMetadataExtractor(hf_llm, batch_size=hf_llm.inference_batch_size)
 
     async def run(self, ckpt_mgr=None) -> str:
         t0 = time.time()
@@ -1057,7 +1128,9 @@ class BayanColabChunker(BayanAgenticChunker):
 
         print("🤖 Stage 6/9: LLM enrichment (3 fields)")
         await self._extractor.enrich_all(
-            self._chunks, self._catalog, ckpt_mgr=None  # checkpoint بعد الـ linking
+            self._chunks,
+            self._catalog,
+            ckpt_mgr=None,  # checkpoint بعد الـ linking
         )
 
         print("⬆️ Stage 7/9: Bubble metadata to parents")
@@ -1084,6 +1157,7 @@ class BayanColabChunker(BayanAgenticChunker):
 
         return self._report(time.time() - t0)
 
+
 print("✅ BayanColabChunker ready")
 ```
 
@@ -1101,8 +1175,7 @@ hf_llm = HFLocalLLM(
 
 # Quick sanity test
 test = hf_llm.generate_batch(
-    ['أرجع JSON: {"summary": "اختبار", "narrative_role": "حديث", "key_lessons": []}'],
-    ["test_0"]
+    ['أرجع JSON: {"summary": "اختبار", "narrative_role": "حديث", "key_lessons": []}'], ["test_0"]
 )
 print("✅ Test:", hf_llm.extract_json(test[0]))
 ```
