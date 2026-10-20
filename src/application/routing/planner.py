@@ -6,8 +6,6 @@ Creates execution plans for complex queries requiring multiple agents.
 
 from __future__ import annotations
 
-from typing import Any
-
 from src.domain.intents import Intent
 
 
@@ -51,7 +49,7 @@ class QueryPlanner:
         "what about",  # Follow-up queries
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the query planner."""
         pass
 
