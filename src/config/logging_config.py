@@ -13,8 +13,8 @@ Phase 9 Enhancement:
 import logging
 import sys
 import time
-from typing import Any, Optional
 from functools import wraps
+from typing import Any
 
 from src.config.settings import settings
 
@@ -99,10 +99,10 @@ class LoggerWrapper:
 class MetricsCollector:
     """Simple metrics collector for observability."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._counters: dict[str, int] = {}
         self._gauges: dict[str, float] = {}
-        self._timings: list[dict[str, float]] = []
+        self._timings: list[dict[str, Any]] = []
 
     def increment(self, name: str, value: int = 1) -> None:
         """Increment a counter."""
@@ -135,12 +135,12 @@ class MetricsCollector:
 metrics = MetricsCollector()
 
 
-def track_time(name: str):
+def track_time(name: str) -> Any:
     """Decorator to track execution time."""
 
-    def decorator(func):
+    def decorator(func: Any) -> Any:
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             start = time.time()
             try:
                 return await func(*args, **kwargs)
@@ -150,7 +150,7 @@ def track_time(name: str):
                 metrics.increment(f"{name}.calls")
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             start = time.time()
             try:
                 return func(*args, **kwargs)
@@ -195,7 +195,7 @@ def setup_logging(level: str = "INFO") -> None:
         )
 
 
-def get_logger(name: Optional[str] = None) -> LoggerWrapper:
+def get_logger(name: str | None = None) -> LoggerWrapper:
     """
     Get a logger instance that handles structlog-style calls.
 
