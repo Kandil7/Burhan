@@ -206,13 +206,12 @@ K:\business\projects_v2\Burhan\
 │       │   ├── orchestrator.py     # Response Orchestrator
 │       │   └── citation.py         # Citation Normalizer
 │       │
-│       ├── agents/                 # AI agents (13)
+│       ├── agents/                 # AI agents
 │       │   ├── base.py             # Base agent interface
-│       │   ├── fiqh_agent.py       # Fiqh RAG Agent
-│       │   ├── hadith_agent.py     # Hadith RAG Agent
-│       │   ├── general_islamic_agent.py
-│       │   ├── chatbot_agent.py
-│       │   └── ... (more agents)
+│       │   ├── chatbot_agent.py    # Greeting/small talk
+│       │   └── collection/         # v2 config-backed agents (10)
+│       │       ├── base.py         # CollectionAgent (shared RAG pipeline)
+│       │       └── fiqh.py, hadith.py, tafsir.py, general.py, ...
 │       │
 │       ├── tools/                  # Deterministic tools (5)
 │       │   ├── base.py             # Base tool interface
