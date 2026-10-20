@@ -22,6 +22,7 @@ Here is the full updated notebook with **HuggingFace Hub** replacing Google Driv
 
 ```python
 from huggingface_hub import notebook_login
+
 notebook_login()
 # Paste your HF token with WRITE access:
 # Settings → Access Tokens → New Token → Role: Write
@@ -105,7 +106,7 @@ if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
 print(f"Loaded on : {model.device} ✅")
-print(f"VRAM used : {torch.cuda.memory_allocated()/1e9:.2f} GB")
+print(f"VRAM used : {torch.cuda.memory_allocated() / 1e9:.2f} GB")
 ```
 
 ***
@@ -117,13 +118,16 @@ import asyncio, re
 from dataclasses import dataclass
 from typing import List
 
+
 @dataclass
 class _FakeMessage:
     content: str
 
+
 @dataclass
 class _FakeChoice:
     message: _FakeMessage
+
 
 @dataclass
 class _FakeResponse:
@@ -132,15 +136,14 @@ class _FakeResponse:
 
 class _HFChatCompletions:
     def __init__(self, hf_model, hf_tokenizer):
-        self._model     = hf_model
+        self._model = hf_model
         self._tokenizer = hf_tokenizer
 
-    async def create(self, model, messages, response_format=None,
-                     temperature=0.0, max_tokens=1200, timeout=60, **kwargs):
+    async def create(
+        self, model, messages, response_format=None, temperature=0.0, max_tokens=1200, timeout=60, **kwargs
+    ):
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(
-            None, self._generate_sync, messages, max_tokens
-        )
+        result = await loop.run_in_executor(None, self._generate_sync, messages, max_tokens)
         return _FakeResponse(choices=[_FakeChoice(message=_FakeMessage(content=result))])
 
     def _generate_sync(self, messages: List[dict], max_new_tokens: int) -> str:
@@ -162,7 +165,7 @@ class _HFChatCompletions:
                 repetition_penalty=1.1,
             )
 
-        generated_ids = output_ids[0][input_ids.shape[-1]:]
+        generated_ids = output_ids[0][input_ids.shape[-1] :]
         raw = self._tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
         json_match = re.search(r"\{[\s\S]*\}", raw)
         return json_match.group(0) if json_match else raw
@@ -170,9 +173,7 @@ class _HFChatCompletions:
 
 class HFAsyncClient:
     def __init__(self, hf_model, hf_tokenizer):
-        self.chat = type("_Chat", (), {
-            "completions": _HFChatCompletions(hf_model, hf_tokenizer)
-        })()
+        self.chat = type("_Chat", (), {"completions": _HFChatCompletions(hf_model, hf_tokenizer)})()
 
 
 hf_client = HFAsyncClient(model, tokenizer)
@@ -191,9 +192,9 @@ import sys
 sys.path.insert(0, "/content")
 
 # ── Config ────────────────────────────────────────────────────────────────────
-HF_OUTPUT_REPO  = "Kandil7/Burhan-Mini-Dataset-v2"   # push output to same dataset repo
-OUTPUT_FILENAME = "seerah_agentic_chunks.jsonl"      # file name inside the repo
-LOCAL_OUTPUT    = f"/content/{OUTPUT_FILENAME}"
+HF_OUTPUT_REPO = "Kandil7/Burhan-Mini-Dataset-v2"  # push output to same dataset repo
+OUTPUT_FILENAME = "seerah_agentic_chunks.jsonl"  # file name inside the repo
+LOCAL_OUTPUT = f"/content/{OUTPUT_FILENAME}"
 
 api = HfApi()
 
@@ -218,10 +219,12 @@ from chunker import LLMMetadataExtractor, SeerahAgenticChunkerLLM
 
 _original_init = LLMMetadataExtractor.__init__
 
+
 def _patched_init(self, api_key, model, base_url, batch_size):
     _original_init(self, api_key, model, base_url, batch_size)
-    self._client    = hf_client
+    self._client = hf_client
     self._semaphore = asyncio.Semaphore(1)
+
 
 LLMMetadataExtractor.__init__ = _patched_init
 print("Extractor patched ✅")
@@ -242,7 +245,7 @@ chunker = SeerahAgenticChunkerLLM(
     child_pages=2,
     child_overlap=1,
     skip_llm=False,
-    resume_path=resumed_path,    # None = fresh, or path to downloaded partial file
+    resume_path=resumed_path,  # None = fresh, or path to downloaded partial file
 )
 
 report = await chunker.run()
@@ -279,11 +282,12 @@ This is critical for long T4 runs — it periodically pushes progress to HF so a
 import asyncio, json, time
 from huggingface_hub import HfApi
 
-SAVE_EVERY = 200   # push to HF every 200 chunks processed
+SAVE_EVERY = 200  # push to HF every 200 chunks processed
 
-api      = HfApi()
-pushed   = 0
+api = HfApi()
+pushed = 0
 last_save_size = 0
+
 
 async def run_with_autosave():
     global pushed, last_save_size
@@ -323,6 +327,7 @@ async def run_with_autosave():
     chunker._write_output = write_and_push
     report = await chunker.run()
     return report
+
 
 report = await run_with_autosave()
 print(report)
