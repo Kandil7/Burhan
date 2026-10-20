@@ -1,5 +1,10 @@
 # ✅ Lucene Merge & Processing - COMPLETE
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/lucene/run_pipeline.py` for extraction and `scripts/download_embeddings_and_upload_qdrant.py` for Qdrant import.
+
 **Date:** April 8, 2026  
 **Status:** ✅ **PRODUCTION READY**  
 **Branch:** `dev` (up to date with `origin/dev`)
@@ -203,10 +208,10 @@ data/processed/
 ### Extraction
 ```bash
 # Extract master catalog
-python scripts/extract_master_catalog.py
+python scripts/data/extract_master_catalog.py
 
 # Extract all Lucene indexes
-python scripts/extract_all_lucene_pipeline.py
+python scripts/data/lucene/run_pipeline.py
 ```
 
 ### Merge & Enrichment
@@ -390,7 +395,7 @@ python scripts/create_embedding_notebook.py --collections all --batch-size 1000
 python scripts/create_qdrant_collections.py
 
 # Import embeddings
-python scripts/import_embeddings_to_qdrant.py --collections all
+python scripts/download_embeddings_and_upload_qdrant.py --collections all
 
 # Verify import
 curl http://localhost:6333/collections
@@ -410,7 +415,7 @@ curl http://localhost:6333/collections
 python scripts/test_rag_retrieval.py --collection fiqh_passages --query "ما حكم الصلاة؟"
 
 # Test full pipeline
-python scripts/test_full_rag_pipeline.py
+python scripts/tests/test_full_pipeline.py
 
 # Test via API
 curl -X POST http://localhost:8000/api/v1/query \
@@ -469,7 +474,7 @@ python scripts/validate_jsonl.py data/processed/lucene_pages/collections/*.jsonl
 
 ```bash
 # Resume from checkpoint
-python scripts/extract_all_lucene_pipeline.py --resume
+python scripts/data/lucene/run_pipeline.py --resume
 ```
 
 ---
