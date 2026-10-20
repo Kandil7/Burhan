@@ -99,18 +99,18 @@ Burhan/
 |----------|-------------|-------|
 | **1** | `src/api/main.py` | نقطة الدخول الرئيسية للتطبيق |
 | **2** | `src/config/settings.py` | كل الإعدادات في مكان واحد |
-| **3** | `src/application/hybrid_classifier.py` | **جديد!** مصنف النية الهجين (المرحلة 8) |
+| **3** | `src/application/router/hybrid_classifier.py` | **جديد!** مصنف النية الهجين (المرحلة 8) |
 | **4** | `src/domain/intents.py` | **جديد!** 16 نوع نية مع 10 مستويات أولوية |
 | **5** | `src/core/router.py` | منطق تصنيف النية (3-tier) |
-| **6** | `src/core/orchestrator.py` | تنسيق الاستجابة بين الوكلاء |
+| **6** | `src/application/router/orchestration.py` | تنسيق الاستجابة بين الوكلاء |
 | **7** | `src/agents/base.py` | الفئات الأساسية للوكلاء |
-| **8** | `src/knowledge/embedding_model.py` | نموذج التضمين (BAAI/bge-m3) |
-| **9** | `src/knowledge/vector_store.py` | Qdrant وإدارة المتجهات |
-| **10** | `src/knowledge/hybrid_search.py` | البحث المختلط (دلالي + BM25) |
+| **8** | `src/indexing/embeddings/embedding_model.py` | نموذج التضمين (BAAI/bge-m3) |
+| **9** | `src/indexing/vectorstores/qdrant_store.py` | Qdrant وإدارة المتجهات |
+| **10** | `src/indexing/vectorstores/hybrid_client.py` | البحث المختلط (دلالي + BM25) |
 | **11** | `src/quran/nl2sql.py` | تحويل اللغة الطبيعية إلى SQL |
 | **12** | `src/tools/zakat_calculator.py` | حاسبة الزكاة (منطق إسلامي دقيق) |
-| **13** | `src/api/routes/classification.py` | **جديد!** نقطة نهاية /classify |
-| **14** | `src/application/router.py` | **جديد!** توجيه الوكيل |
+| **13** | `src/api/routes/classify.py` | **جديد!** نقطة نهاية /classify |
+| **14** | `src/application/router/router_agent.py` | **جديد!** توجيه الوكيل |
 | **15** | `src/config/intents.py` | **محدث!** الأنماط القديمة (التوافق) |
 
 ---
@@ -139,18 +139,18 @@ Burhan/
 ```
 9.  src/agents/base.py    → BaseAgent, AgentInput, AgentOutput
 10. src/agents/chatbot_agent.py      → أبسط وكيل (قوالب جاهزة)
-11. src/agents/fiqh_agent.py         → وكيل RAG كامل
-12. src/agents/base_rag_agent.py     → منطق RAG المشترك
+11. src/agents/collection/fiqh.py    → وكيل RAG كامل
+12. src/agents/collection/base.py    → CollectionAgent (منطق RAG المشترك)
 13. src/tools/base.py                → BaseTool
 14. src/tools/zakat_calculator.py    → مثال على أداة حتمية
 ```
 
 #### المرحلة 4: فهم الـ RAG (اليوم 8-10)
 ```
-15. src/knowledge/embedding_model.py     → BAAI/bge-m3 wrapper
-16. src/knowledge/vector_store.py        → Qdrant integration
-17. src/knowledge/hybrid_search.py       → Semantic + BM25 + RRF
-18. src/knowledge/hierarchical_retriever.py → Book-level context
+15. src/indexing/embeddings/embedding_model.py     → BAAI/bge-m3 wrapper
+16. src/indexing/vectorstores/qdrant_store.py        → Qdrant integration
+17. src/indexing/vectorstores/hybrid_client.py       → Semantic + BM25 + RRF
+18. src/retrieval/retrievers/hierarchical_retriever.py → Book-level context
 ```
 
 #### المرحلة 5: فهم خط إنتاج القرآن (اليوم 11-12)
@@ -169,10 +169,10 @@ Burhan/
 
 #### المرحلة 7: المرحلة 8 - مصنف النية الهجين (اليوم 15-16) ← جديد!
 ```
-25. src/application/hybrid_classifier.py → مصنف النية الهجين
+25. src/application/router/hybrid_classifier.py → مصنف النية الهجين
 26. src/domain/intents.py               → 16 نوع نية + أولويات
-27. src/application/router.py           → توجيه الوكيل
-28. src/api/routes/classification.py    → نقطة /classify
+27. src/application/router/router_agent.py           → توجيه الوكيل
+28. src/api/routes/classify.py    → نقطة /classify
 ```
 
 ---
@@ -182,26 +182,26 @@ Burhan/
 ### 🧠 الذكاء الاصطناعي (AI Components) - محدث!
 
 ```
-src/application/hybrid_classifier.py   ← جديد! مصنف النية الهجين (Phase 8)
-src/domain/intents.py                 ← جديد! 16 نوع نية + 10 أولويات + 4 فرعية قرآن
-src/application/router.py             ← جديد! توجيه الوكيل
-src/core/router.py                    ← تصنيف النية (Hybrid: keyword → LLM → embedding)
-src/infrastructure/llm_client.py      ← التواصل مع Groq/OpenAI
-src/agents/*_agent.py                 ← 13 وكيل متخصص
+src/application/router/hybrid_classifier.py  ← مصنف النية الهجين
+src/domain/intents.py                        ← 17 نوع نية + الأولويات + 4 نوايا فرعية قرآنية
+src/application/router/router_agent.py       ← توجيه الوكيل
+src/core/router.py                           ← مصنف قديم للتوافق الخلفي
+src/infrastructure/llm_client.py             ← التواصل مع Groq/OpenAI
+src/agents/collection/*.py                   ← 10 وكلاء (v2)
 src/quran/nl2sql.py                   ← تحويل اللغة الطبيعية إلى SQL
 ```
 
 ### 🔍 نظام RAG (Retrieval-Augmented Generation)
 
 ```
-src/knowledge/
-├── embedding_model.py      → توليد المتجهات (BAAI/bge-m3)
-├── embedding_cache.py      → Redis caching للمتجهات
-├── vector_store.py         → Qdrant (10 مجموعات)
-├── hybrid_search.py        → بحث دلالي + BM25
-├── hierarchical_retriever.py → استرجاع على مستوى الكتاب
-├── hadith_grader.py        → تقييم صحة الحديث
-└── book_weighter.py        → وزن الكتب حسب الأهمية
+src/indexing/                     (فهرسة)  +  src/retrieval/   (استرجاع)
+├── indexing/embeddings/embedding_model.py     → توليد المتجهات (BAAI/bge-m3)
+├── indexing/embeddings/embedding_cache.py     → Redis caching للمتجهات
+├── indexing/vectorstores/qdrant_store.py      → Qdrant
+├── indexing/vectorstores/hybrid_client.py     → بحث دلالي + BM25
+├── retrieval/retrievers/hierarchical_retriever.py → استرجاع على مستوى الكتاب
+├── verification/checks/hadith_grade.py        → تقييم صحة الحديث
+└── retrieval/ranking/book_weighter.py         → وزن الكتب حسب الأهمية
 ```
 
 ### 🌐 الـ Backend - محدث!
@@ -237,7 +237,7 @@ src/config/
     ↓
 scripts/ingestion/                  → تحميل البيانات
     ↓
-src/knowledge/hierarchical_chunker.py → تقسيم المستندات
+scripts/ingestion/chunk_all_books.py → تقسيم المستندات
     ↓
 11.3 مليون وثيقة لوكين (Phase 7 complete)
     ↓
@@ -357,7 +357,7 @@ POST /classify
 
 ### 🔜 الخطوة التالية المنطقية
 
-اقرأ الملف: `src/application/hybrid_classifier.py` (جديد في المرحلة 8)
+اقرأ الملف: `src/application/router/hybrid_classifier.py` (جديد في المرحلة 8)
 
 ---
 
