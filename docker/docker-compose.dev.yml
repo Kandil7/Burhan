@@ -1,4 +1,4 @@
-version: '3.9'
+name: Burhan
 
 services:
   # PostgreSQL Database
@@ -31,6 +31,9 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
+    # Cap Qdrant so a bulk load cannot exhaust the shared WSL2 VM and kill
+    # the whole Docker session on this 32 GB workstation.
+    mem_limit: 4g
     environment:
       QDRANT__SERVICE__GRPC_PORT: 6334
     healthcheck:
