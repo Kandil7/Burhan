@@ -13,10 +13,13 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+
+if TYPE_CHECKING:
+    from openai import AsyncOpenAI
 
 logger = get_logger()
 
@@ -65,7 +68,7 @@ class CrossEncoderReranker:
 
     def __init__(
         self,
-        llm_client: "LLMClient | None" = None,
+        llm_client: AsyncOpenAI | None = None,
         model: str | None = None,
     ):
         self.llm_client = llm_client
@@ -105,7 +108,7 @@ class CrossEncoderReranker:
                 messages=[
                     {
                         "role": "system",
-                        "content": """أنت نموذج ترتيب متخصص في تقييم相关性 النصوص 
+                        "content": """أنت نموذج ترتيب متخصص في تقييم相关性 النصوص
                         Given a query and passages, rank them by relevance from 1-10.
                         Return in format: [score1, score2, ...]""",
                     },
@@ -119,11 +122,12 @@ class CrossEncoderReranker:
             )
 
             # Parse scores
-            scores = self._parse_scores(response.choices[0].message.content)
+            content = response.choices[0].message.content or ""
+            scores = self._parse_scores(content)
 
             # Apply scores to passages
             reranked = []
-            for i, (passage, score) in enumerate(zip(passages, scores)):
+            for i, (passage, score) in enumerate(zip(passages, scores, strict=True)):
                 result = passage.copy()
                 result["rerank_score"] = score
                 result["rerank_rank"] = i + 1
@@ -196,7 +200,7 @@ class SimpleReranker:
     Fallback when LLM is not available.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def rerank(
@@ -244,7 +248,7 @@ class HybridReranker:
 
     def __init__(
         self,
-        llm_client: "LLMClient | None" = None,
+        llm_client: AsyncOpenAI | None = None,
         use_llm: bool = True,
     ):
         self.llm_reranker = CrossEncoderReranker(llm_client) if use_llm else None
@@ -269,7 +273,7 @@ class HybridReranker:
 
             # Combine scores
             reranked = []
-            for p1, p2 in zip(simple_reranked, llm_reranked):
+            for p1, p2 in zip(simple_reranked, llm_reranked, strict=True):
                 combined = p1.copy()
                 simple_score = p1.get("simple_rerank_score", 0)
                 llm_score = p2.get("rerank_score", 0)
