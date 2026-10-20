@@ -173,7 +173,7 @@ curl http://localhost:8002/health
 3. src/core/citation.py             ← اقرأه سطر سطر
 4. src/agents/base.py               ← اقرأه سطر سطر
 5. src/agents/chatbot_agent.py      ← اقرأه سطر سطر
-6. src/agents/fiqh_agent.py         ← اقرأه سطر سطر
+6. src/agents/collection/fiqh.py         ← اقرأه سطر سطر
 7. src/tools/base.py               ← اقرأه سطر سطر
 8. src/tools/zakat_calculator.py   ← اقرأه سطر سطر
 ```
@@ -223,11 +223,11 @@ curl http://localhost:8002/health
 
 ### الملفات المطلوبة
 ```
-1. src/knowledge/embedding_model.py
-2. src/knowledge/embedding_cache.py
-3. src/knowledge/vector_store.py
-4. src/knowledge/hybrid_search.py
-5. src/knowledge/hierarchical_retriever.py
+1. src/indexing/embeddings/embedding_model.py
+2. src/indexing/embeddings/embedding_cache.py
+3. src/indexing/vectorstores/qdrant_store.py
+4. src/indexing/vectorstores/hybrid_client.py
+5. src/retrieval/retrievers/hierarchical_retriever.py
 6. src/quran/verse_retrieval.py
 7. src/quran/nl2sql.py
 8. src/quran/quotation_validator.py
@@ -279,18 +279,18 @@ curl http://localhost:8002/health
 
 ### الملفات المتبقية
 ```
-src/agents/hadith_agent.py
-src/agents/general_islamic_agent.py
-src/agents/seerah_agent.py
-src/agents/base_rag_agent.py
+src/agents/collection/hadith.py
+src/agents/collection/general.py
+src/agents/collection/seerah.py
+src/agents/collection/base.py
 src/tools/inheritance_calculator.py
 src/tools/prayer_times_tool.py
 src/tools/hijri_calendar_tool.py
 src/tools/dua_retrieval_tool.py
-src/api/routes/query.py
+src/api/routes/ask.py
 src/api/routes/tools.py
 src/api/routes/quran.py
-src/api/routes/rag.py
+src/api/routes/search.py
 src/api/routes/health.py
 ```
 
@@ -327,11 +327,11 @@ src/api/routes/health.py
 
 ### الملفات المطلوبة (جديد!)
 ```
-1. src/application/hybrid_classifier.py   ← المصنف الهجين
+1. src/application/router/hybrid_classifier.py   ← المصنف الهجين
 2. src/domain/intents.py                   ← 16 نوع نية + أولويات
 3. src/application/interfaces.py          ← بروتوكولات
-4. src/application/router.py              ← توجيه الوكيل
-5. src/api/routes/classification.py       ← نقطة النهاية /classify
+4. src/application/router/router_agent.py              ← توجيه الوكيل
+5. src/api/routes/classify.py       ← نقطة النهاية /classify
 6. src/config/intents.py                   ← الأنماط القديمة (التوافق)
 ```
 
@@ -417,17 +417,17 @@ curl -X POST http://localhost:8000/classify \
 | 3 | قراءة citation.py | src/core/citation.py |
 | 4 | قراءة base.py | src/agents/base.py |
 | 5 | قراءة chatbot_agent.py | src/agents/chatbot_agent.py |
-| 6 | قراءة fiqh_agent.py | src/agents/fiqh_agent.py |
+| 6 | قراءة fiqh_agent.py | src/agents/collection/fiqh.py |
 | 7 | مراجعة وتمارين | كل ما سبق |
 
 ### الأسبوع 3: RAG
 | اليوم | المهمة | الملفات |
 |-------|--------|---------|
-| 1 | قراءة embedding_model.py | src/knowledge/embedding_model.py |
-| 2 | قراءة embedding_cache.py | src/knowledge/embedding_cache.py |
-| 3 | قراءة vector_store.py | src/knowledge/vector_store.py |
-| 4 | قراءة hybrid_search.py | src/knowledge/hybrid_search.py |
-| 5 | قراءة hierarchical_retriever.py | src/knowledge/hierarchical_retriever.py |
+| 1 | قراءة embedding_model.py | src/indexing/embeddings/embedding_model.py |
+| 2 | قراءة embedding_cache.py | src/indexing/embeddings/embedding_cache.py |
+| 3 | قراءة vector_store.py | src/indexing/vectorstores/qdrant_store.py |
+| 4 | قراءة hybrid_search.py | src/indexing/vectorstores/hybrid_client.py |
+| 5 | قراءة hierarchical_retriever.py | src/retrieval/retrievers/hierarchical_retriever.py |
 | 6 | تجربة البحث | Swagger UI |
 | 7 | مراجعة وتمارين | كل ما سبق |
 
@@ -445,10 +445,10 @@ curl -X POST http://localhost:8000/classify \
 ### الأسبوع 5-6: المرحلة 8 - مصنف النية الهجين (جديد!)
 | اليوم | المهمة | الملفات |
 |-------|--------|---------|
-| 1 | قراءة hybrid_classifier.py | src/application/hybrid_classifier.py |
+| 1 | قراءة hybrid_classifier.py | src/application/router/hybrid_classifier.py |
 | 2 | قراءة domain/intents.py | src/domain/intents.py |
-| 3 | قراءة application/router.py | src/application/router.py |
-| 4 | قراءة classification endpoint | src/api/routes/classification.py |
+| 3 | قراءة application/router.py | src/application/router/router_agent.py |
+| 4 | قراءة classification endpoint | src/api/routes/classify.py |
 | 5 | تجربة /classify | Swagger UI |
 | 6 | إضافة نمط keyword جديد | src/domain/intents.py |
 | 7 | مراجعة وتمارين شاملة | كل ما سبق + Phase 8 |
@@ -689,7 +689,7 @@ https://huggingface.co/BAAI/bge-m3     ← BGE-m3 model
 
 **🔗 ثم:** [`03_api_main_entrypoint.md`](03_api_main_entrypoint.md)
 
-**🎉 ثم:** المستوى 6 (المرحلة 8) ← [`src/application/hybrid_classifier.py`](src/application/hybrid_classifier.py)
+**🎉 ثم:** المستوى 6 (المرحلة 8) ← [`src/application/router/hybrid_classifier.py`](src/application/router/hybrid_classifier.py)
 
 ---
 
