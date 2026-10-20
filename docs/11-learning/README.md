@@ -66,16 +66,16 @@
 3. `src/domain/` - تعريفات النطاق (intents, models)
 4. `src/config/` - الإعدادات والثوابت
 5. `src/core/` - المنطق الأساسي
-6. `src/agents/` - الوكلاء المتخصصون (16+ وكيل)
-   - `legacy/` - الوكلاء التقليديون (مُهمل)
+6. `src/agents/` - الوكلاء المتخصصون (11 وكيل)
+   - `chatbot_agent.py` - وكيل الترحيب
    - `collection/` - الوكلاء الجدد v2 (canonical)
 7. `src/tools/` - الأدوات الحتمية (5 أدوات)
 8. `src/quran/` - خط إنتاج القرآن
-9. `src/knowledge/` - بنية RAG (مُهمل → استخدم src/retrieval/)
-10. `src/infrastructure/` - الخدمات الخارجية (incl. v2 Qdrant)
-11. `src/retrieval/` - **جديد v2** طبقة الاسترجاع
-12. `src/verification/` - **جديد v2** طبقة التحقق
-13. `src/generation/` - **جديد v2** طبقة التوليد
+9. `src/indexing/` - طبقة الفهرسة (تضمين، متجهات، معجم)
+10. `src/infrastructure/` - الخدمات الخارجية (incl. Qdrant)
+11. `src/retrieval/` - طبقة الاسترجاع
+12. `src/verification/` - طبقة التحقق
+13. `src/generation/` - طبقة التوليد
 
 **المدة المتوقعة:** 45-60 دقيقة
 
@@ -120,17 +120,17 @@
 
 ```
 اليوم 1-2:  src/agents/base.py           ← الفئات الأساسية
-اليوم 3-4:  src/agents/fiqh_agent.py     ← وكيل RAG كامل
-اليوم 5-6:  src/knowledge/embedding_model.py  ← التضمين
-اليوم 7-8:  src/knowledge/vector_store.py     ← Qdrant
+اليوم 3-4:  src/agents/collection/fiqh.py     ← وكيل RAG كامل
+اليوم 5-6:  src/indexing/embeddings/embedding_model.py  ← التضمين
+اليوم 7-8:  src/indexing/vectorstores/qdrant_store.py     ← Qdrant
 ```
 
 ### للمتقدمين جداً (أسبوع 7-8)
 
 ```
-اليوم 1-2:  src/application/hybrid_classifier.py  ← مصنف النية الهجين
+اليوم 1-2:  src/application/router/hybrid_classifier.py  ← مصنف النية الهجين
 اليوم 3-4:  src/domain/intents.py          ← 16 نوع نية مع الأولويات
-اليوم 5-6:  src/api/routes/classification.py  ← نقطة نهاية /classify
+اليوم 5-6:  src/api/routes/classify.py  ← نقطة نهاية /classify
 اليوم 7-8:  تجربة التصنيف الجديد
 ```
 
@@ -298,13 +298,13 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 ### المرحلة 3: فهم الوكلاء (أسبوع 5-6)
 - [ ] قراءة `src/agents/base.py`
 - [ ] قراءة `src/agents/chatbot_agent.py`
-- [ ] قراءة `src/agents/fiqh_agent.py`
+- [ ] قراءة `src/agents/collection/fiqh.py`
 - [ ] فهم RAG flow
 
 ### المرحلة 4: فهم RAG (أسبوع 7-8)
-- [ ] قراءة `src/knowledge/embedding_model.py`
-- [ ] قراءة `src/knowledge/vector_store.py`
-- [ ] قراءة `src/knowledge/hybrid_search.py`
+- [ ] قراءة `src/indexing/embeddings/embedding_model.py`
+- [ ] قراءة `src/indexing/vectorstores/qdrant_store.py`
+- [ ] قراءة `src/indexing/vectorstores/hybrid_client.py`
 - [ ] فهم retrieval pipeline
 
 ### المرحلة 5: فهم القرآن (أسبوع 9-10)
@@ -320,10 +320,10 @@ Generate (ولد): LLM يولد إجابة مبنية على الوثائق
 - [ ] فهم deterministic tools
 
 ### المرحلة 7: المرحلة الثامنة - مصنف النية الهجين (أسبوع 13-14)
-- [ ] قراءة `src/application/hybrid_classifier.py`
+- [ ] قراءة `src/application/router/hybrid_classifier.py`
 - [ ] قراءة `src/domain/intents.py`
-- [ ] قراءة `src/application/router.py`
-- [ ] قراءة `src/api/routes/classification.py`
+- [ ] قراءة `src/application/router/router_agent.py`
+- [ ] قراءة `src/api/routes/classify.py`
 - [ ] تجربة نقطة نهاية `/classify`
 
 ### المرحلة 8: ترحيل v2 (أسبوع 15-16) - جديد!
