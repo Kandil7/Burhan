@@ -40,15 +40,17 @@ Anthropic      ← Claude (قريباً)
 ### 3.1 التكوين
 
 ```python
-# src/generation/llm_client.py
+# src/infrastructure/llm_client.py
+
 
 class LLMClient:
     """عميل OpenAI."""
-    
+
     def __init__(self, api_key: str):
         import openai
+
         openai.api_key = api_key
-    
+
     async def generate(
         self,
         messages: list,
@@ -63,7 +65,7 @@ class LLMClient:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        
+
         return response.choices[0].message.content
 ```
 
@@ -84,12 +86,13 @@ class LLMClient:
 ```python
 from groq import AsyncGroq
 
+
 class GroqClient:
     """عميل Groq."""
-    
+
     def __init__(self, api_key: str):
         self._client = AsyncGroq(api_key=api_key)
-    
+
     async def generate(
         self,
         messages: list,
@@ -102,7 +105,7 @@ class GroqClient:
             messages=messages,
             temperature=temperature,
         )
-        
+
         return response.choices[0].message.content
 ```
 
