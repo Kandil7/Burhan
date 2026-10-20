@@ -8,12 +8,10 @@ for the verification system, integrated with Pydantic schemas.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from src.verification.schemas import (
     CheckResult,
-    VerificationReport,
-    VerificationStatus,
     VerifierType,
 )
 
@@ -29,7 +27,7 @@ class BaseVerifier(ABC):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """
         Verify a claim against evidence.
@@ -62,8 +60,8 @@ class BaseVerifier(ABC):
 class VerifierPipeline:
     """Pipeline that runs multiple verifiers and aggregates results."""
 
-    def __init__(self):
-        self.verifiers: List[BaseVerifier] = []
+    def __init__(self) -> None:
+        self.verifiers: list[BaseVerifier] = []
 
     def add_verifier(self, verifier: BaseVerifier) -> None:
         """Add a verifier to the pipeline."""
@@ -73,8 +71,8 @@ class VerifierPipeline:
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
-    ) -> List[CheckResult]:
+        context: dict[str, Any] | None = None,
+    ) -> list[CheckResult]:
         """Run all applicable verifiers."""
         results = []
         for verifier in self.verifiers:
@@ -83,13 +81,11 @@ class VerifierPipeline:
                 results.append(result)
         return results
 
-    def get_results_summary(self, results: List[CheckResult]) -> Dict[str, Any]:
+    def get_results_summary(self, results: list[CheckResult]) -> dict[str, Any]:
         """Summarize verification results."""
         passed = sum(1 for r in results if r.passed)
         failed = sum(1 for r in results if not r.passed)
-        avg_confidence = (
-            sum(r.confidence for r in results) / len(results) if results else 0.0
-        )
+        avg_confidence = sum(r.confidence for r in results) / len(results) if results else 0.0
 
         return {
             "total": len(results),
