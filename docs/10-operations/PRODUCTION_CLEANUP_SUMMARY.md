@@ -107,7 +107,7 @@
 8. Set up SSL/TLS
 
 ### High Priority
-1. Refactor 6 agents to BaseRAGAgent pattern
+1. ✅ Done: all agents refactored to the v2 `CollectionAgent` pattern
 2. Wire up remaining agents to routes
 3. Set up Sentry error tracking
 4. Configure PostgreSQL backups
