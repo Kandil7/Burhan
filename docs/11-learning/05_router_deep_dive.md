@@ -60,18 +60,14 @@ logger = get_logger()
 ```python
 class RouterResult(BaseModel):
     """Result from intent classification."""
-    
+
     intent: Intent
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     method: str = Field(description="Classification method: keyword, llm, or embedding")
     language: str = Field(default="ar", description="Detected language: ar or en")
-    requires_retrieval: bool = Field(
-        default=True,
-        description="Whether this query needs document retrieval (RAG)"
-    )
+    requires_retrieval: bool = Field(default=True, description="Whether this query needs document retrieval (RAG)")
     sub_intent: Optional[str] = Field(
-        default=None,
-        description="Sub-intent for Quran queries (verse_lookup, interpretation, etc.)"
+        default=None, description="Sub-intent for Quran queries (verse_lookup, interpretation, etc.)"
     )
     reason: str = Field(default="", description="Reasoning for classification")
 ```
@@ -97,7 +93,7 @@ RouterResult(
     language="ar",
     requires_retrieval=True,
     sub_intent=None,
-    reason="Keyword match: 'ما حكم'"
+    reason="Keyword match: 'ما حكم'",
 )
 ```
 
@@ -186,80 +182,73 @@ Query: {query}"""
 ### الأسطر 141-200: دالة classify() الرئيسية
 
 ```python
-    async def classify(self, query: str) -> RouterResult:
-        """
-        Classify user query using three-tier approach.
-        """
-        if not query or not query.strip():
-            return RouterResult(
-                intent=Intent.GREETING,
-                confidence=0.5,
-                method="fallback",
-                reason="Empty query, defaulting to greeting"
-            )
-
-        # ==========================================
-        # Tier 1: Keyword matching (fast path)
-        # ==========================================
-        keyword_result = self._keyword_match(query)
-        if keyword_result and keyword_result.confidence >= 0.90:
-            logger.info(
-                "router.keyword_match",
-                intent=keyword_result.intent.value,
-                confidence=keyword_result.confidence,
-                method="keyword"
-            )
-            return keyword_result
-
-        # ==========================================
-        # Tier 2: LLM classification (primary)
-        # ==========================================
-        if self.llm_client:
-            try:
-                llm_result = await self._llm_classify(query)
-                if llm_result.confidence >= self.CONFIDENCE_THRESHOLD:
-                    logger.info(
-                        "router.llm_classify",
-                        intent=llm_result.intent.value,
-                        confidence=llm_result.confidence,
-                        method="llm"
-                    )
-                    return llm_result
-            except Exception as e:
-                logger.error("router.llm_error", error=str(e))
-
-        # ==========================================
-        # Tier 3: Embedding fallback (backup)
-        # ==========================================
-        if self.embed_client and settings.router_fallback_enabled:
-            try:
-                embed_result = await self._embedding_classify(query)
-                logger.info(
-                    "router.embedding_classify",
-                    intent=embed_result.intent.value,
-                    confidence=embed_result.confidence,
-                    method="embedding"
-                )
-                return embed_result
-            except Exception as e:
-                logger.error("router.embedding_error", error=str(e))
-
-        # ==========================================
-        # Default fallback
-        # ==========================================
-        logger.warning(
-            "router.default_fallback",
-            query=query[:100],
-            default_intent=Intent.ISLAMIC_KNOWLEDGE.value
-        )
-
+async def classify(self, query: str) -> RouterResult:
+    """
+    Classify user query using three-tier approach.
+    """
+    if not query or not query.strip():
         return RouterResult(
-            intent=Intent.ISLAMIC_KNOWLEDGE,
-            confidence=0.5,
-            method="fallback",
-            language=self._detect_language(query),
-            reason="No classifier matched with sufficient confidence, defaulting to general knowledge"
+            intent=Intent.GREETING, confidence=0.5, method="fallback", reason="Empty query, defaulting to greeting"
         )
+
+    # ==========================================
+    # Tier 1: Keyword matching (fast path)
+    # ==========================================
+    keyword_result = self._keyword_match(query)
+    if keyword_result and keyword_result.confidence >= 0.90:
+        logger.info(
+            "router.keyword_match",
+            intent=keyword_result.intent.value,
+            confidence=keyword_result.confidence,
+            method="keyword",
+        )
+        return keyword_result
+
+    # ==========================================
+    # Tier 2: LLM classification (primary)
+    # ==========================================
+    if self.llm_client:
+        try:
+            llm_result = await self._llm_classify(query)
+            if llm_result.confidence >= self.CONFIDENCE_THRESHOLD:
+                logger.info(
+                    "router.llm_classify",
+                    intent=llm_result.intent.value,
+                    confidence=llm_result.confidence,
+                    method="llm",
+                )
+                return llm_result
+        except Exception as e:
+            logger.error("router.llm_error", error=str(e))
+
+    # ==========================================
+    # Tier 3: Embedding fallback (backup)
+    # ==========================================
+    if self.embed_client and settings.router_fallback_enabled:
+        try:
+            embed_result = await self._embedding_classify(query)
+            logger.info(
+                "router.embedding_classify",
+                intent=embed_result.intent.value,
+                confidence=embed_result.confidence,
+                method="embedding",
+            )
+            return embed_result
+        except Exception as e:
+            logger.error("router.embedding_error", error=str(e))
+
+    # ==========================================
+    # Default fallback
+    # ==========================================
+    logger.warning("router.default_fallback", query=query[:100], default_intent=Intent.ISLAMIC_KNOWLEDGE.value)
+
+    return RouterResult(
+        intent=Intent.ISLAMIC_KNOWLEDGE,
+        confidence=0.5,
+        method="fallback",
+        language=self._detect_language(query),
+        reason="No classifier matched with sufficient confidence, defaulting to general knowledge",
+    )
 ```
 
 **شرح التدفق**:
@@ -291,30 +280,31 @@ RouterResult(intent=FIQH, confidence=0.92, method="keyword")
 ### الأسطر 201-230: دالة _keyword_match()
 
 ```python
-    def _keyword_match(self, query: str) -> Optional[RouterResult]:
-        """
-        Fast keyword-based intent detection.
-        """
-        query_lower = query.lower()
-        language = self._detect_language(query)
+def _keyword_match(self, query: str) -> Optional[RouterResult]:
+    """
+    Fast keyword-based intent detection.
+    """
+    query_lower = query.lower()
+    language = self._detect_language(query)
 
-        for intent, patterns in KEYWORD_PATTERNS.items():
-            for pattern in patterns:
-                if pattern.lower() in query_lower:
-                    return RouterResult(
-                        intent=intent,
-                        confidence=0.92,
-                        method="keyword",
-                        language=language,
-                        requires_retrieval=intent in [
-                            Intent.FIQH,
-                            Intent.ISLAMIC_KNOWLEDGE,
-                            Intent.QURAN,
-                        ],
-                        reason=f"Keyword match: '{pattern}'"
-                    )
+    for intent, patterns in KEYWORD_PATTERNS.items():
+        for pattern in patterns:
+            if pattern.lower() in query_lower:
+                return RouterResult(
+                    intent=intent,
+                    confidence=0.92,
+                    method="keyword",
+                    language=language,
+                    requires_retrieval=intent
+                    in [
+                        Intent.FIQH,
+                        Intent.ISLAMIC_KNOWLEDGE,
+                        Intent.QURAN,
+                    ],
+                    reason=f"Keyword match: '{pattern}'",
+                )
 
-        return None
+    return None
 ```
 
 **شرح**:
@@ -338,65 +328,57 @@ query_lower = "ما حكم صلاة العيد؟"
 ### الأسطر 231-280: دالة _llm_classify()
 
 ```python
-    async def _llm_classify(self, query: str) -> RouterResult:
-        """
-        LLM-based intent classification.
-        """
-        try:
-            # Build prompt with intent descriptions
-            intent_descriptions = "\n".join(
-                f"- {k.value}: {v}" for k, v in INTENT_DESCRIPTIONS.items()
-            )
+async def _llm_classify(self, query: str) -> RouterResult:
+    """
+    LLM-based intent classification.
+    """
+    try:
+        # Build prompt with intent descriptions
+        intent_descriptions = "\n".join(f"- {k.value}: {v}" for k, v in INTENT_DESCRIPTIONS.items())
 
-            prompt = self.LLM_CLASSIFIER_PROMPT.format(
-                intent_descriptions=intent_descriptions,
-                query=query
-            )
+        prompt = self.LLM_CLASSIFIER_PROMPT.format(intent_descriptions=intent_descriptions, query=query)
 
-            # Call LLM
-            response = await self.llm_client.chat.completions.create(
-                model=settings.llm_model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an expert intent classifier. Return ONLY valid JSON."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.0,  # Deterministic
-                max_tokens=300,
-                response_format={"type": "json_object"}
-            )
+        # Call LLM
+        response = await self.llm_client.chat.completions.create(
+            model=settings.llm_model,
+            messages=[
+                {"role": "system", "content": "You are an expert intent classifier. Return ONLY valid JSON."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,  # Deterministic
+            max_tokens=300,
+            response_format={"type": "json_object"},
+        )
 
-            content = response.choices[0].message.content.strip()
+        content = response.choices[0].message.content.strip()
 
-            # Parse JSON response
-            result = json.loads(content)
+        # Parse JSON response
+        result = json.loads(content)
 
-            # Validate and normalize
-            intent = Intent(result.get("intent", Intent.ISLAMIC_KNOWLEDGE))
-            confidence = float(result.get("confidence", 0.8))
-            language = result.get("language", self._detect_language(query))
-            requires_retrieval = result.get("requires_retrieval", True)
-            sub_intent = result.get("sub_intent")
-            reason = result.get("reason", "LLM classification")
+        # Validate and normalize
+        intent = Intent(result.get("intent", Intent.ISLAMIC_KNOWLEDGE))
+        confidence = float(result.get("confidence", 0.8))
+        language = result.get("language", self._detect_language(query))
+        requires_retrieval = result.get("requires_retrieval", True)
+        sub_intent = result.get("sub_intent")
+        reason = result.get("reason", "LLM classification")
 
-            return RouterResult(
-                intent=intent,
-                confidence=confidence,
-                method="llm",
-                language=language,
-                requires_retrieval=requires_retrieval,
-                sub_intent=sub_intent,
-                reason=reason
-            )
+        return RouterResult(
+            intent=intent,
+            confidence=confidence,
+            method="llm",
+            language=language,
+            requires_retrieval=requires_retrieval,
+            sub_intent=sub_intent,
+            reason=reason,
+        )
 
-        except json.JSONDecodeError as e:
-            logger.error("router.llm_json_error", error=str(e))
-            raise ValueError(f"LLM returned invalid JSON: {e}")
-        except Exception as e:
-            logger.error("router.llm_error", error=str(e))
-            raise
+    except json.JSONDecodeError as e:
+        logger.error("router.llm_json_error", error=str(e))
+        raise ValueError(f"LLM returned invalid JSON: {e}")
+    except Exception as e:
+        logger.error("router.llm_error", error=str(e))
+        raise
 ```
 
 **شرح**:
@@ -429,22 +411,19 @@ query_lower = "ما حكم صلاة العيد؟"
 ### الأسطر 281-295: دالة _detect_language()
 
 ```python
-    def _detect_language(self, query: str) -> str:
-        """
-        Detect if query is Arabic or English.
-        Uses Unicode range detection for Arabic script.
-        """
-        arabic_chars = sum(
-            1 for char in query
-            if '\u0600' <= char <= '\u06FF' or '\u0750' <= char <= '\u077F'
-        )
+def _detect_language(self, query: str) -> str:
+    """
+    Detect if query is Arabic or English.
+    Uses Unicode range detection for Arabic script.
+    """
+    arabic_chars = sum(1 for char in query if "\u0600" <= char <= "\u06ff" or "\u0750" <= char <= "\u077f")
 
-        total_chars = len(query.replace(" ", ""))
-        if total_chars == 0:
-            return "ar"
+    total_chars = len(query.replace(" ", ""))
+    if total_chars == 0:
+        return "ar"
 
-        arabic_ratio = arabic_chars / total_chars
-        return "ar" if arabic_ratio > 0.3 else "en"
+    arabic_ratio = arabic_chars / total_chars
+    return "ar" if arabic_ratio > 0.3 else "en"
 ```
 
 **شرح**:
