@@ -4,6 +4,7 @@ SQLAlchemy models for the Quran database.
 Defines the table structure for storing Quran text, translations, and tafsir.
 Used by the Quran pipeline for verse retrieval, NL2SQL, and quotation validation.
 """
+
 from datetime import datetime
 from typing import Optional
 
@@ -20,9 +21,13 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    """Declarative base for the Quran models."""
+
+    pass
 
 
 class Surah(Base):
@@ -103,9 +108,7 @@ class Translation(Base):
     # Relationships
     ayah = relationship("Ayah", back_populates="translations")
 
-    __table_args__ = (
-        UniqueConstraint("ayah_id", "language", "translator", name="uq_translation"),
-    )
+    __table_args__ = (UniqueConstraint("ayah_id", "language", "translator", name="uq_translation"),)
 
     def __repr__(self) -> str:
         return f"<Translation {self.language} by {self.translator}>"
@@ -127,9 +130,7 @@ class Tafsir(Base):
     # Relationships
     ayah = relationship("Ayah", back_populates="tafsirs")
 
-    __table_args__ = (
-        UniqueConstraint("ayah_id", "source_name", name="uq_tafsir"),
-    )
+    __table_args__ = (UniqueConstraint("ayah_id", "source_name", name="uq_tafsir"),)
 
     def __repr__(self) -> str:
         return f"<Tafsir {self.source_name}>"
