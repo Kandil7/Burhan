@@ -328,20 +328,22 @@ def sample_sanadset_hadith(num_samples: int = 300) -> list[dict]:
 
                     content = " | ".join(content_parts)[:3000]
 
-                    sampled.append({
-                        "chunk_index": len(sampled),
-                        "content": content,
-                        "metadata": {
-                            "type": "hadith",
-                            "book": book_name,
-                            "num_hadith": row.get("Num_hadith", ""),
-                            "matn": matn[:2000],
-                            "sanad": sanad_clean[:1000],
-                            "sanad_length": row.get("Sanad_Length", ""),
-                            "dataset": "sanadset_mini",
-                            "language": "ar",
-                        },
-                    })
+                    sampled.append(
+                        {
+                            "chunk_index": len(sampled),
+                            "content": content,
+                            "metadata": {
+                                "type": "hadith",
+                                "book": book_name,
+                                "num_hadith": row.get("Num_hadith", ""),
+                                "matn": matn[:2000],
+                                "sanad": sanad_clean[:1000],
+                                "sanad_length": row.get("Sanad_Length", ""),
+                                "dataset": "sanadset_mini",
+                                "language": "ar",
+                            },
+                        }
+                    )
 
                     bar.update(1)
 
@@ -396,17 +398,19 @@ def extract_books_for_collection(
             chunks = extract_chunks_from_book(book_file, num_chunks)
 
             for chunk in chunks:
-                all_chunks.append({
-                    "chunk_index": len(all_chunks),
-                    "content": chunk[:MAX_CHUNK_SIZE],
-                    "metadata": {
-                        "type": collection_name.split("_")[0],
-                        "book": book_file.name,
-                        "category": category,
-                        "language": "ar",
-                        "collection": collection_name,
-                    },
-                })
+                all_chunks.append(
+                    {
+                        "chunk_index": len(all_chunks),
+                        "content": chunk[:MAX_CHUNK_SIZE],
+                        "metadata": {
+                            "type": collection_name.split("_")[0],
+                            "book": book_file.name,
+                            "category": category,
+                            "language": "ar",
+                            "collection": collection_name,
+                        },
+                    }
+                )
                 bar.update(1)
 
     logger.info("collection_extracted", collection=collection_name, chunks=len(all_chunks))
