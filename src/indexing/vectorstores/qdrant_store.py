@@ -14,6 +14,7 @@ Phase 4: Foundation for all RAG retrieval pipelines.
 import asyncio
 import hashlib
 import json
+from typing import Any
 
 import numpy as np
 from qdrant_client import QdrantClient
@@ -56,7 +57,7 @@ class VectorStore:
         results = await store.search("fiqh_passages", query_embedding, top_k=10)
     """
 
-    COLLECTIONS = {
+    COLLECTIONS: dict[str, dict[str, Any]] = {
         "fiqh_passages": {"dimension": 1024, "description": "Fiqh books and fatwas"},
         "hadith_passages": {"dimension": 1024, "description": "Hadith collections"},
         "quran_tafsir": {"dimension": 1024, "description": "Tafsir passages"},
@@ -70,12 +71,12 @@ class VectorStore:
         "usul_fiqh": {"dimension": 1024, "description": "Principles of jurisprudence"},
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize vector store."""
-        self.client = None
+        self.client: Any = None
         self._initialized = False
 
-    async def _run_blocking(self, fn, *args, **kwargs):
+    async def _run_blocking(self, fn: Any, *args: Any, **kwargs: Any) -> Any:
         """Run blocking Qdrant calls in a worker thread."""
         return await asyncio.to_thread(fn, *args, **kwargs)
 
@@ -93,7 +94,7 @@ class VectorStore:
         raw = json.dumps(identity, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
-    async def ensure_collection(self, name: str, dimension: int = 1024):
+    async def ensure_collection(self, name: str, dimension: int = 1024) -> None:
         """Ensure a collection exists, create if not."""
         if not self._initialized:
             await self.initialize()
@@ -133,7 +134,7 @@ class VectorStore:
                         self.client.create_collection,
                         collection_name=collection_name,
                         vectors_config=VectorParams(
-                            size=config["dimension"],
+                            size=int(config["dimension"]),
                             distance=Distance.COSINE,
                         ),
                     )
@@ -227,7 +228,9 @@ class VectorStore:
             # Build filter if provided
             qdrant_filter = None
             if filters:
-                conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()]
+                conditions: list[Any] = [
+                    FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()
+                ]
                 qdrant_filter = Filter(must=conditions)
 
             # Search using query_points (new Qdrant API)
@@ -254,8 +257,8 @@ class VectorStore:
                     {
                         "id": result.id,
                         "score": result.score,
-                        "content": result.payload.get("content", ""),
-                        "metadata": {k: v for k, v in result.payload.items() if k != "content"},
+                        "content": (result.payload or {}).get("content", ""),
+                        "metadata": {k: v for k, v in (result.payload or {}).items() if k != "content"},
                     }
                 )
 
