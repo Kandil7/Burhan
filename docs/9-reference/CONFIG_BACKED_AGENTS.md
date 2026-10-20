@@ -270,6 +270,7 @@ strategy = RetrievalStrategy(
 ```python
 # Config-based strategy
 from src.config import get_config_manager
+
 cm = get_config_manager()
 config = cm.get_collection_agent_config("fiqh", include_prompt=False)
 strategy = config.strategy
