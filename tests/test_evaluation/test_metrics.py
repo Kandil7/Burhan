@@ -5,16 +5,17 @@ Tests precision/recall calculations, citation accuracy, and evaluation runner.
 """
 
 import pytest
+
 from src.evaluation.golden_set_schema import GoldenSetItem
 from src.evaluation.metrics import (
-    precision_at_k,
-    recall_at_k,
-    citation_accuracy,
-    ikhtilaf_coverage,
+    EvaluationResult,
     abstention_rate,
+    citation_accuracy,
     expected_abstention,
     hadith_grade_accuracy,
-    EvaluationResult,
+    ikhtilaf_coverage,
+    precision_at_k,
+    recall_at_k,
     run_evaluation,
 )
 
