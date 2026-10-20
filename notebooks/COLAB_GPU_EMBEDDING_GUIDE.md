@@ -92,6 +92,7 @@ drive.mount('/content/drive')
 
 ```python
 from google.colab import files
+
 uploaded = files.upload()  # Upload JSONL files one by one
 ```
 
@@ -157,57 +158,53 @@ import json
 import time
 from tqdm import tqdm
 
+
 def embed_collection(collection_name):
     """Embed single collection and return (passages, embeddings)."""
     filepath = f"{COLLECTIONS_DIR}/{collection_name}.jsonl"
-    
+
     # Load passages
     passages = []
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         for line in f:
             passages.append(json.loads(line))
-    
+
     print(f"📚 {collection_name}: {len(passages):,} passages")
-    
+
     # Embed in batches
     all_embeddings = []
-    contents = [p.get('content', '') for p in passages]
-    
-    for i in tqdm(range(0, len(contents), BATCH_SIZE), 
-                  desc=f"Embedding {collection_name}"):
-        batch = contents[i:i + BATCH_SIZE]
-        
+    contents = [p.get("content", "") for p in passages]
+
+    for i in tqdm(range(0, len(contents), BATCH_SIZE), desc=f"Embedding {collection_name}"):
+        batch = contents[i : i + BATCH_SIZE]
+
         # Tokenize
-        encoded = tokenizer(
-            batch,
-            padding=True,
-            truncation=True,
-            max_length=MAX_LENGTH,
-            return_tensors='pt'
-        ).to(device)
-        
+        encoded = tokenizer(batch, padding=True, truncation=True, max_length=MAX_LENGTH, return_tensors="pt").to(device)
+
         # Embed
         with torch.no_grad():
             outputs = model(**encoded)
             embeddings = outputs.last_hidden_state[:, 0, :]
             embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-        
+
         all_embeddings.extend(embeddings.cpu().tolist())
-    
+
     print(f"✅ {collection_name}: {len(all_embeddings):,} embeddings generated")
     return passages, all_embeddings
+
 
 # Process all collections
 for collection in COLLECTIONS:
     start = time.time()
     passages, embeddings = embed_collection(collection)
     elapsed = time.time() - start
-    print(f"⏱️  Time: {elapsed/60:.1f} minutes")
-    
+    print(f"⏱️  Time: {elapsed / 60:.1f} minutes")
+
     # Save embeddings for later upload
     import numpy as np
+
     np.save(f"/content/{collection}_embeddings.npy", embeddings)
-    
+
     # Clear GPU memory
     torch.cuda.empty_cache()
 ```
@@ -238,11 +235,11 @@ from google.colab import drive
 drive.mount('/content/drive')
 
 import os
-os.makedirs('/content/drive/MyDrive/Burhan-Embeddings', exist_ok=True)
+os.makedirs('/content/drive/MyDrive/Athar-Embeddings', exist_ok=True)
 
 for collection in COLLECTIONS:
     src = f"/content/{collection}_embeddings.npy"
-    dst = f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy"
+    dst = f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy"
     if os.path.exists(src):
         !cp {src} {dst}
         print(f"✅ Saved {collection} embeddings")
@@ -259,19 +256,19 @@ from qdrant_client.models import Distance, VectorParams, PointStruct
 # Connect to Qdrant
 client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
+
 def upload_to_qdrant(collection_name, passages, embeddings):
     """Upload embeddings to Qdrant collection."""
-    
+
     # Create collection if not exists
     try:
         client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
+            collection_name=collection_name, vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
         )
         print(f"✅ Created collection: {collection_name}")
     except Exception as e:
         print(f"⚠️  Collection exists: {e}")
-    
+
     # Prepare points
     points = []
     for i, (passage, embedding) in enumerate(zip(passages, embeddings)):
@@ -287,27 +284,24 @@ def upload_to_qdrant(collection_name, passages, embeddings):
             "category": passage.get("category", ""),
             "collection": collection_name,
         }
-        
-        points.append(PointStruct(
-            id=i,
-            vector=embedding,
-            payload=payload
-        ))
-    
+
+        points.append(PointStruct(id=i, vector=embedding, payload=payload))
+
     # Upload in batches
     batch_size = 1000
     for i in tqdm(range(0, len(points), batch_size), desc="Uploading"):
-        batch = points[i:i + batch_size]
+        batch = points[i : i + batch_size]
         client.upsert(collection_name=collection_name, points=batch)
-    
+
     print(f"✅ Uploaded {len(points):,} vectors to {collection_name}")
+
 
 # Upload all collections
 for collection in COLLECTIONS:
     # Load embeddings
     embeddings = np.load(f"/content/{collection}_embeddings.npy")
     passages = json.load(open(f"/content/{collection}_passages.json"))
-    
+
     upload_to_qdrant(collection, passages, embeddings)
 ```
 
@@ -350,29 +344,26 @@ for collection in COLLECTIONS:
 def test_search(query, collection="fiqh_passages", top_k=5):
     """Test retrieval quality."""
     # Embed query
-    encoded = tokenizer(query, return_tensors='pt').to(device)
+    encoded = tokenizer(query, return_tensors="pt").to(device)
     with torch.no_grad():
         outputs = model(**encoded)
         query_embedding = outputs.last_hidden_state[:, 0, :].cpu().tolist()[0]
-    
+
     # Search Qdrant
-    results = client.search(
-        collection_name=collection,
-        query_vector=query_embedding,
-        limit=top_k
-    )
-    
+    results = client.search(collection_name=collection, query_vector=query_embedding, limit=top_k)
+
     print(f"Query: {query}")
     print(f"Collection: {collection}")
     print(f"Results: {len(results)}\n")
-    
+
     for i, result in enumerate(results):
-        print(f"[{i+1}] Score: {result.score:.3f}")
+        print(f"[{i + 1}] Score: {result.score:.3f}")
         print(f"    Author: {result.payload.get('author')}")
         print(f"    Book: {result.payload.get('title')}")
         print(f"    Chapter: {result.payload.get('chapter')}")
         print(f"    Content: {result.payload['content'][:200]}...")
         print()
+
 
 # Test queries
 test_search("ما حكم صلاة الجماعة؟", "fiqh_passages")
@@ -413,7 +404,7 @@ BATCH_SIZE = 512  # or 256
 ```python
 # Save every 30 minutes
 if time.time() - last_save > 1800:
-    np.save(f"/content/drive/MyDrive/Burhan-Embeddings/{collection}_embeddings.npy", embeddings)
+    np.save(f"/content/drive/MyDrive/Athar-Embeddings/{collection}_embeddings.npy", embeddings)
 ```
 
 ### Issue 3: Qdrant Upload Too Slow
