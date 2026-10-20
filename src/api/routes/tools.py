@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
+from src.api.schemas.common import ErrorResponse
 from src.api.schemas.tools import (
     DuaRequest,
     HijriRequest,
@@ -18,7 +20,6 @@ from src.api.schemas.tools import (
     PrayerTimesRequest,
     ZakatRequest,
 )
-from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.tools.dua_retrieval_tool import DuaRetrievalTool
 from src.tools.hijri_calendar_tool import HijriCalendarTool
@@ -92,7 +93,7 @@ def _get_dua_retrieval_tool() -> DuaRetrievalTool:
     summary="Calculate Zakat",
     responses={500: {"model": ErrorResponse, "description": "Calculation error"}},
 )
-async def calculate_zakat(request: ZakatRequest):
+async def calculate_zakat(request: ZakatRequest) -> Any:
     """
     Calculate Zakat on wealth, gold, silver, and other assets.
 
@@ -150,7 +151,7 @@ async def calculate_zakat(request: ZakatRequest):
     summary="Calculate Inheritance",
     responses={500: {"model": ErrorResponse, "description": "Calculation error"}},
 )
-async def calculate_inheritance(request: InheritanceRequest):
+async def calculate_inheritance(request: InheritanceRequest) -> Any:
     """
     Calculate inheritance distribution based on fara'id rules.
 
@@ -210,7 +211,7 @@ async def calculate_inheritance(request: InheritanceRequest):
     summary="Get Prayer Times",
     responses={500: {"model": ErrorResponse, "description": "Calculation error"}},
 )
-async def get_prayer_times(request: PrayerTimesRequest):
+async def get_prayer_times(request: PrayerTimesRequest) -> Any:
     """
     Calculate prayer times and Qibla direction for a location.
 
@@ -257,7 +258,7 @@ async def get_prayer_times(request: PrayerTimesRequest):
     summary="Convert Hijri Dates",
     responses={500: {"model": ErrorResponse, "description": "Conversion error"}},
 )
-async def convert_hijri(request: HijriRequest):
+async def convert_hijri(request: HijriRequest) -> Any:
     """
     Convert between Gregorian and Hijri dates.
 
@@ -303,7 +304,7 @@ async def convert_hijri(request: HijriRequest):
     summary="Retrieve Duas",
     responses={500: {"model": ErrorResponse, "description": "Retrieval error"}},
 )
-async def get_duas(request: DuaRequest):
+async def get_duas(request: DuaRequest) -> Any:
     """
     Retrieve verified duas and adhkar.
 
@@ -316,7 +317,7 @@ async def get_duas(request: DuaRequest):
     try:
         tool = _get_dua_retrieval_tool()
         result = await tool.execute(
-            query=request.query,
+            query=request.query or "",
             occasion=request.occasion,
             category=request.category,
             limit=request.limit,
