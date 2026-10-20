@@ -1,5 +1,9 @@
 # Burhan v2 Migration - Complete Implementation Status
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## Migration Status: ✅ COMPLETE (90%+)
 
 This document tracks the implementation of the v2 architecture as defined in `Burhan_v2_migration_pack.md`.
