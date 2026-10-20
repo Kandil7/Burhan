@@ -94,9 +94,11 @@ INDEX_CONFIGS: Dict[str, Dict[str, Any]] = {
 
 # ── Data Classes ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class CheckpointState:
     """Tracks extraction progress for resume support."""
+
     completed_indexes: List[str] = field(default_factory=list)
     current_index: Optional[str] = None
     current_batch_offset: int = 0
@@ -122,6 +124,7 @@ class CheckpointState:
 @dataclass
 class ExtractionStats:
     """Statistics for a single index extraction."""
+
     index_name: str
     total_docs: int = 0
     extracted_docs: int = 0
@@ -134,12 +137,15 @@ class ExtractionStats:
 
 # ── Java Extraction ───────────────────────────────────────────────────────
 
+
 def _get_java_classpath() -> str:
     """Build Java classpath with extractor and Lucene JARs."""
     lucene_dir = PROJECT_ROOT / "scripts" / "lucene"
     jar_files = sorted(LUCENE_JARS.glob("*.jar"))
     jar_list = ";".join(str(j) for j in jar_files)
     return f"{lucene_dir};{jar_list}"
+
+
 def compile_java_extractor() -> bool:
     """Compile LuceneExtractorFull.java if needed."""
     class_file = JAVA_EXTRACTOR.with_suffix(".class")
@@ -181,7 +187,8 @@ def run_java_extractor_batch(
     cp = _get_java_classpath()
     cmd = [
         "java",
-        "-cp", cp,
+        "-cp",
+        cp,
         "LuceneExtractorFull",
         str(index_path),
         str(output_path),
@@ -212,15 +219,13 @@ def run_java_extractor_batch(
             logger.info(f"  {line.strip()}")
 
     if result.returncode != 0:
-        logger.error(
-            f"Java extraction failed (rc={result.returncode}): "
-            f"{result.stderr[:500]}"
-        )
+        logger.error(f"Java extraction failed (rc={result.returncode}): {result.stderr[:500]}")
 
     return result.returncode, extracted
 
 
 # ── Document Processing ───────────────────────────────────────────────────
+
 
 def parse_book_id_from_doc(doc: Dict[str, Any]) -> Optional[int]:
     """
@@ -264,7 +269,7 @@ def decode_mojibake(text: str) -> str:
         return text
 
     # Check if already valid Arabic
-    arabic_count = sum(1 for c in text if "\u0600" <= c <= "\u06FF")
+    arabic_count = sum(1 for c in text if "\u0600" <= c <= "\u06ff")
     if arabic_count > len(text) * 0.3:
         return text  # Already good Arabic
 
@@ -272,7 +277,7 @@ def decode_mojibake(text: str) -> str:
     try:
         raw_bytes = text.encode("utf-8")
         decoded = raw_bytes.decode("windows-1256")
-        decoded_arabic = sum(1 for c in decoded if "\u0600" <= c <= "\u06FF")
+        decoded_arabic = sum(1 for c in decoded if "\u0600" <= c <= "\u06ff")
         if decoded_arabic > arabic_count * 1.5:
             return decoded
     except (UnicodeDecodeError, UnicodeEncodeError):
@@ -325,9 +330,7 @@ class BookFileWriter:
         if book_id not in self._handles:
             self._open_file(book_id)
 
-        self._handles[book_id].write(
-            json.dumps(doc, ensure_ascii=False) + "\n"
-        )
+        self._handles[book_id].write(json.dumps(doc, ensure_ascii=False) + "\n")
         # Update access order
         if book_id in self._access_order:
             self._access_order.remove(book_id)
@@ -408,8 +411,7 @@ def process_jsonl_file(
                 # Progress every 10000 docs
                 if line_num % 10000 == 0:
                     logger.info(
-                        f"  {progress_label}: {line_num:,} lines read, "
-                        f"{docs_written:,} written, {error_count} errors"
+                        f"  {progress_label}: {line_num:,} lines read, {docs_written:,} written, {error_count} errors"
                     )
     finally:
         writer.close_all()
@@ -418,6 +420,7 @@ def process_jsonl_file(
 
 
 # ── Index Extraction ──────────────────────────────────────────────────────
+
 
 def extract_single_index(
     index_name: str,
@@ -479,9 +482,7 @@ def extract_single_index(
         )
 
         # Run Java extractor
-        rc, extracted = run_java_extractor_batch(
-            index_path, raw_file, docs_to_extract, offset
-        )
+        rc, extracted = run_java_extractor_batch(index_path, raw_file, docs_to_extract, offset)
 
         if rc != 0 or extracted == 0:
             logger.error(f"Batch {batch_num} failed or empty, stopping")
@@ -491,10 +492,7 @@ def extract_single_index(
 
         # Process JSONL into per-book files
         logger.info(f"Processing {raw_file.name} ...")
-        written, errors, books = process_jsonl_file(
-            raw_file, output_dir,
-            progress_label=f"Processing {index_name}"
-        )
+        written, errors, books = process_jsonl_file(raw_file, output_dir, progress_label=f"Processing {index_name}")
         stats.extracted_docs += written
         stats.error_docs += errors
         stats.books_found = max(stats.books_found, len(books))
@@ -506,10 +504,7 @@ def extract_single_index(
         checkpoint.total_docs_extracted += extracted
         checkpoint.save(CHECKPOINT_FILE)
 
-        logger.info(
-            f"  Batch {batch_num} complete: {extracted:,} extracted, "
-            f"{written:,} written, {len(books)} books"
-        )
+        logger.info(f"  Batch {batch_num} complete: {extracted:,} extracted, {written:,} written, {len(books)} books")
 
     stats.duration_seconds = time.time() - start_time
 
@@ -543,6 +538,7 @@ def extract_single_index(
 
 # ── Reporting ─────────────────────────────────────────────────────────────
 
+
 def write_report(all_stats: List[ExtractionStats]) -> Path:
     """Write extraction statistics report."""
     report = {
@@ -569,18 +565,12 @@ def write_report(all_stats: List[ExtractionStats]) -> Path:
         }
         report["totals"]["total_docs_extracted"] += s.extracted_docs
         report["totals"]["total_errors"] += s.error_docs
-        report["totals"]["total_books_found"] = max(
-            report["totals"]["total_books_found"], s.books_found
-        )
+        report["totals"]["total_books_found"] = max(report["totals"]["total_books_found"], s.books_found)
         report["totals"]["total_output_size_bytes"] += s.output_size_bytes
         report["totals"]["total_duration_seconds"] += s.duration_seconds
 
-    report["totals"]["total_output_size"] = format_size(
-        report["totals"]["total_output_size_bytes"]
-    )
-    report["totals"]["total_duration"] = format_duration(
-        report["totals"]["total_duration_seconds"]
-    )
+    report["totals"]["total_output_size"] = format_size(report["totals"]["total_output_size_bytes"])
+    report["totals"]["total_duration"] = format_duration(report["totals"]["total_duration_seconds"])
 
     report_path = OUTPUT_DIR / "extraction_report.json"
     with open(report_path, "w", encoding="utf-8") as f:
@@ -602,7 +592,7 @@ def print_summary(all_stats: List[ExtractionStats]) -> None:
     total_duration = 0.0
 
     for s in all_stats:
-        print(f"\n{ s.index_name.upper()}:")
+        print(f"\n{s.index_name.upper()}:")
         print(f"   Documents extracted: {s.extracted_docs:,}")
         print(f"   Errors:              {s.error_docs:,}")
         print(f"   Unique books:        {s.books_found}")
@@ -626,13 +616,12 @@ def print_summary(all_stats: List[ExtractionStats]) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────
 
+
 def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Extract ALL Lucene index content for Shamela books"
-    )
+    parser = argparse.ArgumentParser(description="Extract ALL Lucene index content for Shamela books")
     parser.add_argument(
         "--indexes",
         nargs="+",
@@ -672,9 +661,7 @@ def main():
     # Load checkpoint
     checkpoint = CheckpointState.load(CHECKPOINT_FILE)
     if args.resume:
-        logger.info(
-            f"Resuming: {checkpoint.total_docs_extracted:,} docs already extracted"
-        )
+        logger.info(f"Resuming: {checkpoint.total_docs_extracted:,} docs already extracted")
         logger.info(f"Completed indexes: {checkpoint.completed_indexes}")
 
     # Compile Java extractor
@@ -691,23 +678,22 @@ def main():
             # Still add stats from checkpoint
             if idx_name in checkpoint.index_stats:
                 cs = checkpoint.index_stats[idx_name]
-                all_stats.append(ExtractionStats(
-                    index_name=idx_name,
-                    total_docs=cs.get("total_docs", 0),
-                    extracted_docs=cs.get("extracted_docs", 0),
-                    error_docs=cs.get("error_docs", 0),
-                    books_found=cs.get("books_found", 0),
-                    output_files=cs.get("output_files", 0),
-                    output_size_bytes=cs.get("output_size_bytes", 0),
-                    duration_seconds=cs.get("duration_seconds", 0.0),
-                ))
+                all_stats.append(
+                    ExtractionStats(
+                        index_name=idx_name,
+                        total_docs=cs.get("total_docs", 0),
+                        extracted_docs=cs.get("extracted_docs", 0),
+                        error_docs=cs.get("error_docs", 0),
+                        books_found=cs.get("books_found", 0),
+                        output_files=cs.get("output_files", 0),
+                        output_size_bytes=cs.get("output_size_bytes", 0),
+                        duration_seconds=cs.get("duration_seconds", 0.0),
+                    )
+                )
             continue
 
         idx_config = INDEX_CONFIGS[idx_name]
-        stats = extract_single_index(
-            idx_name, idx_config, checkpoint,
-            resume=args.resume, dry_run=args.dry_run
-        )
+        stats = extract_single_index(idx_name, idx_config, checkpoint, resume=args.resume, dry_run=args.dry_run)
         all_stats.append(stats)
 
     # Write report
