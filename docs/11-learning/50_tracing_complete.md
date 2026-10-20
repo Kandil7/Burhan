@@ -11,22 +11,25 @@
 ```python
 # src/application/services/trace_service.py
 
+
 class TraceService:
     """خدمة التتبع."""
-    
+
     def __init__(self, storage):
         self._storage = storage
-    
+
     async def create_trace(self, query: str) -> str:
         """إنشاء تتبع."""
         trace_id = generate_trace_id()
-        await self._storage.save({
-            "trace_id": trace_id,
-            "query": query,
-            "steps": [],
-        })
+        await self._storage.save(
+            {
+                "trace_id": trace_id,
+                "query": query,
+                "steps": [],
+            }
+        )
         return trace_id
-    
+
     async def add_step(self, trace_id: str, step: dict) -> None:
         """إضافة خطوة."""
         trace = await self._storage.get(trace_id)
@@ -43,9 +46,10 @@ class TraceService:
 ```python
 # src/verification/trace.py
 
+
 class VerificationTrace(BaseModel):
     """تتبع التحقق."""
-    
+
     trace_id: str
     steps: list[VerificationStep]
     total_duration_ms: int
@@ -53,7 +57,7 @@ class VerificationTrace(BaseModel):
 
 class VerificationStep(BaseModel):
     """خطوة التحقق."""
-    
+
     name: str
     status: str  # passed, failed, skipped
     duration_ms: int
