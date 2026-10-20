@@ -1,5 +1,9 @@
 # Burhan v2 Migration - Final Verification Report
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## Verification Phases Results
 
 ### Phase 1: Build/Syntax ✅
