@@ -6,8 +6,7 @@ Request/response models for tool-based operations (zakat, inheritance, prayer ti
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
-
+from pydantic import BaseModel, Field
 
 # ============================================================================
 # Zakat Calculator
