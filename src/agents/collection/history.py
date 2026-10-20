@@ -6,6 +6,8 @@ Uses YAML config from config/agents/history.yaml
 
 from __future__ import annotations
 
+from typing import Any
+
 from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
@@ -47,9 +49,9 @@ class HistoryCollectionAgent(CollectionAgent):
     def __init__(
         self,
         config: CollectionAgentConfig | None = None,
-        embedding_model=None,
-        vector_store=None,
-        llm_client=None,
+        embedding_model: Any = None,
+        vector_store: Any = None,
+        llm_client: Any = None,
     ) -> None:
         if config is None:
             from src.verification.suite_builder import build_verification_suite_for
@@ -106,8 +108,15 @@ class HistoryCollectionAgent(CollectionAgent):
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
-    async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        return VerificationReport.from_passages(passages=candidates, is_verified=True, confidence=0.8)
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        """Verify evidence before generation and the answer after it."""
+        return self._verify(query, candidates, answer=answer, stage=stage)
 
     async def generate_answer(self, query: str, verified_passages: list[dict], language: str) -> str:
         if not verified_passages:
