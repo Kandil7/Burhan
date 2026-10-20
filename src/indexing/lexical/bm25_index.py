@@ -77,7 +77,7 @@ class BM25Index:
 
         self.documents = documents
         self.corpus_size = len(documents)
-        
+
         tokenized_corpus = [self._normalize(doc.get(text_field, "")) for doc in documents]
         self.doc_lengths = [len(doc) for doc in tokenized_corpus]
         self.avgdl = sum(self.doc_lengths) / self.corpus_size if self.corpus_size > 0 else 0
@@ -120,7 +120,7 @@ class BM25Index:
         for term in q_tokens:
             if term not in self.idf:
                 continue
-            
+
             idf = self.idf[term]
             # In a production environment, term frequencies should be pre-calculated
             for i, doc in enumerate(self.documents):
@@ -128,14 +128,14 @@ class BM25Index:
                 # This is inefficient for large corpora; use inverted index in production
                 content = doc.get("content", "")
                 tf = self._normalize(content).count(term)
-                
+
                 if tf > 0:
                     denom = tf + self.k1 * (1 - self.b + self.b * self.doc_lengths[i] / self.avgdl)
                     scores[i] += idf * (tf * (self.k1 + 1)) / denom
 
         # Get top-k indices with non-zero scores
         top_indices = np.argsort(scores)[::-1][:top_k]
-        
+
         results = []
         for idx in top_indices:
             if scores[idx] > 0:
