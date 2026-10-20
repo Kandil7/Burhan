@@ -71,7 +71,7 @@ All 41 Shamela categories with:
 # Extract complete book list with metadata
 import sqlite3
 
-conn = sqlite3.connect('datasets/system_book_datasets/master.db')
+conn = sqlite3.connect("datasets/system_book_datasets/master.db")
 
 # Get all books with category and author
 query = """
@@ -96,7 +96,7 @@ ORDER BY b.book_id
 
 # Save to JSON
 books_df = pd.read_sql_query(query, conn)
-books_df.to_json('data/processed/master_catalog.json', orient='records')
+books_df.to_json("data/processed/master_catalog.json", orient="records")
 ```
 
 **Result:** Complete metadata for all 8,425 books in one JSON file
@@ -112,15 +112,11 @@ books_df.to_json('data/processed/master_catalog.json', orient='records')
 
 # Output structure:
 {
-  "book_id": 622,
-  "pages": [
-    {
-      "page_number": 1,
-      "content": "full Arabic text of page 1",
-      "titles": ["chapter title", "section title"]
-    },
-    ...
-  ]
+    "book_id": 622,
+    "pages": [
+        {"page_number": 1, "content": "full Arabic text of page 1", "titles": ["chapter title", "section title"]},
+        ...,
+    ],
 }
 ```
 
@@ -157,14 +153,14 @@ FROM service
 for book in master_catalog:
     # 1. Get book structure from book/{book_id}.db
     titles = get_title_hierarchy(book.book_id)  # parent-child relationships
-    
+
     # 2. Get page content from Lucene
     pages = get_lucene_pages(book.book_id)
-    
+
     # 3. Get cross-references
     hadith_refs = get_hadith_refs(book.book_id)
     tafsir_refs = get_tafsir_refs(book.book_id)
-    
+
     # 4. Build chunks respecting title boundaries
     chunks = build_chunks(
         titles=titles,
@@ -177,10 +173,10 @@ for book in master_catalog:
             "author": book.author_name,
             "author_death": book.author_death,
             "category": book.category_name,
-            "collection": map_to_collection(book.category_name)
-        }
+            "collection": map_to_collection(book.category_name),
+        },
     )
-    
+
     # 5. Save to collection JSONL
     save_chunks(chunks, f"data/processed/{collection}.jsonl")
 ```
