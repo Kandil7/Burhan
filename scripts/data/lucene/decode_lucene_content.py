@@ -59,9 +59,11 @@ ARABIC_PRESENTATION_B = (0xFE70, 0xFEFF)
 
 # -- Data Classes --
 
+
 @dataclass
 class DecodeResult:
     """Result of decoding a single document."""
+
     success: bool
     original_arabic_chars: int = 0
     decoded_arabic_chars: int = 0
@@ -74,6 +76,7 @@ class DecodeResult:
 @dataclass
 class FileDecodeStats:
     """Statistics for decoding a file."""
+
     file_path: str
     total_docs: int = 0
     decoded_docs: int = 0
@@ -87,6 +90,7 @@ class FileDecodeStats:
 
 
 # -- Decoding Functions --
+
 
 def is_arabic_char(ch: str) -> bool:
     """Check if a character is Arabic."""
@@ -228,6 +232,7 @@ def decode_document(doc: Dict[str, Any]) -> Tuple[Dict[str, Any], DecodeResult]:
 
 # -- File Processing --
 
+
 def process_jsonl_file(
     input_path: Path,
     output_path: Path,
@@ -275,27 +280,19 @@ def process_jsonl_file(
                     stats.total_arabic_chars += result.total_arabic_chars
 
                     if output_fh and not validate_only:
-                        output_fh.write(
-                            json.dumps(cleaned, ensure_ascii=False) + "\n"
-                        )
+                        output_fh.write(json.dumps(cleaned, ensure_ascii=False) + "\n")
 
                 except json.JSONDecodeError as e:
                     stats.error_docs += 1
-                    stats.encoding_issues.append(
-                        f"Line {line_num}: JSON parse error: {e}"
-                    )
+                    stats.encoding_issues.append(f"Line {line_num}: JSON parse error: {e}")
                 except Exception as e:
                     stats.error_docs += 1
-                    stats.encoding_issues.append(
-                        f"Line {line_num}: {type(e).__name__}: {e}"
-                    )
+                    stats.encoding_issues.append(f"Line {line_num}: {type(e).__name__}: {e}")
 
                 # Progress
                 if line_num % 10000 == 0:
                     logger.info(
-                        f"  {line_num:,} docs processed, "
-                        f"{stats.mojibake_fixed} fixed, "
-                        f"{stats.error_docs} errors"
+                        f"  {line_num:,} docs processed, {stats.mojibake_fixed} fixed, {stats.error_docs} errors"
                     )
 
     finally:
@@ -343,6 +340,7 @@ def process_directory(
 
 # -- Validation & Diagnostics --
 
+
 def validate_encoding(file_path: Path) -> Dict[str, Any]:
     """
     Validate encoding of a file.
@@ -375,9 +373,7 @@ def validate_encoding(file_path: Path) -> Dict[str, Any]:
     for pattern in mojibake_patterns:
         if pattern in content:
             report["mojibake_detected"] = True
-            report["encoding_issues"].append(
-                f"Mojibake pattern detected: {repr(pattern)}"
-            )
+            report["encoding_issues"].append(f"Mojibake pattern detected: {repr(pattern)}")
 
     total_chars = len(content)
     arabic_chars = count_arabic_chars(content)
@@ -387,14 +383,12 @@ def validate_encoding(file_path: Path) -> Dict[str, Any]:
     report["control_chars"] = control_chars
 
     if control_chars > 100:
-        report["encoding_issues"].append(
-            f"High control character count: {control_chars}"
-        )
+        report["encoding_issues"].append(f"High control character count: {control_chars}")
 
     if arabic_chars > 0:
         for i, ch in enumerate(content):
             if is_arabic_char(ch):
-                report["sample_texts"].append(content[i:i+100])
+                report["sample_texts"].append(content[i : i + 100])
                 break
 
     return report
@@ -447,6 +441,7 @@ def diagnose_file(file_path: Path) -> None:
 
 # -- Summary --
 
+
 def print_decode_summary(all_stats: List[FileDecodeStats]) -> None:
     """Print summary of decode operation."""
     total_docs = sum(s.total_docs for s in all_stats)
@@ -478,13 +473,12 @@ def print_decode_summary(all_stats: List[FileDecodeStats]) -> None:
 
 # -- Main --
 
+
 def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Decode and clean Lucene-extracted content"
-    )
+    parser = argparse.ArgumentParser(description="Decode and clean Lucene-extracted content")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -563,7 +557,8 @@ def main():
             output_path = input_path.parent / f"{input_path.name}_cleaned"
         logger.info(f"Processing directory: {input_path} -> {output_path}")
         all_stats = process_directory(
-            input_path, output_path,
+            input_path,
+            output_path,
             pattern=args.pattern,
             recursive=args.recursive,
         )
