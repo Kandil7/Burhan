@@ -1,9 +1,9 @@
 # Formatting Policy Module
 """Policies for controlling response formatting."""
 
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class OutputFormat(str, Enum):
@@ -39,13 +39,13 @@ class FormattingPolicyConfig:
 class FormattingPolicy:
     """Policy for controlling response formatting."""
 
-    def __init__(self, config: Optional[FormattingPolicyConfig] = None):
+    def __init__(self, config: FormattingPolicyConfig | None = None):
         self.config = config or FormattingPolicyConfig()
 
     def format_response(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Format response according to policy."""
         if self.config.output_format == OutputFormat.MARKDOWN:
@@ -59,7 +59,7 @@ class FormattingPolicy:
     def _format_markdown(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]],
+        metadata: dict[str, Any] | None,
     ) -> str:
         """Format as Markdown."""
         # Add title if provided
@@ -85,7 +85,7 @@ class FormattingPolicy:
     def _format_html(
         self,
         content: str,
-        metadata: Optional[Dict[str, Any]],
+        metadata: dict[str, Any] | None,
     ) -> str:
         """Format as HTML."""
         # Basic markdown to HTML conversion
