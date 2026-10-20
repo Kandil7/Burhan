@@ -1,5 +1,10 @@
 # 🕌 Burhan - Complete Notebooks Guide
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/data/upload_mini_dataset_v2.py`, `scripts/data/upload_remaining.py`, and `scripts/backup_embeddings_and_qdrant.py`.
+
 **Last Updated:** April 15, 2026  
 **Status:** Phase 8 Complete - Ready for GPU Embedding  
 **Phase:** Hybrid Intent Classifier Active
@@ -280,6 +285,7 @@ BATCH_SIZE = 8  # Change from 32 to 8
 # Get token from https://huggingface.co/settings/tokens
 # In Colab, use:
 from huggingface_hub import login
+
 login(token="hf_YOUR_TOKEN_HERE")
 ```
 
