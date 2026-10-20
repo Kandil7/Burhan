@@ -42,6 +42,7 @@ logger = setup_script_logger("quick-test")
 @dataclass
 class TestResult:
     """Result of a single test."""
+
     name: str
     passed: bool
     status_code: int = 0
@@ -53,6 +54,7 @@ class TestResult:
 @dataclass
 class TestSuite:
     """Collection of test results."""
+
     results: list[TestResult] = field(default_factory=list)
     start_time: float = 0
 
@@ -101,9 +103,7 @@ def make_request(
     try:
         if data:
             body = json.dumps(data).encode("utf-8")
-            req = urllib.request.Request(
-                url, data=body, headers={"Content-Type": "application/json"}, method=method
-            )
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method=method)
         else:
             req = urllib.request.Request(url, method=method)
 
@@ -151,8 +151,7 @@ def test_root(base_url: str) -> TestResult:
 def test_query_greeting(base_url: str) -> TestResult:
     """Test query endpoint with greeting."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/query",
-        {"query": "السلام عليكم", "language": "ar"}
+        "POST", f"{base_url}/api/v1/query", {"query": "السلام عليكم", "language": "ar"}
     )
     detail = ""
     passed = success and status == 200
@@ -164,7 +163,8 @@ def test_query_greeting(base_url: str) -> TestResult:
 def test_query_fiqh(base_url: str) -> TestResult:
     """Test query endpoint with fiqh question."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/query",
+        "POST",
+        f"{base_url}/api/v1/query",
         {"query": "ما حكم صلاة الجمعة؟", "language": "ar"},
         timeout=30,
     )
@@ -178,8 +178,7 @@ def test_query_fiqh(base_url: str) -> TestResult:
 def test_zakat(base_url: str) -> TestResult:
     """Test zakat calculator."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/tools/zakat",
-        {"assets": {"cash": 50000, "gold_grams": 100}, "debts": 5000}
+        "POST", f"{base_url}/api/v1/tools/zakat", {"assets": {"cash": 50000, "gold_grams": 100}, "debts": 5000}
     )
     detail = ""
     passed = success and status == 200
@@ -191,7 +190,8 @@ def test_zakat(base_url: str) -> TestResult:
 def test_prayer_times(base_url: str) -> TestResult:
     """Test prayer times tool."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/tools/prayer-times",
+        "POST",
+        f"{base_url}/api/v1/tools/prayer-times",
         {"lat": 25.2854, "lng": 51.5310, "method": "egyptian"},
         timeout=15,
     )
@@ -206,8 +206,7 @@ def test_prayer_times(base_url: str) -> TestResult:
 def test_hijri(base_url: str) -> TestResult:
     """Test Hijri calendar tool."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/tools/hijri",
-        {"gregorian_date": "2026-04-05"}
+        "POST", f"{base_url}/api/v1/tools/hijri", {"gregorian_date": "2026-04-05"}
     )
     detail = ""
     passed = success and status == 200
@@ -220,8 +219,7 @@ def test_hijri(base_url: str) -> TestResult:
 def test_duas(base_url: str) -> TestResult:
     """Test duas retrieval tool."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/tools/duas",
-        {"occasion": "morning", "limit": 2}
+        "POST", f"{base_url}/api/v1/tools/duas", {"occasion": "morning", "limit": 2}
     )
     detail = ""
     passed = success and status == 200
@@ -233,8 +231,9 @@ def test_duas(base_url: str) -> TestResult:
 def test_inheritance(base_url: str) -> TestResult:
     """Test inheritance calculator."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/tools/inheritance",
-        {"estate_value": 100000, "heirs": {"husband": True, "father": True, "mother": True, "sons": 1, "daughters": 1}}
+        "POST",
+        f"{base_url}/api/v1/tools/inheritance",
+        {"estate_value": 100000, "heirs": {"husband": True, "father": True, "mother": True, "sons": 1, "daughters": 1}},
     )
     detail = ""
     passed = success and status == 200
@@ -266,8 +265,7 @@ def test_quran_ayah(base_url: str) -> TestResult:
 def test_quran_search(base_url: str) -> TestResult:
     """Test Quran search."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/quran/search",
-        {"query": "رحمة", "limit": 3}
+        "POST", f"{base_url}/api/v1/quran/search", {"query": "رحمة", "limit": 3}
     )
     detail = ""
     passed = success and status == 200
@@ -279,7 +277,8 @@ def test_quran_search(base_url: str) -> TestResult:
 def test_rag_fiqh(base_url: str) -> TestResult:
     """Test RAG fiqh endpoint."""
     success, status, data, elapsed = make_request(
-        "POST", f"{base_url}/api/v1/rag/fiqh",
+        "POST",
+        f"{base_url}/api/v1/rag/fiqh",
         {"query": "صلاة الجمعة", "language": "ar"},
         timeout=30,
     )
