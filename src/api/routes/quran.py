@@ -13,13 +13,14 @@ Provides endpoints for:
 """
 
 import asyncio
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.config.logging_config import get_logger
 from src.data.models.quran import Ayah, Surah
-from src.infrastructure.database import get_sync_session
+from src.infrastructure.database import get_db, get_sync_session
 from src.quran.nl2sql import NL2SQLEngine, NL2SQLQueryError
 from src.quran.quotation_validator import QuotationValidator
 from src.quran.tafsir_retrieval import TafsirNotFoundError, TafsirRetrievalEngine
@@ -108,22 +109,22 @@ class TafsirResponse(BaseModel):
 # ==========================================
 
 
-def get_verse_engine(db_session):
+def get_verse_engine(db_session: Any) -> Any:
     """Get verse retrieval engine."""
     return VerseRetrievalEngine(db_session)
 
 
-def get_nl2sql_engine(db_session):
+def get_nl2sql_engine(db_session: Any) -> Any:
     """Get NL2SQL engine."""
     return NL2SQLEngine(db_session)
 
 
-def get_quotation_validator(db_session):
+def get_quotation_validator(db_session: Any) -> Any:
     """Get quotation validator."""
     return QuotationValidator(db_session)
 
 
-def get_tafsir_engine(db_session):
+def get_tafsir_engine(db_session: Any) -> Any:
     """Get tafsir engine."""
     return TafsirRetrievalEngine(db_session)
 
@@ -134,7 +135,7 @@ def get_tafsir_engine(db_session):
 
 
 @router.get("/surahs", response_model=list[SurahResponse])
-async def list_surahs():
+async def list_surahs() -> Any:
     """
     List all 114 surahs.
 
@@ -143,27 +144,26 @@ async def list_surahs():
     Note: Uses thread pool to avoid blocking event loop.
     """
 
-    def _query_surahs():
+    def _query_surahs() -> list[dict[str, Any]]:
         with get_sync_session() as session:
-            return session.query(Surah).order_by(Surah.number).all()
+            return [
+                {
+                    "number": s.number,
+                    "name_ar": s.name_ar,
+                    "name_en": s.name_en,
+                    "verse_count": s.verse_count,
+                    "revelation_type": s.revelation_type,
+                }
+                for s in session.query(Surah).order_by(Surah.number).all()
+            ]
 
     # Run sync query in thread pool (Python 3.9+ asyncio.to_thread)
-    surahs = await asyncio.to_thread(_query_surahs)
-
-    return [
-        SurahResponse(
-            number=s.number,
-            name_ar=s.name_ar,
-            name_en=s.name_en,
-            verse_count=s.verse_count,
-            revelation_type=s.revelation_type,
-        )
-        for s in surahs
-    ]
+    rows = await asyncio.to_thread(_query_surahs)
+    return [SurahResponse(**row) for row in rows]
 
 
 @router.get("/surahs/{surah_number}", response_model=dict)
-async def get_surah_details(surah_number: int):
+async def get_surah_details(surah_number: int) -> Any:
     """
     Get details for a specific surah.
 
@@ -172,32 +172,30 @@ async def get_surah_details(surah_number: int):
     Note: Uses thread pool to avoid blocking event loop.
     """
 
-    def _query_surah():
+    def _query_surah() -> Any:
         with get_sync_session() as session:
             surah = session.query(Surah).filter(Surah.number == surah_number).first()
             if not surah:
                 return None
             ayahs = session.query(Ayah).filter(Ayah.surah_id == surah.id).order_by(Ayah.number_in_surah).all()
-            return {"surah": surah, "ayahs": ayahs}
+            return {
+                "number": surah.number,
+                "name_ar": surah.name_ar,
+                "name_en": surah.name_en,
+                "verse_count": surah.verse_count,
+                "revelation_type": surah.revelation_type,
+                "ayahs": [
+                    {"number": a.number_in_surah, "text_uthmani": a.text_uthmani, "juz": a.juz, "page": a.page}
+                    for a in ayahs
+                ],
+            }
 
     result = await asyncio.to_thread(_query_surah)
 
-    if not result or result["surah"] is None:
+    if not result:
         raise HTTPException(status_code=404, detail=f"Surah {surah_number} not found")
 
-    surah = result["surah"]
-    ayahs = result["ayahs"]
-
-    return {
-        "number": surah.number,
-        "name_ar": surah.name_ar,
-        "name_en": surah.name_en,
-        "verse_count": surah.verse_count,
-        "revelation_type": surah.revelation_type,
-        "ayahs": [
-            {"number": a.number_in_surah, "text_uthmani": a.text_uthmani, "juz": a.juz, "page": a.page} for a in ayahs
-        ],
-    }
+    return result
 
 
 # ==========================================
@@ -206,7 +204,7 @@ async def get_surah_details(surah_number: int):
 
 
 @router.get("/ayah/{surah}:{ayah}", response_model=AyahResponse)
-async def get_ayah(surah: int, ayah: int, db_session=Depends(get_sync_session)):
+async def get_ayah(surah: int, ayah: int, db_session: Any = Depends(get_db)) -> Any:
     """
     Get a specific ayah by surah:ayah reference.
 
@@ -234,7 +232,7 @@ class SearchRequest(BaseModel):
 
 
 @router.post("/search", response_model=VerseSearchResponse)
-async def search_verses(request: SearchRequest, db_session=Depends(get_sync_session)):  # noqa: B008
+async def search_verses(request: SearchRequest, db_session: Any = Depends(get_db)) -> Any:  # noqa: B008
     """
     Search Quran verses by text.
 
@@ -252,7 +250,7 @@ async def search_verses(request: SearchRequest, db_session=Depends(get_sync_sess
 
 
 @router.post("/validate", response_model=QuotationValidationResponse)
-async def validate_quotation(request: QuotationValidationRequest, db_session=Depends(get_sync_session)):  # noqa: B008
+async def validate_quotation(request: QuotationValidationRequest, db_session: Any = Depends(get_db)) -> Any:  # noqa: B008
     """
     Validate if text is from the Quran.
 
@@ -270,7 +268,7 @@ async def validate_quotation(request: QuotationValidationRequest, db_session=Dep
 
 
 @router.post("/analytics", response_model=NL2SQLResponse)
-async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_session)):  # noqa: B008
+async def quran_analytics(request: NL2SQLRequest, db_session: Any = Depends(get_db)) -> Any:  # noqa: B008
     """
     Execute analytics queries on Quran data.
 
@@ -296,7 +294,7 @@ async def quran_analytics(request: NL2SQLRequest, db_session=Depends(get_sync_se
 
 
 @router.get("/tafsir/{surah}:{ayah}", response_model=TafsirResponse)
-async def get_tafsir(surah: int, ayah: int, source: str | None = None, db_session=Depends(get_sync_session)):  # noqa: B008
+async def get_tafsir(surah: int, ayah: int, source: str | None = None, db_session: Any = Depends(get_db)) -> Any:  # noqa: B008
     """
     Get tafsir (commentary) for a specific ayah.
 
@@ -312,7 +310,7 @@ async def get_tafsir(surah: int, ayah: int, source: str | None = None, db_sessio
 
 
 @router.get("/tafsir-sources", response_model=list[dict])
-async def list_tafsir_sources(db_session=Depends(get_sync_session)):  # noqa: B008
+async def list_tafsir_sources(db_session: Any = Depends(get_db)) -> Any:  # noqa: B008
     """
     List all available tafsir sources.
 
