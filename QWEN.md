@@ -100,24 +100,26 @@
 
 ### Intent Priority System (Phase 8)
 
-| Intent | Priority | Agent | Retrieval |
-|--------|----------|-------|-----------|
-| TAFSIR | 10 | general_islamic_agent | ✅ |
-| QURAN | 9 | quran:* (+ sub-intent) | depends |
+Source of truth: `INTENT_PRIORITY` and `INTENT_ROUTING` in `src/domain/intents.py`.
+
+| Intent | Priority | Agent / Tool | Retrieval |
+|--------|----------|--------------|-----------|
+| TAFSIR | 10 | tafsir_agent | ✅ |
+| QURAN | 9 | tafsir_agent (sub-intent routes `quran:*`) | ✅ |
 | HADITH | 9 | hadith_agent | ✅ |
+| GREETING | 9 | chatbot_agent | ❌ |
 | SEERAH | 8 | seerah_agent | ✅ |
-| ISLAMIC_HISTORY | 7 | islamic_history_agent | ✅ |
-| ARABIC_LANGUAGE | 6 | arabic_language_agent | ✅ |
+| AQEEDAH | 8 | aqeedah_agent | ✅ |
+| USUL_FIQH | 8 | usul_fiqh_agent | ✅ |
+| ISLAMIC_TAZKIYAH | 8 | tazkiyah_agent | ✅ |
+| ARABIC_LANGUAGE | 7 | language_agent | ✅ |
+| ISLAMIC_HISTORY | 6 | history_agent | ✅ |
+| PRAYER_TIMES | 6 | prayer_tool | ❌ |
+| HIJRI_CALENDAR | 6 | hijri_tool | ❌ |
+| ZAKAT | 6 | zakat_tool | ❌ |
+| INHERITANCE | 6 | inheritance_tool | ❌ |
+| DUAS | 6 | dua_tool | ❌ |
 | FIQH | 5 | fiqh_agent | ✅ |
-| AQEDAH | 5 | aqeedah_agent | ✅ |
-| USUL_FIQH | 4 | fiqh_usul_agent | ✅ |
-| SPIRITUALITY | 3 | general_islamic_agent | ✅ |
-| ZAKAT | 2 | Calculator (no RAG) | ❌ |
-| INHERITANCE | 2 | Calculator (no RAG) | ❌ |
-| GREETING | 2 | chatbot_agent | ❌ |
-| DUA | 2 | Calculator (no RAG) | ❌ |
-| HIJRI_CALENDAR | 2 | Calculator (no RAG) | ❌ |
-| PRAYER_TIMES | 2 | Calculator (no RAG) | ❌ |
 | ISLAMIC_KNOWLEDGE | 1 | general_islamic_agent | ✅ |
 
 ---
@@ -191,22 +193,26 @@ K:\business\projects_v2\Burhan\
 │   │
 │   ├── api/                      # FastAPI application
 │   │   ├── main.py               # App factory with middleware
-│   │   ├── routes/               # API routes (5 modules)
-│   │   │   ├── classification.py # NEW: /classify endpoint (Phase 8)
-│   │   │   ├── query.py          # POST /api/v1/query (main endpoint)
-│   │   │   ├── health.py         # GET /health, /ready
-│   │   │   ├── tools.py          # 5 tool endpoints (zakat, etc.)
-│   │   │   ├── quran.py          # 6 Quran endpoints
-│   │   │   └── rag.py            # 3 RAG endpoints
+│   │   ├── routes/               # API routes
+│   │   │   ├── ask.py            # POST /api/v1/ask (main QA endpoint)
+│   │   │   ├── classify.py       # POST /api/v1/classify
+│   │   │   ├── fiqh.py           # Fiqh routes
+│   │   │   ├── quran.py          # Quran routes
+│   │   │   ├── search.py         # Retrieval/search routes
+│   │   │   ├── tools.py          # Deterministic tool endpoints
+│   │   │   └── health.py         # GET /health, /ready
 │   │   ├── schemas/              # Pydantic models (request/response)
-│   │   │   └── classification.py # NEW: Classification schemas
-│   │   └── middleware/           # Error handler, CORS
+│   │   └── middleware/           # error_handler, request_id, request_logging, security
 │   │
-│   ├── application/               # NEW: Application layer (Phase 8)
+│   ├── application/               # Application layer
+│   │   ├── classifier_factory.py # build_classifier()
+│   │   ├── container.py          # Dependency container
 │   │   ├── interfaces.py         # IntentClassifier, Router protocols
 │   │   ├── models.py             # RoutingDecision
-│   │   ├── hybrid_classifier.py  # HybridIntentClassifier
-│   │   └── router.py             # RouterAgent
+│   │   ├── router/               # RouterAgent, hybrid/embedding classifiers, orchestration
+│   │   ├── routing/              # intent_router, planner, executor
+│   │   ├── services/             # ask, citation, classify, search, tool, trace services
+│   │   └── use_cases/            # answer_query, run_retrieval, run_tool, build_trace, classify_*
 │   │
 │   ├── domain/                    # NEW: Domain definitions
 │   │   ├── intents.py           # Intent, QuranSubIntent, routing
@@ -214,23 +220,17 @@ K:\business\projects_v2\Burhan\
 │   │
 │   ├── core/                     # Core logic
 │   │   ├── router.py            # Legacy router (backward compat)
-│   │   ├── orchestrator.py      # Response Orchestrator (agent routing)
 │   │   ├── citation.py          # Citation Normalizer
+│   │   ├── exceptions.py        # BurhanError hierarchy
 │   │   └── registry.py          # Agent Registry
 │   │
-│   ├── agents/                   # 13 agent implementations
-│   │   ├── base.py              # BaseAgent, AgentInput, AgentOutput
-│   │   ├── fiqh_agent.py        # Fiqh RAG Agent (retrieve + generate)
-│   │   ├── hadith_agent.py     # Hadith RAG Agent
-│   │   ├── sanadset_hadith_agent.py  # Sanadset 650K Hadith Agent
-│   │   ├── tafsir_agent.py     # Quran Tafsir Agent
-│   │   ├── aqeedah_agent.py    # Islamic Creed Agent
-│   │   ├── seerah_agent.py     # Prophet Biography Agent
-│   │   ├── islamic_history_agent.py  # Islamic History Agent
-│   │   ├── fiqh_usul_agent.py  # Jurisprudence Principles Agent
-│   │   ├── arabic_language_agent.py  # Arabic Language Agent
-│   │   ├── general_islamic_agent.py  # General Knowledge Agent
-│   │   └── chatbot_agent.py    # Greeting/Small Talk Agent
+│   ├── agents/                   # Base agent + canonical v2 collection agents
+│   │   ├── base.py              # BaseAgent, AgentInput, AgentOutput, Citation
+│   │   ├── chatbot_agent.py    # Greeting/Small Talk Agent
+│   │   └── collection/          # Config-backed v2 CollectionAgents
+│   │       ├── base.py          # CollectionAgent, CollectionAgentConfig
+│   │       ├── fiqh.py, usul_fiqh.py, hadith.py, tafsir.py, aqeedah.py
+│   │       └── seerah.py, history.py, language.py, tazkiyah.py, general.py
 │   │
 │   ├── tools/                    # 5 deterministic tools
 │   │   ├── base.py              # BaseTool, ToolInput, ToolOutput
@@ -240,29 +240,40 @@ K:\business\projects_v2\Burhan\
 │   │   ├── hijri_calendar_tool.py # Hijri dates (Umm al-Qura)
 │   │   └── dua_retrieval_tool.py # Hisn al-Muslim + Azkar
 │   │
-│   ├── quran/                    # Quran pipeline (6 modules)
+│   ├── quran/                    # Quran pipeline
 │   │   ├── verse_retrieval.py   # Verse lookup (exact + fuzzy)
 │   │   ├── nl2sql.py            # Natural language → SQL
 │   │   ├── quotation_validator.py # Verify Quran quotes
 │   │   ├── tafsir_retrieval.py  # Tafsir lookup
 │   │   ├── quran_router.py      # Sub-intent classification (4 types)
-│   │   └── quran_agent.py       # Complete Quran agent
+│   │   └── named_verses.json    # Named-verse reference data
 │   │
-│   ├── knowledge/                # RAG infrastructure
-│   │   ├── embedding_model.py   # BGE-m3 wrapper + cache
-│   │   ├── embedding_cache.py   # Redis/local dict caching
-│   │   ├── vector_store.py      # Qdrant (10 collections)
-│   │   ├── hybrid_search.py    # Semantic + BM25 search
-│   │   └── chunker.py           # Document chunking
+│   ├── indexing/                 # RAG infrastructure
+│   │   ├── embeddings/          # bge_m3, e5, embedding_model, embedding_cache
+│   │   ├── lexical/             # bm25_index, tantivy_index
+│   │   ├── metadata/            # author/master catalogs, enrichment, title_loader
+│   │   ├── pipelines/           # ingest_athar, build_collection_indexes, sync_metadata
+│   │   └── vectorstores/        # base, factory, hybrid_client, hybrid_config, qdrant_store
 │   │
-│   ├── data/                    # Data ingestion
-│   │   ├── models/              # SQLAlchemy models (Quran)
-│   │   └── ingestion/           # Data loaders (Quran, Hadith)
+│   ├── retrieval/                # Hybrid retrieval layer (BM25 + dense + fusion)
+│   │   ├── retrievers/          # bm25, dense, hybrid, hierarchical, multi_collection
+│   │   ├── fusion/, ranking/, filters/, expanders/, planning/, mapping/
+│   │   └── schemas.py, strategies.py
+│   │
+│   ├── verification/             # Verification suite
+│   │   ├── checks/              # quran, hadith_grade, exact_quote, misattribution, ...
+│   │   └── suite_builder.py, policies.py, trace.py, schemas.py, base.py, pipeline.py
+│   │
+│   ├── data/                    # Database layer
+│   │   └── models/              # SQLAlchemy models (Quran)
 │   │
 │   └── infrastructure/          # External services
-│       ├── db.py                # PostgreSQL (asyncpg)
+│       ├── database.py          # PostgreSQL (asyncpg)
 │       ├── redis.py             # Redis connection
-│       └── llm_client.py        # LLM provider (Groq/OpenAI)
+│       ├── llm_client.py        # LLM provider (Groq/OpenAI)
+│       ├── llm/                 # llm_classifier, openai_client
+│       ├── qdrant/              # client, collections, payload_indexes
+│       └── logging/             # logger
 │
 ├── data/
 │   ├── mini_dataset/            # GitHub-friendly mini-dataset (1.7 MB)
