@@ -72,7 +72,7 @@ import json
 
 # Load a collection
 documents = []
-with open('data/mini_dataset/fiqh_passages.jsonl', 'r', encoding='utf-8') as f:
+with open("data/mini_dataset/fiqh_passages.jsonl", "r", encoding="utf-8") as f:
     for line in f:
         documents.append(json.loads(line))
 
