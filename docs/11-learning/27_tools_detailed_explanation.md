@@ -65,55 +65,28 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from src.tools.base import Tool
 
+
 class ZakatInput(BaseModel):
     """مدخلات الزكاة."""
-    
-    gold_amount_grams: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="كمية الذهب بالجرامات"
-    )
-    
-    silver_amount_grams: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="كمية الفضة بالجرامات"
-    )
-    
-    cash_amount: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="المبلغ النقدي"
-    )
-    
-    investments: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="الاستثمارات"
-    )
-    
-    debts: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="الديون المستحقة"
-    )
-    
-    gold_price_per_gram: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="سعرجرام الذهب"
-    )
-    
-    silver_price_per_gram: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="سعرجرام الفضة"
-    )
+
+    gold_amount_grams: float = Field(default=0.0, ge=0.0, description="كمية الذهب بالجرامات")
+
+    silver_amount_grams: float = Field(default=0.0, ge=0.0, description="كمية الفضة بالجرامات")
+
+    cash_amount: float = Field(default=0.0, ge=0.0, description="المبلغ النقدي")
+
+    investments: float = Field(default=0.0, ge=0.0, description="الاستثمارات")
+
+    debts: float = Field(default=0.0, ge=0.0, description="الديون المستحقة")
+
+    gold_price_per_gram: float = Field(default=0.0, ge=0.0, description="سعرجرام الذهب")
+
+    silver_price_per_gram: float = Field(default=0.0, ge=0.0, description="سعرجرام الفضة")
 
 
 class ZakatOutput(BaseModel):
     """مخرجات الزكاة."""
-    
+
     total_nisab: float
     total_assets: float
     total_zakat: float
@@ -150,13 +123,13 @@ class ZakatOutput(BaseModel):
 ```python
 class ZakatCalculator(Tool):
     """حاسبة الزكاة."""
-    
+
     name = "zakat_calculator"
     description = "حاسبة زكاة المال"
-    
+
     async def execute(self, parameters: dict) -> dict:
         """تنفيذ الحساب."""
-        
+
         # 1. استخراج القيم
         gold = parameters.get("gold_amount_grams", 0)
         silver = parameters.get("silver_amount_grams", 0)
@@ -165,35 +138,35 @@ class ZakatCalculator(Tool):
         debts = parameters.get("debts", 0)
         gold_price = parameters.get("gold_price_per_gram", 0)
         silver_price = parameters.get("silver_price_per_gram", 0)
-        
+
         # 2. حساب قيمة الذهب
         gold_value = gold * gold_price
-        
+
         # 3. حساب قيمة الفضة
         silver_value = silver * silver_price
-        
+
         # 4. حساب total الأصول
         total_assets = gold_value + silver_value + cash + investments
-        
+
         # 5. خصم الديون
         net_assets = total_assets - debts
-        
+
         # 6. حساب النسبة
         nisab_gold = 85 * gold_price  # 85 جرام
         nisab_silver = 595 * silver_price  # 595 جرام
-        
+
         # 7. اختيار أعلى النسبة
         nisab = max(nisab_gold, nisab_silver)
-        
+
         # 8. التحقق من الوصول للنسبة
         is_zakat_due = net_assets >= nisab
-        
+
         # 9. حساب الزكاة
         if is_zakat_due:
             total_zakat = net_assets * 0.025  # 2.5%
         else:
             total_zakat = 0.0
-        
+
         # 10. إرجاع النتيجة
         return {
             "total_nisab": nisab,
@@ -207,7 +180,7 @@ class ZakatCalculator(Tool):
                 "investments": investments,
                 "debts": debts,
                 "net_assets": net_assets,
-            }
+            },
         }
 ```
 
@@ -280,35 +253,21 @@ class ZakatCalculator(Tool):
 ```python
 # src/tools/inheritance_calculator.py
 
+
 class InheritanceInput(BaseModel):
     """مدخلات الإرث."""
-    
+
     deceased_gender: str = Field(..., description="جنس المتوفى")
     is_married: bool = Field(default=True, description="هل كان متزوجاً؟")
     is_married_to_muslim: bool = Field(default=True, description="هل الزوجة مسلمة؟")
-    
-    heirs: list[dict] = Field(
-        default_factory=list,
-        description="الورثة"
-    )
-    
-    total_inheritance: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="إجمالي التركة"
-    )
-    
-    debts: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="الديون"
-    )
-    
-    wasiyya: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="الوصية"
-    )
+
+    heirs: list[dict] = Field(default_factory=list, description="الورثة")
+
+    total_inheritance: float = Field(default=0.0, ge=0.0, description="إجمالي التركة")
+
+    debts: float = Field(default=0.0, ge=0.0, description="الديون")
+
+    wasiyya: float = Field(default=0.0, ge=0.0, description="الوصية")
 ```
 
 ### 3.3 الورثة وأنصبتهم
@@ -522,29 +481,29 @@ class PrayerTimesOutput(BaseModel):
 ```python
 class PrayerTimesTool(Tool):
     """أوقات الصلاة."""
-    
+
     name = "prayer_times"
     description = "حاسبة أوقات الصلاة"
-    
+
     async def execute(self, parameters: dict) -> dict:
         """تنفيذ."""
-        
+
         # Create location
         location = Location(
             latitude=parameters["latitude"],
             longitude=parameters["longitude"],
         )
-        
+
         # Get date
         date = datetime.fromisoformat(parameters["date"])
-        
+
         # Calculate using prayer_times library
-        prayer_times =Timetable(
+        prayer_times = Timetable(
             location,
             date,
             method=CalculationMethod.MUSLIM_WORLD_LEAGUE,
         )
-        
+
         return {
             "fajr": prayer_times.fajr.strftime("%H:%M"),
             "sunrise": prayer_times.sunrise.strftime("%H:%M"),
@@ -595,14 +554,15 @@ class PrayerTimesTool(Tool):
 ```python
 class HijriDateInput(BaseModel):
     """مدخلات التاريخ."""
-    
+
     day: int = Field(..., ge=1, le=30)
     month: int = Field(..., ge=1, le=12)
     year: int = Field(...)
 
+
 class HijriDateOutput(BaseModel):
     """مخرجات التاريخ."""
-    
+
     hijri: dict
     gregorian: dict
     hijri_formatted: str
