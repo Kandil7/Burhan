@@ -35,8 +35,7 @@ Burhan/
 │   ├── agents/                   ← الوكلاء المتخصصون
 │   │   ├── base.py               ← الفئة الأساسية
 │   │   ├── chatbot_agent.py      ← وكيل الترحيب
-│   │   ├── fiqh_agent.py         ← وكيل الفقه
-│   │   └── general_islamic_agent.py ← وكيل المعارف العامة
+│   │   └── collection/           ← وكلاء v2 (fiqh, hadith, general, ...)
 │   │
 │   ├── tools/                    ← الأدوات الحتمية
 │   │   ├── zakat_calculator.py   ← حاسبة الزكاة
@@ -806,12 +805,12 @@ async def lifespan(app: FastAPI):
     # ← يهيئ structlog
     # ← يحدد مستوى logging (DEBUG في development)
     # ← يحدد الشكل (JSON في production, console في development)
-    
+
     logger.info(
         "app.startup",
-        app_name=settings.app_name,        # "Burhan"
+        app_name=settings.app_name,  # "Burhan"
         version="0.5.0",
-        environment=settings.app_env,      # "development"
+        environment=settings.app_env,  # "development"
     )
     # ← يطبع:
     #   2024-04-14 10:30:00 [info     ] app.startup app_name=Burhan version=0.5.0 environment=development
@@ -904,7 +903,7 @@ Uvicorn يستمع على المنفذ 8000
 # FastAPI يبحث عن router مطابق
 # يجد: query_router مع prefix="/api/v1/query"
 
-# من src/api/routes/query.py:
+# من src/api/routes/ask.py:
 @router.post("")
 async def handle_query(request: QueryRequest, ...):
     # ← هذا الـ endpoint يتعامل مع POST /api/v1/query
@@ -934,28 +933,12 @@ async def handle_query(request: QueryRequest, ...):
 ```python
 # من src/api/schemas/request.py:
 class QueryRequest(BaseModel):
-    query: str = Field(
-        ...,
-        min_length=1,
-        max_length=1000,
-        description="User's question"
-    )
-    language: Optional[str] = Field(
-        None,
-        description="Response language (ar/en)"
-    )
-    madhhab: Optional[str] = Field(
-        None,
-        description="Islamic school of jurisprudence"
-    )
-    session_id: Optional[str] = Field(
-        None,
-        description="Session ID for conversation context"
-    )
-    stream: bool = Field(
-        False,
-        description="Stream response"
-    )
+    query: str = Field(..., min_length=1, max_length=1000, description="User's question")
+    language: Optional[str] = Field(None, description="Response language (ar/en)")
+    madhhab: Optional[str] = Field(None, description="Islamic school of jurisprudence")
+    session_id: Optional[str] = Field(None, description="Session ID for conversation context")
+    stream: bool = Field(False, description="Stream response")
+
 
 # ما يحدث:
 request_data = {"query": "ما حكم صلاة العيد؟"}
@@ -968,13 +951,7 @@ request_data = {"query": "ما حكم صلاة العيد؟"}
 # 5. madhhab موجود؟ ← لا، لكن Optional ✓
 
 # إذا نجح:
-request = QueryRequest(
-    query="ما حكم صلاة العيد؟",
-    language=None,
-    madhhab=None,
-    session_id=None,
-    stream=False
-)
+request = QueryRequest(query="ما حكم صلاة العيد؟", language=None, madhhab=None, session_id=None, stream=False)
 
 # إذا فشل (مثلاً query فارغ):
 # ValidationError: query: Field required
@@ -985,7 +962,7 @@ request = QueryRequest(
 ### الخطوة 5: endpoint يُنفذ
 
 ```python
-# من src/api/routes/query.py:
+# من src/api/routes/ask.py:
 @router.post("")
 async def handle_query(request: QueryRequest, ...):
     """Handle user query with intent-based routing."""
@@ -1006,12 +983,14 @@ async def handle_query(request: QueryRequest, ...):
 # 6.1: جلب ChatbotAgent
 chatbot = get_chatbot()
 
+
 def get_chatbot() -> ChatbotAgent:
     global _chatbot
     with _chatbot_lock:
         if _chatbot is None:
             _chatbot = ChatbotAgent()  # ← ينشئ أول مرة فقط
         return _chatbot
+
 
 # ما يحدث:
 # أول طلب: ينشئ ChatbotAgent()
@@ -1020,6 +999,7 @@ def get_chatbot() -> ChatbotAgent:
 
 # 6.2: جلب HybridQueryClassifier
 classifier = await get_classifier()
+
 
 async def get_classifier() -> HybridQueryClassifier:
     global _classifier
@@ -1048,23 +1028,22 @@ router_result = await classifier.classify(request.query)
 # ==========================================
 keyword_result = self._keyword_match("ما حكم صلاة العيد؟")
 
+
 def _keyword_match(self, query: str):
     query_lower = "ما حكم صلاة العيد؟"
-    
+
     # يبحث في KEYWORD_PATTERNS:
     for intent, patterns in KEYWORD_PATTERNS.items():
         for pattern in patterns:
             if pattern.lower() in query_lower:
                 return RouterResult(
-                    intent=intent,
-                    confidence=0.92,
-                    method="keyword",
-                    reason=f"Keyword match: '{pattern}'"
+                    intent=intent, confidence=0.92, method="keyword", reason=f"Keyword match: '{pattern}'"
                 )
 
     # iteration 1: intent=FIQH, patterns=["حكم", "ما حكم", ...]
     #   pattern = "حكم" → "حكم" in "ما حكم صلاة العيد؟" ← نعم!
     #   يرجع RouterResult(intent=Intent.FIQH, confidence=0.92)
+
 
 # keyword_result.confidence = 0.92 >= 0.90 → ✅ يرجع مباشرة!
 
@@ -1074,7 +1053,7 @@ language = request.language or router_result.language  # "ar"
 logger.info(
     "query.classified",
     query_id=query_id,
-    intent=intent.value,         # "fiqh"
+    intent=intent.value,  # "fiqh"
     confidence=router_result.confidence,  # 0.92
 )
 ```
@@ -1133,49 +1112,49 @@ elif intent == Intent.FIQH:
 ### الخطوة 9: FiqhAgent يُنفذ (RAG Pipeline)
 
 ```python
-# من src/agents/fiqh_agent.py:
+# من src/agents/collection/fiqh.py:
 async def execute(self, input: AgentInput) -> AgentOutput:
-    
+
     # ==========================================
     # الخطوة 9.1: تحويل السؤال لمتجه
     # ==========================================
     query_embedding = await self.embedding_model.encode_query(input.query)
-    
+
     # ما يحدث داخل encode_query():
     # 1. tokenizer يحول النص إلى tokens
     #    "ما حكم صلاة العيد؟" → [101, 2345, 6789, 10123, 456, 102]
     # 2. model يحول tokens إلى embedding
     #    [101, 2345, ...] → [0.12, -0.34, 0.56, ...] (1024 رقم)
     # 3. يرجع embedding
-    
+
     # query_embedding = [0.1234, -0.5678, 0.9012, ...] (1024 dimension)
 
     # ==========================================
     # الخطوة 9.2: البحث في Qdrant
     # ==========================================
     passages = await self.hybrid_searcher.search(
-        query=input.query,              # "ما حكم صلاة العيد؟"
+        query=input.query,  # "ما حكم صلاة العيد؟"
         query_embedding=query_embedding,  # [0.1234, -0.5678, ...]
-        collection="fiqh_passages",     # مجموعة الفقه
-        top_k=self.TOP_K_RETRIEVAL,     # 15
+        collection="fiqh_passages",  # مجموعة الفقه
+        top_k=self.TOP_K_RETRIEVAL,  # 15
     )
-    
+
     # ما يحدث داخل hybrid_searcher.search():
     # 1. Semantic Search:
     #    ← يبحث في Qdrant باستخدام المتجه
     #    ← يرجع top 15 وثيقة متشابهة دلالياً
     #    ← النتائج: [doc1 (0.85), doc2 (0.78), ...]
-    
+
     # 2. BM25 Search:
     #    ← يبحث عن الكلمات "ما", "حكم", "صلاة", "العيد"
     #    ← يرجع top 15 وثيقة تحتوي الكلمات
     #    ← النتائج: [doc2 (0.90), doc1 (0.82), ...]
-    
+
     # 3. Reciprocal Rank Fusion:
     #    ← يدمج النتيجتين
     #    ← score = 1/(60+rank_semantic) + 1/(60+rank_bm25)
     #    ← النتائج النهائية: [doc1 (0.0323), doc2 (0.0320), ...]
-    
+
     # passages = [
     #     {"content": "صلاة العيد سنة مؤكدة...", "score": 0.85},
     #     {"content": "كان النبي صلى الله عليه وسلم...", "score": 0.78},
@@ -1186,19 +1165,20 @@ async def execute(self, input: AgentInput) -> AgentOutput:
     # الخطوة 9.3: تصفية الوثائق
     # ==========================================
     good_passages = [
-        p for p in passages
+        p
+        for p in passages
         if p.get("score", 0) >= self.SCORE_THRESHOLD  # 0.15
     ]
-    
+
     # يحتفظ فقط بالوثائق > 0.15
     # good_passages = [doc1, doc2, ..., doc12] (12 وثيقة)
 
     # ==========================================
     # الخطوة 9.4: تنسيق الوثائق للـ LLM
     # ==========================================
-    formatted_passages = self._format_passages(good_passages[:self.TOP_K_RERANK])
+    formatted_passages = self._format_passages(good_passages[: self.TOP_K_RERANK])
     # ← يأخذ top 5 فقط
-    
+
     def _format_passages(self, passages):
         formatted = []
         for i, passage in enumerate(passages, 1):
@@ -1207,7 +1187,7 @@ async def execute(self, input: AgentInput) -> AgentOutput:
             passage_text = f"[C{i}] {content}\nالمصدر: {source}"
             formatted.append(passage_text)
         return "\n\n".join(formatted)
-    
+
     # formatted_passages = """
     # [C1] صلاة العيد سنة مؤكدة عند الجمهور من العلماء...
     # المصدر: موطأ مالك
@@ -1221,12 +1201,8 @@ async def execute(self, input: AgentInput) -> AgentOutput:
     # ==========================================
     # الخطوة 9.5: توليد الإجابة بـ LLM
     # ==========================================
-    answer = await self._generate_with_llm(
-        query=input.query,
-        passages=formatted_passages,
-        language=input.language
-    )
-    
+    answer = await self._generate_with_llm(query=input.query, passages=formatted_passages, language=input.language)
+
     # ما يحدث داخل _generate_with_llm():
     # 1. يبني prompt:
     prompt = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.
@@ -1254,21 +1230,18 @@ async def execute(self, input: AgentInput) -> AgentOutput:
     # 2. يرسل إلى Groq:
     response = await self.llm_client.chat.completions.create(
         model="qwen/qwen3-32b",
-        messages=[
-            {"role": "system", "content": "أنت مساعد إسلامي متخصص..."},
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "system", "content": "أنت مساعد إسلامي متخصص..."}, {"role": "user", "content": prompt}],
         temperature=0.1,  # دقيق جداً
         max_tokens=2048,
     )
-    
+
     # 3. Groq يعالج:
     #    ← يحلل الـ prompt
     #    ← يفهم السؤال
     #    ← يقرأ النصوص المسترجاعة
     #    ← يولد إجابة مبنية على النصوص
     #    ← يستغرق ~2-5 ثواني
-    
+
     # 4. يرجع الإجابة:
     answer = response.choices[0].message.content
     # answer = "صلاة العيد سنة مؤكدة عند الجمهور من العلماء..."
@@ -1277,15 +1250,15 @@ async def execute(self, input: AgentInput) -> AgentOutput:
     # الخطوة 9.6: تطبيع الاقتباسات
     # ==========================================
     normalized_text = self.citation_normalizer.normalize(answer)
-    
+
     # ما يحدث داخل normalize():
     # 1. يبحث عن أنماط الاقتباس في النص
     # 2. يجد "موطأ مالك" → يستبدل بـ [C1]
     # 3. يجد "صحيح البخاري" → يستبدل بـ [C2]
     # 4. يرجع النص مع الاقتباسات المطبعة
-    
+
     # normalized_text = "صلاة العيد سنة مؤكدة [C1] [C2]..."
-    
+
     citations = self.citation_normalizer.get_citations()
     # citations = [
     #     Citation(id="C1", type="fiqh_book", source="موطأ مالك", ...),
@@ -1296,7 +1269,7 @@ async def execute(self, input: AgentInput) -> AgentOutput:
     # الخطوة 9.7: إضافة التنويه
     # ==========================================
     final_answer = self._add_disclaimer(normalized_text)
-    
+
     def _add_disclaimer(self, text):
         disclaimer = "\n\n---\n⚠️ **تنبيه مهم**: هذه الإجابة مبنية على النصوص المسترجاعة..."
         return text + disclaimer
@@ -1322,28 +1295,28 @@ async def execute(self, input: AgentInput) -> AgentOutput:
 ### الخطوة 10: بناء الاستجابة
 
 ```python
-# من src/api/routes/query.py:
+# من src/api/routes/ask.py:
 processing_time = int((time.time() - start_time) * 1000)
 # ← processing_time = 2847 (ملّي ثانية = 2.8 ثانية)
 
 return QueryResponse(
     query_id=query_id,
-    intent=intent.value,                   # "fiqh"
+    intent=intent.value,  # "fiqh"
     intent_confidence=router_result.confidence,  # 0.92
-    answer=agent_result.answer,            # "صلاة العيد سنة مؤكدة..."
+    answer=agent_result.answer,  # "صلاة العيد سنة مؤكدة..."
     citations=[
         CitationResponse(
-            id=c.id,            # "C1"
-            type=c.type,        # "fiqh_book"
-            source=c.source,    # "موطأ مالك"
+            id=c.id,  # "C1"
+            type=c.type,  # "fiqh_book"
+            source=c.source,  # "موطأ مالك"
             reference=c.reference,
             url=c.url,
-            text_excerpt=c.text_excerpt
+            text_excerpt=c.text_excerpt,
         )
         for c in agent_result.citations
     ],
     metadata={
-        "agent": agent_name,               # "fiqh_agent"
+        "agent": agent_name,  # "fiqh_agent"
         "processing_time_ms": processing_time,  # 2847
         "classification_method": router_result.method,  # "keyword"
         **agent_result.metadata,
@@ -1514,7 +1487,7 @@ HTTP Response:
 
 ### 🔜 الخطوة التالية
 
-اقرأ الملف التالي: `src/api/routes/query.py` بالتفصيل
+اقرأ الملف التالي: `src/api/routes/ask.py` بالتفصيل
 
 ---
 
