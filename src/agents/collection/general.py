@@ -8,6 +8,8 @@ This is the fallback agent for questions that don't match specific domains.
 
 from __future__ import annotations
 
+from typing import Any
+
 from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
@@ -49,9 +51,9 @@ class GeneralCollectionAgent(CollectionAgent):
     def __init__(
         self,
         config: CollectionAgentConfig | None = None,
-        embedding_model=None,
-        vector_store=None,
-        llm_client=None,
+        embedding_model: Any = None,
+        vector_store: Any = None,
+        llm_client: Any = None,
     ) -> None:
         if config is None:
             from src.verification.suite_builder import build_verification_suite_for
@@ -108,8 +110,15 @@ class GeneralCollectionAgent(CollectionAgent):
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
-    async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        return VerificationReport.from_passages(passages=candidates, is_verified=True, confidence=0.8)
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        """Verify evidence before generation and the answer after it."""
+        return self._verify(query, candidates, answer=answer, stage=stage)
 
     async def generate_answer(self, query: str, verified_passages: list[dict], language: str) -> str:
         if not verified_passages:
@@ -152,16 +161,21 @@ class GeneralCollectionAgent(CollectionAgent):
         return "\n\n".join(parts)
 
     def _get_system_prompt(self) -> str:
+        # Load shared preamble + agent-specific prompt from file, with a
+        # built-in fallback if the prompt file is missing.
         preamble = self._load_shared_preamble()
         try:
             with open("prompts/general_agent.txt", encoding="utf-8") as f:
                 agent_prompt = f.read()
         except FileNotFoundError:
-            return """أنت معلم إسلامي متخصص.
+            agent_prompt = """أنت معلم إسلامي متخصص.
 استند حصراً إلى المصادر المُقدَّمة.
 Use مراجع المصادر [C1]، [C2].
 أضف السياق التاريخي أو الفقهي عند الاقتضاء.
 إذا كانت المصادر غير كافية، قل ذلك بوضوح."""
+        if preamble:
+            return f"{preamble}\n\n{agent_prompt}"
+        return agent_prompt
 
     def _build_user_prompt(self, query: str, passages: str, language: str) -> str:
         return f"""السؤال: {query}
