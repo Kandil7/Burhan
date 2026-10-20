@@ -1,23 +1,24 @@
 # Temporal Consistency Verifier Module
 """Verifier for temporal consistency in historical claims."""
 
-from typing import Optional, Dict, Any, List, Tuple
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 import re
+from typing import Any
+
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 
 class TemporalConsistencyVerifier(BaseVerifier):
     """Verifies temporal consistency of claims."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.verifier_type = VerifierType.TEMPORAL_CONSISTENCY
 
     async def verify(
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify temporal consistency."""
         # Extract dates/eras from claim
@@ -29,6 +30,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
         if not claim_dates and not evidence_dates:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=0.5,
                 message="No temporal information found",
@@ -40,6 +42,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
         if contradictions:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.8,
                 message=f"Found {len(contradictions)} temporal contradictions",
@@ -48,6 +51,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.85,
             message="Temporal consistency verified",
@@ -57,7 +61,7 @@ class TemporalConsistencyVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return True
 
-    def _extract_dates(self, text: str) -> List[Tuple[str, int]]:
+    def _extract_dates(self, text: str) -> list[tuple[str, int]]:
         """Extract dates from text."""
         # Extract AH dates
         ah_patterns = [
@@ -77,16 +81,16 @@ class TemporalConsistencyVerifier(BaseVerifier):
 
         return dates
 
-    def _extract_dates_from_evidence(self, evidence: Any) -> List[Tuple[str, int]]:
+    def _extract_dates_from_evidence(self, evidence: Any) -> list[tuple[str, int]]:
         """Extract dates from evidence."""
         # Placeholder - would implement actual extraction
         return []
 
     def _find_temporal_contradictions(
         self,
-        claim_dates: List[Tuple[str, int]],
-        evidence_dates: List[Tuple[str, int]],
-    ) -> List[str]:
+        claim_dates: list[tuple[str, int]],
+        evidence_dates: list[tuple[str, int]],
+    ) -> list[str]:
         """Find contradictions between dates."""
         contradictions = []
 
