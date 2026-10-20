@@ -6,7 +6,7 @@ Phase 10: Added request/response logging middleware.
 """
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -35,7 +35,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip logging for excluded paths
         if request.url.path in self.EXCLUDE_PATHS:
-            return await call_next(request)
+            early_response: Response = await call_next(request)
+            return early_response
 
         # Start timing
         start_time = time.perf_counter()
@@ -54,7 +55,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         # Process request
         try:
-            response = await call_next(request)
+            response: Response = await call_next(request)
             status_code = response.status_code
         except Exception as e:
             status_code = 500
@@ -112,7 +113,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         # Add to request state for access in handlers
         request.state.request_id = request_id
 
-        response = await call_next(request)
+        response: Response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
 
         return response
