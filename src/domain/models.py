@@ -8,7 +8,6 @@ This module contains:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from src.domain.intents import Intent, QuranSubIntent
 
@@ -39,11 +38,11 @@ class ClassificationResult:
     reasoning: str
     requires_retrieval: bool
     method: str  # "keyword" | "llm" | "embedding" | "fallback"
-    quran_subintent: Optional[QuranSubIntent] = None
-    scores: Optional[Dict[str, float]] = field(default=None)
-    subquestions: List[str] = field(default_factory=list)
+    quran_subintent: QuranSubIntent | None = None
+    scores: dict[str, float] | None = field(default=None)
+    subquestions: list[str] = field(default_factory=list)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate classification result after initialization."""
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(f"Confidence must be between 0.0 and 1.0, got {self.confidence}")
