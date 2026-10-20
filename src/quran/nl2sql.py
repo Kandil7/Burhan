@@ -9,6 +9,7 @@ Fixes:
   - Typo: "جوز" → "جزء"
   - `import re` moved to module level
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -46,69 +47,174 @@ Table: ayahs
 
 # ── Few-shot examples ─────────────────────────────────────────────────────────
 NL2SQL_EXAMPLES = [
-    {"query_ar": "كم عدد آيات سورة البقرة؟",
-     "sql": "SELECT verse_count FROM surahs WHERE number = 2"},
-    {"query_ar": "ما هي أطول سورة؟",
-     "sql": "SELECT name_en, verse_count FROM surahs ORDER BY verse_count DESC LIMIT 1"},
-    {"query_ar": "كم عدد السور المكية؟",
-     "sql": "SELECT COUNT(*) FROM surahs WHERE revelation_type = 'meccan'"},
-    {"query_ar": "ما هي السور المدنية؟",
-     "sql": "SELECT name_en FROM surahs WHERE revelation_type = 'medinan'"},
-    {"query_ar": "في أي جزء سورة الكهف؟",
-     "sql": "SELECT DISTINCT juz FROM ayahs WHERE surah_id = "
-            "(SELECT id FROM surahs WHERE number = 18) LIMIT 1"},
-    {"query_ar": "كم عدد صفحات القرآن؟",
-     "sql": "SELECT MAX(page) FROM ayahs"},
-    {"query_ar": "ما أقصر سورة؟",
-     "sql": "SELECT name_en, verse_count FROM surahs ORDER BY verse_count ASC LIMIT 1"},
-    {"query_ar": "كم عدد أجزاء القرآن؟",
-     "sql": "SELECT COUNT(DISTINCT juz) FROM ayahs"},
+    {"query_ar": "كم عدد آيات سورة البقرة؟", "sql": "SELECT verse_count FROM surahs WHERE number = 2"},
+    {
+        "query_ar": "ما هي أطول سورة؟",
+        "sql": "SELECT name_en, verse_count FROM surahs ORDER BY verse_count DESC LIMIT 1",
+    },
+    {"query_ar": "كم عدد السور المكية؟", "sql": "SELECT COUNT(*) FROM surahs WHERE revelation_type = 'meccan'"},
+    {"query_ar": "ما هي السور المدنية؟", "sql": "SELECT name_en FROM surahs WHERE revelation_type = 'medinan'"},
+    {
+        "query_ar": "في أي جزء سورة الكهف؟",
+        "sql": "SELECT DISTINCT juz FROM ayahs WHERE surah_id = (SELECT id FROM surahs WHERE number = 18) LIMIT 1",
+    },
+    {"query_ar": "كم عدد صفحات القرآن؟", "sql": "SELECT MAX(page) FROM ayahs"},
+    {"query_ar": "ما أقصر سورة؟", "sql": "SELECT name_en, verse_count FROM surahs ORDER BY verse_count ASC LIMIT 1"},
+    {"query_ar": "كم عدد أجزاء القرآن؟", "sql": "SELECT COUNT(DISTINCT juz) FROM ayahs"},
 ]
 
 # ── Arabic surah name → number (full 114) ────────────────────────────────────
 _SURAH_NAMES_AR: dict[str, int] = {
-    "الفاتحة": 1, "البقرة": 2, "آل عمران": 3, "النساء": 4,
-    "المائدة": 5, "الأنعام": 6, "الأعراف": 7, "الأنفال": 8,
-    "التوبة": 9, "يونس": 10, "هود": 11, "يوسف": 12,
-    "الرعد": 13, "إبراهيم": 14, "الحجر": 15, "النحل": 16,
-    "الإسراء": 17, "الكهف": 18, "مريم": 19, "طه": 20,
-    "الأنبياء": 21, "الحج": 22, "المؤمنون": 23, "النور": 24,
-    "الفرقان": 25, "الشعراء": 26, "النمل": 27, "القصص": 28,
-    "العنكبوت": 29, "الروم": 30, "لقمان": 31, "السجدة": 32,
-    "الأحزاب": 33, "سبأ": 34, "فاطر": 35, "يس": 36,
-    "الصافات": 37, "ص": 38, "الزمر": 39, "غافر": 40,
-    "فصلت": 41, "الشورى": 42, "الزخرف": 43, "الدخان": 44,
-    "الجاثية": 45, "الأحقاف": 46, "محمد": 47, "الفتح": 48,
-    "الحجرات": 49, "ق": 50, "الذاريات": 51, "الطور": 52,
-    "النجم": 53, "القمر": 54, "الرحمن": 55, "الواقعة": 56,
-    "الحديد": 57, "المجادلة": 58, "الحشر": 59, "الممتحنة": 60,
-    "الصف": 61, "الجمعة": 62, "المنافقون": 63, "التغابن": 64,
-    "الطلاق": 65, "التحريم": 66, "الملك": 67, "القلم": 68,
-    "الحاقة": 69, "المعارج": 70, "نوح": 71, "الجن": 72,
-    "المزمل": 73, "المدثر": 74, "القيامة": 75, "الإنسان": 76,
-    "المرسلات": 77, "النبأ": 78, "النازعات": 79, "عبس": 80,
-    "التكوير": 81, "الانفطار": 82, "المطففين": 83, "الانشقاق": 84,
-    "البروج": 85, "الطارق": 86, "الأعلى": 87, "الغاشية": 88,
-    "الفجر": 89, "البلد": 90, "الشمس": 91, "الليل": 92,
-    "الضحى": 93, "الشرح": 94, "التين": 95, "العلق": 96,
-    "القدر": 97, "البينة": 98, "الزلزلة": 99, "العاديات": 100,
-    "القارعة": 101, "التكاثر": 102, "العصر": 103, "الهمزة": 104,
-    "الفيل": 105, "قريش": 106, "الماعون": 107, "الكوثر": 108,
-    "الكافرون": 109, "النصر": 110, "المسد": 111, "الإخلاص": 112,
-    "الفلق": 113, "الناس": 114,
+    "الفاتحة": 1,
+    "البقرة": 2,
+    "آل عمران": 3,
+    "النساء": 4,
+    "المائدة": 5,
+    "الأنعام": 6,
+    "الأعراف": 7,
+    "الأنفال": 8,
+    "التوبة": 9,
+    "يونس": 10,
+    "هود": 11,
+    "يوسف": 12,
+    "الرعد": 13,
+    "إبراهيم": 14,
+    "الحجر": 15,
+    "النحل": 16,
+    "الإسراء": 17,
+    "الكهف": 18,
+    "مريم": 19,
+    "طه": 20,
+    "الأنبياء": 21,
+    "الحج": 22,
+    "المؤمنون": 23,
+    "النور": 24,
+    "الفرقان": 25,
+    "الشعراء": 26,
+    "النمل": 27,
+    "القصص": 28,
+    "العنكبوت": 29,
+    "الروم": 30,
+    "لقمان": 31,
+    "السجدة": 32,
+    "الأحزاب": 33,
+    "سبأ": 34,
+    "فاطر": 35,
+    "يس": 36,
+    "الصافات": 37,
+    "ص": 38,
+    "الزمر": 39,
+    "غافر": 40,
+    "فصلت": 41,
+    "الشورى": 42,
+    "الزخرف": 43,
+    "الدخان": 44,
+    "الجاثية": 45,
+    "الأحقاف": 46,
+    "محمد": 47,
+    "الفتح": 48,
+    "الحجرات": 49,
+    "ق": 50,
+    "الذاريات": 51,
+    "الطور": 52,
+    "النجم": 53,
+    "القمر": 54,
+    "الرحمن": 55,
+    "الواقعة": 56,
+    "الحديد": 57,
+    "المجادلة": 58,
+    "الحشر": 59,
+    "الممتحنة": 60,
+    "الصف": 61,
+    "الجمعة": 62,
+    "المنافقون": 63,
+    "التغابن": 64,
+    "الطلاق": 65,
+    "التحريم": 66,
+    "الملك": 67,
+    "القلم": 68,
+    "الحاقة": 69,
+    "المعارج": 70,
+    "نوح": 71,
+    "الجن": 72,
+    "المزمل": 73,
+    "المدثر": 74,
+    "القيامة": 75,
+    "الإنسان": 76,
+    "المرسلات": 77,
+    "النبأ": 78,
+    "النازعات": 79,
+    "عبس": 80,
+    "التكوير": 81,
+    "الانفطار": 82,
+    "المطففين": 83,
+    "الانشقاق": 84,
+    "البروج": 85,
+    "الطارق": 86,
+    "الأعلى": 87,
+    "الغاشية": 88,
+    "الفجر": 89,
+    "البلد": 90,
+    "الشمس": 91,
+    "الليل": 92,
+    "الضحى": 93,
+    "الشرح": 94,
+    "التين": 95,
+    "العلق": 96,
+    "القدر": 97,
+    "البينة": 98,
+    "الزلزلة": 99,
+    "العاديات": 100,
+    "القارعة": 101,
+    "التكاثر": 102,
+    "العصر": 103,
+    "الهمزة": 104,
+    "الفيل": 105,
+    "قريش": 106,
+    "الماعون": 107,
+    "الكوثر": 108,
+    "الكافرون": 109,
+    "النصر": 110,
+    "المسد": 111,
+    "الإخلاص": 112,
+    "الفلق": 113,
+    "الناس": 114,
 }
 
 _SURAH_NAMES_EN: dict[str, int] = {
-    "al-fatihah": 1,  "alfatihah": 1,  "fatihah": 1,  "fatiha": 1,
-    "al-baqarah": 2,  "albaqarah": 2,  "baqarah": 2,  "baqara": 2,
-    "al-imran": 3,    "alimran": 3,    "imran": 3,
-    "an-nisa": 4,     "annisa": 4,     "nisa": 4,     "nisa'": 4,
-    "al-maidah": 5,   "almaidah": 5,   "maidah": 5,
-    "al-kahf": 18,    "alkahf": 18,    "kahf": 18,
-    "maryam": 19,     "ta-ha": 20,     "taha": 20,
-    "al-ikhlas": 112, "alikhlas": 112, "ikhlas": 112,
-    "al-falaq": 113,  "alfalaq": 113,  "falaq": 113,
-    "an-nas": 114,    "annas": 114,    "nas": 114,
+    "al-fatihah": 1,
+    "alfatihah": 1,
+    "fatihah": 1,
+    "fatiha": 1,
+    "al-baqarah": 2,
+    "albaqarah": 2,
+    "baqarah": 2,
+    "baqara": 2,
+    "al-imran": 3,
+    "alimran": 3,
+    "imran": 3,
+    "an-nisa": 4,
+    "annisa": 4,
+    "nisa": 4,
+    "nisa'": 4,
+    "al-maidah": 5,
+    "almaidah": 5,
+    "maidah": 5,
+    "al-kahf": 18,
+    "alkahf": 18,
+    "kahf": 18,
+    "maryam": 19,
+    "ta-ha": 20,
+    "taha": 20,
+    "al-ikhlas": 112,
+    "alikhlas": 112,
+    "ikhlas": 112,
+    "al-falaq": 113,
+    "alfalaq": 113,
+    "falaq": 113,
+    "an-nas": 114,
+    "annas": 114,
+    "nas": 114,
 }
 
 # Compiled SQL injection blocklist
@@ -150,10 +256,18 @@ class NL2SQLEngine:
         ql = q.lower()
 
         # T1: verse count for a specific surah
-        if any(kw in ql for kw in [
-            "عدد آيات", "كم آية", "كم عدد الآيات",
-            "verses in", "ayahs in", "how many verses", "how many ayahs",
-        ]):
+        if any(
+            kw in ql
+            for kw in [
+                "عدد آيات",
+                "كم آية",
+                "كم عدد الآيات",
+                "verses in",
+                "ayahs in",
+                "how many verses",
+                "how many ayahs",
+            ]
+        ):
             surah = self._extract_surah_number(q)
             if surah:
                 return f"SELECT verse_count FROM surahs WHERE number = {surah}"
@@ -175,7 +289,7 @@ class NL2SQLEngine:
             return "SELECT name_ar, name_en FROM surahs WHERE revelation_type = 'medinan'"
 
         # T6: juz count / which juz
-        if any(kw in ql for kw in ["أجزاء", "جزء", "juz"]):        # ← "جزء" (not "جوز")
+        if any(kw in ql for kw in ["أجزاء", "جزء", "juz"]):  # ← "جزء" (not "جوز")
             surah = self._extract_surah_number(q)
             if surah:
                 return (
@@ -192,11 +306,7 @@ class NL2SQLEngine:
         # T8: surah name/info by number ("السورة رقم X" / "surah number X")
         num_match = re.search(r"(?:رقم|number)\s*(\d+)", ql)
         if num_match or any(kw in ql for kw in ["اسم السورة", "surah name", "what is surah"]):
-            surah_num = (
-                int(num_match.group(1))
-                if num_match
-                else self._extract_surah_number(q)
-            )
+            surah_num = int(num_match.group(1)) if num_match else self._extract_surah_number(q)
             if surah_num:
                 return f"SELECT name_ar, name_en FROM surahs WHERE number = {surah_num}"
 
@@ -218,10 +328,11 @@ class NL2SQLEngine:
         """Execute a validated SELECT query and return rows as dicts."""
         self._validate_sql(sql)
         try:
+
             def _execute() -> list[dict]:
                 result = self.session.execute(text(sql))
                 columns = list(result.keys())
-                return [dict(zip(columns, row)) for row in result.fetchall()]
+                return [dict(zip(columns, row, strict=False)) for row in result.fetchall()]
 
             rows = await asyncio.to_thread(_execute)
             logger.info("nl2sql.executed", sql=sql, rows=len(rows))
@@ -232,13 +343,13 @@ class NL2SQLEngine:
 
     async def execute(self, query: str) -> dict:
         """Full pipeline: NL → SQL → Execute → Format."""
-        sql      = await self.generate_sql(query)
-        rows     = await self.execute_sql(sql)
+        sql = await self.generate_sql(query)
+        rows = await self.execute_sql(sql)
         return {
-            "sql":              sql,
-            "result":           rows,
+            "sql": sql,
+            "result": rows,
             "formatted_answer": self._format_result(query, rows),
-            "row_count":        len(rows),
+            "row_count": len(rows),
         }
 
     # ── Surah extraction ──────────────────────────────────────────────────────
@@ -292,9 +403,7 @@ class NL2SQLEngine:
             raise NL2SQLQueryError("Only SELECT queries are allowed.")
 
         if _FORBIDDEN_SQL.search(stripped):
-            raise NL2SQLQueryError(
-                "Query contains a forbidden keyword or character."
-            )
+            raise NL2SQLQueryError("Query contains a forbidden keyword or character.")
 
     # ── Formatting ────────────────────────────────────────────────────────────
 
@@ -304,19 +413,13 @@ class NL2SQLEngine:
             return "No results found."
 
         row = rows[0]
-        ql  = query.lower()
+        ql = query.lower()
 
         if any(kw in ql for kw in ["أطول", "longest"]):
-            return (
-                f"The longest surah is {row.get('name_en', '?')} "
-                f"with {row.get('verse_count', '?')} verses."
-            )
+            return f"The longest surah is {row.get('name_en', '?')} with {row.get('verse_count', '?')} verses."
 
         if any(kw in ql for kw in ["أقصر", "shortest"]):
-            return (
-                f"The shortest surah is {row.get('name_en', '?')} "
-                f"with {row.get('verse_count', '?')} verses."
-            )
+            return f"The shortest surah is {row.get('name_en', '?')} with {row.get('verse_count', '?')} verses."
 
         # Single scalar value
         if len(row) == 1:
@@ -327,6 +430,4 @@ class NL2SQLEngine:
         if len(rows) == 1:
             return ", ".join(f"{k}: {v}" for k, v in row.items())
 
-        return "\n".join(
-            " | ".join(str(v) for v in r.values()) for r in rows
-        )
+        return "\n".join(" | ".join(str(v) for v in r.values()) for r in rows)
