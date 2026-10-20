@@ -15,17 +15,19 @@ Eras:
 Usage:
     era = EraClassifier.classify(179)  # "classical" - Imam Malik
 """
+
 from enum import Enum
 
 
 class Era(str, Enum):
     """Islamic scholarly eras."""
-    PROPHETIC = "prophetic"        # 0-100 AH - Companions
-    TABIUN = "tabiun"              # 100-200 AH - Successors
-    CLASSICAL = "classical"        # 200-500 AH - Golden age
-    MEDIEVAL = "medieval"          # 500-900 AH - Post-classical
-    OTTOMAN = "ottoman"            # 900-1300 AH - Ottoman era
-    MODERN = "modern"              # 1300+ AH - Modern era
+
+    PROPHETIC = "prophetic"  # 0-100 AH - Companions
+    TABIUN = "tabiun"  # 100-200 AH - Successors
+    CLASSICAL = "classical"  # 200-500 AH - Golden age
+    MEDIEVAL = "medieval"  # 500-900 AH - Post-classical
+    OTTOMAN = "ottoman"  # 900-1300 AH - Ottoman era
+    MODERN = "modern"  # 1300+ AH - Modern era
 
 
 class EraClassifier:
