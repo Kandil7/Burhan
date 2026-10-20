@@ -13,13 +13,14 @@ This module provides:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
+from typing import Any
 
-from src.domain.intents import Intent, get_agent_for_intent, INTENT_ROUTING
-from src.retrieval.strategies import get_strategy_for_agent, get_collection_for_agent
-from src.agents.base import AgentOutput, AgentInput
+from src.agents.base import AgentInput, AgentOutput
+from src.domain.intents import Intent, get_agent_for_intent
+from src.retrieval.strategies import get_strategy_for_agent
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ def _detect_complex_query(query: str) -> bool:
     }
 
     matched_domains = 0
-    for domain, keywords in domain_keywords.items():
+    for _domain, keywords in domain_keywords.items():
         if any(kw in query_lower for kw in keywords):
             matched_domains += 1
 
@@ -245,7 +246,7 @@ class MultiAgentOrchestrator:
         Args:
             agent_registry: Dictionary mapping agent names to agent instances
         """
-        self._agent_registry = agent_registry or {}
+        self._agent_registry: dict[str, Any] = agent_registry or {}
         logger.info("multi_agent_orchestrator_initialized", extra={"num_agents": len(self._agent_registry)})
 
     def register_agent(self, name: str, agent: Callable) -> None:
@@ -329,7 +330,7 @@ class MultiAgentOrchestrator:
         # Filter out exceptions and aggregate
         valid_results = []
         for i, result in enumerate(results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.error(
                     "agent_task_failed",
                     extra={
@@ -408,7 +409,7 @@ class MultiAgentOrchestrator:
             )
 
             # Execute agent
-            result = await agent.execute(input_data)
+            result: AgentOutput = await agent.execute(input_data)
 
             # Add agent name to metadata
             result.metadata["agent_name"] = task.agent_name
@@ -454,7 +455,7 @@ class MultiAgentOrchestrator:
                 language="ar",
                 metadata={"fallback": True},
             )
-            result = await fallback_agent.execute(input_data)
+            result: AgentOutput = await fallback_agent.execute(input_data)
             result.metadata["fallback_used"] = True
             return result
 
