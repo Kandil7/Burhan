@@ -6,7 +6,6 @@ Used by ClassifyQueryUseCase for fast, deterministic classification.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple
 
 
 @dataclass
@@ -14,14 +13,14 @@ class IntentRule:
     """Represents a classification rule for an intent."""
 
     intent: str
-    keywords: List[str]
+    keywords: list[str]
     confidence: float
     agent: str
-    collections: List[str]
+    collections: list[str]
 
 
 # All classification rules in priority order
-INTENT_RULES: List[IntentRule] = [
+INTENT_RULES: list[IntentRule] = [
     # Tazkiyah / Spirituality (highest priority)
     IntentRule(
         intent="islamic_tazkiyah",
@@ -207,7 +206,7 @@ INTENT_RULES: List[IntentRule] = [
 ]
 
 
-def classify_by_keywords(query: str) -> Tuple[str, float, str, List[str]]:
+def classify_by_keywords(query: str) -> tuple[str, float, str, list[str]]:
     """
     Classify query using keyword rules.
 
