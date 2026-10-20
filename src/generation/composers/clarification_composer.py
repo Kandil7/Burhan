@@ -1,9 +1,9 @@
 # Clarification Composer Module
 """Compose clarification requests."""
 
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class ClarificationType(str, Enum):
@@ -22,7 +22,7 @@ class ClarificationOption:
 
     option_id: str
     text: str
-    example: Optional[str] = None
+    example: str | None = None
 
 
 @dataclass
@@ -36,15 +36,15 @@ class ClarificationConfig:
 class ClarificationComposer:
     """Composes clarification requests."""
 
-    def __init__(self, config: Optional[ClarificationConfig] = None):
+    def __init__(self, config: ClarificationConfig | None = None):
         self.config = config or ClarificationConfig()
 
     def compose(
         self,
         clarification_type: ClarificationType,
-        options: Optional[List[ClarificationOption]] = None,
-        message: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        options: list[ClarificationOption] | None = None,
+        message: str | None = None,
+    ) -> dict[str, Any]:
         """Compose a clarification request."""
         # Get template for type
         template = self._get_template(clarification_type)
