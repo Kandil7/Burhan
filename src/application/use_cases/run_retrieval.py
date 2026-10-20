@@ -64,12 +64,10 @@ class RunRetrievalUseCase:
             )
             collections_order.append(coll)
 
-        all_results: list[dict[str, Any]] = []
-
         if tasks:
             results_per_collection = await asyncio.gather(*tasks, return_exceptions=True)
             for coll, res in zip(collections_order, results_per_collection, strict=False):
-                if isinstance(res, Exception):
+                if isinstance(res, BaseException):
                     logger.warning(f"Retrieval failed for collection={coll}: {res}")
                     continue
                 for r in res:
