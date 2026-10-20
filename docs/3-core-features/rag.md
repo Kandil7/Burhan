@@ -109,7 +109,7 @@ embeddings = await model.encode(texts)
 
 ### Embedding Cache
 
-**File:** `src/knowledge/embedding_cache.py`
+**File:** `src/indexing/embeddings/embedding_cache.py`
 
 - **Storage**: Redis
 - **TTL**: 7 days
@@ -122,7 +122,7 @@ embeddings = await model.encode(texts)
 
 ### Qdrant Configuration
 
-**File:** `src/knowledge/vector_store.py`
+**File:** `src/indexing/vectorstores/qdrant_store.py`
 
 **Collections:**
 
@@ -156,18 +156,11 @@ store = VectorStore()
 await store.initialize()
 
 # Upsert documents
-await store.upsert(
-    collection="fiqh_passages",
-    documents=chunks,
-    embeddings=embeddings
-)
+await store.upsert(collection="fiqh_passages", documents=chunks, embeddings=embeddings)
 
 # Search
 results = await store.search(
-    collection="fiqh_passages",
-    query_embedding=query_embedding,
-    top_k=10,
-    filters={"madhhab": "hanafi"}
+    collection="fiqh_passages", query_embedding=query_embedding, top_k=10, filters={"madhhab": "hanafi"}
 )
 ```
 
@@ -177,7 +170,7 @@ results = await store.search(
 
 ### Semantic + Keyword Search
 
-**File:** `src/knowledge/hybrid_search.py`
+**File:** `src/indexing/vectorstores/hybrid_client.py`
 
 **Process:**
 1. **Semantic Search**: Cosine similarity in vector space
@@ -196,10 +189,7 @@ from src.knowledge.hybrid_search import HybridSearcher
 searcher = HybridSearcher(vector_store)
 
 results = await searcher.search(
-    query="ما حكم زكاة الأسهم؟",
-    query_embedding=embedding,
-    collection="fiqh_passages",
-    top_k=10
+    query="ما حكم زكاة الأسهم؟", query_embedding=embedding, collection="fiqh_passages", top_k=10
 )
 ```
 
@@ -209,7 +199,7 @@ results = await searcher.search(
 
 ### Configuration
 
-**File:** `src/agents/fiqh_agent.py`
+**File:** `src/agents/collection/fiqh.py`
 
 ```python
 class FiqhAgent(BaseAgent):
@@ -253,11 +243,7 @@ from src.agents.base import AgentInput
 
 agent = FiqhAgent()
 
-result = await agent.execute(AgentInput(
-    query="ما حكم زكاة الأسهم؟",
-    language="ar",
-    metadata={"madhhab": "hanafi"}
-))
+result = await agent.execute(AgentInput(query="ما حكم زكاة الأسهم؟", language="ar", metadata={"madhhab": "hanafi"}))
 
 print(result.answer)
 print(result.citations)
@@ -269,22 +255,23 @@ print(result.citations)
 
 ### Configuration
 
-**File:** `src/agents/general_islamic_agent.py`
+**File:** `src/agents/collection/general.py`
+**Config:** `config/agents/general.yaml`, prompt `prompts/general_agent.txt`
 
 ```python
-class GeneralIslamicAgent(BaseAgent):
-    TEMPERATURE = 0.3  # Slightly higher for educational tone
-    COLLECTION = "general_islamic"
+class GeneralCollectionAgent(CollectionAgent):
+    # Retrieval and verification come from config/agents/general.yaml
+    ...
 ```
 
 ### Differences from Fiqh Agent
 
 | Feature | Fiqh Agent | General Agent |
 |---------|------------|---------------|
-| Temperature | 0.1 | 0.3 |
+| min_relevance | 0.45 | 0.40 |
 | Collection | fiqh_passages | general_islamic |
 | Tone | Legal ruling | Educational |
-| Disclaimers | Required | Optional |
+| Abstention | Strict (abstain on quote and evidence) | Lenient (proceed on evidence) |
 | Citations | Strict | Moderate |
 
 ---
@@ -305,13 +292,11 @@ class GeneralIslamicAgent(BaseAgent):
 ```python
 PATTERNS = [
     # Quran: "Quran 2:255"
-    (r'(?:quran|القرآن)\s*(\d+)\s*[:\-]\s*(\d+)', "quran"),
-    
+    (r"(?:quran|القرآن)\s*(\d+)\s*[:\-]\s*(\d+)", "quran"),
     # Hadith: "صحيح البخاري، حديث 1234"
-    (r'(?:صحيح|سنن)\s+(البخاري|مسلم)\s*.*?(\d+)', "hadith"),
-    
+    (r"(?:صحيح|سنن)\s+(البخاري|مسلم)\s*.*?(\d+)", "hadith"),
     # Fatwa: "فتوى رقم 12345"
-    (r'(?:فتوى|fatwa)\s*(\d+)', "fatwa"),
+    (r"(?:فتوى|fatwa)\s*(\d+)", "fatwa"),
 ]
 ```
 
@@ -319,11 +304,11 @@ PATTERNS = [
 ```python
 @dataclass
 class Citation:
-    id: str              # "C1", "C2", etc.
-    type: str            # "quran", "hadith", "fatwa"
-    source: str          # "Sahih Bukhari"
-    reference: str       # "Hadith #1234"
-    url: Optional[str]   # "https://sunnah.com/bukhari/1234"
+    id: str  # "C1", "C2", etc.
+    type: str  # "quran", "hadith", "fatwa"
+    source: str  # "Sahih Bukhari"
+    reference: str  # "Hadith #1234"
+    url: Optional[str]  # "https://sunnah.com/bukhari/1234"
     text_excerpt: Optional[str]  # Quoted passage
 ```
 
@@ -344,7 +329,7 @@ class Citation:
 ```python
 # Encode in batches of 32
 for i in range(0, len(texts), 32):
-    batch = texts[i:i+32]
+    batch = texts[i : i + 32]
     embeddings = await model.encode(batch)
 ```
 
