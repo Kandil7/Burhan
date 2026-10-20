@@ -96,10 +96,12 @@ def _strip_html(text: str) -> str:
 # Data models
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Passage:
     """One raw input record from the JSONL file."""
-    idx: int                # zero-based line index in source file
+
+    idx: int  # zero-based line index in source file
     content: str
     content_type: str
     book_id: int
@@ -116,6 +118,7 @@ class Passage:
 @dataclass
 class Chunk:
     """One semantic chunk with rich metadata."""
+
     chunk_id: str
     source_passage_ids: List[int]
     book_id: int
@@ -129,7 +132,7 @@ class Chunk:
     page_range: Tuple[int, int]
     page_count: int
     text: str
-    chunk_type: str                 # atomic | section | multi_page
+    chunk_type: str  # atomic | section | multi_page
     topics: List[str]
     persons: List[str]
     places: List[str]
@@ -161,17 +164,17 @@ class Chunk:
             "metadata": {
                 "topics": self.topics,
                 "entities": {
-                    "persons":  self.persons,
-                    "places":   self.places,
-                    "events":   self.events,
+                    "persons": self.persons,
+                    "places": self.places,
+                    "events": self.events,
                     "concepts": self.concepts,
                 },
-                "quranic_refs":       self.quranic_refs,
+                "quranic_refs": self.quranic_refs,
                 "hadith_collections": self.hadith_collections,
-                "temporal_context":   self.temporal_context,
-                "temporal_order":     self.temporal_order,   # FIX: was missing
-                "narrative_role":     self.narrative_role,
-                "relations":          self.relations,         # FIX: was missing
+                "temporal_context": self.temporal_context,
+                "temporal_order": self.temporal_order,  # FIX: was missing
+                "narrative_role": self.narrative_role,
+                "relations": self.relations,  # FIX: was missing
             },
         }
 
@@ -183,39 +186,23 @@ class Chunk:
 # NOTE: More-specific epochs are listed FIRST so first-match wins correctly.
 # Generic period patterns (Meccan / Medinan) are placed LAST (indices 14-15).
 TEMPORAL_EPOCHS: List[Tuple[int, str, str]] = [
-    (0,  r"قبل البعثة|قبل الإسلام|الجاهلية",
-         "Pre-Islamic Era (before 610 CE)"),
-    (1,  r"أول وحي|بدء الوحي|نزل عليه القرآن|اقرأ|بعثة النبي|بعث محمد",
-         "Beginning of Revelation (610 CE / 13 BH)"),
-    (2,  r"إسراء|معراج|ليلة المعراج",
-         "Isra' wal-Mi'raj (~621 CE / 1 BH)"),
-    (3,  r"هجرة النبي|هاجر إلى المدينة|دخل المدينة|الهجرة النبوية",
-         "Prophetic Hijra to Medina (622 CE / 1 AH)"),
-    (4,  r"غزوة بدر|بدر الكبرى|يوم بدر",
-         "Battle of Badr (624 CE / 2 AH)"),
-    (5,  r"غزوة أحد|يوم أحد|جبل أحد",
-         "Battle of Uhud (625 CE / 3 AH)"),
-    (6,  r"الخندق|غزوة الأحزاب",
-         "Battle of the Trench / Ahzab (627 CE / 5 AH)"),
-    (7,  r"صلح الحديبية|الحديبية",
-         "Treaty of Hudaybiyya (628 CE / 6 AH)"),
-    (8,  r"فتح خيبر|غزوة خيبر|خيبر",
-         "Conquest of Khaybar (628 CE / 7 AH)"),
-    (9,  r"فتح مكة|يوم الفتح|دخل مكة",
-         "Conquest of Mecca (630 CE / 8 AH)"),
-    (10, r"غزوة حنين|يوم حنين|حنين",
-         "Battle of Hunayn (630 CE / 8 AH)"),
-    (11, r"غزوة تبوك|تبوك",
-         "Expedition of Tabuk (631 CE / 9 AH)"),
-    (12, r"حجة الوداع|حج النبي|خطبة الوداع",
-         "Farewell Pilgrimage (632 CE / 10 AH)"),
-    (13, r"وفاة النبي|مرضه الأخير|قبره|بعد وفاته",
-         "Death of the Prophet (632 CE / 11 AH)"),
+    (0, r"قبل البعثة|قبل الإسلام|الجاهلية", "Pre-Islamic Era (before 610 CE)"),
+    (1, r"أول وحي|بدء الوحي|نزل عليه القرآن|اقرأ|بعثة النبي|بعث محمد", "Beginning of Revelation (610 CE / 13 BH)"),
+    (2, r"إسراء|معراج|ليلة المعراج", "Isra' wal-Mi'raj (~621 CE / 1 BH)"),
+    (3, r"هجرة النبي|هاجر إلى المدينة|دخل المدينة|الهجرة النبوية", "Prophetic Hijra to Medina (622 CE / 1 AH)"),
+    (4, r"غزوة بدر|بدر الكبرى|يوم بدر", "Battle of Badr (624 CE / 2 AH)"),
+    (5, r"غزوة أحد|يوم أحد|جبل أحد", "Battle of Uhud (625 CE / 3 AH)"),
+    (6, r"الخندق|غزوة الأحزاب", "Battle of the Trench / Ahzab (627 CE / 5 AH)"),
+    (7, r"صلح الحديبية|الحديبية", "Treaty of Hudaybiyya (628 CE / 6 AH)"),
+    (8, r"فتح خيبر|غزوة خيبر|خيبر", "Conquest of Khaybar (628 CE / 7 AH)"),
+    (9, r"فتح مكة|يوم الفتح|دخل مكة", "Conquest of Mecca (630 CE / 8 AH)"),
+    (10, r"غزوة حنين|يوم حنين|حنين", "Battle of Hunayn (630 CE / 8 AH)"),
+    (11, r"غزوة تبوك|تبوك", "Expedition of Tabuk (631 CE / 9 AH)"),
+    (12, r"حجة الوداع|حج النبي|خطبة الوداع", "Farewell Pilgrimage (632 CE / 10 AH)"),
+    (13, r"وفاة النبي|مرضه الأخير|قبره|بعد وفاته", "Death of the Prophet (632 CE / 11 AH)"),
     # Generic period patterns — kept LAST to avoid swallowing specific events
-    (14, r"قبل الهجرة|مكية|مكي|السنة المكية",
-         "Meccan Period (610-622 CE)"),
-    (15, r"بعد الهجرة|مدنية|مدني|المرحلة المدنية",
-         "Medinan Period (622-632 CE)"),
+    (14, r"قبل الهجرة|مكية|مكي|السنة المكية", "Meccan Period (610-622 CE)"),
+    (15, r"بعد الهجرة|مدنية|مدني|المرحلة المدنية", "Medinan Period (622-632 CE)"),
 ]
 
 _DEFAULT_EPOCH = (99, "Prophetic Era (610-632 CE)")
@@ -226,315 +213,197 @@ _DEFAULT_EPOCH = (99, "Prophetic Era (610-632 CE)")
 # ---------------------------------------------------------------------------
 
 PERSON_TABLE: List[Tuple[str, str]] = [
-    (r"النبي|رسول الله|محمد ﷺ|محمد صلى الله|صلى الله عليه وسلم",
-     "Prophet Muhammad ﷺ"),
-    (r"أبو بكر الصديق|أبو بكر رضي|الصديق",
-     "Abu Bakr al-Siddiq"),
-    (r"عمر بن الخطاب|عمر رضي الله|الفاروق",
-     "Umar ibn al-Khattab"),
-    (r"عثمان بن عفان|عثمان رضي|ذو النورين",
-     "Uthman ibn Affan"),
-    (r"علي بن أبي طالب|علي رضي الله|أبو الحسن",
-     "Ali ibn Abi Talib"),
-    (r"عائشة رضي|أم المؤمنين عائشة|عائشة أم",
-     "Aisha bint Abi Bakr"),
-    (r"خديجة بنت|خديجة رضي",
-     "Khadija bint Khuwaylid"),
-    (r"فاطمة الزهراء|فاطمة رضي",
-     "Fatima al-Zahra"),
-    (r"أبو هريرة",
-     "Abu Hurayra"),
-    (r"عبد الله بن عباس|ابن عباس",
-     "Abdullah ibn Abbas"),
-    (r"عبد الله بن مسعود|ابن مسعود",
-     "Abdullah ibn Masud"),
-    (r"أنس بن مالك",
-     "Anas ibn Malik"),
-    (r"أبو سفيان بن حرب|أبو سفيان",
-     "Abu Sufyan ibn Harb"),
-    (r"زيد بن حارثة",
-     "Zayd ibn Haritha"),
-    (r"جبريل|جبرائيل|الروح الأمين",
-     "Angel Jibreel (Gabriel)"),
-    (r"إبراهيم عليه السلام|نبي الله إبراهيم|إبراهيم الخليل",
-     "Prophet Ibrahim (Abraham) ﷺ"),
-    (r"موسى عليه السلام|نبي الله موسى|كليم الله",
-     "Prophet Musa (Moses) ﷺ"),
-    (r"عيسى عليه السلام|نبي الله عيسى|روح الله",
-     "Prophet Isa (Jesus) ﷺ"),
-    (r"ابن القيم الجوزية|ابن قيم|ابن القيم",
-     "Ibn al-Qayyim al-Jawziyya (d. 751 AH)"),
-    (r"ابن تيمية|شيخ الإسلام ابن تيمية",
-     "Ibn Taymiyya (d. 728 AH)"),
-    (r"حمزة بن عبد المطلب|سيد الشهداء",
-     "Hamza ibn Abd al-Muttalib"),
-    (r"أبو طالب بن عبد المطلب|أبو طالب",
-     "Abu Talib ibn Abd al-Muttalib"),
-    (r"المسور بن مخرمة",
-     "Al-Miswar ibn Makhrama"),
-    (r"الحسن بن علي|الحسن رضي",
-     "Al-Hasan ibn Ali"),
-    (r"الحسين بن علي|الحسين رضي",
-     "Al-Husayn ibn Ali"),
-    (r"معاوية بن أبي سفيان|معاوية رضي",
-     "Muawiyah ibn Abi Sufyan"),
-    (r"عبد الرحمن بن عوف",
-     "Abd al-Rahman ibn Awf"),
-    (r"سعد بن أبي وقاص",
-     "Sad ibn Abi Waqqas"),
-    (r"بلال بن رباح|بلال الحبشي",
-     "Bilal ibn Rabah"),
-    (r"أبو ذر الغفاري|أبو ذر",
-     "Abu Dharr al-Ghifari"),
-    (r"الألباني|الشيخ الألباني",
-     "al-Albani (contemporary scholar)"),
-    (r"سلمان الفارسي|سلمان رضي",
-     "Salman al-Farisi"),
-    (r"عمار بن ياسر",
-     "Ammar ibn Yasir"),
-    (r"أبو عبيدة بن الجراح|أبو عبيدة",
-     "Abu Ubayda ibn al-Jarrah"),
-    (r"طلحة بن عبيد الله|طلحة رضي",
-     "Talha ibn Ubaydullah"),
-    (r"الزبير بن العوام|الزبير رضي",
-     "al-Zubayr ibn al-Awwam"),
-    (r"سعد بن معاذ",
-     "Sad ibn Muadh"),
-    (r"عبد الله بن أبيّ|ابن سلول",
-     "Abdullah ibn Ubayy (chief hypocrite)"),
-    (r"أبو لهب|عبد العزى",
-     "Abu Lahab"),
-    (r"أبو جهل|عمرو بن هشام",
-     "Abu Jahl"),
-    (r"هند بنت عتبة|هند",
-     "Hind bint Utba"),
+    (r"النبي|رسول الله|محمد ﷺ|محمد صلى الله|صلى الله عليه وسلم", "Prophet Muhammad ﷺ"),
+    (r"أبو بكر الصديق|أبو بكر رضي|الصديق", "Abu Bakr al-Siddiq"),
+    (r"عمر بن الخطاب|عمر رضي الله|الفاروق", "Umar ibn al-Khattab"),
+    (r"عثمان بن عفان|عثمان رضي|ذو النورين", "Uthman ibn Affan"),
+    (r"علي بن أبي طالب|علي رضي الله|أبو الحسن", "Ali ibn Abi Talib"),
+    (r"عائشة رضي|أم المؤمنين عائشة|عائشة أم", "Aisha bint Abi Bakr"),
+    (r"خديجة بنت|خديجة رضي", "Khadija bint Khuwaylid"),
+    (r"فاطمة الزهراء|فاطمة رضي", "Fatima al-Zahra"),
+    (r"أبو هريرة", "Abu Hurayra"),
+    (r"عبد الله بن عباس|ابن عباس", "Abdullah ibn Abbas"),
+    (r"عبد الله بن مسعود|ابن مسعود", "Abdullah ibn Masud"),
+    (r"أنس بن مالك", "Anas ibn Malik"),
+    (r"أبو سفيان بن حرب|أبو سفيان", "Abu Sufyan ibn Harb"),
+    (r"زيد بن حارثة", "Zayd ibn Haritha"),
+    (r"جبريل|جبرائيل|الروح الأمين", "Angel Jibreel (Gabriel)"),
+    (r"إبراهيم عليه السلام|نبي الله إبراهيم|إبراهيم الخليل", "Prophet Ibrahim (Abraham) ﷺ"),
+    (r"موسى عليه السلام|نبي الله موسى|كليم الله", "Prophet Musa (Moses) ﷺ"),
+    (r"عيسى عليه السلام|نبي الله عيسى|روح الله", "Prophet Isa (Jesus) ﷺ"),
+    (r"ابن القيم الجوزية|ابن قيم|ابن القيم", "Ibn al-Qayyim al-Jawziyya (d. 751 AH)"),
+    (r"ابن تيمية|شيخ الإسلام ابن تيمية", "Ibn Taymiyya (d. 728 AH)"),
+    (r"حمزة بن عبد المطلب|سيد الشهداء", "Hamza ibn Abd al-Muttalib"),
+    (r"أبو طالب بن عبد المطلب|أبو طالب", "Abu Talib ibn Abd al-Muttalib"),
+    (r"المسور بن مخرمة", "Al-Miswar ibn Makhrama"),
+    (r"الحسن بن علي|الحسن رضي", "Al-Hasan ibn Ali"),
+    (r"الحسين بن علي|الحسين رضي", "Al-Husayn ibn Ali"),
+    (r"معاوية بن أبي سفيان|معاوية رضي", "Muawiyah ibn Abi Sufyan"),
+    (r"عبد الرحمن بن عوف", "Abd al-Rahman ibn Awf"),
+    (r"سعد بن أبي وقاص", "Sad ibn Abi Waqqas"),
+    (r"بلال بن رباح|بلال الحبشي", "Bilal ibn Rabah"),
+    (r"أبو ذر الغفاري|أبو ذر", "Abu Dharr al-Ghifari"),
+    (r"الألباني|الشيخ الألباني", "al-Albani (contemporary scholar)"),
+    (r"سلمان الفارسي|سلمان رضي", "Salman al-Farisi"),
+    (r"عمار بن ياسر", "Ammar ibn Yasir"),
+    (r"أبو عبيدة بن الجراح|أبو عبيدة", "Abu Ubayda ibn al-Jarrah"),
+    (r"طلحة بن عبيد الله|طلحة رضي", "Talha ibn Ubaydullah"),
+    (r"الزبير بن العوام|الزبير رضي", "al-Zubayr ibn al-Awwam"),
+    (r"سعد بن معاذ", "Sad ibn Muadh"),
+    (r"عبد الله بن أبيّ|ابن سلول", "Abdullah ibn Ubayy (chief hypocrite)"),
+    (r"أبو لهب|عبد العزى", "Abu Lahab"),
+    (r"أبو جهل|عمرو بن هشام", "Abu Jahl"),
+    (r"هند بنت عتبة|هند", "Hind bint Utba"),
 ]
 
 PLACE_TABLE: List[Tuple[str, str]] = [
-    (r"مكة المكرمة|مكة|مكه|البلد الحرام|أم القرى|بكة",
-     "Mecca (Umm al-Qura)"),
-    (r"المدينة المنورة|المدينة|طيبة|يثرب|مدينة النبي",
-     "Medina (Madinat al-Nabi)"),
-    (r"الكعبة المشرفة|الكعبة|البيت الحرام|الحرم المكي|بيت الله",
-     "Kaaba / Masjid al-Haram"),
-    (r"المسجد النبوي|مسجد النبي|المسجد الشريف",
-     "Masjid al-Nabawi (Prophet's Mosque)"),
-    (r"القدس|بيت المقدس|المسجد الأقصى|إيلياء|الصخرة المشرفة",
-     "Jerusalem / Masjid al-Aqsa"),
-    (r"السماء الأولى|السماء الثانية|السموات|السموات العلا",
-     "The Seven Heavens"),
-    (r"الجنة|الفردوس|جنة المأوى",
-     "Paradise (Janna)"),
-    (r"النار|جهنم|السعير",
-     "Hellfire (Jahannam)"),
-    (r"وادي بدر|يوم بدر|بدر الكبرى",
-     "Badr (battlefield)"),
-    (r"جبل أحد|يوم أحد|وادي أحد",
-     "Uhud (mountain/battlefield)"),
-    (r"الخندق|غزوة الأحزاب|المدينة الخندق",
-     "Khandaq / Trench"),
-    (r"خيبر|غزوة خيبر|حصون خيبر",
-     "Khaybar"),
-    (r"الحديبية|صلح الحديبية",
-     "Al-Hudaybiyya"),
-    (r"وادي حنين|غزوة حنين",
-     "Hunayn (valley/battlefield)"),
-    (r"تبوك|غزوة تبوك|منطقة تبوك",
-     "Tabuk"),
-    (r"الطائف",
-     "Ta'if"),
-    (r"الحجاز|منطقة الحجاز",
-     "Hijaz (region)"),
-    (r"بلاد الشام|الشام|سوريا",
-     "Al-Sham (Syria/Levant)"),
-    (r"غار حراء|جبل النور|حراء",
-     "Cave of Hira' / Jabal al-Nur"),
-    (r"غار ثور|جبل ثور",
-     "Cave of Thawr"),
-    (r"العقبة|منى|مشعر",
-     "Aqaba / Mina / Masha'ir"),
-    (r"نخلة|وادي نخلة",
-     "Nakhlah (valley)"),
-    (r"بئر معونة|رجيع",
-     "Bi'r Ma'una / Raji'"),
-    (r"بدر الصغرى|بدر الموعد",
-     "Badr al-Maw'id (small Badr)"),
-    (r"مؤتة|غزوة مؤتة",
-     "Mu'ta (battlefield)"),
+    (r"مكة المكرمة|مكة|مكه|البلد الحرام|أم القرى|بكة", "Mecca (Umm al-Qura)"),
+    (r"المدينة المنورة|المدينة|طيبة|يثرب|مدينة النبي", "Medina (Madinat al-Nabi)"),
+    (r"الكعبة المشرفة|الكعبة|البيت الحرام|الحرم المكي|بيت الله", "Kaaba / Masjid al-Haram"),
+    (r"المسجد النبوي|مسجد النبي|المسجد الشريف", "Masjid al-Nabawi (Prophet's Mosque)"),
+    (r"القدس|بيت المقدس|المسجد الأقصى|إيلياء|الصخرة المشرفة", "Jerusalem / Masjid al-Aqsa"),
+    (r"السماء الأولى|السماء الثانية|السموات|السموات العلا", "The Seven Heavens"),
+    (r"الجنة|الفردوس|جنة المأوى", "Paradise (Janna)"),
+    (r"النار|جهنم|السعير", "Hellfire (Jahannam)"),
+    (r"وادي بدر|يوم بدر|بدر الكبرى", "Badr (battlefield)"),
+    (r"جبل أحد|يوم أحد|وادي أحد", "Uhud (mountain/battlefield)"),
+    (r"الخندق|غزوة الأحزاب|المدينة الخندق", "Khandaq / Trench"),
+    (r"خيبر|غزوة خيبر|حصون خيبر", "Khaybar"),
+    (r"الحديبية|صلح الحديبية", "Al-Hudaybiyya"),
+    (r"وادي حنين|غزوة حنين", "Hunayn (valley/battlefield)"),
+    (r"تبوك|غزوة تبوك|منطقة تبوك", "Tabuk"),
+    (r"الطائف", "Ta'if"),
+    (r"الحجاز|منطقة الحجاز", "Hijaz (region)"),
+    (r"بلاد الشام|الشام|سوريا", "Al-Sham (Syria/Levant)"),
+    (r"غار حراء|جبل النور|حراء", "Cave of Hira' / Jabal al-Nur"),
+    (r"غار ثور|جبل ثور", "Cave of Thawr"),
+    (r"العقبة|منى|مشعر", "Aqaba / Mina / Masha'ir"),
+    (r"نخلة|وادي نخلة", "Nakhlah (valley)"),
+    (r"بئر معونة|رجيع", "Bi'r Ma'una / Raji'"),
+    (r"بدر الصغرى|بدر الموعد", "Badr al-Maw'id (small Badr)"),
+    (r"مؤتة|غزوة مؤتة", "Mu'ta (battlefield)"),
 ]
 
 CONCEPT_TABLE: List[Tuple[str, str]] = [
-    (r"توحيد|الإيمان بالله|لا إله إلا الله|العقيدة",
-     "Tawhid (Divine Oneness)"),
-    (r"الوحي|إنزال القرآن|تنزيل|الوحي الإلهي",
-     "Revelation (Wahy)"),
-    (r"النبوة|نبي|رسول|المرسلين|الرسالة",
-     "Prophethood (Nubuwwa)"),
-    (r"الإيمان|أركان الإيمان|الإيمان بالله",
-     "Faith (Iman)"),
-    (r"الإسلام|أركان الإسلام|الشهادتان",
-     "Islam (Submission)"),
-    (r"الجهاد|في سبيل الله|المجاهدين",
-     "Jihad (Striving in Allah's path)"),
-    (r"الهجرة|هجرة في سبيل الله",
-     "Hijra (Migration for Allah's sake)"),
-    (r"الصبر|الصابرين|التوكل",
-     "Sabr (Patience) & Tawakkul"),
-    (r"العدل|القسط|الميزان",
-     "Adl (Justice)"),
-    (r"الشورى|مشاورة|أهل الرأي",
-     "Shura (Consultation)"),
-    (r"المنافقون|النفاق|الازدواجية",
-     "Nifaq (Hypocrisy)"),
-    (r"الردة|المرتد",
-     "Ridda (Apostasy)"),
-    (r"الحلف|الميثاق|العهد|المعاهدة",
-     "Treaty / Covenant"),
-    (r"الأخوة|مؤاخاة|التضامن",
-     "Brotherhood / Muakhaa"),
-    (r"الزهد|التقشف|الدنيا",
-     "Zuhd (Asceticism)"),
-    (r"الشفاعة|شفاعة النبي",
-     "Shafa'a (Intercession)"),
-    (r"المعجزة|الآيات البينات|كرامة",
-     "Miracles / Signs"),
-    (r"الأخلاق|حسن الخلق|مكارم الأخلاق",
-     "Prophetic Ethics (Akhlaq)"),
-    (r"الفقر|المساكين|الزكاة|الصدقة",
-     "Poverty / Zakat / Charity"),
-    (r"السنة|الحديث النبوي|الأحاديث",
-     "Sunnah / Prophetic Hadith"),
+    (r"توحيد|الإيمان بالله|لا إله إلا الله|العقيدة", "Tawhid (Divine Oneness)"),
+    (r"الوحي|إنزال القرآن|تنزيل|الوحي الإلهي", "Revelation (Wahy)"),
+    (r"النبوة|نبي|رسول|المرسلين|الرسالة", "Prophethood (Nubuwwa)"),
+    (r"الإيمان|أركان الإيمان|الإيمان بالله", "Faith (Iman)"),
+    (r"الإسلام|أركان الإسلام|الشهادتان", "Islam (Submission)"),
+    (r"الجهاد|في سبيل الله|المجاهدين", "Jihad (Striving in Allah's path)"),
+    (r"الهجرة|هجرة في سبيل الله", "Hijra (Migration for Allah's sake)"),
+    (r"الصبر|الصابرين|التوكل", "Sabr (Patience) & Tawakkul"),
+    (r"العدل|القسط|الميزان", "Adl (Justice)"),
+    (r"الشورى|مشاورة|أهل الرأي", "Shura (Consultation)"),
+    (r"المنافقون|النفاق|الازدواجية", "Nifaq (Hypocrisy)"),
+    (r"الردة|المرتد", "Ridda (Apostasy)"),
+    (r"الحلف|الميثاق|العهد|المعاهدة", "Treaty / Covenant"),
+    (r"الأخوة|مؤاخاة|التضامن", "Brotherhood / Muakhaa"),
+    (r"الزهد|التقشف|الدنيا", "Zuhd (Asceticism)"),
+    (r"الشفاعة|شفاعة النبي", "Shafa'a (Intercession)"),
+    (r"المعجزة|الآيات البينات|كرامة", "Miracles / Signs"),
+    (r"الأخلاق|حسن الخلق|مكارم الأخلاق", "Prophetic Ethics (Akhlaq)"),
+    (r"الفقر|المساكين|الزكاة|الصدقة", "Poverty / Zakat / Charity"),
+    (r"السنة|الحديث النبوي|الأحاديث", "Sunnah / Prophetic Hadith"),
 ]
 
 EVENT_TABLE: List[Tuple[str, str]] = [
-    (r"أول وحي|نزل جبريل|اقرأ|بدء الوحي",
-     "First Revelation in Cave Hira'"),
-    (r"الإسراء والمعراج|ليلة المعراج|أسري به",
-     "Isra' wal-Mi'raj (Night Journey & Ascension)"),
-    (r"الهجرة إلى الحبشة|هجرة الحبشة",
-     "Hijra to Abyssinia"),
-    (r"بيعة العقبة الأولى|بيعة العقبة الثانية|بيعة العقبة",
-     "Bay'at al-Aqaba"),
-    (r"الهجرة إلى المدينة|هجرة النبي|الهجرة النبوية",
-     "Prophetic Hijra to Medina"),
-    (r"المؤاخاة بين المهاجرين والأنصار|مؤاخاة المدينة",
-     "Brotherhood of Muhajirin and Ansar"),
-    (r"بناء المسجد النبوي|أسس المسجد",
-     "Construction of the Prophet's Mosque"),
-    (r"صحيفة المدينة|وثيقة المدينة|ميثاق المدينة",
-     "Charter of Medina"),
-    (r"غزوة بدر الكبرى|يوم بدر",
-     "Battle of Badr"),
-    (r"غزوة أحد|يوم أحد|كسر رباعيته",
-     "Battle of Uhud"),
-    (r"غزوة الخندق|غزوة الأحزاب",
-     "Battle of Khandaq (Confederates)"),
-    (r"بني قريظة|غزوة بني قريظة",
-     "Banu Qurayza Expedition"),
-    (r"الحديبية|صلح الحديبية",
-     "Treaty of Hudaybiyya"),
-    (r"رسائل النبي|كتب النبي إلى الملوك",
-     "Letters to Kings and Rulers"),
-    (r"فتح خيبر|يوم خيبر",
-     "Conquest of Khaybar"),
-    (r"عمرة القضاء|عمرة الوفاء",
-     "Umrat al-Qada'"),
-    (r"فتح مكة|يوم الفتح الأعظم",
-     "Conquest of Mecca"),
-    (r"غزوة حنين|وادي حنين",
-     "Battle of Hunayn"),
-    (r"غزوة تبوك|جيش العسرة",
-     "Expedition of Tabuk"),
-    (r"حجة الوداع|خطبة الوداع|حج النبي",
-     "Farewell Pilgrimage"),
-    (r"وفاة النبي|انتقال النبي|المرض الأخير",
-     "Death of Prophet Muhammad ﷺ"),
+    (r"أول وحي|نزل جبريل|اقرأ|بدء الوحي", "First Revelation in Cave Hira'"),
+    (r"الإسراء والمعراج|ليلة المعراج|أسري به", "Isra' wal-Mi'raj (Night Journey & Ascension)"),
+    (r"الهجرة إلى الحبشة|هجرة الحبشة", "Hijra to Abyssinia"),
+    (r"بيعة العقبة الأولى|بيعة العقبة الثانية|بيعة العقبة", "Bay'at al-Aqaba"),
+    (r"الهجرة إلى المدينة|هجرة النبي|الهجرة النبوية", "Prophetic Hijra to Medina"),
+    (r"المؤاخاة بين المهاجرين والأنصار|مؤاخاة المدينة", "Brotherhood of Muhajirin and Ansar"),
+    (r"بناء المسجد النبوي|أسس المسجد", "Construction of the Prophet's Mosque"),
+    (r"صحيفة المدينة|وثيقة المدينة|ميثاق المدينة", "Charter of Medina"),
+    (r"غزوة بدر الكبرى|يوم بدر", "Battle of Badr"),
+    (r"غزوة أحد|يوم أحد|كسر رباعيته", "Battle of Uhud"),
+    (r"غزوة الخندق|غزوة الأحزاب", "Battle of Khandaq (Confederates)"),
+    (r"بني قريظة|غزوة بني قريظة", "Banu Qurayza Expedition"),
+    (r"الحديبية|صلح الحديبية", "Treaty of Hudaybiyya"),
+    (r"رسائل النبي|كتب النبي إلى الملوك", "Letters to Kings and Rulers"),
+    (r"فتح خيبر|يوم خيبر", "Conquest of Khaybar"),
+    (r"عمرة القضاء|عمرة الوفاء", "Umrat al-Qada'"),
+    (r"فتح مكة|يوم الفتح الأعظم", "Conquest of Mecca"),
+    (r"غزوة حنين|وادي حنين", "Battle of Hunayn"),
+    (r"غزوة تبوك|جيش العسرة", "Expedition of Tabuk"),
+    (r"حجة الوداع|خطبة الوداع|حج النبي", "Farewell Pilgrimage"),
+    (r"وفاة النبي|انتقال النبي|المرض الأخير", "Death of Prophet Muhammad ﷺ"),
 ]
 
 TOPIC_TABLE: List[Tuple[List[str], str]] = [
-    (["هجرة", "هجرته", "الهجرة النبوية"],              "Hijra"),
+    (["هجرة", "هجرته", "الهجرة النبوية"], "Hijra"),
     (["غزوة", "غزوات", "سرية", "معركة", "قتال", "جيش"], "Military Expedition/Battle"),
     (["صلاة", "صلاته", "الصلاة", "يصلي", "الركوع", "السجود"], "Salat (Prayer)"),
-    (["صوم", "رمضان", "الصيام", "يصوم"],               "Sawm (Fasting)"),
+    (["صوم", "رمضان", "الصيام", "يصوم"], "Sawm (Fasting)"),
     (["حج", "حجة", "عمرة", "الكعبة", "الطواف", "السعي", "الإحرام"], "Hajj/Umra (Pilgrimage)"),
-    (["زكاة", "الصدقة", "الإنفاق"],                    "Zakat/Charity"),
-    (["وفد", "وفود", "سفارة", "بعث"],                  "Delegation / Diplomatic"),
+    (["زكاة", "الصدقة", "الإنفاق"], "Zakat/Charity"),
+    (["وفد", "وفود", "سفارة", "بعث"], "Delegation / Diplomatic"),
     (["فقه", "حكم", "أحكام", "الفوائد", "العبر", "الدروس", "استنبط"], "Fiqh / Legal Lessons"),
     (["شمائل", "خلق", "هدي", "طريقته", "كان يفعل", "عادته"], "Prophetic Character (Shama'il)"),
-    (["معجزة", "معجزات", "كرامة", "آية من آيات"],       "Miracles / Prophetic Signs"),
+    (["معجزة", "معجزات", "كرامة", "آية من آيات"], "Miracles / Prophetic Signs"),
     (["نكاح", "زواج", "طلاق", "أزواجه", "الزوجات", "النساء"], "Marriage / Family"),
-    (["دعاء", "ذكر", "تسبيح", "استغفار", "الورد"],     "Du'a / Dhikr"),
-    (["قرآن", "وحي", "نزول", "تنزيل", "آية", "سورة"],  "Revelation / Quran"),
-    (["صحابة", "صحابي", "أصحاب", "الصحب"],             "Companions (Sahaba)"),
-    (["طب", "دواء", "علاج", "الحجامة", "الطب النبوي"],  "Prophetic Medicine"),
-    (["أنصار", "الأنصار"],                              "Ansar"),
-    (["مهاجرون", "مهاجر", "المهاجرين"],                "Muhajirin"),
-    (["يهود", "اليهود", "بني إسرائيل"],                "Jewish tribes / Banu Isra'il"),
-    (["نصارى", "أهل الكتاب", "المسيحيون"],              "Christians / People of the Book"),
-    (["منافق", "النفاق", "المنافقون"],                  "Hypocrisy / Munafiqeen"),
-    (["تحقيق", "مقدمة", "منهج", "المحقق"],              "Scholarly Editorial"),
-    (["طعام", "أكل", "شرب", "الغذاء"],                  "Food and Drink"),
-    (["لباس", "ثوب", "كسوة", "الملبس"],                 "Dress / Clothing"),
-    (["حديث", "رواية", "إسناد", "سند", "رجال"],         "Hadith Transmission"),
-    (["تفسير", "تأويل"],                                "Quranic Exegesis (Tafsir)"),
-    (["إسراء", "معراج", "ليلة المعراج"],                "Isra'/Mi'raj"),
+    (["دعاء", "ذكر", "تسبيح", "استغفار", "الورد"], "Du'a / Dhikr"),
+    (["قرآن", "وحي", "نزول", "تنزيل", "آية", "سورة"], "Revelation / Quran"),
+    (["صحابة", "صحابي", "أصحاب", "الصحب"], "Companions (Sahaba)"),
+    (["طب", "دواء", "علاج", "الحجامة", "الطب النبوي"], "Prophetic Medicine"),
+    (["أنصار", "الأنصار"], "Ansar"),
+    (["مهاجرون", "مهاجر", "المهاجرين"], "Muhajirin"),
+    (["يهود", "اليهود", "بني إسرائيل"], "Jewish tribes / Banu Isra'il"),
+    (["نصارى", "أهل الكتاب", "المسيحيون"], "Christians / People of the Book"),
+    (["منافق", "النفاق", "المنافقون"], "Hypocrisy / Munafiqeen"),
+    (["تحقيق", "مقدمة", "منهج", "المحقق"], "Scholarly Editorial"),
+    (["طعام", "أكل", "شرب", "الغذاء"], "Food and Drink"),
+    (["لباس", "ثوب", "كسوة", "الملبس"], "Dress / Clothing"),
+    (["حديث", "رواية", "إسناد", "سند", "رجال"], "Hadith Transmission"),
+    (["تفسير", "تأويل"], "Quranic Exegesis (Tafsir)"),
+    (["إسراء", "معراج", "ليلة المعراج"], "Isra'/Mi'raj"),
 ]
 
 HADITH_COLLECTION_TABLE: List[Tuple[str, str]] = [
-    (r"البخاري|صحيح البخاري",                  "Sahih al-Bukhari"),
-    (r"مسلم|صحيح مسلم",                        "Sahih Muslim"),
-    (r"أبو داود|سنن أبي داود",                  "Sunan Abi Dawud"),
-    (r"الترمذي|سنن الترمذي|جامع الترمذي",       "Jami' al-Tirmidhi"),
-    (r"النسائي|سنن النسائي",                    "Sunan al-Nasa'i"),
-    (r"ابن ماجه|سنن ابن ماجه",                  "Sunan Ibn Majah"),
-    (r"أحمد|مسند أحمد",                         "Musnad Ahmad"),
-    (r"الطبراني|المعجم الكبير|الأوسط",          "al-Tabarani (al-Mu'jam)"),
-    (r"ابن حبان|صحيح ابن حبان",                 "Sahih Ibn Hibban"),
-    (r"الحاكم|مستدرك الحاكم",                   "Mustadrak al-Hakim"),
-    (r"البيهقي|سنن البيهقي|شعب الإيمان",        "Sunan al-Bayhaqi"),
-    (r"الدارقطني|سنن الدارقطني",                "Sunan al-Daraqutni"),
-    (r"ابن خزيمة|صحيح ابن خزيمة",               "Sahih Ibn Khuzayma"),
-    (r"ابن أبي شيبة|مصنف ابن أبي شيبة",         "Musannaf Ibn Abi Shayba"),
-    (r"الطيالسي|مسند الطيالسي",                 "Musnad al-Tayalisi"),
+    (r"البخاري|صحيح البخاري", "Sahih al-Bukhari"),
+    (r"مسلم|صحيح مسلم", "Sahih Muslim"),
+    (r"أبو داود|سنن أبي داود", "Sunan Abi Dawud"),
+    (r"الترمذي|سنن الترمذي|جامع الترمذي", "Jami' al-Tirmidhi"),
+    (r"النسائي|سنن النسائي", "Sunan al-Nasa'i"),
+    (r"ابن ماجه|سنن ابن ماجه", "Sunan Ibn Majah"),
+    (r"أحمد|مسند أحمد", "Musnad Ahmad"),
+    (r"الطبراني|المعجم الكبير|الأوسط", "al-Tabarani (al-Mu'jam)"),
+    (r"ابن حبان|صحيح ابن حبان", "Sahih Ibn Hibban"),
+    (r"الحاكم|مستدرك الحاكم", "Mustadrak al-Hakim"),
+    (r"البيهقي|سنن البيهقي|شعب الإيمان", "Sunan al-Bayhaqi"),
+    (r"الدارقطني|سنن الدارقطني", "Sunan al-Daraqutni"),
+    (r"ابن خزيمة|صحيح ابن خزيمة", "Sahih Ibn Khuzayma"),
+    (r"ابن أبي شيبة|مصنف ابن أبي شيبة", "Musannaf Ibn Abi Shayba"),
+    (r"الطيالسي|مسند الطيالسي", "Musnad al-Tayalisi"),
 ]
 
 NARRATIVE_ROLE_TABLE: List[Tuple[str, str]] = [
-    (r"فقه|أحكام|الفوائد|العبر|الدروس|استنبط|استدل",
-     "Fiqh / Legal Derivation & Lessons"),
-    (r"شمائل|خُلُق|خلقه|هدي|طريقته|كان يفعل|كان يقول|عادته",
-     "Prophetic Shama'il / Character"),
-    (r"غزوة|سرية|معركة|قتال|الجيش|الكتيبة|البطل",
-     "Military Expedition Narrative"),
-    (r"وفد|بعث رسالة|كاتب|سفير|الوفود",
-     "Diplomatic / Delegation Account"),
-    (r"تحقيق|مقدمة|منهج|المحقق|الناشر|طبعة|النسخ الخطية",
-     "Scholarly / Editorial Introduction"),
-    (r"حدثنا|أخبرنا|أخرجه|روي|رواه|أسند|الإسناد|باب .{1,30} حديث",
-     "Hadith Narration / Isnad Chain"),
-    (r"هجرة النبي|لما هاجر|أثناء الهجرة|رحلة الهجرة",
-     "Hijra Narrative"),
-    (r"حج النبي|أدى النبي العمرة|مناسك|الطواف",
-     "Pilgrimage / Hajj Account"),
-    (r"صلى النبي|صلاة النبي|هدي النبي في الصلاة",
-     "Worship / Ibadah Description"),
-    (r"خطب النبي|قال رسول الله في خطبة|الخطبة",
-     "Prophetic Speech / Sermon"),
-    (r"تفسير|في قوله تعالى|المراد بالآية|فسّر",
-     "Quranic Exegesis (Tafsir)"),
-    (r"الأنساب|نسب النبي|السلالة|جد النبي",
-     "Genealogy / Nasab"),
+    (r"فقه|أحكام|الفوائد|العبر|الدروس|استنبط|استدل", "Fiqh / Legal Derivation & Lessons"),
+    (r"شمائل|خُلُق|خلقه|هدي|طريقته|كان يفعل|كان يقول|عادته", "Prophetic Shama'il / Character"),
+    (r"غزوة|سرية|معركة|قتال|الجيش|الكتيبة|البطل", "Military Expedition Narrative"),
+    (r"وفد|بعث رسالة|كاتب|سفير|الوفود", "Diplomatic / Delegation Account"),
+    (r"تحقيق|مقدمة|منهج|المحقق|الناشر|طبعة|النسخ الخطية", "Scholarly / Editorial Introduction"),
+    (r"حدثنا|أخبرنا|أخرجه|روي|رواه|أسند|الإسناد|باب .{1,30} حديث", "Hadith Narration / Isnad Chain"),
+    (r"هجرة النبي|لما هاجر|أثناء الهجرة|رحلة الهجرة", "Hijra Narrative"),
+    (r"حج النبي|أدى النبي العمرة|مناسك|الطواف", "Pilgrimage / Hajj Account"),
+    (r"صلى النبي|صلاة النبي|هدي النبي في الصلاة", "Worship / Ibadah Description"),
+    (r"خطب النبي|قال رسول الله في خطبة|الخطبة", "Prophetic Speech / Sermon"),
+    (r"تفسير|في قوله تعالى|المراد بالآية|فسّر", "Quranic Exegesis (Tafsir)"),
+    (r"الأنساب|نسب النبي|السلالة|جد النبي", "Genealogy / Nasab"),
 ]
 
 # FIX: Extended Quran ref pattern to also catch bare ﴿...﴾ without a bracket ref
 _QURAN_REF_PATTERN = re.compile(
-    r"\[([^:\u003a\]]+)[:\u003a]\s*(\d+)\]"   # [Surah: ayah]
-    r"|﴿([^﴾]{1,120})﴾\s*(?:\[([^\]]+)\])?"       # ﴿text﴾ optionally followed by [ref]
+    r"\[([^:\u003a\]]+)[:\u003a]\s*(\d+)\]"  # [Surah: ayah]
+    r"|﴿([^﴾]{1,120})﴾\s*(?:\[([^\]]+)\])?"  # ﴿text﴾ optionally followed by [ref]
 )
 
 
 # ---------------------------------------------------------------------------
 # SeerahAgenticChunker — main class
 # ---------------------------------------------------------------------------
+
 
 class SeerahAgenticChunker:
     """
@@ -608,28 +477,29 @@ class SeerahAgenticChunker:
                 try:
                     rec = json.loads(raw_line)
                 except json.JSONDecodeError as exc:
-                    print(f"[WARN] Line {idx}: JSON parse error — {exc}",
-                          file=sys.stderr)
+                    print(f"[WARN] Line {idx}: JSON parse error — {exc}", file=sys.stderr)
                     continue
 
                 # FIX: Strip HTML from content at load time
                 raw_content = rec.get("content", "")
                 clean_content = _strip_html(raw_content)
 
-                self._passages.append(Passage(
-                    idx=idx,
-                    content=clean_content,
-                    content_type=rec.get("content_type", "page"),
-                    book_id=int(rec.get("book_id", 0)),
-                    book_title=rec.get("book_title", ""),
-                    category=rec.get("category", ""),
-                    author=rec.get("author", ""),
-                    author_death=int(rec.get("author_death", 99999)),
-                    collection=rec.get("collection", ""),
-                    page_number=int(rec.get("page_number", 0)),
-                    section_title=rec.get("section_title", ""),
-                    hierarchy=rec.get("hierarchy", []),
-                ))
+                self._passages.append(
+                    Passage(
+                        idx=idx,
+                        content=clean_content,
+                        content_type=rec.get("content_type", "page"),
+                        book_id=int(rec.get("book_id", 0)),
+                        book_title=rec.get("book_title", ""),
+                        category=rec.get("category", ""),
+                        author=rec.get("author", ""),
+                        author_death=int(rec.get("author_death", 99999)),
+                        collection=rec.get("collection", ""),
+                        page_number=int(rec.get("page_number", 0)),
+                        section_title=rec.get("section_title", ""),
+                        hierarchy=rec.get("hierarchy", []),
+                    )
+                )
 
     # ------------------------------------------------------------------
     # Stage 2 — Deduplicate
@@ -645,8 +515,7 @@ class SeerahAgenticChunker:
         for p in self._passages:
             # FIX: Removed spurious extra opening parenthesis that caused TypeError
             fingerprint = hashlib.md5(
-                (str(p.book_id) + str(p.page_number) + str(p.hierarchy) + p.content)
-                .encode("utf-8")
+                (str(p.book_id) + str(p.page_number) + str(p.hierarchy) + p.content).encode("utf-8")
             ).hexdigest()
             if fingerprint not in seen:
                 seen.add(fingerprint)
@@ -722,16 +591,20 @@ class SeerahAgenticChunker:
 
         for indices in section_index.values():
             for prev_i, next_i in zip(indices, indices[1:]):
-                self._chunks[prev_i].relations.append({
-                    "type": "CONTINUES_FROM",
-                    "target_chunk_id": self._chunks[next_i].chunk_id,
-                    "direction": "precedes",
-                })
-                self._chunks[next_i].relations.append({
-                    "type": "CONTINUES_FROM",
-                    "target_chunk_id": self._chunks[prev_i].chunk_id,
-                    "direction": "follows",
-                })
+                self._chunks[prev_i].relations.append(
+                    {
+                        "type": "CONTINUES_FROM",
+                        "target_chunk_id": self._chunks[next_i].chunk_id,
+                        "direction": "precedes",
+                    }
+                )
+                self._chunks[next_i].relations.append(
+                    {
+                        "type": "CONTINUES_FROM",
+                        "target_chunk_id": self._chunks[prev_i].chunk_id,
+                        "direction": "follows",
+                    }
+                )
 
         # ── SHARES_EVENT ────────────────────────────────────────────────
         event_index: Dict[str, List[int]] = defaultdict(list)
@@ -745,11 +618,13 @@ class SeerahAgenticChunker:
             for i in indices:
                 others = [self._chunks[j].chunk_id for j in indices if j != i][:3]
                 if others:
-                    self._chunks[i].relations.append({
-                        "type": "SHARES_EVENT",
-                        "event": ev,
-                        "related_chunk_ids": others,
-                    })
+                    self._chunks[i].relations.append(
+                        {
+                            "type": "SHARES_EVENT",
+                            "event": ev,
+                            "related_chunk_ids": others,
+                        }
+                    )
 
         # ── SHARES_PERSON (FIX: implemented — was documented but missing) ──
         person_index: Dict[str, List[int]] = defaultdict(list)
@@ -763,11 +638,13 @@ class SeerahAgenticChunker:
             for i in indices:
                 others = [self._chunks[j].chunk_id for j in indices if j != i][:3]
                 if others:
-                    self._chunks[i].relations.append({
-                        "type": "SHARES_PERSON",
-                        "person": person,
-                        "related_chunk_ids": others,
-                    })
+                    self._chunks[i].relations.append(
+                        {
+                            "type": "SHARES_PERSON",
+                            "person": person,
+                            "related_chunk_ids": others,
+                        }
+                    )
 
         # ── SHARES_PLACE (FIX: implemented — was documented but missing) ──
         place_index: Dict[str, List[int]] = defaultdict(list)
@@ -781,20 +658,18 @@ class SeerahAgenticChunker:
             for i in indices:
                 others = [self._chunks[j].chunk_id for j in indices if j != i][:3]
                 if others:
-                    self._chunks[i].relations.append({
-                        "type": "SHARES_PLACE",
-                        "place": place,
-                        "related_chunk_ids": others,
-                    })
+                    self._chunks[i].relations.append(
+                        {
+                            "type": "SHARES_PLACE",
+                            "place": place,
+                            "related_chunk_ids": others,
+                        }
+                    )
 
         # ── FIQH_OF ─────────────────────────────────────────────────────
-        fiqh_chunks = [
-            i for i, c in enumerate(self._chunks)
-            if "Fiqh" in c.narrative_role
-        ]
+        fiqh_chunks = [i for i, c in enumerate(self._chunks) if "Fiqh" in c.narrative_role]
         narrative_chunks = [
-            i for i, c in enumerate(self._chunks)
-            if "Narrative" in c.narrative_role or "Battle" in c.narrative_role
+            i for i, c in enumerate(self._chunks) if "Narrative" in c.narrative_role or "Battle" in c.narrative_role
         ]
 
         ev_narrative: Dict[str, List[int]] = defaultdict(list)
@@ -806,11 +681,13 @@ class SeerahAgenticChunker:
             fc = self._chunks[fi]
             for ev in fc.events:
                 for ni in ev_narrative.get(ev, [])[:2]:
-                    fc.relations.append({
-                        "type": "FIQH_OF",
-                        "target_chunk_id": self._chunks[ni].chunk_id,
-                        "note": f"Derives rulings from: {ev}",
-                    })
+                    fc.relations.append(
+                        {
+                            "type": "FIQH_OF",
+                            "target_chunk_id": self._chunks[ni].chunk_id,
+                            "note": f"Derives rulings from: {ev}",
+                        }
+                    )
 
     # ------------------------------------------------------------------
     # Stage 6 — Write output
@@ -881,16 +758,12 @@ class SeerahAgenticChunker:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _non_overlapping_windows(
-        pages: List[Passage], size: int
-    ) -> List[List[Passage]]:
+    def _non_overlapping_windows(pages: List[Passage], size: int) -> List[List[Passage]]:
         """Split `pages` into consecutive, non-overlapping groups of `size`."""
         return [pages[i : i + size] for i in range(0, len(pages), size)]
 
     @staticmethod
-    def _sliding_windows(
-        pages: List[Passage], size: int, step: int
-    ) -> List[List[Passage]]:
+    def _sliding_windows(pages: List[Passage], size: int, step: int) -> List[List[Passage]]:
         """
         Produce overlapping windows. `step` < `size` creates context overlap.
 
@@ -900,9 +773,7 @@ class SeerahAgenticChunker:
         windows = [pages[i : i + size] for i in range(0, len(pages), step)]
         # Merge last stub window into the second-to-last if it is too small
         if len(windows) >= 2 and len(windows[-1]) < size // 2:
-            windows[-2] = windows[-2] + [
-                p for p in windows[-1] if p not in windows[-2]
-            ]
+            windows[-2] = windows[-2] + [p for p in windows[-1] if p not in windows[-2]]
             windows.pop()
         return windows
 
@@ -1017,9 +888,7 @@ class SeerahAgenticChunker:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _infer_temporal_context(
-        text: str, hier: List[str]
-    ) -> Tuple[str, int]:
+    def _infer_temporal_context(text: str, hier: List[str]) -> Tuple[str, int]:
         """
         Return (human-readable period string, sortable epoch index).
         FIX: Scans full text (up to 4000 chars) instead of 700.
@@ -1063,15 +932,15 @@ class SeerahAgenticChunker:
     # ------------------------------------------------------------------
 
     def _build_report(self) -> str:
-        total_in       = len(self._passages)
-        total_deduped  = len(self._deduped)
+        total_in = len(self._passages)
+        total_deduped = len(self._deduped)
         total_sections = len(self._sections)
-        total_chunks   = len(self._chunks)
+        total_chunks = len(self._chunks)
 
-        book_counts    = Counter(c.book_id          for c in self._chunks)
-        role_counts    = Counter(c.narrative_role   for c in self._chunks)
-        temporal_counts= Counter(c.temporal_context for c in self._chunks)
-        chunk_types    = Counter(c.chunk_type        for c in self._chunks)
+        book_counts = Counter(c.book_id for c in self._chunks)
+        role_counts = Counter(c.narrative_role for c in self._chunks)
+        temporal_counts = Counter(c.temporal_context for c in self._chunks)
+        chunk_types = Counter(c.chunk_type for c in self._chunks)
         topic_counts: Counter = Counter()
         for c in self._chunks:
             topic_counts.update(c.topics)
@@ -1090,8 +959,7 @@ class SeerahAgenticChunker:
             "",
             "  ── Passage statistics ──────────────────────────────────",
             f"  Raw passages loaded  : {total_in:,}",
-            f"  After deduplication  : {total_deduped:,} "
-            f"({total_in - total_deduped:,} duplicates removed)",
+            f"  After deduplication  : {total_deduped:,} ({total_in - total_deduped:,} duplicates removed)",
             f"  Unique section groups: {total_sections:,}",
             "",
             "  ── Chunking parameters ─────────────────────────────────",
@@ -1135,23 +1003,22 @@ class SeerahAgenticChunker:
 # CLI entry-point
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Agentic semantic chunker for Seerah JSONL corpora."
-    )
-    parser.add_argument("input",  help="Path to input JSONL file")
+    parser = argparse.ArgumentParser(description="Agentic semantic chunker for Seerah JSONL corpora.")
+    parser.add_argument("input", help="Path to input JSONL file")
     parser.add_argument("output", help="Path to output JSONL file")
-    parser.add_argument("--small-max",  type=int, default=5,
-                        help="Max pages for a single-chunk section (default 5)")
-    parser.add_argument("--medium-max", type=int, default=20,
-                        help="Max pages before sliding-window mode (default 20)")
-    parser.add_argument("--window",     type=int, default=4,
-                        help="Window size in pages (default 4)")
-    parser.add_argument("--step",       type=int, default=3,
-                        help="Step size for large-section sliding window "
-                             "(default 3; set equal to --window for no overlap)")
+    parser.add_argument("--small-max", type=int, default=5, help="Max pages for a single-chunk section (default 5)")
+    parser.add_argument("--medium-max", type=int, default=20, help="Max pages before sliding-window mode (default 20)")
+    parser.add_argument("--window", type=int, default=4, help="Window size in pages (default 4)")
+    parser.add_argument(
+        "--step",
+        type=int,
+        default=3,
+        help="Step size for large-section sliding window (default 3; set equal to --window for no overlap)",
+    )
     args = parser.parse_args()
 
     chunker = SeerahAgenticChunker(
