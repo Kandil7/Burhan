@@ -1,15 +1,15 @@
 import asyncio
-import threading
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi import FastAPI
+
 from src.config.logging_config import get_logger
 
 logger = get_logger()
 
 
-def warm_models(app: FastAPI):
+def warm_models(app: FastAPI) -> None:
     """Warm up models in a background thread to avoid blocking startup."""
     logger.info("lifespan.warming.begin")
     try:
@@ -34,9 +34,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     register_all_checks()
 
     # ── 2. Infrastructure (Shared) ────────────────────────────────────────────
-    from src.infrastructure.llm_client import LLMClients
     from src.indexing.embeddings.embedding_model import EmbeddingModel
     from src.indexing.vectorstores.qdrant_store import VectorStore
+    from src.infrastructure.llm_client import LLMClients
 
     llm_clients = await LLMClients.create()
     app.state.llm_clients = llm_clients
@@ -57,15 +57,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.registry = get_registry()
 
     # ── 4. Use Case & Service ─────────────────────────────────────────────────
-    from src.application.use_cases.answer_query import AnswerQueryUseCase
-    from src.application.services.ask_service import AskService
-    from src.application.router import RouterAgent
     from src.application.classifier_factory import build_classifier
+    from src.application.router import RouterAgent
+    from src.application.services.ask_service import AskService
+    from src.application.use_cases.answer_query import AnswerQueryUseCase
 
     # Build Router - use keyword-only classifier for fast-path routing
     classifier = build_classifier(embedding_model=None)
     logger.info(
-        f"Built classifier: {type(classifier).__name__}, keyword: {type(classifier._keyword_classifier).__name__}"
+        f"Built classifier: {type(classifier).__name__}, "
+        f"keyword: {type(getattr(classifier, '_keyword_classifier', None)).__name__}"
     )
     router = RouterAgent(classifier=classifier)
     app.state.router = router
