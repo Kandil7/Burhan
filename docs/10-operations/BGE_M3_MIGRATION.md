@@ -1,5 +1,10 @@
 # BAAI/bge-m3 Migration Guide
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `src/indexing/embeddings/embedding_model.py`; there is no standalone BGE-M3 smoke-test script.
+
 **Date:** April 8, 2026  
 **Status:** Ready for Testing  
 **Model:** BAAI/bge-m3 (1024 dimensions, 100+ languages)
@@ -118,7 +123,7 @@ EMBEDDING_DIMENSION=1024
 ### Step 2: Update Code
 
 ```python
-# src/knowledge/embedding_model.py
+# src/indexing/embeddings/embedding_model.py
 # Already updated to support both models!
 
 # Automatic selection based on EMBEDDING_MODEL setting
@@ -130,19 +135,22 @@ model = EmbeddingModel()  # Uses BGE-M3 by default
 ```python
 from src.knowledge.embedding_model import EmbeddingModel
 
+
 async def test():
     model = EmbeddingModel(model_name="BAAI/bge-m3")
     await model.load_model()
-    
+
     # Test Arabic query
     result = await model.encode_query("ما حكم الصلاة؟")
     print(f"Dense vector shape: {result['dense_vecs'].shape}")
-    
+
     # Test with sparse (BGE-M3 only)
     result = await model.encode_query("ما حكم الصلاة؟", return_sparse=True)
     print(f"Sparse weights: {result.get('lexical_weights')}")
 
+
 import asyncio
+
 asyncio.run(test())
 ```
 
@@ -154,53 +162,56 @@ asyncio.run(test())
 
 from FlagEmbedding import BGEM3FlagModel
 
-model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=True)
+model = BGEM3FlagModel("BAAI/bge-m3", use_fp16=True)
 
 # Load collection
 import json
-with open('fiqh_passages.jsonl.gz', 'rt') as f:
-    texts = [json.loads(line)['content'] for line in f]
+
+with open("fiqh_passages.jsonl.gz", "rt") as f:
+    texts = [json.loads(line)["content"] for line in f]
 
 # Embed (batch processing)
 embeddings = []
 for i in range(0, len(texts), 32):
-    batch = texts[i:i+32]
+    batch = texts[i : i + 32]
     result = model.encode(batch, batch_size=32, max_length=8192)
-    embeddings.append(result['dense_vecs'])
+    embeddings.append(result["dense_vecs"])
 
 # Save embeddings
 import numpy as np
-np.save('fiqh_passages_embeddings.npy', np.vstack(embeddings))
+
+np.save("fiqh_passages_embeddings.npy", np.vstack(embeddings))
 ```
 
 ### Step 5: Update Hybrid Search
 
 ```python
-# src/knowledge/hybrid_search.py
+# src/indexing/vectorstores/hybrid_client.py
 # Now uses sparse embeddings from BGE-M3
 
 from src.knowledge.embedding_model import EmbeddingModel
 
+
 async def search(query: str, top_k: int = 10):
     model = EmbeddingModel()
-    
+
     # Get both dense and sparse
     result = await model.encode_query(query, return_sparse=True)
-    dense_vec = result['dense_vecs']
-    sparse_weights = result.get('lexical_weights')
-    
+    dense_vec = result["dense_vecs"]
+    sparse_weights = result.get("lexical_weights")
+
     # Dense search (semantic)
     dense_results = vector_store.search(dense_vec, top_k=top_k)
-    
+
     # Sparse search (lexical)
     if sparse_weights:
         sparse_results = vector_store.search_sparse(sparse_weights, top_k=top_k)
-        
+
         # Rerank combining both
         final_results = rerank(dense_results, sparse_results)
     else:
         final_results = dense_results
-    
+
     return final_results
 ```
 
@@ -263,10 +274,10 @@ async def search(query: str, top_k: int = 10):
 | File | Status | Purpose |
 |------|--------|---------|
 | `scripts/test_bge_m3.py` | ✅ NEW | Test BGE-M3 with Arabic queries |
-| `src/knowledge/embedding_model_v2.py` | ✅ NEW | Updated embedding model (supports both) |
+| `src/indexing/embeddings/embedding_model.py` | ✅ NEW | Updated embedding model (supports both) |
 | `docs/BGE_M3_MIGRATION.md` | ✅ NEW | This migration guide |
 | `notebooks/01_embed_all_collections.ipynb` | ⏳ TODO | Update to use BGE-M3 |
-| `src/knowledge/hybrid_search.py` | ⏳ TODO | Add sparse embedding support |
+| `src/indexing/vectorstores/hybrid_client.py` | ⏳ TODO | Add sparse embedding support |
 | `pyproject.toml` | ⏳ TODO | Add FlagEmbedding dependency |
 
 ---
