@@ -11,14 +11,15 @@
 ```python
 # src/api/schemas/request.py
 
+
 class AskRequest(BaseModel):
     """طلب السؤال."""
-    
+
     query: str
     language: str = "ar"
     collection: Optional[str]
     madhhab: Optional[str]
-    
+
     model_config = {"extra": "forbid"}
 ```
 
@@ -43,9 +44,10 @@ class SearchRequest(BaseModel):
 ```python
 # src/api/schemas/response.py
 
+
 class AskResponse(BaseModel):
     """استجابة السؤال."""
-    
+
     answer: str
     citations: list[CitationResponse]
     intent: str
@@ -120,9 +122,10 @@ class HealthResponse(BaseModel):
 ```python
 # src/api/schemas/trace.py
 
+
 class TraceRequest(BaseModel):
     """طلب التتبع."""
-    
+
     query: str
     intent: str
     agent: str
