@@ -50,18 +50,14 @@ class Colors:
 # ── HTTP Helper ──────────────────────────────────────────────────────────
 
 
-def make_request(
-    method: str, path: str, data: Optional[dict] = None, timeout: int = 30
-) -> tuple[bool, int, dict]:
+def make_request(method: str, path: str, data: Optional[dict] = None, timeout: int = 30) -> tuple[bool, int, dict]:
     """Make HTTP request and return (success, status_code, response_data)."""
     base_url = make_request.base_url  # type: ignore[attr-defined]
     url = f"{base_url}{path}"
     try:
         if data:
             body = json.dumps(data).encode("utf-8")
-            req = urllib.request.Request(
-                url, data=body, headers={"Content-Type": "application/json"}, method=method
-            )
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"}, method=method)
         else:
             req = urllib.request.Request(url, method=method)
 
@@ -119,9 +115,7 @@ def print_failure(error: str) -> None:
     print(f"    {Colors.RED}Error: {error}{Colors.ENDC}")
 
 
-def validate_field(
-    data: dict, field_name: str, expected_type: Any = None, required: bool = True
-) -> bool:
+def validate_field(data: dict, field_name: str, expected_type: Any = None, required: bool = True) -> bool:
     """Validate a field exists and has the correct type."""
     if required and field_name not in data:
         print_warning(f"Missing required field: {field_name}")
@@ -131,8 +125,7 @@ def validate_field(
     if expected_type and value is not None:
         if not isinstance(value, expected_type):
             print_warning(
-                f"Field {field_name} has wrong type: {type(value).__name__} "
-                f"(expected {expected_type.__name__})"
+                f"Field {field_name} has wrong type: {type(value).__name__} (expected {expected_type.__name__})"
             )
             return False
     return True
@@ -195,7 +188,8 @@ def test_tool_endpoints() -> bool:
     # Test 1: Zakat Calculator
     print_test(1, "POST /api/v1/tools/zakat", "Calculate zakat on wealth")
     success, status, data = make_request(
-        "POST", "/api/v1/tools/zakat",
+        "POST",
+        "/api/v1/tools/zakat",
         {"assets": {"cash": 50000, "gold_grams": 100, "silver_grams": 500}, "debts": 5000, "madhhab": "shafii"},
     )
     if success and status == 200:
@@ -210,8 +204,10 @@ def test_tool_endpoints() -> bool:
     # Test 2: Prayer Times
     print_test(2, "POST /api/v1/tools/prayer-times", "Get prayer times for Doha")
     success, status, data = make_request(
-        "POST", "/api/v1/tools/prayer-times",
-        {"lat": 25.2854, "lng": 51.5310, "method": "egyptian"}, timeout=10,
+        "POST",
+        "/api/v1/tools/prayer-times",
+        {"lat": 25.2854, "lng": 51.5310, "method": "egyptian"},
+        timeout=10,
     )
     if success and status == 200:
         if validate_field(data, "times", dict):
@@ -228,9 +224,7 @@ def test_tool_endpoints() -> bool:
 
     # Test 3: Hijri Calendar
     print_test(3, "POST /api/v1/tools/hijri", "Convert Gregorian to Hijri")
-    success, status, data = make_request(
-        "POST", "/api/v1/tools/hijri", {"gregorian_date": "2026-04-05"}
-    )
+    success, status, data = make_request("POST", "/api/v1/tools/hijri", {"gregorian_date": "2026-04-05"})
     if success and status == 200:
         if validate_field(data, "hijri_date", dict):
             print_success(data, ["hijri_date", "is_ramadan", "is_eid"])
@@ -242,9 +236,7 @@ def test_tool_endpoints() -> bool:
 
     # Test 4: Duas
     print_test(4, "POST /api/v1/tools/duas", "Retrieve duas for morning")
-    success, status, data = make_request(
-        "POST", "/api/v1/tools/duas", {"occasion": "morning", "limit": 3}
-    )
+    success, status, data = make_request("POST", "/api/v1/tools/duas", {"occasion": "morning", "limit": 3})
     if success and status == 200:
         if validate_field(data, "duas", list) and validate_field(data, "count", int):
             print_success(data, ["duas", "count"])
@@ -257,7 +249,8 @@ def test_tool_endpoints() -> bool:
     # Test 5: Inheritance Calculator
     print_test(5, "POST /api/v1/tools/inheritance", "Calculate inheritance distribution")
     success, status, data = make_request(
-        "POST", "/api/v1/tools/inheritance",
+        "POST",
+        "/api/v1/tools/inheritance",
         {"estate_value": 100000, "heirs": {"husband": True, "father": True, "mother": True, "sons": 1, "daughters": 1}},
     )
     if success and status == 200:
@@ -319,9 +312,7 @@ def test_quran_endpoints() -> bool:
 
     # Test 4: Quran Search
     print_test(4, "POST /api/v1/quran/search", "Search for رحمة in Quran")
-    success, status, data = make_request(
-        "POST", "/api/v1/quran/search", {"query": "رحمة", "limit": 5}
-    )
+    success, status, data = make_request("POST", "/api/v1/quran/search", {"query": "رحمة", "limit": 5})
     if success and status == 200:
         if validate_field(data, "verses", list) and validate_field(data, "count", int):
             print_success(data, ["verses", "count"])
@@ -333,9 +324,7 @@ def test_quran_endpoints() -> bool:
 
     # Test 5: Validate Quotation
     print_test(5, "POST /api/v1/quran/validate", "Validate Quranic text")
-    success, status, data = make_request(
-        "POST", "/api/v1/quran/validate", {"text": "بسم الله الرحمن الرحيم"}
-    )
+    success, status, data = make_request("POST", "/api/v1/quran/validate", {"text": "بسم الله الرحمن الرحيم"})
     if success and status == 200:
         if validate_field(data, "is_quran", bool):
             print_success(data, ["is_quran", "confidence"])
@@ -360,8 +349,10 @@ def test_quran_endpoints() -> bool:
     # Test 7: Analytics (NL2SQL)
     print_test(7, "POST /api/v1/quran/analytics", "How many verses in Al-Baqarah?")
     success, status, data = make_request(
-        "POST", "/api/v1/quran/analytics",
-        {"query": "How many verses are in Surah Al-Baqarah?"}, timeout=10,
+        "POST",
+        "/api/v1/quran/analytics",
+        {"query": "How many verses are in Surah Al-Baqarah?"},
+        timeout=10,
     )
     if success and status == 200:
         if validate_field(data, "sql", str):
@@ -386,8 +377,10 @@ def test_rag_endpoints() -> bool:
     # Test 1: Fiqh RAG
     print_test(1, "POST /api/v1/rag/fiqh", "Fiqh question with RAG")
     success, status, data = make_request(
-        "POST", "/api/v1/rag/fiqh",
-        {"query": "ما حكم صلاة الجماعة؟", "language": "ar"}, timeout=30,
+        "POST",
+        "/api/v1/rag/fiqh",
+        {"query": "ما حكم صلاة الجماعة؟", "language": "ar"},
+        timeout=30,
     )
     if success and status == 200:
         if validate_field(data, "answer", str) and validate_field(data, "citations", list):
@@ -401,8 +394,10 @@ def test_rag_endpoints() -> bool:
     # Test 2: General RAG
     print_test(2, "POST /api/v1/rag/general", "General Islamic knowledge")
     success, status, data = make_request(
-        "POST", "/api/v1/rag/general",
-        {"query": "من هو عمر بن الخطاب؟", "language": "ar"}, timeout=15,
+        "POST",
+        "/api/v1/rag/general",
+        {"query": "من هو عمر بن الخطاب؟", "language": "ar"},
+        timeout=15,
     )
     if success and status == 200:
         if validate_field(data, "answer", str):
@@ -438,9 +433,7 @@ def test_query_endpoint() -> bool:
 
     # Test 1: Greeting
     print_test(1, "Greeting Query", "السلام عليكم")
-    success, status, data = make_request(
-        "POST", "/api/v1/query", {"query": "السلام عليكم", "language": "ar"}
-    )
+    success, status, data = make_request("POST", "/api/v1/query", {"query": "السلام عليكم", "language": "ar"})
     if success and status == 200:
         if validate_field(data, "intent", str) and validate_field(data, "answer", str):
             print_success(data, ["query_id", "intent", "intent_confidence", "answer"])
@@ -453,8 +446,10 @@ def test_query_endpoint() -> bool:
     # Test 2: Fiqh Question
     print_test(2, "Fiqh Question", "ما حكم صلاة الجمعة؟")
     success, status, data = make_request(
-        "POST", "/api/v1/query",
-        {"query": "ما حكم صلاة الجمعة؟", "language": "ar", "madhhab": "shafii"}, timeout=15,
+        "POST",
+        "/api/v1/query",
+        {"query": "ما حكم صلاة الجمعة؟", "language": "ar", "madhhab": "shafii"},
+        timeout=15,
     )
     if success and status == 200:
         if validate_field(data, "intent", str) and validate_field(data, "answer", str):
@@ -468,8 +463,10 @@ def test_query_endpoint() -> bool:
     # Test 3: Quran Question
     print_test(3, "Quran Question", "كم عدد آيات سورة البقرة؟")
     success, status, data = make_request(
-        "POST", "/api/v1/query",
-        {"query": "كم عدد آيات سورة البقرة؟", "language": "ar"}, timeout=15,
+        "POST",
+        "/api/v1/query",
+        {"query": "كم عدد آيات سورة البقرة؟", "language": "ar"},
+        timeout=15,
     )
     if success and status == 200:
         if validate_field(data, "intent", str):
@@ -483,8 +480,10 @@ def test_query_endpoint() -> bool:
     # Test 4: Zakat Intent
     print_test(4, "Zakat Intent", "كيف احسب زكاة مالي؟")
     success, status, data = make_request(
-        "POST", "/api/v1/query",
-        {"query": "كيف احسب زكاة مالي؟", "language": "ar"}, timeout=15,
+        "POST",
+        "/api/v1/query",
+        {"query": "كيف احسب زكاة مالي؟", "language": "ar"},
+        timeout=15,
     )
     if success and status == 200:
         if validate_field(data, "intent", str):
@@ -498,8 +497,10 @@ def test_query_endpoint() -> bool:
     # Test 5: Dua Request
     print_test(5, "Dua Request", "أعطني دعاء السفر")
     success, status, data = make_request(
-        "POST", "/api/v1/query",
-        {"query": "أعطني دعاء السفر", "language": "ar"}, timeout=15,
+        "POST",
+        "/api/v1/query",
+        {"query": "أعطني دعاء السفر", "language": "ar"},
+        timeout=15,
     )
     if success and status == 200:
         if validate_field(data, "intent", str):
