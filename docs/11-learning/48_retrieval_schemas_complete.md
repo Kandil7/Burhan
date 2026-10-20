@@ -11,15 +11,16 @@
 ```python
 # src/retrieval/schemas.py
 
+
 class RetrievalResult(BaseModel):
     """نتيجة الاسترجاع."""
-    
+
     id: str
     text: str
     score: float
     collection: str
     metadata: dict
-    
+
     # Additional fields
     rank: Optional[int]
     rerank_score: Optional[float]
@@ -30,10 +31,10 @@ class RetrievalResult(BaseModel):
 ```python
 class QueryType(str, Enum):
     """نوع الاستعلام."""
-    
-    SEMANTIC = "semantic"      # Embedding-based
-    KEYWORD = "keyword"       # BM25
-    HYBRID = "hybrid"          # Combined
+
+    SEMANTIC = "semantic"  # Embedding-based
+    KEYWORD = "keyword"  # BM25
+    HYBRID = "hybrid"  # Combined
 ```
 
 ### 1.3 RetrievalPassage
@@ -60,14 +61,16 @@ class RetrievalPassage(BaseModel):
 ```python
 # src/retrieval/strategies.py
 
+
 class RetrievalStrategy(BaseModel):
     """استراتيجية الاسترجاع."""
-    
+
     collection: str
     top_k: int
     filters: Optional[dict]
     rerank: bool
     query_type: QueryType = QueryType.HYBRID
+
 
 # Collection-specific
 RETRIEVAL_MATRIX = {
