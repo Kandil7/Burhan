@@ -8,8 +8,10 @@ Provides:
 """
 
 import hashlib
+import hmac
 import time
 from collections import defaultdict
+from typing import Any
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyHeader
@@ -34,14 +36,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     For production, use Redis-based rate limiting.
     """
 
-    def __init__(self, app, requests_per_minute: int = 60):
+    def __init__(self, app: Any, requests_per_minute: int = 60) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.requests: dict[str, list[float]] = defaultdict(list)
         self.cleanup_interval = 300  # Clean up every 5 minutes
         self.last_cleanup = time.time()
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         # Skip rate limiting for health checks
         if request.url.path in ["/health", "/docs", "/openapi.json", "/redoc"]:
             return await call_next(request)
@@ -126,7 +128,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         oldest = min(recent)
         return int(oldest + 60)
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Remove old request timestamps."""
         now = time.time()
 
@@ -167,17 +169,19 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
     # Paths that require API key
     PROTECTED_PATHS = [
-        "/api/v1/query",
+        "/api/v1/ask",
+        "/api/v1/search",
         "/api/v1/tools",
         "/api/v1/quran",
-        "/api/v1/rag",
+        "/api/v1/fiqh",
+        "/classify",
     ]
 
-    def __init__(self, app, api_key: str | None = None):
+    def __init__(self, app: Any, api_key: str | None = None) -> None:
         super().__init__(app)
-        self.api_key = api_key or settings.secret_key
+        self.api_key = api_key or settings.api_key or settings.secret_key
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         path = request.url.path
 
         # Public paths - allow without auth
@@ -205,12 +209,11 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
     def _validate_api_key(self, provided_key: str) -> bool:
-        """Validate the provided API key."""
-        # Hash both for comparison
-        provided_hash = hashlib.sha256(provided_key.encode()).hexdigest()
-        expected_hash = hashlib.sha256(self.api_key.encode()).hexdigest()
+        """Validate the provided API key in constant time."""
+        provided_hash = hashlib.sha256(provided_key.encode()).digest()
+        expected_hash = hashlib.sha256(self.api_key.encode()).digest()
 
-        return provided_hash == expected_hash or provided_key == self.api_key
+        return hmac.compare_digest(provided_hash, expected_hash)
 
 
 # ==========================================
@@ -223,7 +226,7 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
     Sanitize user inputs to prevent injection attacks.
     """
 
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         super().__init__(app)
 
         # Patterns to detect and potentially block
@@ -235,7 +238,7 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
             "onload=",
         ]
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         # Only sanitize POST/PUT request bodies
         if request.method in ["POST", "PUT", "PATCH"]:
             # Get content type
@@ -265,7 +268,7 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Any) -> Any:
         response = await call_next(request)
 
         # Security headers
@@ -292,8 +295,8 @@ async def verify_api_key(api_key: str | None = Depends(api_key_header)) -> str:
     if not api_key:
         raise HTTPException(status_code=401, detail="API Key required")
 
-    # Simple comparison (in production, use constant-time comparison)
-    if api_key != settings.secret_key:
+    expected = settings.api_key or settings.secret_key
+    if not hmac.compare_digest(api_key.encode(), expected.encode()):
         raise HTTPException(status_code=403, detail="Invalid API Key")
 
     return api_key
