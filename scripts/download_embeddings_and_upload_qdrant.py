@@ -25,6 +25,7 @@ import time
 import argparse
 import numpy as np
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Optional, Dict, List, Tuple
 
@@ -32,7 +33,8 @@ from typing import Optional, Dict, List, Tuple
 if sys.platform == "win32":
     import io
 
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace", line_buffering=True)
 
 from dotenv import load_dotenv
 
@@ -83,6 +85,7 @@ COLLECTIONS = [
 DOWNLOAD_DIR = Path("data/processed/hf_embeddings")
 QDRANT_BATCH_SIZE = 500  # Points per upload batch
 VECTOR_DIM = 1024  # BAAI/bge-m3 output size
+DOWNLOAD_WORKERS = 4  # Parallel shard downloads
 
 
 def format_size(size_bytes: int) -> str:
@@ -227,10 +230,11 @@ def read_meta_file(path: str) -> list[dict]:
 
 
 def iter_collection_shards(collection_name: str):
-    """Download a collection one shard at a time.
+    """Download a collection one shard at a time, prefetching in parallel.
 
-    Yields (shard_index, shard_count, vectors, passages). Holding one shard
-    keeps the process near 40 MB instead of several gigabytes.
+    Yields (shard_index, shard_count, vectors, passages) in shard order.
+    Holding one shard keeps the process near 40 MB instead of several
+    gigabytes, and a small thread pool overlaps network waits with upload.
     """
     emb_files, meta_files = list_collection_shards(collection_name)
     if not emb_files:
@@ -242,7 +246,8 @@ def iter_collection_shards(collection_name: str):
         print(f"  [warn] {len(emb_files)} embedding shards vs {len(meta_files)} metadata shards")
 
     total = min(len(emb_files), len(meta_files))
-    for index in range(total):
+
+    def fetch(index: int) -> tuple[int, str, str]:
         emb_path = hf_hub_download(
             repo_id=HF_REPO,
             filename=emb_files[index],
@@ -257,18 +262,24 @@ def iter_collection_shards(collection_name: str):
             local_dir=str(DOWNLOAD_DIR),
             force_download=False,
         )
+        return index, emb_path, meta_path
 
-        vectors = np.load(emb_path, mmap_mode="r")
-        passages = read_meta_file(meta_path)
-        if vectors.shape[0] != len(passages):
-            count = min(vectors.shape[0], len(passages))
-            print(
-                f"  [warn] {emb_files[index]}: {vectors.shape[0]} vectors vs {len(passages)} rows, trimming to {count}"
-            )
-            vectors = vectors[:count]
-            passages = passages[:count]
+    with ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS) as pool:
+        futures = {index: pool.submit(fetch, index) for index in range(total)}
+        for index in range(total):
+            _, emb_path, meta_path = futures[index].result()
+            vectors = np.load(emb_path, mmap_mode="r")
+            passages = read_meta_file(meta_path)
+            if vectors.shape[0] != len(passages):
+                count = min(vectors.shape[0], len(passages))
+                print(
+                    f"  [warn] {emb_files[index]}: {vectors.shape[0]} vectors vs "
+                    f"{len(passages)} rows, trimming to {count}"
+                )
+                vectors = vectors[:count]
+                passages = passages[:count]
 
-        yield index, total, vectors, passages
+            yield index, total, vectors, passages
 
 
 def upload_to_qdrant(
