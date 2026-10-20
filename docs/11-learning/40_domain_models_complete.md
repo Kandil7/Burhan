@@ -11,9 +11,10 @@
 ```python
 # src/domain/intents.py
 
+
 class IntentType(str, Enum):
     """أنواع النية."""
-    
+
     ZAKAT = "ZAKAT"
     INHERITANCE = "INHERITANCE"
     Fiqh_HUKM = "FIQH_HUKM"
@@ -57,9 +58,10 @@ INTENT_PRIORITY = {
 ```python
 # src/domain/evidence.py
 
+
 class Evidence(BaseModel):
     """الدليل."""
-    
+
     id: str
     text: str
     source: str
@@ -77,9 +79,10 @@ class Evidence(BaseModel):
 ```python
 # src/domain/citations.py
 
+
 class Citation(BaseModel):
     """الاقتباس."""
-    
+
     source_id: str
     text: str
     book_title: str
@@ -98,9 +101,10 @@ class Citation(BaseModel):
 ```python
 # src/domain/collections.py
 
+
 class Collection(BaseModel):
     """المجموعة."""
-    
+
     name: str
     description: str
     document_count: int
@@ -118,9 +122,10 @@ class Collection(BaseModel):
 ```python
 # src/domain/decisions.py
 
+
 class RoutingDecision(BaseModel):
     """قرار التوجيه."""
-    
+
     intent: IntentType
     confidence: float
     agent_name: str
