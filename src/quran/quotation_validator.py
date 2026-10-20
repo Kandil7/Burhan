@@ -15,6 +15,7 @@ import asyncio
 import re
 from difflib import SequenceMatcher
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from src.config.logging_config import get_logger
@@ -22,14 +23,51 @@ from src.data.models.quran import Ayah
 
 logger = get_logger()
 
-_ARABIC_RE = re.compile(r"[\u064B-\u065F\u0670]")
+_ARABIC_RE = re.compile(r"[\u064B-\u065F]")
 _ALEF_RE = re.compile(r"[أإآٱ]")
 _YA_RE = re.compile(r"ى")
 _TA_MARBUTA_RE = re.compile(r"ة")
+_TATWEEL_RE = re.compile("\u0640")
+_SUPERSCRIPT_ALEF_RE = re.compile("\u0670")
 _NON_ARABIC_RE = re.compile(r"[^\u0600-\u06FF\s]")
 _SPACES_RE = re.compile(r"\s+")
 
 _MIN_INPUT_LEN = 5
+
+
+def normalize_arabic(text: str) -> str:
+    """
+    Normalize Arabic text for comparison:
+      - Expand superscript alef (U+0670) to a full alef
+      - Remove diacritics (tashkeel) and tatweel
+      - Unify alef variants → ا
+      - Unify ya variants  → ي
+      - Unify ta marbuta   → ه
+      - Remove non-Arabic  (preserve spaces)
+      - Collapse whitespace
+    """
+    if not text:
+        return ""
+    text = _SUPERSCRIPT_ALEF_RE.sub("ا", text)
+    text = _ARABIC_RE.sub("", text)
+    text = _ALEF_RE.sub("ا", text)
+    text = _YA_RE.sub("ي", text)
+    text = _TA_MARBUTA_RE.sub("ه", text)
+    text = _TATWEEL_RE.sub("", text)
+    text = _NON_ARABIC_RE.sub("", text)
+    text = _SPACES_RE.sub(" ", text)
+    return text.strip()
+
+
+def _skeleton(text: str) -> str:
+    """
+    Comparison form: normalized Arabic with long alefs removed.
+
+    Uthmani script marks some long alefs with a superscript alef (U+0670),
+    and modern spelling varies (الرحمن vs الرحمان, العالمين vs العلمين).
+    Dropping long alefs on both sides makes matching insensitive to that.
+    """
+    return normalize_arabic(text).replace("ا", "")
 
 
 class QuotationValidatorError(Exception):
@@ -91,19 +129,13 @@ class QuotationValidator:
         # 2. Fragment / containment match
         fragment = self._check_fragment(normalized, candidates)
         if fragment:
-            norm_ayah = self.normalize_arabic(
-                fragment["ayah"]["text_uthmani"]
-            )
+            norm_ayah = self.normalize_arabic(fragment["ayah"]["text_uthmani"])
             is_partial = len(normalized) < len(norm_ayah) * 0.9
             return {
                 "is_quran": True,
                 "confidence": fragment["confidence"],
                 "matched_ayah": fragment["ayah"],
-                "suggestion": (
-                    f"النص جزء من: {fragment['ayah']['text_uthmani'][:60]}…"
-                    if is_partial
-                    else None
-                ),
+                "suggestion": (f"النص جزء من: {fragment['ayah']['text_uthmani'][:60]}…" if is_partial else None),
             }
 
         # 3. Fuzzy match
@@ -126,24 +158,8 @@ class QuotationValidator:
     # ── Normalization ────────────────────────────────────────────────────────
 
     def normalize_arabic(self, text: str) -> str:
-        """
-        Normalize Arabic text for comparison:
-          - Remove diacritics (tashkeel)
-          - Unify alef variants → ا
-          - Unify ya variants  → ي
-          - Unify ta marbuta   → ه
-          - Remove non-Arabic  (preserve spaces)
-          - Collapse whitespace
-        """
-        if not text:
-            return ""
-        text = _ARABIC_RE.sub("", text)
-        text = _ALEF_RE.sub("ا", text)
-        text = _YA_RE.sub("ي", text)
-        text = _TA_MARBUTA_RE.sub("ه", text)
-        text = _NON_ARABIC_RE.sub("", text)
-        text = _SPACES_RE.sub(" ", text)
-        return text.strip()
+        """Delegate to the module-level normalizer so seeding and validation agree."""
+        return normalize_arabic(text)
 
     # ── Database ─────────────────────────────────────────────────────────────
 
@@ -161,14 +177,15 @@ class QuotationValidator:
         (e.g. 'ابراهيم') correctly match DB rows where text_uthmani
         contains 'إِبْرَاهِيم'.
         """
-        words = [w for w in normalized_text.split() if len(w) >= 4][:2]
+        words = [w for w in _skeleton(normalized_text).split() if len(w) >= 3][:2]
         if not words:
-            words = [normalized_text[:6]]
+            words = [_skeleton(normalized_text)[:6]]
 
         q = self.session.query(Ayah).options(joinedload(Ayah.surah))
+        simple = func.coalesce(Ayah.text_simple, "")
         for word in words:
-            # Filter on text_simple — diacritics-free column in DB
-            q = q.filter(Ayah.text_simple.contains(word))
+            # Compare skeletons so alef spelling variance does not drop the row.
+            q = q.filter(func.replace(simple, "ا", "").contains(word))
         return q.limit(limit).all()
 
     # ── Matchers (sync — candidates pre-fetched) ─────────────────────────────
@@ -178,8 +195,9 @@ class QuotationValidator:
         normalized_text: str,
         candidates: list[Ayah],
     ) -> dict | None:
+        target = _skeleton(normalized_text)
         for ayah in candidates:
-            if self.normalize_arabic(ayah.text_uthmani) == normalized_text:
+            if _skeleton(str(ayah.text_uthmani)) == target:
                 return self._ayah_to_dict(ayah)
         return None
 
@@ -195,16 +213,16 @@ class QuotationValidator:
           confidence=0.95 — substring after space-stripping
                             (waw-attachment edge case)
         """
+        target = _skeleton(normalized_text)
+        target_nospace = target.replace(" ", "")
         for ayah in candidates:
-            ayah_norm = self.normalize_arabic(ayah.text_uthmani)
-            if normalized_text in ayah_norm:
+            ayah_norm = _skeleton(str(ayah.text_uthmani))
+            if target in ayah_norm:
                 return {
                     "confidence": 1.0,
                     "ayah": self._ayah_to_dict(ayah),
                 }
-            if normalized_text.replace(" ", "") in ayah_norm.replace(
-                " ", ""
-            ):
+            if target_nospace in ayah_norm.replace(" ", ""):
                 return {
                     "confidence": 0.95,
                     "ayah": self._ayah_to_dict(ayah),
@@ -222,11 +240,10 @@ class QuotationValidator:
         """
         best_score: float = 0.0
         best_match: dict | None = None
+        target = _skeleton(normalized_text)
         for ayah in candidates:
-            ayah_norm = self.normalize_arabic(ayah.text_uthmani)
-            similarity = SequenceMatcher(
-                None, normalized_text, ayah_norm
-            ).ratio()
+            ayah_norm = _skeleton(str(ayah.text_uthmani))
+            similarity = SequenceMatcher(None, target, ayah_norm).ratio()
             if similarity > best_score and similarity >= self.threshold:
                 best_score = similarity
                 best_match = {
@@ -240,8 +257,9 @@ class QuotationValidator:
     def _ayah_to_dict(self, ayah: Ayah) -> dict:
         """
         Convert Ayah ORM object to plain dict.
-        Accesses ayah.surah once (must be eagerly loaded via joinedload).
-        Includes surah_name_ar for Arabic UI display.
+
+        Matches ``AyahResponse`` so the result can be returned directly by the
+        API. Accesses ayah.surah once (must be eagerly loaded via joinedload).
         """
         surah = ayah.surah
         return {
@@ -250,10 +268,12 @@ class QuotationValidator:
             "surah_name_ar": getattr(surah, "name_ar", ""),
             "ayah_number": ayah.number_in_surah,
             "text_uthmani": ayah.text_uthmani,
-            "quran_url": (
-                f"https://quran.com/{surah.number}/{ayah.number_in_surah}"
-            ),
+            "text_simple": ayah.text_simple,
+            "juz": ayah.juz,
+            "page": ayah.page,
+            "quran_url": (f"https://quran.com/{surah.number}/{ayah.number_in_surah}"),
+            "translations": None,
         }
 
 
-__all__ = ["QuotationValidator", "QuotationValidatorError"]
+__all__ = ["QuotationValidator", "QuotationValidatorError", "normalize_arabic"]
