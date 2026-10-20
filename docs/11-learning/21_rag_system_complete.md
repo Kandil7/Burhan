@@ -141,19 +141,19 @@ class KeywordBasedClassifier:
 
 ```python
 class Intent(str, Enum):
-    FIQH = "fiqh"                    # Islamic jurisprudence
-    HADITH = "hadith"                # Hadith questions
-    TAFSIR = "tafsir"               # Quran interpretation
-    AQEEDAH = "aqeedah"              # Islamic theology
-    SEERAH = "seerah"               # Prophet biography
-    USUL_FIQH = "usul_fiqh"         # Principles of jurisprudence
+    FIQH = "fiqh"  # Islamic jurisprudence
+    HADITH = "hadith"  # Hadith questions
+    TAFSIR = "tafsir"  # Quran interpretation
+    AQEEDAH = "aqeedah"  # Islamic theology
+    SEERAH = "seerah"  # Prophet biography
+    USUL_FIQH = "usul_fiqh"  # Principles of jurisprudence
     ISLAMIC_HISTORY = "islamic_history"  # Islamic history
     ARABIC_LANGUAGE = "arabic_language"  # Arabic language
-    ZAKAT = "zakat"                  # Zakat calculation
-    INHERITANCE = "inheritance"       # Inheritance calculation
-    QURAN = "quran"                  # Quran verses
-    DUA = "dua"                      # Supplications
-    GREETING = "greeting"             # Greetings
+    ZAKAT = "zakat"  # Zakat calculation
+    INHERITANCE = "inheritance"  # Inheritance calculation
+    QURAN = "quran"  # Quran verses
+    DUA = "dua"  # Supplications
+    GREETING = "greeting"  # Greetings
     ISLAMIC_KNOWLEDGE = "islamic_knowledge"  # General
 ```
 
@@ -207,16 +207,12 @@ class RouterAgent:
     def __init__(self, classifier, conf_threshold=0.5):
         self._classifier = classifier
         self._conf_threshold = conf_threshold
-    
+
     async def route(self, query: str) -> RoutingDecision:
         result = await self._classifier.classify(query)
         route = get_agent_for_intent(result.intent)
-        
-        return RoutingDecision(
-            result=result,
-            route=route,
-            agent_metadata={}
-        )
+
+        return RoutingDecision(result=result, route=route, agent_metadata={})
 ```
 
 ### Agent Selection
@@ -262,6 +258,7 @@ RETRIEVAL_MATRIX = {
     # ... per-agent configs
 }
 
+
 def get_strategy_for_agent(agent_name: str) -> RetrievalStrategy:
     return RETRIEVAL_MATRIX.get(agent_name, DEFAULT_STRATEGY)
 ```
@@ -276,7 +273,7 @@ class HybridSearcher:
         self._semantic = DenseRetriever(qdrant_client, embedding_model)
         self._bm25 = BM25Retriever()
         self._rrf = ReciprocalRankFusion(k=60)
-    
+
     async def search(
         self,
         query: str,
@@ -284,22 +281,18 @@ class HybridSearcher:
         top_k: int = 10,
     ) -> list[RetrievalResult]:
         # 1. Semantic search (embeddings)
-        semantic_results = await self._semantic.search(
-            query, collection, top_k * 2
-        )
-        
+        semantic_results = await self._semantic.search(query, collection, top_k * 2)
+
         # 2. Keyword search (BM25)
-        keyword_results = await self._bm25.search(
-            query, collection, top_k * 2
-        )
-        
+        keyword_results = await self._bm25.search(query, collection, top_k * 2)
+
         # 3. Fuse results using RRF
         fused = self._rrf.fuse(
-            semantic_results, 
+            semantic_results,
             keyword_results,
-            k=60  # RRF parameter
+            k=60,  # RRF parameter
         )
-        
+
         return fused[:top_k]
 ```
 
@@ -334,14 +327,10 @@ class BM25Retriever:
         # Uses rank_bm25 library
         # Classic information retrieval algorithm
         scores = self._index.score(query)
-        
+
         # Get top results
-        top_indices = sorted(
-            range(len(scores)), 
-            key=lambda i: scores[i],
-            reverse=True
-        )[:top_k]
-        
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+
         return [self._to_result(i, scores[i]) for i in top_indices]
 ```
 
@@ -382,13 +371,10 @@ class FilterBuilder:
     def build(self, filters: dict) -> QdrantFilter:
         """Build Qdrant filter from dict."""
         must = []
-        
+
         for key, value in filters.items():
-            must.append({
-                "key": key,
-                "match": {"value": value}
-            })
-        
+            must.append({"key": key, "match": {"value": value}})
+
         return {"must": must} if must else None
 ```
 
@@ -401,17 +387,13 @@ class CrossEncoderReranker:
     async def rerank(self, query, results, top_k=10):
         # Use cross-encoder for more accurate scoring
         pairs = [(query, r.text) for r in results]
-        
+
         # Get scores
         scores = await self._model.predict(pairs)
-        
+
         # Re-sort by cross-encoder scores
-        reranked = sorted(
-            zip(results, scores),
-            key=lambda x: x[1],
-            reverse=True
-        )
-        
+        reranked = sorted(zip(results, scores), key=lambda x: x[1], reverse=True)
+
         return [r for r, s in reranked[:top_k]]
 ```
 
@@ -434,7 +416,7 @@ class RetrievalPassage(BaseModel):
 Validate that the retrieved passages actually support the answer before sending to LLM.
 
 ### Implementation
-**File**: `src/verifiers/suite_builder.py`
+**File**: `src/verification/suite_builder.py`
 
 ```python
 async def run_verification_suite(
@@ -481,7 +463,7 @@ async def run_verification_suite(
 | **Evidence Sufficiency** | Check enough evidence | abstain |
 
 ### Quote Validation Example
-**File**: `src/verifiers/exact_quote.py`
+**File**: `src/verification/checks/exact_quote.py`
 
 ```python
 class ExactQuoteVerifier:
@@ -506,8 +488,8 @@ class ExactQuoteVerifier:
 
 ```python
 class VerificationReport(BaseModel):
-    status: str          # "passed", "failed", "abstained"
-    confidence: float    # 0.0 - 1.0
+    status: str  # "passed", "failed", "abstained"
+    confidence: float  # 0.0 - 1.0
     verified_passages: list[str]
     abstained: bool
     abstention_reason: str | None
@@ -549,11 +531,10 @@ async def generate(self, query: str, passages: list[RetrievalPassage]) -> str:
 ```python
 def _build_prompt(self, query: str, passages: list[RetrievalPassage]) -> str:
     # Build context from passages
-    contexts = "\n\n".join([
-        f"[{i+1}] {p.text}\n— {p.metadata.get('book_title', 'Unknown')}"
-        for i, p in enumerate(passages)
-    ])
-    
+    contexts = "\n\n".join(
+        [f"[{i + 1}] {p.text}\n— {p.metadata.get('book_title', 'Unknown')}" for i, p in enumerate(passages)]
+    )
+
     # Build full prompt
     prompt = f"""\
     السؤال: {query}
@@ -567,7 +548,7 @@ def _build_prompt(self, query: str, passages: list[RetrievalPassage]) -> str:
     - إذا لم تجد إجابة في المصادر، قل "لا أعرف"
     - Mention the view of major scholars (Abu Hanifa, Malik, Shafi'i, Ahmad)
     """
-    
+
     return prompt
 ```
 
@@ -609,16 +590,18 @@ Create citation objects from retrieved passages.
 ```python
 def _build_citations(self, passages: list[RetrievalPassage]) -> list[Citation]:
     citations = []
-    
+
     for i, passage in enumerate(passages, 1):
-        citations.append(Citation(
-            source_id=f"C{i}",
-            text=passage.text[:200],  # First 200 chars
-            book_title=passage.metadata.get("book_title"),
-            page=passage.metadata.get("page_number"),
-            grade=passage.metadata.get("grade"),  # For hadith
-        ))
-    
+        citations.append(
+            Citation(
+                source_id=f"C{i}",
+                text=passage.text[:200],  # First 200 chars
+                book_title=passage.metadata.get("book_title"),
+                page=passage.metadata.get("page_number"),
+                grade=passage.metadata.get("grade"),  # For hadith
+            )
+        )
+
     return citations
 ```
 
@@ -631,11 +614,11 @@ def _build_citations(self, passages: list[RetrievalPassage]) -> list[Citation]:
 
 ```python
 class AskResponse(BaseModel):
-    answer: str                          # Generated answer
-    citations: list[CitationResponse]    # Citations
-    intent: str                         # Detected intent
-    confidence: float                  # Confidence score
-    processing_time_ms: int            # Time taken
+    answer: str  # Generated answer
+    citations: list[CitationResponse]  # Citations
+    intent: str  # Detected intent
+    confidence: float  # Confidence score
+    processing_time_ms: int  # Time taken
 ```
 
 ### Example Response
@@ -766,8 +749,8 @@ User Query: "ما حكم ترك صلاة الجمعة عمداً؟"
 | Agent Routing | `src/core/registry.py` |
 | Hybrid Search | `src/retrieval/retrievers/hybrid_retriever.py` |
 | RRF | `src/retrieval/fusion/rrf.py` |
-| Verification Suite | `src/verifiers/suite_builder.py` |
-| Quote Validation | `src/verifiers/exact_quote.py` |
+| Verification Suite | `src/verification/suite_builder.py` |
+| Quote Validation | `src/verification/checks/exact_quote.py` |
 | Generation | `src/agents/collection/fiqh.py` |
 | CoT Stripping | `src/agents/base.py` |
 
