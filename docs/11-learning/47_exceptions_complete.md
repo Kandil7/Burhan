@@ -11,9 +11,10 @@
 ```python
 # src/core/exceptions.py
 
+
 class BurhanError(Exception):
     """الخطأ الأساسي."""
-    
+
     def __init__(self, message: str, details: dict = None):
         self.message = message
         self.details = details or {}
@@ -25,6 +26,7 @@ class BurhanError(Exception):
 ```python
 class ConfigurationError(BurhanError):
     """خطأ التكوين."""
+
     pass
 ```
 
@@ -33,6 +35,7 @@ class ConfigurationError(BurhanError):
 ```python
 class RetrievalError(BurhanError):
     """خطأ الاسترجاع."""
+
     pass
 ```
 
@@ -41,6 +44,7 @@ class RetrievalError(BurhanError):
 ```python
 class VerificationError(BurhanError):
     """خطأ التحقق."""
+
     pass
 ```
 
@@ -49,6 +53,7 @@ class VerificationError(BurhanError):
 ```python
 class GenerationError(BurhanError):
     """خطأ التوليد."""
+
     pass
 ```
 
