@@ -15,7 +15,9 @@ Special handling:
 from __future__ import annotations
 
 import re
+from typing import Any
 
+from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -24,7 +26,6 @@ from src.agents.collection.base import (
     RetrievalStrategy,
     VerificationReport,
 )
-from src.agents.base import strip_cot_leakage
 from src.domain.intents import Intent
 
 # =============================================================================
@@ -82,9 +83,9 @@ class HadithCollectionAgent(CollectionAgent):
     def __init__(
         self,
         config: CollectionAgentConfig | None = None,
-        embedding_model=None,
-        vector_store=None,
-        llm_client=None,
+        embedding_model: Any = None,
+        vector_store: Any = None,
+        llm_client: Any = None,
     ) -> None:
         if config is None:
             from src.verification.suite_builder import build_verification_suite_for
@@ -161,20 +162,15 @@ class HadithCollectionAgent(CollectionAgent):
         top_k = self.strategy.top_k if self.strategy and self.strategy.rerank else 5
         return filtered[:top_k]
 
-    async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport:
-        """Verify candidates with hadith-specific checks."""
-        from src.verification.suite_builder import run_verification_suite
-
-        suite = self.config.verification_suite if self.config else None
-
-        if suite:
-            return run_verification_suite(suite=suite, query=query, candidates=candidates)
-
-        return VerificationReport.from_passages(
-            passages=candidates,
-            is_verified=True,
-            confidence=0.8,
-        )
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        """Verify evidence before generation and the answer after it."""
+        return self._verify(query, candidates, answer=answer, stage=stage)
 
     async def generate_answer(self, query: str, verified_passages: list[dict], language: str) -> str:
         """Generate answer from verified passages."""
