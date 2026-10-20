@@ -1,5 +1,10 @@
 # 🕌 Burhan - Complete Data-Driven Multi-Agent RAG System
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: `scripts/ingestion/chunk_all_books.py`.
+
 **Date:** April 6, 2026  
 **Version:** 0.5.0 (Full Category Mapping)  
 **Architecture:** 10 Specialized Agents | 16 Intents | 40 Categories → 9 Collections
@@ -58,12 +63,12 @@
 ## 🔧 Implementation Summary
 
 ### Files Created (1 new agent)
-- `src/agents/arabic_language_agent.py` - Arabic language, grammar, literature, poetry
+- `src/agents/collection/language.py` - Arabic language, grammar, literature, poetry
 
 ### Files Modified (3 files)
 1. **`src/config/intents.py`** - Added ARABIC_LANGUAGE intent + keyword patterns (16 intents total)
-2. **`src/core/orchestrator.py`** - Registers all 10 agents with proper intent routing
-3. **`scripts/generate_embeddings.py`** - Complete 40-category → 9-collection mapping
+2. **`src/application/router/orchestration.py`** - Registers all 10 agents with proper intent routing
+3. **`scripts/data/generate_embeddings.py`** - Complete 40-category → 9-collection mapping
 
 ### Category-to-Collection Mapping (40 → 9)
 ```
@@ -87,22 +92,22 @@ Duas (seed data)            → duas_adhkar
 ### Step 1: Re-chunk All 8,425 Books
 ```bash
 # Script processes all extracted books with proper category routing
-python scripts/rechunk_all_books.py
+python scripts/ingestion/chunk_all_books.py
 # Expected output: ~1.5M chunks across 9 collections
 ```
 
 ### Step 2: Embed All Collections
 ```bash
 # Each collection can be embedded separately
-python scripts/generate_embeddings.py --collection hadith_passages
-python scripts/generate_embeddings.py --collection fiqh_passages
-python scripts/generate_embeddings.py --collection arabic_language_passages
+python scripts/data/generate_embeddings.py --collection hadith_passages
+python scripts/data/generate_embeddings.py --collection fiqh_passages
+python scripts/data/generate_embeddings.py --collection arabic_language_passages
 # etc.
 ```
 
 ### Step 3: Test All 10 Agents
 ```bash
-python scripts/comprehensive_test.py
+python scripts/tests/comprehensive_test.py
 # Expected: All 10 agents responding with category-appropriate answers
 ```
 
