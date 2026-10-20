@@ -134,9 +134,7 @@ def cmd_setup() -> bool:
 
     # Run migrations
     print_step("Running migrations...")
-    run_command(
-        "docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql"
-    )
+    run_command("docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql")
     print_success("Migrations complete")
 
     print_header("✓ Setup Complete! Next: python scripts/cli.py start")
@@ -159,9 +157,7 @@ def cmd_start(api_only: bool = False) -> None:
     # Start API
     print_step("Starting Backend API...")
     print_warning("API will start in a new window")
-    run_command(
-        'start "Burhan API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"'
-    )
+    run_command('start "Burhan API" cmd /k "uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000"')
     time.sleep(3)
     print_success("API starting on port 8000")
 
@@ -171,11 +167,7 @@ def cmd_start(api_only: bool = False) -> None:
         time.sleep(3)
         print_success("Frontend starting on port 3000")
 
-    print_header(
-        "✓ Application Starting!\n"
-        "  API: http://localhost:8000\n"
-        "  Docs: http://localhost:8000/docs"
-    )
+    print_header("✓ Application Starting!\n  API: http://localhost:8000\n  Docs: http://localhost:8000/docs")
 
     # Open browser
     time.sleep(3)
@@ -207,9 +199,7 @@ def cmd_status() -> None:
     print_header("📊 Burhan Status")
 
     print("Docker Services:")
-    success, output = run_command(
-        "docker compose -f docker/docker-compose.dev.yml ps", capture=True
-    )
+    success, output = run_command("docker compose -f docker/docker-compose.dev.yml ps", capture=True)
     if output:
         print(output)
     else:
@@ -230,17 +220,13 @@ def cmd_status() -> None:
 def cmd_ingest(books: int = 100, hadith: int = 1000) -> None:
     """Ingest data."""
     print_header(f"📥 Data Ingestion ({books} books, {hadith} hadith)")
-    run_command(
-        f"python scripts/ingestion/complete_ingestion.py --books {books} --hadith {hadith}"
-    )
+    run_command(f"python scripts/ingestion/complete_ingestion.py --books {books} --hadith {hadith}")
 
 
 def cmd_embed(limit: int = 1000) -> None:
     """Generate embeddings."""
     print_header(f"🔢 Generating Embeddings (limit: {limit})")
-    run_command(
-        f"python scripts/data/generate_embeddings.py --collection fiqh_passages --limit {limit}"
-    )
+    run_command(f"python scripts/data/generate_embeddings.py --collection fiqh_passages --limit {limit}")
 
 
 def cmd_db_migrate() -> None:
@@ -249,15 +235,14 @@ def cmd_db_migrate() -> None:
 
     migrations = [
         "migrations/001_initial_schema.sql",
+        "migrations/versions/002_quran_translations_tafsir.sql",
     ]
 
     for migration in migrations:
         migration_path = PROJECT_ROOT / migration
         if migration_path.exists():
             print_step(f"Running {migration_path.name}...")
-            run_command(
-                f"docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < {migration_path}"
-            )
+            run_command(f"docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < {migration_path}")
             print_success(f"{migration_path.name} complete")
         else:
             print_warning(f"Migration not found: {migration}")
