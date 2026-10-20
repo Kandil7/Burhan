@@ -1,9 +1,9 @@
 # Evidence Domain Module
 """Domain model for evidence and verification."""
 
-from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class EvidenceType(str, Enum):
@@ -45,8 +45,8 @@ class Evidence:
     reference: str
     relevance_score: float = 1.0
     verification_status: VerificationStatus = VerificationStatus.PENDING
-    verification_notes: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    verification_notes: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_verified(self) -> bool:
         """Check if evidence is verified."""
@@ -57,20 +57,20 @@ class Evidence:
 class EvidenceSet:
     """Collection of evidence for a response."""
 
-    evidences: List[Evidence] = field(default_factory=list)
-    overall_groundedness: Optional[GroundednessLevel] = None
-    sufficiency_score: Optional[float] = None
-    notes: Optional[str] = None
+    evidences: list[Evidence] = field(default_factory=list)
+    overall_groundedness: GroundednessLevel | None = None
+    sufficiency_score: float | None = None
+    notes: str | None = None
 
     def add_evidence(self, evidence: Evidence) -> None:
         """Add evidence to the set."""
         self.evidences.append(evidence)
 
-    def get_verified_evidences(self) -> List[Evidence]:
+    def get_verified_evidences(self) -> list[Evidence]:
         """Get only verified evidences."""
         return [e for e in self.evidences if e.is_verified()]
 
-    def get_unverified_evidences(self) -> List[Evidence]:
+    def get_unverified_evidences(self) -> list[Evidence]:
         """Get unverified evidences."""
         return [e for e in self.evidences if not e.is_verified()]
 
