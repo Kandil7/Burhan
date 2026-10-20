@@ -76,7 +76,7 @@ This document describes the implementation of the Multi-Agent Collection-Aware R
 
 ### 1. CollectionAgent Base Class
 
-**Location**: `src/agents/collection_agent.py`
+**Location**: `src/agents/collection/base.py`
 
 The abstract base class providing the full RAG pipeline:
 
@@ -87,7 +87,7 @@ class CollectionAgent(ABC):
 
     # 7-stage pipeline
     def query_intake(self, query: str) -> str: ...
-    def classify_intent(self, query: str) -> IntentLabel: ...
+    def classify_intent(self, query: str) -> Intent: ...
     async def retrieve_candidates(self, query: str) -> list[dict]: ...
     async def rerank_candidates(self, query: str, candidates: list[dict]) -> list[dict]: ...
     async def run_verification(self, query: str, candidates: list[dict]) -> VerificationReport: ...
@@ -98,12 +98,12 @@ class CollectionAgent(ABC):
     async def run(self, raw_question: str, meta: dict | None = None) -> AgentOutput: ...
 ```
 
-#### IntentLabel Enum
+#### Proposed per-domain intents (design only)
 
 Agent-specific intents for each domain:
 
 ```python
-class IntentLabel(str, Enum):
+class PerDomainIntent(str, Enum):  # design-only; shipped classifier uses Intent
     # Fiqh
     FiqhHukm = "fiqh_hukm"
     FiqhMasaail = "fiqh_masaail"
@@ -162,6 +162,7 @@ def get_strategy_for_agent(agent_name: str) -> RetrievalStrategy:
     """Get retrieval strategy for an agent."""
     ...
 
+
 def get_collection_for_agent(agent_name: str) -> str:
     """Get Qdrant collection for an agent."""
     ...
@@ -171,7 +172,7 @@ def get_collection_for_agent(agent_name: str) -> str:
 
 ### 3. Verification Suite
 
-**Location**: `src/verifiers/suite_builder.py`
+**Location**: `src/verification/suite_builder.py`
 
 Each agent has a verification suite with fail policies:
 
@@ -183,7 +184,7 @@ VerificationSuite(
         VerificationCheck(name="contradiction_detector", fail_policy="proceed", enabled=True),
         VerificationCheck(name="evidence_sufficiency", fail_policy="abstain", enabled=True),
     ],
-    fail_fast=True
+    fail_fast=True,
 )
 ```
 
@@ -216,16 +217,16 @@ VerificationSuite(
 
 ```python
 class OrchestrationPattern(str, Enum):
-    SEQUENTIAL = "sequential"   # Agent → Agent → ...
-    PARALLEL = "parallel"      # Agent + Agent + ...
+    SEQUENTIAL = "sequential"  # Agent → Agent → ...
+    PARALLEL = "parallel"  # Agent + Agent + ...
     HIERARCHICAL = "hierarchical"  # Primary + Secondary agents
 ```
 
 #### Thresholds
 
 ```python
-PRIMARY_THRESHOLD = 0.7       # High confidence - direct routing
-SECONDARY_THRESHOLD = 0.4     # Medium confidence - multiple agents
+PRIMARY_THRESHOLD = 0.7  # High confidence - direct routing
+SECONDARY_THRESHOLD = 0.4  # Medium confidence - multiple agents
 LOW_CONFIDENCE_THRESHOLD = 0.2  # Low confidence - fallback to GeneralIslamicAgent
 ```
 
@@ -247,14 +248,14 @@ Rule-based routing by keyword detection:
 
 | Agent | File | Collection | Intents |
 |-------|------|------------|---------|
-| FiqhCollectionAgent | `fiqh_collection_agent.py` | fiqh | FiqhHukm, FiqhMasaail |
-| HadithCollectionAgent | `hadith_collection_agent.py` | hadith | HadithTakhrij, HadithSanad, HadithMatn |
-| TafsirCollectionAgent | `tafsir_collection_agent.py` | quran | TafsirAyah, TafsirMaqasid |
-| AqeedahCollectionAgent | `aqeedah_collection_agent.py` | aqeedah | AqeedahTawhid, AqeedahIman |
-| SeerahCollectionAgent | `seerah_collection_agent.py` | seerah | SeerahEvent, SeerahMilad |
-| UsulFiqhCollectionAgent | `usul_fiqh_collection_agent.py` | usul_fiqh | UsulFiqhIjtihad, UsulFiqhQiyas |
-| HistoryCollectionAgent | `history_collection_agent.py` | islamic_history | IslamicHistoryEvent, IslamicHistoryDynasty |
-| LanguageCollectionAgent | `language_collection_agent.py` | arabic_language | ArabicGrammar, ArabicMorphology, ArabicBalaghah |
+| FiqhCollectionAgent | `collection/fiqh.py` | fiqh | FiqhHukm, FiqhMasaail |
+| HadithCollectionAgent | `collection/hadith.py` | hadith | HadithTakhrij, HadithSanad, HadithMatn |
+| TafsirCollectionAgent | `collection/tafsir.py` | quran | TafsirAyah, TafsirMaqasid |
+| AqeedahCollectionAgent | `collection/aqeedah.py` | aqeedah | AqeedahTawhid, AqeedahIman |
+| SeerahCollectionAgent | `collection/seerah.py` | seerah | SeerahEvent, SeerahMilad |
+| UsulFiqhCollectionAgent | `collection/usul_fiqh.py` | usul_fiqh | UsulFiqhIjtihad, UsulFiqhQiyas |
+| HistoryCollectionAgent | `collection/history.py` | islamic_history | IslamicHistoryEvent, IslamicHistoryDynasty |
+| LanguageCollectionAgent | `collection/language.py` | arabic_language | ArabicGrammar, ArabicMorphology, ArabicBalaghah |
 
 ---
 
@@ -331,6 +332,7 @@ class HNSWPreset:
     MEDIUM = {"m": 16, "ef_construct": 128, "full_scan_threshold": 10000}
     LARGE = {"m": 32, "ef_construct": 256, "full_scan_threshold": 10000}
 
+
 # Example: Fiqh collection
 COLLECTION_CONFIGS["fiqh"] = CollectionConfig(
     dense=DenseVectorConfig(size=1024, distance=Distance.COSINE),
@@ -379,19 +381,12 @@ class GoldenSetItem:
 ### 1. Using FiqhCollectionAgent
 
 ```python
-from src.agents.fiqh_collection_agent import FiqhCollectionAgent
+from src.agents.collection import FiqhCollectionAgent
 from src.agents.base import AgentInput
 
-agent = FiqhCollectionAgent(
-    embedding_model=embedding_model,
-    llm_client=llm_client,
-    vector_store=vector_store
-)
+agent = FiqhCollectionAgent(embedding_model=embedding_model, llm_client=llm_client, vector_store=vector_store)
 
-result = await agent.run(
-    raw_question="ما حكم أداء صلاة العصر في جماعة؟",
-    meta={"language": "ar", "madhhab": "hanafi"}
-)
+result = await agent.run(raw_question="ما حكم أداء صلاة العصر في جماعة؟", meta={"language": "ar", "madhhab": "hanafi"})
 
 print(result.answer)
 print(result.citations)
@@ -401,17 +396,11 @@ print(result.confidence)
 ### 2. Using Router with Orchestration
 
 ```python
-from src.application.router.orchestration import (
-    create_orchestration_plan,
-    MultiAgentOrchestrator
-)
+from src.application.router.orchestration import create_orchestration_plan, MultiAgentOrchestrator
 from src.domain.intents import Intent
 
 # Create plan for query
-plan = create_orchestration_plan(
-    query="ما حكم الصلاة وما صحة هذا الحديث",
-    intent=Intent.FIQH
-)
+plan = create_orchestration_plan(query="ما حكم الصلاة وما صحة هذا الحديث", intent=Intent.FIQH)
 
 # Execute orchestration
 orchestrator = MultiAgentOrchestrator(registry=agent_registry)
@@ -422,9 +411,9 @@ result = await orchestrator.execute_plan(plan, query)
 
 ```python
 from src.evaluation.metrics import run_evaluation
-from src.evaluation.golden_set_schema import load_golden_set
+from src.evaluation.golden_set_schema import get_fiqh_golden_set
 
-golden_set = load_golden_set("data/fiqh_golden_set.json")
+golden_set = get_fiqh_golden_set()
 results = await run_evaluation(fiqh_agent, golden_set)
 
 print(f"Precision@5: {results.precision}")
@@ -481,20 +470,17 @@ RATE_LIMIT_RPM=60
 
 ## Migration from Old Architecture
 
-The new architecture maintains backward compatibility through:
+The v2 architecture replaces the v1 per-agent modules:
 
-1. **Compatibility shims** in `src/knowledge/` that re-export from new locations
-2. **Existing agents** (FiqhAgent, HadithAgent, etc.) still work
-3. **Router integration** with both old and new agents
+1. **Config-backed agents** in `src/agents/collection/` replace the flat `src/agents/*_agent.py` modules.
+2. **Retrieval** lives in `src/retrieval/`; the old `src/knowledge/` package was split into `src/indexing/` and `src/retrieval/`.
+3. **Verification** lives in `src/verification/`; the old `src/verifiers/` name is gone.
 
 ```python
-# Old way (still works)
-from src.agents.fiqh_agent import FiqhAgent
-agent = FiqhAgent()
+# Recommended (v2)
+from src.agents.collection import FiqhCollectionAgent
 
-# New way (recommended)
-from src.agents.fiqh_collection_agent import FiqhCollectionAgent
-agent = FiqhCollectionAgent()
+agent = FiqhCollectionAgent(config=config)
 ```
 
 ---
@@ -515,29 +501,33 @@ agent = FiqhCollectionAgent()
 src/
 ├── agents/
 │   ├── base.py                    # BaseAgent, Citation, AgentInput, AgentOutput
-│   ├── base_rag_agent.py         # BaseRAGAgent (legacy)
-│   ├── collection_agent.py       # CollectionAgent abstract base
-│   ├── fiqh_collection_agent.py  # FiqhCollectionAgent
-│   ├── hadith_collection_agent.py
-│   ├── tafsir_collection_agent.py
-│   ├── aqeedah_collection_agent.py
-│   ├── seerah_collection_agent.py
-│   ├── usul_fiqh_collection_agent.py
-│   ├── history_collection_agent.py
-│   ├── language_collection_agent.py
-│   └── registry.py               # Agent registry
+│   ├── chatbot_agent.py           # ChatbotAgent (greeting/small talk)
+│   └── collection/
+│       ├── base.py                # CollectionAgent abstract base + Intent
+│       ├── fiqh.py                # FiqhCollectionAgent
+│       ├── hadith.py
+│       ├── tafsir.py
+│       ├── aqeedah.py
+│       ├── seerah.py
+│       ├── usul_fiqh.py
+│       ├── history.py
+│       ├── language.py
+│       ├── tazkiyah.py
+│       └── general.py
 ├── retrieval/
 │   ├── strategies.py             # Retrieval strategy matrix
 │   ├── retrievers/               # Dense, sparse, hybrid retrievers
 │   ├── ranking/                  # Reranking, scoring
 │   └── policies/                 # Collection policies
-├── verifiers/
-│   ├── base.py                   # BaseVerifier, VerificationResult
+├── verification/
+│   ├── base.py                   # VerificationCheck, VerificationReport
 │   ├── suite_builder.py          # Verification suite builder
-│   ├── fiqh_checks.py            # Fiqh-specific verifiers
-│   ├── exact_quote.py            # Quote validation
-│   ├── hadith_grade.py           # Hadith grading
-│   └── ...                       # Other verifiers
+│   ├── checks/
+│   │   ├── fiqh_checks.py        # Fiqh-specific verifiers
+│   │   ├── exact_quote.py        # Quote validation
+│   │   ├── hadith_grade.py       # Hadith grading
+│   │   └── ...                   # Other verifiers
+│   └── pipeline.py               # Verification pipeline
 ├── application/
 │   └── router/
 │       ├── router_agent.py       # RouterAgent
