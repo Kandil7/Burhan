@@ -10,16 +10,16 @@ Based on Fanar-Sadiq architecture achieving ~90% accuracy.
 """
 
 import json
+from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.domain.intents import (
-    INTENT_DESCRIPTIONS,
-    KEYWORD_PATTERNS,
-    Intent,
-)
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+from src.domain.intents import (
+    INTENT_DESCRIPTIONS,
+    Intent,
+)
 
 logger = get_logger()
 
@@ -94,21 +94,22 @@ Now classify this query. Return ONLY valid JSON, no explanations.
 
 Query: {query}"""
 
-    def __init__(self, llm_client=None):
+    def __init__(self, llm_client: Any = None) -> None:
         """
-        Initialize the classifier with LLM client only.
+        Initialize the classifier.
 
         Args:
-            llm_client: OpenAI-compatible client for classification (required)
+            llm_client: Optional OpenAI-compatible client used when keywords
+                do not match. Keyword classification works without it.
         """
+        from src.application.router.classifier_factory import KeywordBasedClassifier
+
         self.llm_client = llm_client
+        self._keyword_classifier = KeywordBasedClassifier()
 
     async def classify(self, query: str) -> RouterResult:
         """
-        Classify user query using LLM only (no fallbacks).
-
-        This classifier ONLY uses LLM for classification.
-        If LLM fails, an exception is raised (no silent fallbacks).
+        Classify a query through the keyword, LLM, and fallback tiers.
 
         Args:
             query: User's question
@@ -117,60 +118,74 @@ Query: {query}"""
             RouterResult with intent, confidence, and metadata
 
         Raises:
-            ValueError: If LLM classification fails
+            ValueError: If an LLM is configured and LLM classification fails
         """
         if not query or not query.strip():
             return RouterResult(
                 intent=Intent.GREETING, confidence=0.5, method="fallback", reason="Empty query, defaulting to greeting"
             )
 
-        # ==========================================
-        # LLM classification ONLY (no fallbacks)
-        # ==========================================
-        if not self.llm_client:
-            raise ValueError("LLM client not configured - classifier requires LLM")
+        # Tier 1: keyword fast path.
+        keyword_result = self._keyword_match(query)
+        if keyword_result is not None:
+            return keyword_result
 
-        try:
-            llm_result = await self._llm_classify(query)
+        # Tier 2: LLM, when a client is configured.
+        if self.llm_client:
+            try:
+                llm_result = await self._llm_classify(query)
+                logger.info(
+                    "router.llm_classify",
+                    intent=llm_result.intent.value,
+                    confidence=llm_result.confidence,
+                    method="llm",
+                )
+                return llm_result
+            except Exception as e:
+                logger.error("router.llm_error", error=str(e))
+                raise ValueError(f"LLM classification failed: {e}") from e
 
-            logger.info(
-                "router.llm_classify", intent=llm_result.intent.value, confidence=llm_result.confidence, method="llm"
-            )
-            return llm_result
-
-        except Exception as e:
-            logger.error("router.llm_error", error=str(e))
-            # LLM only - raise error instead of silent fallback
-            raise ValueError(f"LLM classification failed: {e}") from e
+        # Tier 3: no LLM configured. Return the canonical low-confidence
+        # fallback instead of raising, so keyword-only deployments work.
+        fallback = self._keyword_classifier.classify_sync(query)
+        return RouterResult(
+            intent=fallback.intent,
+            confidence=fallback.confidence,
+            method=fallback.method,
+            language=fallback.language,
+            requires_retrieval=fallback.requires_retrieval,
+            sub_intent=fallback.quran_subintent.value if fallback.quran_subintent else None,
+            reason=fallback.reasoning,
+        )
 
     def _keyword_match(self, query: str) -> RouterResult | None:
         """
         Fast keyword-based intent detection.
 
-        Checks query against known keyword patterns for each intent.
-        Returns result if match found with high confidence.
+        Delegates matching and conflict resolution to the canonical
+        KeywordBasedClassifier so this module cannot drift from it.
+        Returns None when no keyword matches.
         """
-        query_lower = query.lower()
-        language = self._detect_language(query)
+        from src.domain.intents import classify_quran_subintent, infer_requires_retrieval
 
-        for intent, patterns in KEYWORD_PATTERNS.items():
-            for pattern in patterns:
-                if pattern.lower() in query_lower:
-                    return RouterResult(
-                        intent=intent,
-                        confidence=0.92,
-                        method="keyword",
-                        language=language,
-                        requires_retrieval=intent
-                        in [
-                            Intent.FIQH,
-                            Intent.ISLAMIC_KNOWLEDGE,
-                            Intent.QURAN,
-                        ],
-                        reason=f"Keyword match: '{pattern}'",
-                    )
+        counts = self._keyword_classifier.match_counts(query)
+        intent = self._keyword_classifier.best_intent(counts)
+        if intent is None:
+            return None
 
-        return None
+        sub_intent = None
+        if intent is Intent.QURAN:
+            sub_intent, _ = classify_quran_subintent(query)
+
+        return RouterResult(
+            intent=intent,
+            confidence=0.92,
+            method="keyword",
+            language=self._detect_language(query),
+            requires_retrieval=infer_requires_retrieval(intent, sub_intent),
+            sub_intent=sub_intent.value if sub_intent else None,
+            reason=f"Keyword match: {counts[intent]} term(s)",
+        )
 
     async def _llm_classify(self, query: str) -> RouterResult:
         """
