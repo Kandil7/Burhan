@@ -11,6 +11,7 @@ Usage:
     _classifier = LazySingleton(lambda: HybridQueryClassifier(llm_client=...))
     classifier = await _classifier.get_async()  # For async factories
 """
+
 import asyncio
 import threading
 from collections.abc import Callable
