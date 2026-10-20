@@ -43,7 +43,7 @@
 | `src/application/` | منطق الأعمال |
 | `src/agents/` | وكلاء الذكاء الاصطناعي |
 | `src/retrieval/` | استرجاع الوثائق |
-| `src/verifiers/` | التحقق من الدقة |
+| `src/verification/` | التحقق من الدقة |
 | `src/generation/` | توليد الإجابات |
 
 ---
@@ -141,15 +141,7 @@ class AskRequest(BaseModel):
 
 ```python
 # خطأ في التحقق من الصحة
-{
-    "detail": [
-        {
-            "loc": ["query"],
-            "msg": "String should have at least 1 character",
-            "type": "string_too_short"
-        }
-    ]
-}
+{"detail": [{"loc": ["query"], "msg": "String should have at least 1 character", "type": "string_too_short"}]}
 ```
 
 ### 3.5 ما بعد التحقق الناجح
@@ -172,7 +164,7 @@ class AskRequest(BaseModel):
 يستخدم النظام تصنيفياً هجيناً يجمع بين طريقتين:
 
 ```python
-# في src/application/hybrid_classifier.py
+# في src/application/router/hybrid_classifier.py
 class MasterHybridClassifier:
     async def classify(self, query: str) -> ClassificationResult:
         # الخطوة 1: المطابقة بالكلمات المفتاحية
@@ -240,7 +232,7 @@ QuranSubIntent = Enum(
         "ANALYTICS": "إحصاءات قرآنية",
         "INTERPRETATION": "تفسير آية",
         "QUOTATION_VALIDATION": "تحقق من اقتباس",
-    }
+    },
 )
 ```
 
@@ -262,12 +254,7 @@ class ClassificationResult:
 **المخرجات**:
 
 ```python
-{
-    "intent": "FIQH_HUKM",
-    "confidence": 0.92,
-    "language": "ar",
-    "requires_retrieval": True
-}
+{"intent": "FIQH_HUKM", "confidence": 0.92, "language": "ar", "requires_retrieval": True}
 ```
 
 ---
@@ -488,21 +475,25 @@ class RetrievalResult(BaseModel):
 لكل وكيل مجموعة تحقق خاصة:
 
 ```python
-# في src/verifiers/suite_builder.py
+# في src/verification/suite_builder.py
 def build_verification_suite_for(agent_name: str) -> VerificationSuite:
     suites = {
-        "fiqh": VerificationSuite(checks=[
-            VerificationCheck(name="quote_validator", fail_policy="abstain"),
-            VerificationCheck(name="source_attributor", fail_policy="warn"),
-            VerificationCheck(name="contradiction_detector", fail_policy="proceed"),
-            VerificationCheck(name="evidence_sufficiency", fail_policy="abstain"),
-        ]),
-        "hadith": VerificationSuite(checks=[
-            VerificationCheck(name="quote_validator", fail_policy="abstain"),
-            VerificationCheck(name="hadith_grade_checker", fail_policy="abstain"),
-        ]),
+        "fiqh": VerificationSuite(
+            checks=[
+                VerificationCheck(name="quote_validator", fail_policy="abstain"),
+                VerificationCheck(name="source_attributor", fail_policy="warn"),
+                VerificationCheck(name="contradiction_detector", fail_policy="proceed"),
+                VerificationCheck(name="evidence_sufficiency", fail_policy="abstain"),
+            ]
+        ),
+        "hadith": VerificationSuite(
+            checks=[
+                VerificationCheck(name="quote_validator", fail_policy="abstain"),
+                VerificationCheck(name="hadith_grade_checker", fail_policy="abstain"),
+            ]
+        ),
     }
-    
+
     return suites.get(agent_name, VerificationSuite(checks=[]))
 ```
 
@@ -511,80 +502,68 @@ def build_verification_suite_for(agent_name: str) -> VerificationSuite:
 #### 7.3.1 التحقق من الاقتباس الدقيق
 
 ```python
-# في src/verifiers/exact_quote.py
+# في src/verification/checks/exact_quote.py
 async def check_exact_quote(answer: str, passages: list) -> CheckResult:
     # استخراج الاقتباسات من الإجابة
     quotes = extract_quotes(answer)
-    
+
     for quote in quotes:
         # البحث في المصادر
         match = find_exact_match(quote, passages)
-        
+
         if not match:
-            return CheckResult(
-                status="failed",
-                message=f"اقتباس غير موجود: {quote[:50]}..."
-            )
-    
+            return CheckResult(status="failed", message=f"اقتباس غير موجود: {quote[:50]}...")
+
     return CheckResult(status="passed")
 ```
 
 #### 7.3.2 التحقق من المصدر
 
 ```python
-# في src/verifiers/source_attribution.py
+# في src/verification/checks/source_attribution.py
 async def check_source_attribution(answer: str, passages: list) -> CheckResult:
     # استخراج أسماء المصادر
     sources = extract_sources(answer)
-    
+
     for source in sources:
         if not validate_source(source, passages):
-            return CheckResult(
-                status="warning",
-                message=f"مصدر غير موثق: {source}"
-            )
-    
+            return CheckResult(status="warning", message=f"مصدر غير موثق: {source}")
+
     return CheckResult(status="passed")
 ```
 
 #### 7.3.3 التحقق من درجة الحديث
 
 ```python
-# في src/verifiers/hadith_grade.py
+# في src/verification/checks/hadith_grade.py
 async def check_hadith_grade(answer: str, passages: list) -> CheckResult:
     # استخراج الأحاديث المذكورة
     ahadith = extract_ahadith(answer)
-    
+
     for hadith in ahadith:
         # التحقق من الدرجة في المصادر
         grade = get_grade(hadith)
-        
+
         if grade == "daif":
-            return CheckResult(
-                status="warning",
-                message="يشير إلى حديث ضعيف"
-            )
-    
+            return CheckResult(status="warning", message="يشير إلى حديث ضعيف")
+
     return CheckResult(status="passed")
 ```
 
 #### 7.3.4 التحقق من التناقض
 
 ```python
-# في src/verifiers/contradiction.py
+# في src/verification/checks/contradiction.py
 async def check_contradiction(answer: str, passages: list) -> CheckResult:
     # تحليل المحتوى
     claims = extract_claims(answer)
-    
+
     # التحقق من التناقضات
     for i, claim1 in enumerate(claims):
-        for claim2 in claims[i+1:]:
+        for claim2 in claims[i + 1 :]:
             if is_contradiction(claim1, claim2):
-                return CheckResult(
-                    status="warning",
-                    message="تم اكتشاف تناقض محتمل"
-                )
-    
+                return CheckResult(status="warning", message="تم اكتشاف تناقض محتمل")
+
     return CheckResult(status="passed")
 ```
 
@@ -626,12 +605,7 @@ class VerificationReport(BaseModel):
 **المخرجات**:
 
 ```python
-{
-    "status": "passed",
-    "confidence": 0.95,
-    "verified_passages": ["صلاة الجماعة فرض عين..."],
-    "abstained": False
-}
+{"status": "passed", "confidence": 0.95, "verified_passages": ["صلاة الجماعة فرض عين..."], "abstained": False}
 ```
 
 ---
@@ -645,7 +619,7 @@ class VerificationReport(BaseModel):
 ### 8.2 العميل
 
 ```python
-# في src/generation/llm_client.py
+# في src/infrastructure/llm_client.py
 class LLMClient:
     async def generate(
         self,
@@ -694,16 +668,14 @@ def load_prompt(template_name: str) -> str:
 def _build_prompt(self, query: str, contexts: list[str]) -> str:
     # تحميل النموذج
     template = self._load_prompt_template()
-    
+
     # بناء السياق
-    context_text = "\n\n".join([
-        f"[{i+1}] {ctx}" for i, ctx in enumerate(contexts)
-    ])
-    
+    context_text = "\n\n".join([f"[{i + 1}] {ctx}" for i, ctx in enumerate(contexts)])
+
     # استبدال العناصر
     prompt = template.replace("{{query}}", query)
     prompt = prompt.replace("{{context}}", context_text)
-    
+
     return prompt
 ```
 
@@ -785,14 +757,15 @@ _COT_PATTERNS = [
     re.compile(r"###\s*(?:Let me|I'll|I will).*?\n\s*", re.IGNORECASE),
 ]
 
+
 def strip_cot_leakage(text: str) -> str:
     if not text:
         return text
-    
+
     result = text
     for pattern in _COT_PATTERNS:
         result = pattern.sub("", result)
-    
+
     return result.strip()
 ```
 
@@ -897,15 +870,15 @@ class CitationResponse(BaseModel):
         "text": "صلاة الجماعة فرض عين على الرجل القادر...",
         "book_title": "الموسوعة الفقهية",
         "page": 150,
-        "grade": null
+        "grade": null,
     },
     {
         "source_id": "hadith_001",
         "text": "من صلى جماعة فكأنما صلى في五金...",
         "book_title": "صحيح البخاري",
         "page": 580,
-        "grade": "sahih"
-    }
+        "grade": "sahih",
+    },
 ]
 ```
 
@@ -970,13 +943,7 @@ async def ask_question(request: AskRequest) -> AskResponse:
 
 ```python
 # HTTP 200 OK
-{
-    "answer": "...",
-    "citations": [...],
-    "intent": "FIQH_HUKM",
-    "confidence": 0.95,
-    "processing_time_ms": 1250
-}
+{"answer": "...", "citations": [...], "intent": "FIQH_HUKM", "confidence": 0.95, "processing_time_ms": 1250}
 ```
 
 ### 11.6 حالات الخطأ
@@ -1038,11 +1005,11 @@ async def ask_question(request: AskRequest) -> AskResponse:
 
 1. [/src/api/main.py](src/api/main.py) - نقطة الدخول
 2. [/src/api/routes/ask.py](src/api/routes/ask.py) - نقطة النهاية
-3. [/src/application/hybrid_classifier.py](src/application/hybrid_classifier.py) - التصنيف
+3. [/src/application/router/hybrid_classifier.py](src/application/router/hybrid_classifier.py) - التصنيف
 4. [/src/agents/collection/base.py](src/agents/collection/base.py) - الوكيل الأساسي
 5. [/src/retrieval/retrievers/hybrid_retriever.py](src/retrieval/retrievers/hybrid_retriever.py) - الاسترجاع
-6. [/src/verifiers/suite_builder.py](src/verifiers/suite_builder.py) - التحقق
-7. [/src/generation/llm_client.py](src/generation/llm_client.py) - التوليد
+6. [/src/verification/suite_builder.py](src/verification/suite_builder.py) - التحقق
+7. [/src/infrastructure/llm_client.py](src/infrastructure/llm_client.py) - التوليد
 
 ---
 
