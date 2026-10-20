@@ -63,11 +63,11 @@ User Query
 |--------|-------|---------|
 | API | `src/api/routes/ask.py` | استلام الطلب |
 | Validation | `src/api/schemas/ask.py` | التحقق من الصحة |
-| Classification | `src/application/hybrid_classifier.py` | تصنيف النية |
+| Classification | `src/application/router/hybrid_classifier.py` | تصنيف النية |
 | Routing | `src/core/registry.py` | اختيار الوكيل |
 | Retrieval | `src/retrieval/retrievers/*.py` | استرجاع الوثائق |
-| Verification | `src/verifiers/suite_builder.py` | التحقق من الدقة |
-| Generation | `src/generation/llm_client.py` | توليد الإجابة |
+| Verification | `src/verification/suite_builder.py` | التحقق من الدقة |
+| Generation | `src/infrastructure/llm_client.py` | توليد الإجابة |
 | Post-processing | `src/agents/base.py` | معالجة الإجابة |
 
 ---
@@ -113,11 +113,7 @@ logger = structlog.get_logger(__name__)
 
 ```python
 # إنشاءRouter
-ask_router = APIRouter(
-    prefix="/ask",
-    tags=["query"],
-    responses={404: {"description": "Not found"}}
-)
+ask_router = APIRouter(prefix="/ask", tags=["query"], responses={404: {"description": "Not found"}})
 ```
 
 **شرح**:
@@ -311,7 +307,7 @@ class AskRequest(BaseModel):
 ```python
 class CitationResponse(BaseModel):
     """نموذج الاقتباس في الاستجابة."""
-    
+
     source_id: str = Field(..., description="معرف المصدر")
     text: str = Field(..., description="النص المقتبس", max_length=200)
     book_title: Optional[str] = Field(default=None, description="عنوان الكتاب")
@@ -322,12 +318,9 @@ class CitationResponse(BaseModel):
 
 class AskResponse(BaseModel):
     """نموذج الاستجابة."""
-    
+
     answer: str = Field(..., description="الإجابة")
-    citations: list[CitationResponse] = Field(
-        default_factory=list,
-        description="الاقتباسات"
-    )
+    citations: list[CitationResponse] = Field(default_factory=list, description="الاقتباسات")
     intent: str = Field(..., description="النية")
     confidence: float = Field(..., ge=0.0, le=1.0, description="الثقة")
     processing_time_ms: int = Field(..., ge=0, description="زمن المعالجة")
@@ -350,11 +343,7 @@ class AskResponse(BaseModel):
 # 3. madhhab هو salah من أربعة مذاهب
 
 try:
-    request = AskRequest(
-        query="ما حكم صلاة الجماعة؟",
-        language="ar",
-        madhhab="hanafi"
-    )
+    request = AskRequest(query="ما حكم صلاة الجماعة؟", language="ar", madhhab="hanafi")
     # إذا كان صالح، يستمر
 except ValidationError as e:
     # إذا كان غير صالح، يرجع خطأ
@@ -366,20 +355,21 @@ except ValidationError as e:
 ```python
 # ===== التحقق اليدوي =====
 
+
 async def validate_request(request: AskRequest) -> AskRequest:
     """تحقق يدوي إضافي."""
-    
+
     # 1. التحقق من أن السؤال ليس سؤالاً ضاراً
     harmful_patterns = [
         r"كيف\s+يقتل",
         r"كيف\s+يصنع\s+قنبلة",
         r"كيف\s+يهاجم",
     ]
-    
+
     for pattern in harmful_patterns:
         if re.search(pattern, request.query, re.IGNORECASE):
             raise ValueError("Question contains harmful content")
-    
+
     # 2. التحقق من أن السؤال إسلامي
     islamic_keywords = [
         r"الله",
@@ -396,16 +386,13 @@ async def validate_request(request: AskRequest) -> AskRequest:
         r"Prophet",
         r"prayer",
     ]
-    
-    has_islamic_keyword = any(
-        re.search(kw, request.query, re.IGNORECASE)
-        for kw in islamic_keywords
-    )
-    
+
+    has_islamic_keyword = any(re.search(kw, request.query, re.IGNORECASE) for kw in islamic_keywords)
+
     if not has_islamic_keyword:
         # Allow but log
         logger.warning(f"Non-Islamic query: {request.query[:50]}")
-    
+
     return request
 ```
 
@@ -416,15 +403,17 @@ async def validate_request(request: AskRequest) -> AskRequest:
 ### 4.1 Hybrid Intent Classifier
 
 ```python
-# ===== src/application/hybrid_classifier.py =====
+# ===== src/application/router/hybrid_classifier.py =====
 
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Optional
 import re
 
+
 class IntentType(str, Enum):
     """أنواع النية."""
+
     ZAKAT = "ZAKAT"
     INHERITANCE = "INHERITANCE"
     FIQH_HUKM = "FIQH_HUKM"
@@ -440,6 +429,7 @@ class IntentType(str, Enum):
 
 class ClassificationResult(BaseModel):
     """نتيجة التصنيف."""
+
     intent: IntentType
     confidence: float
     language: str
@@ -448,7 +438,7 @@ class ClassificationResult(BaseModel):
 
 class QueryClassifier(ABC):
     """واجهة المصنف."""
-    
+
     @abstractmethod
     async def classify(self, query: str) -> ClassificationResult:
         """تصنيف سؤال."""
@@ -457,7 +447,7 @@ class QueryClassifier(ABC):
 
 class MasterHybridClassifier(QueryClassifier):
     """المصنف الهجين الرئيسي."""
-    
+
     def __init__(
         self,
         embedding_model=None,
@@ -465,46 +455,46 @@ class MasterHybridClassifier(QueryClassifier):
     ):
         # 1. المصنف بالكلمات المفتاحية
         self._keyword_classifier = KeywordBasedClassifier()
-        
+
         # 2. المصنف التضميناتي (اختياري)
         self._embedding_classifier = None
         if embedding_model:
             self._embedding_classifier = EmbeddingClassifier(embedding_model)
-        
+
         # 3. حد الثقة المنخفض
         self._low_conf_threshold = low_conf_threshold
-    
+
     async def classify(self, query: str) -> ClassificationResult:
         """تصنيف سؤال."""
-        
+
         # الخطوة 1:.keyword (سريع، <1ms)
         kw_result = await self._keyword_classifier.classify(query)
-        
+
         # إذا كانت الثقة >= 0.85، استخدم فوراً
         if kw_result.confidence >= 0.85:
             return kw_result
-        
+
         # الخطوة 2: Embedding (أبطأ، 10-50ms)
         if self._embedding_classifier:
             emb_result = await self._embedding_classifier.classify(query)
-            
+
             # اختر الأعلى ثقة
             if emb_result.confidence > kw_result.confidence:
                 return emb_result
-        
+
         # الخطوة 3: keyword كنهاية
         return kw_result
 
 
 class KeywordBasedClassifier(QueryClassifier):
     """مصنف الكلمات المفتاحية."""
-    
+
     def __init__(self):
         self._keywords = self._load_keywords()
-    
+
     def _load_keywords(self) -> dict[IntentType, list[re.Pattern]]:
         """تحميل أنماط الكلمات."""
-        
+
         patterns = {
             IntentType.ZAKAT: [
                 re.compile(r"زكاة", re.IGNORECASE),
@@ -542,38 +532,38 @@ class KeywordBasedClassifier(QueryClassifier):
                 re.compile(r"معنى", re.IGNORECASE),
             ],
         }
-        
+
         return patterns
-    
+
     async def classify(self, query: str) -> ClassificationResult:
         """تصنيف باستخدام الكلمات."""
-        
+
         # تطبيع النص
         normalized = self._normalize_arabic(query)
-        
+
         # حساب التطابقات
         intent_scores: dict[IntentType, int] = {}
-        
+
         for intent, patterns in self._keywords.items():
             matches = sum(1 for p in patterns if p.search(normalized))
             if matches > 0:
                 intent_scores[intent] = matches
-        
+
         if intent_scores:
             # اختيار الأعلى
             best_intent = max(intent_scores, key=intent_scores.get)
             matches = intent_scores[best_intent]
-            
+
             # حساب الثقة (0.85 + bonus)
             confidence = min(0.85 + (matches * 0.05), 0.95)
-            
+
             return ClassificationResult(
                 intent=best_intent,
                 confidence=confidence,
                 language=self._detect_language(query),
                 requires_retrieval=True,
             )
-        
+
         # الافتراضي
         return ClassificationResult(
             intent=IntentType.GENERAL_ISLAMIC,
@@ -581,28 +571,28 @@ class KeywordBasedClassifier(QueryClassifier):
             language=self._detect_language(query),
             requires_retrieval=False,
         )
-    
+
     def _normalize_arabic(self, text: str) -> str:
         """تطبيع النص العربي."""
         # أشكال مختلفة لحرف ALEF
         text = text.replace("إ", "ا")
         text = text.replace("أ", "ا")
         text = text.replace("آ", "ا")
-        
+
         # YEh المربوطة
         text = text.replace("ى", "ي")
-        
+
         # إزالة التشكيل
         arabic_diacritics = re.compile(r"[\u064B-\u0652]")
         text = arabic_diacritics.sub("", text)
-        
+
         return text
-    
+
     def _detect_language(self, text: str) -> str:
         """كشف اللغة."""
         arabic_chars = len(re.findall(r"[\u0600-\u06FF]", text))
         english_chars = len(re.findall(r"[a-zA-Z]", text))
-        
+
         if arabic_chars > english_chars:
             return "ar"
         return "en"
@@ -649,27 +639,28 @@ class EmbeddingClassifier(QueryClassifier):
 
 from typing import Dict, Optional
 
+
 class AgentRegistry:
     """سجل الوكلاء."""
-    
+
     def __init__(self):
         self._agents: Dict[str, CollectionAgent] = {}
-    
+
     def register(self, name: str, agent: CollectionAgent) -> None:
         """تسجيل وكيل."""
         self._agents[name] = agent
         logger.info(f"Registered agent: {name}")
-    
+
     def get(self, name: str) -> CollectionAgent:
         """الحصول على وكيل."""
         if name not in self._agents:
             raise KeyError(f"Agent not found: {name}")
         return self._agents[name]
-    
+
     def list_all(self) -> list[str]:
         """قائمة الوكلاء."""
         return list(self._agents.keys())
-    
+
     def get_by_collection(self, collection: str) -> Optional[CollectionAgent]:
         """الحصول على وكل collection معين."""
         for agent in self._agents.values():
@@ -680,6 +671,7 @@ class AgentRegistry:
 
 # ===== Singleton Instance =====
 _registry: Optional[AgentRegistry] = None
+
 
 def get_registry() -> AgentRegistry:
     """الحصول على instance الـ registry."""
@@ -696,9 +688,10 @@ def get_registry() -> AgentRegistry:
 
 from src.domain.intents import IntentType
 
+
 class Router:
     """موجه الأسئلة."""
-    
+
     # خريطة النيات إلى الوكلاء
     INTENT_TO_AGENT = {
         IntentType.ZAKAT: "fiqh:rag",
@@ -713,12 +706,12 @@ class Router:
         IntentType.HISTORY: "history:rag",
         IntentType.GENERAL_ISLAMIC: "general:rag",
     }
-    
+
     def route(self, intent: IntentType) -> str:
         """توجيه naar agent."""
         return self.INTENT_TO_AGENT.get(
             intent,
-            "general:rag"  # الافتراضي
+            "general:rag",  # الافتراضي
         )
 ```
 
@@ -734,9 +727,10 @@ class Router:
 from typing import Optional
 from src.retrieval.schemas import RetrievalResult
 
+
 class HybridSearcher:
     """بائع هجين يجمع بين البحثين."""
-    
+
     def __init__(
         self,
         embedding_model,
@@ -746,7 +740,7 @@ class HybridSearcher:
         self._semantic = DenseRetriever(embedding_model, qdrant_client)
         self._bm25 = BM25Retriever(bm25_index)
         self._rrf = ReciprocalRankFusion()
-    
+
     async def search(
         self,
         query: str,
@@ -755,23 +749,16 @@ class HybridSearcher:
         filters: Optional[dict] = None,
     ) -> list[RetrievalResult]:
         """بحث هجين."""
-        
+
         # البحث الدلالي (semantic)
-        semantic_results = await self._semantic.search(
-            query, collection, top_k * 2, filters
-        )
-        
+        semantic_results = await self._semantic.search(query, collection, top_k * 2, filters)
+
         # البحث بالكلمات (BM25)
-        keyword_results = await self._bm25.search(
-            query, collection, top_k * 2
-        )
-        
+        keyword_results = await self._bm25.search(query, collection, top_k * 2)
+
         # دمج باستخدام RRF
-        fused_results = self._rrf.fuse(
-            [semantic_results, keyword_results],
-            k=60
-        )
-        
+        fused_results = self._rrf.fuse([semantic_results, keyword_results], k=60)
+
         return fused_results[:top_k]
 ```
 
@@ -780,13 +767,14 @@ class HybridSearcher:
 ```python
 # ===== src/retrieval/retrievers/dense_retriever.py =====
 
+
 class DenseRetriever:
     """بائع المتجهات الكثيفة (البحث الدلالي)."""
-    
+
     def __init__(self, embedding_model, qdrant_client):
         self._model = embedding_model
         self._qdrant = qdrant_client
-    
+
     async def search(
         self,
         query: str,
@@ -795,11 +783,11 @@ class DenseRetriever:
         filters: Optional[dict] = None,
     ) -> list[RetrievalResult]:
         """بحث دلالي."""
-        
+
         # 1. تضمين السؤال
         query_embeddings = await self._model.encode([query])
         query_vector = query_embeddings[0].tolist()
-        
+
         # 2. البحث في Qdrant
         results = await self._qdrant.search(
             collection=collection,
@@ -808,7 +796,7 @@ class DenseRetriever:
             query_filter=filters,
             with_payload=True,
         )
-        
+
         # 3. تحويلإلى RetrievalResult
         return [
             RetrievalResult(
@@ -829,14 +817,15 @@ class DenseRetriever:
 
 import math
 
+
 class BM25Retriever:
     """بائع BM25 (البحث بالكلمات)."""
-    
+
     def __init__(self, index):
         self._index = index
         self._k1 = 1.5  # معامل التردد
         self._b = 0.75  # معيار الطول
-    
+
     async def search(
         self,
         query: str,
@@ -844,26 +833,26 @@ class BM25Retriever:
         top_k: int = 10,
     ) -> list[RetrievalResult]:
         """بحث BM25."""
-        
+
         # 1. توكنز السؤال
         query_tokens = self._tokenize(query)
-        
+
         # 2. حسابScores لكل وثيقة
         scores: dict[str, float] = {}
-        
+
         for doc_id, doc in self._index.documents.items():
             doc_tokens = self._tokenize(doc.text)
             score = self._bm25_score(query_tokens, doc_tokens)
             if score > 0:
                 scores[doc_id] = score
-        
+
         # 3. ترتيب واختيار الأعلى
         sorted_docs = sorted(
             scores.items(),
             key=lambda x: x[1],
             reverse=True,
         )[:top_k]
-        
+
         return [
             RetrievalResult(
                 id=doc_id,
@@ -874,49 +863,45 @@ class BM25Retriever:
             )
             for doc_id, score in sorted_docs
         ]
-    
+
     def _tokenize(self, text: str) -> list[str]:
         """تقسيم إلى Words."""
         # إزالة التشكيل
         text = re.sub(r"[\u064B-\u0652]", "", text)
         # التقسيم
         return re.findall(r"[\w]+", text.lower())
-    
+
     def _bm25_score(
         self,
         query_tokens: list[str],
         doc_tokens: list[str],
     ) -> float:
         """حسابScore BM25."""
-        
+
         doc_len = len(doc_tokens)
         avg_doc_len = self._index.avg_doc_len
-        
+
         score = 0.0
         doc_freq = {}
-        
+
         for term in query_tokens:
             # تردد المصطلح في الوثيقة
             tf = doc_tokens.count(term)
             if tf == 0:
                 continue
-            
+
             # عدد الوثائق التي تحتوي المصطلح
             df = self._index.term_doc_freq.get(term, 0)
-            
+
             # IDF
-            idf = math.log(
-                (self._index.num_docs - df + 0.5) / (df + 0.5) + 1
-            )
-            
+            idf = math.log((self._index.num_docs - df + 0.5) / (df + 0.5) + 1)
+
             # BM25 formula
             numerator = tf * (self._k1 + tf)
-            denominator = tf + self._k1 * (
-                1 - self._b + self._b * doc_len / avg_doc_len
-            )
-            
+            denominator = tf + self._k1 * (1 - self._b + self._b * doc_len / avg_doc_len)
+
             score += idf * (numerator / denominator)
-        
+
         return score
 ```
 
@@ -925,40 +910,39 @@ class BM25Retriever:
 ```python
 # ===== src/retrieval/fusion/rrf.py =====
 
+
 class ReciprocalRankFusion:
     """دمج الترتيب المتبادل (RRF)."""
-    
+
     def __init__(self, k: int = 60):
         """k هو معامل الانتظام."""
         self._k = k
-    
+
     def fuse(
         self,
         result_lists: list[list[RetrievalResult]],
     ) -> list[RetrievalResult]:
         """دمج قوائم النتائج."""
-        
+
         # 1. حسابScores
         doc_scores: dict[str, float] = {}
-        
+
         for results in result_lists:
             for rank, result in enumerate(results):
                 doc_id = result.id
-                
+
                 # صيغة RRF: 1 / (k + rank)
                 contribution = 1.0 / (self._k + rank + 1)
-                
-                doc_scores[doc_id] = (
-                    doc_scores.get(doc_id, 0.0) + contribution
-                )
-        
+
+                doc_scores[doc_id] = doc_scores.get(doc_id, 0.0) + contribution
+
         # 2. ترتيب
         sorted_docs = sorted(
             doc_scores.items(),
             key=lambda x: x[1],
             reverse=True,
         )
-        
+
         # 3. إعادة النتائج
         # (نحتاج للحصول على التفاصيل من الـ index)
         return []  # TODO: اكمل
@@ -971,10 +955,12 @@ class ReciprocalRankFusion:
 ### 7.1 Suite Builder
 
 ```python
-# ===== src/verifiers/suite_builder.py =====
+# ===== src/verification/suite_builder.py =====
+
 
 class VerificationCheck(BaseModel):
     """فحص واحد."""
+
     name: str
     fail_policy: str  # "abstain" | "warn" | "proceed"
     enabled: bool = True
@@ -982,11 +968,13 @@ class VerificationCheck(BaseModel):
 
 class VerificationSuite(BaseModel):
     """مجموعة فحوصات."""
+
     checks: list[VerificationCheck]
 
 
 class VerificationReport(BaseModel):
     """نتيجة التحقق."""
+
     status: str  # "passed" | "failed" | "abstained"
     confidence: float
     verified_passages: list[str]
@@ -996,59 +984,46 @@ class VerificationReport(BaseModel):
 
 def build_suite(agent_name: str) -> VerificationSuite:
     """بناء مجموعة تحقق للوكيل."""
-    
+
     suites = {
-        "fiqh": VerificationSuite(checks=[
-            VerificationCheck(
-                name="exact_quote",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="source_attribution",
-                fail_policy="warn"
-            ),
-            VerificationCheck(
-                name="contradiction_detector",
-                fail_policy="proceed"
-            ),
-            VerificationCheck(
-                name="evidence_sufficiency",
-                fail_policy="abstain"
-            ),
-        ]),
-        "hadith": VerificationSuite(checks=[
-            VerificationCheck(
-                name="exact_quote",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="hadith_grade",
-                fail_policy="abstain"
-            ),
-        ]),
+        "fiqh": VerificationSuite(
+            checks=[
+                VerificationCheck(name="exact_quote", fail_policy="abstain"),
+                VerificationCheck(name="source_attribution", fail_policy="warn"),
+                VerificationCheck(name="contradiction_detector", fail_policy="proceed"),
+                VerificationCheck(name="evidence_sufficiency", fail_policy="abstain"),
+            ]
+        ),
+        "hadith": VerificationSuite(
+            checks=[
+                VerificationCheck(name="exact_quote", fail_policy="abstain"),
+                VerificationCheck(name="hadith_grade", fail_policy="abstain"),
+            ]
+        ),
     }
-    
+
     return suites.get(agent_name, VerificationSuite(checks=[]))
 ```
 
 ### 7.2 Exact Quote Checker
 
 ```python
-# ===== src/verifiers/exact_quote.py =====
+# ===== src/verification/checks/exact_quote.py =====
 
 import re
+
 
 async def check_exact_quote(
     answer: str,
     passages: list[RetrievalResult],
 ) -> CheckResult:
     """فحص الاقتباسات Exact."""
-    
+
     # استخراج الاقتباسات من الإجابة
     # يتوقع أن تكون بين []
     quote_pattern = re.compile(r"\[(\d+)\]([^\[]+)")
     quotes = quote_pattern.findall(answer)
-    
+
     for source_num, quote_text in quotes:
         # البحث في المصادر
         found = False
@@ -1056,13 +1031,10 @@ async def check_exact_quote(
             if quote_text.strip() in passage.text:
                 found = True
                 break
-        
+
         if not found:
-            return CheckResult(
-                status="failed",
-                message=f"اقتباس غير موجود في المصادر"
-            )
-    
+            return CheckResult(status="failed", message=f"اقتباس غير موجود في المصادر")
+
     return CheckResult(status="passed")
 ```
 
@@ -1073,13 +1045,14 @@ async def check_exact_quote(
 ### 8.1 LLM Client
 
 ```python
-# ===== src/generation/llm_client.py =====
+# ===== src/infrastructure/llm_client.py =====
 
 from typing import Optional
 
+
 class LLMClient:
     """عميل LLM (OpenAI/Groq)."""
-    
+
     def __init__(
         self,
         api_key: str,
@@ -1087,7 +1060,7 @@ class LLMClient:
     ):
         self._api_key = api_key
         self._provider = provider
-    
+
     async def generate(
         self,
         prompt: str,
@@ -1097,33 +1070,23 @@ class LLMClient:
         max_tokens: int = 2000,
     ) -> str:
         """توليد نص."""
-        
+
         # بناء الرسائل
         messages = []
-        
+
         if system_prompt:
-            messages.append({
-                "role": "system",
-                "content": system_prompt
-            })
-        
-        messages.append({
-            "role": "user",
-            "content": prompt
-        })
-        
+            messages.append({"role": "system", "content": system_prompt})
+
+        messages.append({"role": "user", "content": prompt})
+
         # استدعاء API المناسب
         if self._provider == "openai":
-            response = await self._call_openai(
-                messages, model, temperature, max_tokens
-            )
+            response = await self._call_openai(messages, model, temperature, max_tokens)
         elif self._provider == "groq":
-            response = await self._call_groq(
-                messages, model, temperature, max_tokens
-            )
-        
+            response = await self._call_groq(messages, model, temperature, max_tokens)
+
         return response
-    
+
     async def _call_openai(
         self,
         messages: list,
@@ -1133,16 +1096,16 @@ class LLMClient:
     ) -> str:
         """استدعاء OpenAI."""
         import openai
-        
+
         response = await openai.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        
+
         return response.choices[0].message.content
-    
+
     async def _call_groq(
         self,
         messages: list,
@@ -1152,16 +1115,16 @@ class LLMClient:
     ) -> str:
         """استدعاء Groq."""
         from groq import AsyncGroq
-        
+
         client = AsyncGroq(api_key=self._api_key)
-        
+
         response = await client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        
+
         return response.choices[0].message.content
 ```
 
@@ -1170,31 +1133,29 @@ class LLMClient:
 ```python
 # ===== src/agents/collection/base.py =====
 
+
 class BaseCollectionAgent:
     """الوكيل الأساسي."""
-    
+
     def _build_prompt(
         self,
         query: str,
         contexts: list[str],
     ) -> str:
         """بناء سؤال LLM."""
-        
+
         # تحميل النموذج
         template = self._load_prompt_template()
-        
+
         # بناء السياق
-        context_text = "\n\n".join([
-            f"[المصدر {i+1}]:\n{ctx}"
-            for i, ctx in enumerate(contexts)
-        ])
-        
+        context_text = "\n\n".join([f"[المصدر {i + 1}]:\n{ctx}" for i, ctx in enumerate(contexts)])
+
         # استبدال العناصر
         prompt = template.replace("{{query}}", query)
         prompt = prompt.replace("{{context}}", context_text)
-        
+
         return prompt
-    
+
     def _load_prompt_template(self) -> str:
         """تحميل نموذج السؤال."""
         # قراءة من ملف
@@ -1215,36 +1176,25 @@ import re
 
 _COT_PATTERNS = [
     # Markdown Headers
-    re.compile(
-        r"##?\s*(?:Analysis|Reasoning|Thought).*?\n\n",
-        re.IGNORECASE | re.DOTALL
-    ),
+    re.compile(r"##?\s*(?:Analysis|Reasoning|Thought).*?\n\n", re.IGNORECASE | re.DOTALL),
     # XML Tags
-    re.compile(
-        r"<\s*(?:analysis|reasoning|thought)\s*>.*?<\s*/\s*>",
-        re.IGNORECASE | re.DOTALL
-    ),
+    re.compile(r"<\s*(?:analysis|reasoning|thought)\s*>.*?<\s*/\s*>", re.IGNORECASE | re.DOTALL),
     # Let me
-    re.compile(
-        r"###\s*(?:Let me|I'll|I will).*?\n\s*",
-        re.IGNORECASE
-    ),
+    re.compile(r"###\s*(?:Let me|I'll|I will).*?\n\s*", re.IGNORECASE),
     # Numbers with periods
-    re.compile(
-        r"^\d+\.\s+.*?\n",
-        re.MULTILINE
-    ),
+    re.compile(r"^\d+\.\s+.*?\n", re.MULTILINE),
 ]
+
 
 def strip_cot_leakage(text: str) -> str:
     """إزالة تسرب التفكير."""
     if not text:
         return text
-    
+
     result = text
     for pattern in _COT_PATTERNS:
         result = pattern.sub("", result)
-    
+
     return result.strip()
 ```
 
@@ -1424,11 +1374,11 @@ def strip_cot_leakage(text: str) -> str:
 
 - [src/api/routes/ask.py](src/api/routes/ask.py) - API routes
 - [src/api/schemas/ask.py](src/api/schemas/ask.py) - Schemas
-- [src/application/hybrid_classifier.py](src/application/hybrid_classifier.py) - Classifier
+- [src/application/router/hybrid_classifier.py](src/application/router/hybrid_classifier.py) - Classifier
 - [src/core/registry.py](src/core/registry.py) - Registry
 - [src/retrieval/retrievers/*.py](src/retrieval/retrievers/) - Retrievers
-- [src/verifiers/suite_builder.py](src/verifiers/suite_builder.py) - Verification
-- [src/generation/llm_client.py](src/generation/llm_client.py) - LLM Client
+- [src/verification/suite_builder.py](src/verification/suite_builder.py) - Verification
+- [src/infrastructure/llm_client.py](src/infrastructure/llm_client.py) - LLM Client
 - [src/agents/base.py](src/agents/base.py) - Base agent
 
 ---
