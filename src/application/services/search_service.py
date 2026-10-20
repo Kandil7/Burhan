@@ -1,14 +1,14 @@
 # Search Service Module
 """Service for handling search operations."""
 
-from typing import Optional, Dict, Any, List
+from typing import Any
 
-from src.config.constants import CollectionNames
 from src.application.use_cases.run_retrieval import (
     RunRetrievalInput,
     RunRetrievalOutput,
     RunRetrievalUseCase,
 )
+from src.config.constants import CollectionNames
 
 # Unified default collections used when caller requests "all"
 DEFAULT_COLLECTIONS: list[str] = [
@@ -35,9 +35,9 @@ class SearchService:
     async def search(
         self,
         query: str,
-        collections: Optional[List[str]] = None,
+        collections: list[str] | None = None,
         top_k: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
     ) -> RunRetrievalOutput:
         """
         Process a search query.
