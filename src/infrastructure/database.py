@@ -8,18 +8,16 @@ for sync operations to avoid blocking the event loop.
 import asyncio
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
 
 from sqlalchemy import Index, create_engine
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool
 
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 
 logger = get_logger()
-
-# Create base class for models
-Base = declarative_base()
 
 
 # ==========================================
@@ -32,14 +30,16 @@ def get_sync_database_url() -> str:
     return settings.database_url.replace("+asyncpg", "+psycopg2")
 
 
-# Create sync engine with connection pooling
-sync_engine = create_engine(
-    get_sync_database_url(),
-    pool_size=5,
-    max_overflow=10,
-    pool_pre_ping=True,
-    poolclass=NullPool if settings.is_production else None,
-)
+# Create sync engine. Pool sizing is only valid for pooled classes; NullPool
+# rejects pool_size and max_overflow, which used to abort import in production.
+_engine_kwargs: dict = {"pool_pre_ping": True}
+if settings.is_production:
+    _engine_kwargs["poolclass"] = NullPool
+else:
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
+
+sync_engine = create_engine(get_sync_database_url(), **_engine_kwargs)
 
 # Session factory
 SyncSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine, class_=Session)
@@ -65,7 +65,19 @@ def get_sync_session() -> Generator[Session, None, None]:
         session.close()
 
 
-def run_in_thread(func):
+def get_db() -> Generator[Session, None, None]:
+    """
+    FastAPI dependency that yields a synchronous database session.
+
+    ``get_sync_session`` is a context manager, so passing it to ``Depends``
+    injects the context manager object instead of a session. This wrapper
+    yields the session and lets FastAPI close it after the response.
+    """
+    with get_sync_session() as session:
+        yield session
+
+
+def run_in_thread(func: Any) -> Any:
     """
     Decorator/utility to run sync database operations in thread pool.
 
@@ -74,7 +86,7 @@ def run_in_thread(func):
             return await run_in_thread(sync_query)
     """
 
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
 
@@ -90,15 +102,17 @@ class QuranModels:
     """Database models for Quran data."""
 
     @staticmethod
-    def create_tables():
+    def create_tables() -> None:
         """Create all tables with indexes."""
-        # Import here to avoid circular imports
+        # Import here to avoid circular imports. Use the Quran models'
+        # metadata, which is where the tables are actually registered.
+        from src.data.models.quran import Base as QuranBase
 
-        Base.metadata.create_all(bind=sync_engine)
+        QuranBase.metadata.create_all(bind=sync_engine)
         logger.info("database.tables_created")
 
     @staticmethod
-    def create_indexes():
+    def create_indexes() -> None:
         """Create performance indexes."""
         from src.data.models.quran import Ayah, Surah, Tafsir, Translation
 
@@ -122,7 +136,7 @@ class QuranModels:
             Index("idx_translation_language", Translation.language),
             # Tafsir indexes
             Index("idx_tafsir_ayah", Tafsir.ayah_id),
-            Index("idx_tafsir_source", Tafsir.source),
+            Index("idx_tafsir_source", Tafsir.source_name),
         ]
 
         for index in indexes:
@@ -145,10 +159,10 @@ class AsyncDatabaseManager:
     Uses asyncpg directly for better performance.
     """
 
-    def __init__(self):
-        self._pool: object | None = None
+    def __init__(self) -> None:
+        self._pool: Any = None
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize async connection pool."""
         try:
             from urllib.parse import urlparse
@@ -171,13 +185,13 @@ class AsyncDatabaseManager:
             logger.error("database.async_pool_error", error=str(e))
             raise
 
-    async def close(self):
+    async def close(self) -> None:
         """Close connection pool."""
         if self._pool:
             await self._pool.close()
             logger.info("database.async_pool_closed")
 
-    async def fetch(self, query: str, *args):
+    async def fetch(self, query: str, *args: Any) -> Any:
         """Execute query and fetch results."""
         if not self._pool:
             raise RuntimeError("Database not initialized")
@@ -185,7 +199,7 @@ class AsyncDatabaseManager:
         async with self._pool.acquire() as conn:
             return await conn.fetch(query, *args)
 
-    async def fetchrow(self, query: str, *args):
+    async def fetchrow(self, query: str, *args: Any) -> Any:
         """Execute query and fetch single row."""
         if not self._pool:
             raise RuntimeError("Database not initialized")
@@ -193,7 +207,7 @@ class AsyncDatabaseManager:
         async with self._pool.acquire() as conn:
             return await conn.fetchrow(query, *args)
 
-    async def execute(self, query: str, *args):
+    async def execute(self, query: str, *args: Any) -> Any:
         """Execute query without returning results."""
         if not self._pool:
             raise RuntimeError("Database not initialized")
