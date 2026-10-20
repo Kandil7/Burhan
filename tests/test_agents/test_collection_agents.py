@@ -18,7 +18,6 @@ Each agent tests:
 - Full pipeline execution
 """
 
-
 import pytest
 
 # Import all collection agents
@@ -27,13 +26,13 @@ from src.agents.collection import (
     CollectionAgentConfig,
     HadithCollectionAgent,
     HistoryCollectionAgent,
-    IntentLabel,
     LanguageCollectionAgent,
     RetrievalStrategy,
     SeerahCollectionAgent,
     TafsirCollectionAgent,
     UsulFiqhCollectionAgent,
 )
+from src.domain.intents import Intent
 
 # =============================================================================
 # HadithCollectionAgent Tests
@@ -47,10 +46,10 @@ class TestHadithCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = HadithCollectionAgent()
 
-        assert agent.name == "hadith_agent"
-        assert agent.COLLECTION == "hadith"
+        assert agent.name == "hadith"
+        assert agent.COLLECTION == "hadith_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
-        assert agent.config.collection_name == "hadith"
+        assert agent.config.collection_name == "hadith_passages"
 
     def test_custom_config_instantiation(self):
         """Test agent with custom configuration."""
@@ -69,7 +68,7 @@ class TestHadithCollectionAgentInstantiation:
 
         agent = HadithCollectionAgent(config=config)
 
-        assert agent.name == "hadith_agent"
+        assert agent.name == "hadith"
         assert agent.config.strategy.top_k == 100
 
 
@@ -80,15 +79,15 @@ class TestHadithIntentClassification:
         """Test HadithTakhrij intent."""
         agent = HadithCollectionAgent()
 
-        assert agent.classify_intent("ما صحة هذا الحديث؟") == IntentLabel.HadithTakhrij
-        assert agent.classify_intent("أخرج البخاري حديثا") == IntentLabel.HadithTakhrij
+        assert agent.classify_intent("ما صحة هذا الحديث؟") == Intent.HADITH
+        assert agent.classify_intent("أخرج البخاري حديثا") == Intent.HADITH
 
     def test_hadith_sanad_intent(self):
         """Test HadithSanad intent."""
         agent = HadithCollectionAgent()
 
-        assert agent.classify_intent("ما سند هذا الحديث؟") == IntentLabel.HadithSanad
-        assert agent.classify_intent("من رواة هذا الحديث") == IntentLabel.HadithSanad
+        assert agent.classify_intent("ما سند هذا الحديث؟") == Intent.HADITH
+        assert agent.classify_intent("من رواة هذا الحديث") == Intent.HADITH
 
     def test_hadith_matn_intent(self):
         """Test HadithMatn intent."""
@@ -97,8 +96,8 @@ class TestHadithIntentClassification:
         # Use a query that contains matn keywords without any takhrij/sanad keywords
         # "معنى المتن" contains "متن" but also has "معنى" which should trigger matn
         # Note: This may fail if "حديث" is in the query - use a cleaner query
-        assert agent.classify_intent("معنى هذا المتن") == IntentLabel.HadithMatn
-        assert agent.classify_intent("تحليل المتن") == IntentLabel.HadithMatn
+        assert agent.classify_intent("معنى هذا المتن") == Intent.HADITH
+        assert agent.classify_intent("تحليل المتن") == Intent.HADITH
 
 
 # =============================================================================
@@ -113,8 +112,8 @@ class TestTafsirCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = TafsirCollectionAgent()
 
-        assert agent.name == "tafsir_agent"
-        assert agent.COLLECTION == "quran"
+        assert agent.name == "tafsir"
+        assert agent.COLLECTION == "tafsir_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -125,15 +124,15 @@ class TestTafsirIntentClassification:
         """Test TafsirAyah intent."""
         agent = TafsirCollectionAgent()
 
-        assert agent.classify_intent("ما تفسير هذه الآية؟") == IntentLabel.TafsirAyah
-        assert agent.classify_intent("فسير سورة البقرة") == IntentLabel.TafsirAyah
+        assert agent.classify_intent("ما تفسير هذه الآية؟") == Intent.TAFSIR
+        assert agent.classify_intent("فسير سورة البقرة") == Intent.TAFSIR
 
     def test_tafsir_maqasid_intent(self):
         """Test TafsirMaqasid intent."""
         agent = TafsirCollectionAgent()
 
-        assert agent.classify_intent("ما مقصد هذه الآية؟") == IntentLabel.TafsirMaqasid
-        assert agent.classify_intent("ما الحكمة من هذه الآية") == IntentLabel.TafsirMaqasid
+        assert agent.classify_intent("ما مقصد هذه الآية؟") == Intent.TAFSIR
+        assert agent.classify_intent("ما الحكمة من هذه الآية") == Intent.TAFSIR
 
 
 # =============================================================================
@@ -148,8 +147,8 @@ class TestAqeedahCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = AqeedahCollectionAgent()
 
-        assert agent.name == "aqeedah_agent"
-        assert agent.COLLECTION == "aqeedah"
+        assert agent.name == "aqeedah"
+        assert agent.COLLECTION == "aqeedah_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -160,15 +159,15 @@ class TestAqeedahIntentClassification:
         """Test AqeedahTawhid intent."""
         agent = AqeedahCollectionAgent()
 
-        assert agent.classify_intent("ما هو توحيد الله؟") == IntentLabel.AqeedahTawhid
-        assert agent.classify_intent("أسماء الله الحسنى") == IntentLabel.AqeedahTawhid
+        assert agent.classify_intent("ما هو توحيد الله؟") == Intent.AQEEDAH
+        assert agent.classify_intent("أسماء الله الحسنى") == Intent.AQEEDAH
 
     def test_aqeedah_iman_intent(self):
         """Test AqeedahIman intent."""
         agent = AqeedahCollectionAgent()
 
-        assert agent.classify_intent("ما هي أركان الإيمان؟") == IntentLabel.AqeedahIman
-        assert agent.classify_intent("الإيمان بالملائكة") == IntentLabel.AqeedahIman
+        assert agent.classify_intent("ما هي أركان الإيمان؟") == Intent.AQEEDAH
+        assert agent.classify_intent("الإيمان بالملائكة") == Intent.AQEEDAH
 
 
 # =============================================================================
@@ -183,8 +182,8 @@ class TestSeerahCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = SeerahCollectionAgent()
 
-        assert agent.name == "seerah_agent"
-        assert agent.COLLECTION == "seerah"
+        assert agent.name == "seerah"
+        assert agent.COLLECTION == "seerah_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -195,15 +194,15 @@ class TestSeerahIntentClassification:
         """Test SeerahEvent intent."""
         agent = SeerahCollectionAgent()
 
-        assert agent.classify_intent("ماذا حدث في غزوة بدر؟") == IntentLabel.SeerahEvent
-        assert agent.classify_intent("وقعة أحد") == IntentLabel.SeerahEvent
+        assert agent.classify_intent("ماذا حدث في غزوة بدر؟") == Intent.SEERAH
+        assert agent.classify_intent("وقعة أحد") == Intent.SEERAH
 
     def test_seerah_milad_intent(self):
         """Test SeerahMilad intent."""
         agent = SeerahCollectionAgent()
 
-        assert agent.classify_intent("متى كان ميلاد النبي؟") == IntentLabel.SeerahMilad
-        assert agent.classify_intent("طفولة النبي") == IntentLabel.SeerahMilad
+        assert agent.classify_intent("متى كان ميلاد النبي؟") == Intent.SEERAH
+        assert agent.classify_intent("طفولة النبي") == Intent.SEERAH
 
 
 # =============================================================================
@@ -218,8 +217,8 @@ class TestUsulFiqhCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = UsulFiqhCollectionAgent()
 
-        assert agent.name == "usul_fiqh_agent"
-        assert agent.COLLECTION == "usul_fiqh"
+        assert agent.name == "usul_fiqh"
+        assert agent.COLLECTION == "usul_fiqh_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -230,15 +229,15 @@ class TestUsulFiqhIntentClassification:
         """Test UsulFiqhIjtihad intent."""
         agent = UsulFiqhCollectionAgent()
 
-        assert agent.classify_intent("ما هو الاجتهاد؟") == IntentLabel.UsulFiqhIjtihad
-        assert agent.classify_intent("كيف يستنبط الفقهاء") == IntentLabel.UsulFiqhIjtihad
+        assert agent.classify_intent("ما هو الاجتهاد؟") == Intent.USUL_FIQH
+        assert agent.classify_intent("كيف يستنبط الفقهاء") == Intent.USUL_FIQH
 
     def test_usul_fiqh_qiyas_intent(self):
         """Test UsulFiqhQiyas intent."""
         agent = UsulFiqhCollectionAgent()
 
-        assert agent.classify_intent("ما هو القياس؟") == IntentLabel.UsulFiqhQiyas
-        assert agent.classify_intent("الأصل والفرع في القياس") == IntentLabel.UsulFiqhQiyas
+        assert agent.classify_intent("ما هو القياس؟") == Intent.USUL_FIQH
+        assert agent.classify_intent("الأصل والفرع في القياس") == Intent.USUL_FIQH
 
 
 # =============================================================================
@@ -253,8 +252,8 @@ class TestHistoryCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = HistoryCollectionAgent()
 
-        assert agent.name == "history_agent"
-        assert agent.COLLECTION == "islamic_history"
+        assert agent.name == "history"
+        assert agent.COLLECTION == "history_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -265,15 +264,15 @@ class TestHistoryIntentClassification:
         """Test IslamicHistoryEvent intent."""
         agent = HistoryCollectionAgent()
 
-        assert agent.classify_intent("ماذا حدث في год 61 هجرية؟") == IntentLabel.IslamicHistoryEvent
-        assert agent.classify_intent("معركة الجمل") == IntentLabel.IslamicHistoryEvent
+        assert agent.classify_intent("ماذا حدث في عام 61 هجرية؟") == Intent.ISLAMIC_HISTORY
+        assert agent.classify_intent("معركة الجمل") == Intent.ISLAMIC_HISTORY
 
     def test_islamic_history_dynasty_intent(self):
         """Test IslamicHistoryDynasty intent."""
         agent = HistoryCollectionAgent()
 
-        assert agent.classify_intent("الدولة العباسية") == IntentLabel.IslamicHistoryDynasty
-        assert agent.classify_intent("الخلافة الأموية") == IntentLabel.IslamicHistoryDynasty
+        assert agent.classify_intent("الدولة العباسية") == Intent.ISLAMIC_HISTORY
+        assert agent.classify_intent("الخلافة الأموية") == Intent.ISLAMIC_HISTORY
 
 
 # =============================================================================
@@ -288,8 +287,8 @@ class TestLanguageCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = LanguageCollectionAgent()
 
-        assert agent.name == "language_agent"
-        assert agent.COLLECTION == "arabic_language"
+        assert agent.name == "language"
+        assert agent.COLLECTION == "language_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
 
 
@@ -300,22 +299,22 @@ class TestLanguageIntentClassification:
         """Test ArabicGrammar intent."""
         agent = LanguageCollectionAgent()
 
-        assert agent.classify_intent("ما إعراب هذه الجملة؟") == IntentLabel.ArabicGrammar
-        assert agent.classify_intent("النحو العربي") == IntentLabel.ArabicGrammar
+        assert agent.classify_intent("ما إعراب هذه الجملة؟") == Intent.ARABIC_LANGUAGE
+        assert agent.classify_intent("النحو العربي") == Intent.ARABIC_LANGUAGE
 
     def test_arabic_morphology_intent(self):
         """Test ArabicMorphology intent."""
         agent = LanguageCollectionAgent()
 
-        assert agent.classify_intent("ما وزن هذا الفعل؟") == IntentLabel.ArabicMorphology
-        assert agent.classify_intent("تصريف الفعل") == IntentLabel.ArabicMorphology
+        assert agent.classify_intent("ما وزن هذا الفعل؟") == Intent.ARABIC_LANGUAGE
+        assert agent.classify_intent("تصريف الفعل") == Intent.ARABIC_LANGUAGE
 
     def test_arabic_balaghah_intent(self):
         """Test ArabicBalaghah intent."""
         agent = LanguageCollectionAgent()
 
-        assert agent.classify_intent("ما البلاغة في هذا النص؟") == IntentLabel.ArabicBalaghah
-        assert agent.classify_intent("تشبيه واستعارة") == IntentLabel.ArabicBalaghah
+        assert agent.classify_intent("ما البلاغة في هذا النص؟") == Intent.ARABIC_LANGUAGE
+        assert agent.classify_intent("تشبيه واستعارة") == Intent.ARABIC_LANGUAGE
 
 
 # =============================================================================
@@ -505,7 +504,7 @@ class TestCollectionAgentCitations:
         citations = agent.assemble_citations(passages)
 
         assert len(citations) == 1
-        assert citations[0].id == "C1"
+        assert citations[0].source_id == "C1"
 
     def test_seerah_assemble_citations(self):
         """Test seerah assembling citations from passages."""
@@ -525,7 +524,7 @@ class TestCollectionAgentCitations:
         citations = agent.assemble_citations(passages)
 
         assert len(citations) == 1
-        assert citations[0].id == "C1"
+        assert citations[0].source_id == "C1"
 
 
 # =============================================================================
@@ -549,7 +548,7 @@ class TestCollectionAgentFullPipeline:
         assert result is not None
         assert hasattr(result, "answer")
         assert hasattr(result, "citations")
-        assert result.metadata.get("collection") == "hadith"
+        assert result.metadata.get("collection") == "hadith_passages"
 
     @pytest.mark.asyncio
     async def test_tafsir_full_run(self):
@@ -562,7 +561,7 @@ class TestCollectionAgentFullPipeline:
         )
 
         assert result is not None
-        assert result.metadata.get("collection") == "quran"
+        assert result.metadata.get("collection") == "tafsir_passages"
 
     @pytest.mark.asyncio
     async def test_aqeedah_full_run(self):
@@ -575,7 +574,7 @@ class TestCollectionAgentFullPipeline:
         )
 
         assert result is not None
-        assert result.metadata.get("collection") == "aqeedah"
+        assert result.metadata.get("collection") == "aqeedah_passages"
 
     @pytest.mark.asyncio
     async def test_seerah_full_run(self):
@@ -588,7 +587,7 @@ class TestCollectionAgentFullPipeline:
         )
 
         assert result is not None
-        assert result.metadata.get("collection") == "seerah"
+        assert result.metadata.get("collection") == "seerah_passages"
 
 
 # =============================================================================
@@ -600,32 +599,32 @@ class TestCollectionAgentClassAttributes:
     """Tests for class-level attributes."""
 
     def test_hadith_system_prompt_arabic(self):
-        """Test hadith system prompt is in Arabic."""
-        assert "علم الحديث النبوي" in HadithCollectionAgent.SYSTEM_PROMPT
+        """Test the hadith system prompt loads from the prompt file."""
+        assert "وكيل مجموعة حديثية" in HadithCollectionAgent()._get_system_prompt()
 
     def test_tafsir_system_prompt_arabic(self):
-        """Test tafsir system prompt is in Arabic."""
-        assert "القرآن الكريم" in TafsirCollectionAgent.SYSTEM_PROMPT
+        """Test the tafsir system prompt loads from the prompt file."""
+        assert "وكيل مجموعة التفسير" in TafsirCollectionAgent()._get_system_prompt()
 
     def test_aqeedah_system_prompt_arabic(self):
-        """Test aqeedah system prompt is in Arabic."""
-        assert "العقيدة الإسلامية" in AqeedahCollectionAgent.SYSTEM_PROMPT
+        """Test the aqeedah system prompt loads from the prompt file."""
+        assert "وكيل مجموعة العقيدة" in AqeedahCollectionAgent()._get_system_prompt()
 
     def test_seerah_system_prompt_arabic(self):
-        """Test seerah system prompt is in Arabic."""
-        assert "السيرة النبوية" in SeerahCollectionAgent.SYSTEM_PROMPT
+        """Test the seerah system prompt loads from the prompt file."""
+        assert "وكيل مجموعة السيرة" in SeerahCollectionAgent()._get_system_prompt()
 
     def test_usul_fiqh_system_prompt_arabic(self):
-        """Test usul_fiqh system prompt is in Arabic."""
-        assert "أصول الفقه الإسلامي" in UsulFiqhCollectionAgent.SYSTEM_PROMPT
+        """Test the usul_fiqh system prompt loads from the prompt file."""
+        assert "وكيل أصول الفقه" in UsulFiqhCollectionAgent()._get_system_prompt()
 
     def test_history_system_prompt_arabic(self):
-        """Test history system prompt is in Arabic."""
-        assert "التاريخ الإسلامي" in HistoryCollectionAgent.SYSTEM_PROMPT
+        """Test the history system prompt loads from the prompt file."""
+        assert "وكيل مجموعة التاريخ الإسلامي" in HistoryCollectionAgent()._get_system_prompt()
 
     def test_language_system_prompt_arabic(self):
-        """Test language system prompt is in Arabic."""
-        assert "اللغة العربية" in LanguageCollectionAgent.SYSTEM_PROMPT
+        """Test the language system prompt loads from the prompt file."""
+        assert "وكيل مجموعة اللغة العربية" in LanguageCollectionAgent()._get_system_prompt()
 
     def test_no_passages_messages_arabic(self):
         """Test fallback messages are in Arabic."""
