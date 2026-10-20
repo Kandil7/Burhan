@@ -51,12 +51,10 @@ CATEGORY_TO_COLLECTION: dict[str, str] = {
     # Aqeedah (creed)
     "العقيدة": "aqeedah",
     "الفرق والردود": "aqeedah",
-
     # Quran & Tafsir
     "التفسير": "quran_tafsir",
     "علوم القرآن وأصول التفسير": "quran_tafsir",
     "التجويد والقراءات": "quran_tafsir",
-
     # Hadith
     "كتب السنة": "hadith",
     "الجوامع": "hadith",
@@ -64,7 +62,6 @@ CATEGORY_TO_COLLECTION: dict[str, str] = {
     "علوم الحديث": "hadith",
     "التخريج والأطراف": "hadith",
     "العلل والسؤلات الحديثية": "hadith",
-
     # Fiqh
     "الفقه العام": "fiqh",
     "الفقه الحنفي": "fiqh",
@@ -76,16 +73,13 @@ CATEGORY_TO_COLLECTION: dict[str, str] = {
     "الفتاوى": "fiqh",
     "السياسة الشرعية والقضاء": "fiqh",
     "الفرائض والوصايا": "fiqh",
-
     # Usul al-Fiqh
     "أصول الفقه": "usul_fiqh",
-
     # Islamic History
     "التراجم والطبقات": "islamic_history",
     "التاريخ": "islamic_history",
     "الأنساب": "islamic_history",
     "البلدان والرحلات": "islamic_history",
-
     # Arabic Language
     "كتب اللغة": "arabic_language",
     "النحو والصرف": "arabic_language",
@@ -95,22 +89,18 @@ CATEGORY_TO_COLLECTION: dict[str, str] = {
     "اللغة العربية": "arabic_language",
     "البلاغة": "arabic_language",
     "الغريب والمعاجم": "arabic_language",
-
     # Spirituality
     "الرقائق والآداب والأذكار": "spirituality",
     "السلوك والآداب": "spirituality",
-
     # Adab (Literature)
     "الأدب": "adab",
     "الدواوين الشعرية": "adab",
-
     # Seerah
     "السير والمناقب": "seerah",
     "السيرة النبوية": "seerah",
     "المغازي": "seerah",
     "الدلائل": "seerah",
     "الشمائل": "seerah",
-
     # General Islamic
     "كتب عامة": "general_islamic",
     "الردود": "general_islamic",
@@ -250,12 +240,8 @@ def create_category_mapping() -> dict[str, Any]:
         # Collection info
         "collection_info": COLLECTION_INFO,
         # Stats
-        "category_stats": dict(
-            sorted(category_stats.items(), key=lambda x: -x[1]["book_count"])
-        ),
-        "collection_stats": dict(
-            sorted(collection_stats.items(), key=lambda x: -x[1]["book_count"])
-        ),
+        "category_stats": dict(sorted(category_stats.items(), key=lambda x: -x[1]["book_count"])),
+        "collection_stats": dict(sorted(collection_stats.items(), key=lambda x: -x[1]["book_count"])),
         # Unmapped categories (should be empty if mapping is complete)
         "unmapped_categories": sorted(unmapped_categories),
     }
@@ -274,9 +260,7 @@ def print_report(mapping: dict[str, Any]) -> None:
     print(f"  Total collections:  {mapping['total_collections']}")
 
     print(f"\n  Collection summary:")
-    for coll, info in sorted(
-        mapping["collection_stats"].items(), key=lambda x: -x[1]["book_count"]
-    ):
+    for coll, info in sorted(mapping["collection_stats"].items(), key=lambda x: -x[1]["book_count"]):
         coll_info = mapping["collection_info"].get(coll, {})
         name_en = coll_info.get("name_en", coll)
         name_ar = coll_info.get("name_ar", "")
