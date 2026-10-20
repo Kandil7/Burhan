@@ -322,7 +322,7 @@ import sqlite3
 import json
 
 # 1. Load master metadata
-master = sqlite3.connect('system_book_datasets/master.db')
+master = sqlite3.connect("system_book_datasets/master.db")
 
 # 2. Build complete book catalog with all metadata
 query = """
@@ -358,7 +358,7 @@ GROUP BY ab.book_id
 """
 
 # 4. Load cover images (if needed)
-covers = sqlite3.connect('system_book_datasets/cover.db')
+covers = sqlite3.connect("system_book_datasets/cover.db")
 cover_query = "SELECT id, cover FROM cover WHERE id = ?"
 ```
 
