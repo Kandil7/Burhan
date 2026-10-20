@@ -77,17 +77,17 @@ src/
 | 1 | `src/api/main.py` | نقطة الدخول |
 | 2 | `src/config/settings.py` | الإعدادات (37 متغير) |
 | 3 | `src/config/intents.py` | 16 نوع نية |
-| 4 | `src/application/hybrid_classifier.py` | **جديد!** مصنف النية الهجين |
+| 4 | `src/application/router/hybrid_classifier.py` | **جديد!** مصنف النية الهجين |
 | 5 | `src/domain/intents.py` | **جديد!** 16 نوع نية مع أولويات |
 | 6 | `src/core/router.py` | تصنيف النية (3-tier) |
 | 7 | `src/agents/base.py` | الفئات الأساسية |
-| 8 | `src/agents/fiqh_agent.py` | وكيل RAG كامل |
-| 9 | `src/knowledge/embedding_model.py` | BAAI/bge-m3 |
-| 10 | `src/knowledge/vector_store.py` | Qdrant |
-| 11 | `src/knowledge/hybrid_search.py` | Semantic + BM25 |
+| 8 | `src/agents/collection/fiqh.py` | وكيل RAG كامل |
+| 9 | `src/indexing/embeddings/embedding_model.py` | BAAI/bge-m3 |
+| 10 | `src/indexing/vectorstores/qdrant_store.py` | Qdrant |
+| 11 | `src/indexing/vectorstores/hybrid_client.py` | Semantic + BM25 |
 | 12 | `src/quran/nl2sql.py` | لغة طبيعية → SQL |
-| 13 | `src/api/routes/classification.py` | **جديد!** نقطة /classify |
-| 14 | `src/application/router.py` | **جديد!** توجيه الوكيل |
+| 13 | `src/api/routes/classify.py` | **جديد!** نقطة /classify |
+| 14 | `src/application/router/router_agent.py` | **جديد!** توجيه الوكيل |
 | 15 | `src/tools/zakat_calculator.py` | حاسبة الزكاة |
 
 ---
@@ -136,22 +136,22 @@ QueryResponse {
 
 | الأولوية | Intent | Agent/Tool | مثال |
 |----------|--------|-----------|------|
-| 10 | tafsir | general_islamic_agent | "ما تفسير آية كذا؟" |
-| 9 | quran | quran_pipeline | "آية عن كذا" |
+| 10 | tafsir | tafsir_agent | "ما تفسير آية كذا؟" |
+| 9 | quran | tafsir_agent (`quran:*` sub-intent) | "آية عن كذا" |
 | 9 | hadith | hadith_agent | "حديث عن كذا" |
+| 9 | greeting | chatbot_agent | "السلام عليكم" |
 | 8 | seerah | seerah_agent | "متى ولد النبي؟" |
-| 7 | islamic_history | islamic_history_agent | "متى كانت غزوة بدر؟" |
-| 6 | arabic_language | arabic_language_agent | "ما معنى هذه الكلمة؟" |
+| 8 | aqeedah | aqeedah_agent | "ما معنى التوحيد؟" |
+| 8 | usul_fiqh | usul_fiqh_agent | "ما هي مصادر التشريع؟" |
+| 8 | islamic_tazkiyah | tazkiyah_agent | "ما هي طريق التصوف؟" |
+| 7 | arabic_language | language_agent | "ما معنى هذه الكلمة؟" |
+| 6 | islamic_history | history_agent | "متى كانت غزوة بدر؟" |
+| 6 | prayer_times | prayer_tool | "متى صلاة الفجر؟" |
+| 6 | hijri_calendar | hijri_tool | "متى يبدأ رمضان؟" |
+| 6 | zakat | zakat_tool | "كيف أحسب الزكاة؟" |
+| 6 | inheritance | inheritance_tool | "كيف أقسم الميراث؟" |
+| 6 | duas | dua_tool | "دعاء السفر" |
 | 5 | fiqh | fiqh_agent | "ما حكم صلاة العيد؟" |
-| 5 | aqeedah | aqeedah_agent | "ما معنى التوحيد؟" |
-| 4 | usul_fiqh | usul_fiqh_agent | "ما هي مصادر التشريع؟" |
-| 3 | spirituality | general_islamic_agent | "ما هي طريق التصوف؟" |
-| 2 | greeting | chatbot_agent | "السلام عليكم" |
-| 2 | dua | dua_tool | "دعاء السفر" |
-| 2 | hijri_calendar | hijri_tool | "متى يبدأ رمضان؟" |
-| 2 | prayer_times | prayer_times_tool | "متى صلاة الفجر؟" |
-| 2 | zakat | zakak_tool | "كيف أحسب الزكاة؟" |
-| 2 | inheritance | inheritance_tool | "كيف أقسم الميراث؟" |
 | 1 | islamic_knowledge | general_islamic_agent | (fallback) |
 
 ---
