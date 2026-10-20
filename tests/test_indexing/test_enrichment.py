@@ -2,16 +2,16 @@
 """Tests for Phase 3.1 metadata enrichment pipeline."""
 
 import pytest
+
+from src.indexing.metadata.author_catalog import author_catalog
 from src.indexing.metadata.enrichment import (
-    EraClassifier,
-    era_classifier,
-    enrich_passage,
     enrich_batch,
-    get_madhhab,
+    enrich_passage,
+    era_classifier,
     get_aqeedah_school,
+    get_madhhab,
 )
 from src.indexing.metadata.master_catalog import master_catalog
-from src.indexing.metadata.author_catalog import author_catalog
 
 
 class TestEraClassifier:
