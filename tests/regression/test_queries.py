@@ -13,16 +13,16 @@ behavior during refactoring and code changes.
 
 from __future__ import annotations
 
-import pytest
 import warnings
+
+import pytest
 
 # Suppress the deprecation warning for backward compatibility
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Import the classifier via the new path
-from src.application.router import HybridIntentClassifier
-from src.domain.intents import Intent, get_agent_for_intent
-
+from src.application.router import HybridIntentClassifier  # noqa: E402
+from src.domain.intents import Intent, get_agent_for_intent  # noqa: E402
 
 # ============================================================================
 # FiQH Regression Tests
@@ -258,7 +258,7 @@ async def test_intent_classifier_stability(clf):
         Intent.TAFSIR: ["تفسير", "tafsir"],
     }
 
-    for intent, queries in test_queries.items():
+    for _intent, queries in test_queries.items():
         for query in queries:
             result = await clf.classify(query)
             assert result.intent in [Intent.FIQH, Intent.HADITH, Intent.QURAN, Intent.TAFSIR], (
