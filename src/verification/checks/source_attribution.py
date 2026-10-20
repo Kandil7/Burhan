@@ -1,9 +1,10 @@
 # Source Attribution Verifier Module
 """Verifier for source attribution validation."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from typing import Any
+
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 
 class SourceAttributionVerifier(BaseVerifier):
@@ -19,14 +20,14 @@ class SourceAttributionVerifier(BaseVerifier):
         is_applicable(claim, evidence) -> bool
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.verifier_type = VerifierType.SOURCE_ATTRIBUTION
 
     async def verify(
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify source attribution.
 
@@ -44,6 +45,7 @@ class SourceAttributionVerifier(BaseVerifier):
         if not claimed_sources:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=1.0,
                 message="No sources claimed in claim",
@@ -65,6 +67,7 @@ class SourceAttributionVerifier(BaseVerifier):
         if invalid_sources:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.7,
                 message=f"Invalid sources: {invalid_sources}",
@@ -73,6 +76,7 @@ class SourceAttributionVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.9,
             message="All sources properly attributed",
@@ -105,7 +109,7 @@ class SourceAttributionVerifier(BaseVerifier):
 
         return True  # Always applicable for factual claims
 
-    def _extract_sources(self, claim: str) -> List[str]:
+    def _extract_sources(self, claim: str) -> list[str]:
         """Extract source references from claim.
 
         Args:
@@ -146,7 +150,7 @@ class SourceAttributionVerifier(BaseVerifier):
         self,
         source: str,
         evidence: Any,
-        evidence_sources: List[str],
+        evidence_sources: list[str],
     ) -> bool:
         """Verify that a source exists in the evidence.
 
