@@ -68,11 +68,11 @@
 ### للمتقدمين
 
 ```
-1. اقرأ: src/application/hybrid_classifier.py   ← المرحلة 8
+1. اقرأ: src/application/router/hybrid_classifier.py   ← المرحلة 8
 2. اقرأ: src/domain/intents.py                  ← 16 نوع نية
 3. اققرأ: src/agents/base.py
-4. اقرأ: src/knowledge/embedding_model.py
-5. اقرأ: src/knowledge/vector_store.py
+4. اقرأ: src/indexing/embeddings/embedding_model.py
+5. اقرأ: src/indexing/vectorstores/qdrant_store.py
 ```
 
 ---
@@ -182,18 +182,18 @@
 | 3 | citation | src/core/citation.py |
 | 4 | base agent | src/agents/base.py |
 | 5 | chatbot | src/agents/chatbot_agent.py |
-| 6 | fiqh agent | src/agents/fiqh_agent.py |
+| 6 | fiqh agent | src/agents/collection/fiqh.py |
 | 7 | مراجعة | كل ما سبق |
 
 ### الأسبوع 3: RAG
 
 | اليوم | المهمة | الملف |
 |-------|--------|-------|
-| 1 | embedding | src/knowledge/embedding_model.py |
-| 2 | cache | src/knowledge/embedding_cache.py |
-| 3 | vector store | src/knowledge/vector_store.py |
-| 4 | hybrid search | src/knowledge/hybrid_search.py |
-| 5 | hierarchical | src/knowledge/hierarchical_retriever.py |
+| 1 | embedding | src/indexing/embeddings/embedding_model.py |
+| 2 | cache | src/indexing/embeddings/embedding_cache.py |
+| 3 | vector store | src/indexing/vectorstores/qdrant_store.py |
+| 4 | hybrid search | src/indexing/vectorstores/hybrid_client.py |
+| 5 | hierarchical | src/retrieval/retrievers/hierarchical_retriever.py |
 | 6 | تجربة | Swagger UI |
 | 7 | مراجعة | كل ما سبق |
 
@@ -213,10 +213,10 @@
 
 | اليوم | المهمة | الملف |
 |-------|--------|-------|
-| 1 | hybrid classifier | src/application/hybrid_classifier.py |
+| 1 | hybrid classifier | src/application/router/hybrid_classifier.py |
 | 2 | domain intents | src/domain/intents.py |
-| 3 | application router | src/application/router.py |
-| 4 | classification endpoint | src/api/routes/classification.py |
+| 3 | application router | src/application/router/router_agent.py |
+| 4 | classification endpoint | src/api/routes/classify.py |
 | 5 | تجربة /classify | Swagger UI |
 | 6-7 | مراجعة شاملة | كل ما سبق |
 
