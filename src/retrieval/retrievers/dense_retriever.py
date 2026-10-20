@@ -1,8 +1,8 @@
 # Dense Retriever Module
 """Dense (embedding-based) retrieval."""
 
-from typing import List, Optional, Dict, Any
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class BaseDenseRetriever(ABC):
@@ -13,8 +13,8 @@ class BaseDenseRetriever(ABC):
         self,
         query: str,
         top_k: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Retrieve documents using dense embeddings."""
         raise NotImplementedError
 
@@ -36,14 +36,14 @@ class DenseRetriever(BaseDenseRetriever):
         self,
         query: str,
         top_k: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Retrieve documents using dense embeddings."""
         # 1) Embed query
         query_embedding = await self.embedding_model.encode_query(query)
 
         # 2) Search in the configured collection
-        results = await self.vector_store.search(
+        results: list[dict[str, Any]] = await self.vector_store.search(
             collection=self.collection,
             query_embedding=query_embedding,
             top_k=top_k,
