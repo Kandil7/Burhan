@@ -12,9 +12,17 @@ Phase 3.2: Qdrant Collections Setup for hybrid search.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict
+from typing import TYPE_CHECKING, Any
 
-from qdrant_client.models import Distance
+from qdrant_client.models import (
+    Distance,
+    ScalarQuantization,
+    ScalarQuantizationConfig,
+    ScalarType,
+)
+
+if TYPE_CHECKING:
+    from qdrant_client import QdrantClient
 
 
 class SparseVectorType(str, Enum):
@@ -75,6 +83,12 @@ class QuantizationConfig:
     type: QuantizationType = QuantizationType.INT8
     always_ram: bool = True
 
+    def to_grpc(self) -> Any:
+        """Convert to a Qdrant quantization config."""
+        return ScalarQuantization(
+            scalar=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=self.always_ram),
+        )
+
 
 @dataclass(frozen=True)
 class HNSWConfig:
@@ -90,6 +104,16 @@ class HNSWConfig:
     m: int = 16
     ef_construct: int = 100
     full_scan_threshold: int = 10000
+
+    def to_grpc(self) -> Any:
+        """Convert to a Qdrant HNSW config."""
+        from qdrant_client.models import HnswConfigDiff
+
+        return HnswConfigDiff(
+            m=self.m,
+            ef_construct=self.ef_construct,
+            full_scan_threshold=self.full_scan_threshold,
+        )
 
 
 # Predefined HNSW configurations for different collection sizes
@@ -126,7 +150,7 @@ class CollectionConfig:
 
 
 # Collection configurations for all Islamic knowledge domains
-COLLECTION_CONFIGS: Dict[str, CollectionConfig] = {
+COLLECTION_CONFIGS: dict[str, CollectionConfig] = {
     "fiqh": CollectionConfig(
         name="fiqh",
         dense=DenseVectorConfig(size=1024, distance=Distance.COSINE),
@@ -262,11 +286,11 @@ def recreate_collection(
     Returns:
         True if successful, False otherwise
     """
-    from qdrant_client import QdrantClient as QdrantClientType
     from qdrant_client.models import (
         Distance,
         HnswConfigDiff,
-        QuantizationConfigDiff,
+        Modifier,
+        SparseIndexParams,
         SparseVectorParams,
         VectorParams,
     )
@@ -276,7 +300,8 @@ def recreate_collection(
         if client.collection_exists(collection_name):
             client.delete_collection(collection_name=collection_name)
 
-        # Build vector configs
+        # Dense vectors go in `vectors_config`; sparse vectors must be passed
+        # through the separate `sparse_vectors_config` argument.
         vectors_config = {
             "dense": VectorParams(
                 size=dense_size,
@@ -286,27 +311,30 @@ def recreate_collection(
                     ef_construct=hnsw_preset.ef_construct,
                     full_scan_threshold=hnsw_preset.full_scan_threshold,
                 ),
-                quantization_config=QuantizationConfigDiff(
-                    quantized_by_default=True,
-                    always_ram=True,
-                )
-                if use_quantization
-                else None,
+                quantization_config=(
+                    ScalarQuantization(
+                        scalar=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
+                    )
+                    if use_quantization
+                    else None
+                ),
             )
         }
 
-        # Add sparse vectors if enabled
+        sparse_vectors_config = None
         if use_sparse:
-            vectors_config["sparse"] = SparseVectorParams(
-                modifier=SparseVectorParams.Modifier.IDF,
-                invert=True,
-                index=True,
-            )
+            sparse_vectors_config = {
+                "sparse": SparseVectorParams(
+                    modifier=Modifier.IDF,
+                    index=SparseIndexParams(on_disk=False),
+                )
+            }
 
         # Create collection
         client.create_collection(
             collection_name=collection_name,
             vectors_config=vectors_config,
+            sparse_vectors_config=sparse_vectors_config,
         )
 
         return True
@@ -372,7 +400,8 @@ def create_fiqh_collection(
     from qdrant_client.models import (
         Distance,
         HnswConfigDiff,
-        QuantizationConfigDiff,
+        Modifier,
+        SparseIndexParams,
         SparseVectorParams,
         VectorParams,
     )
@@ -392,21 +421,22 @@ def create_fiqh_collection(
                     ef_construct=100,
                     full_scan_threshold=10000,
                 ),
-                quantization_config=QuantizationConfigDiff(
-                    quantized_by_default=True,
-                    always_ram=True,
+                quantization_config=ScalarQuantization(
+                    scalar=ScalarQuantizationConfig(type=ScalarType.INT8, always_ram=True),
                 ),
-            ),
+            )
+        }
+        sparse_vectors_config = {
             "sparse": SparseVectorParams(
-                modifier=SparseVectorParams.Modifier.IDF,
-                invert=True,
-                index=True,
-            ),
+                modifier=Modifier.IDF,
+                index=SparseIndexParams(on_disk=False),
+            )
         }
 
         client.create_collection(
             collection_name=collection_name,
             vectors_config=vectors_config,
+            sparse_vectors_config=sparse_vectors_config,
         )
 
         return True
