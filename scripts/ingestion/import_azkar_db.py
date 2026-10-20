@@ -7,6 +7,7 @@ Downloads azkar database and converts to Burhan's dua format.
 Usage:
     python scripts/import_azkar_db.py
 """
+
 import json
 import csv
 import httpx
@@ -15,17 +16,18 @@ from pathlib import Path
 AZKAR_DB_URL = "https://github.com/osamayy/azkar-db/raw/refs/heads/main/azkar.json"
 OUTPUT_PATH = Path(__file__).parent.parent / "data" / "seed" / "azkar_imported.json"
 
+
 def import_azkar():
     """Import azkar-db and convert to Burhan format."""
     print("📥 Downloading azkar-db...")
-    
+
     try:
         response = httpx.get(AZKAR_DB_URL, follow_redirects=True)
         response.raise_for_status()
         azkar_data = response.json()
-        
+
         print(f"✅ Downloaded {len(azkar_data)} azkar entries")
-        
+
         # Convert to Burhan format
         Burhan_duas = []
         for i, zikr in enumerate(azkar_data, 1):
@@ -42,17 +44,17 @@ def import_azkar():
                 "grade": "",
                 "repeat_count": zikr.get("count", 1),
                 "virtues": zikr.get("description", ""),
-                "search_keywords": zikr.get("search", "")
+                "search_keywords": zikr.get("search", ""),
             }
             Burhan_duas.append(dua)
-        
+
         # Save converted data
-        with open(OUTPUT_PATH, 'w', encoding='utf-8') as f:
+        with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
             json.dump(Burhan_duas, f, ensure_ascii=False, indent=2)
-        
+
         print(f"✅ Converted and saved to {OUTPUT_PATH}")
         print(f"📊 Total entries: {len(Burhan_duas)}")
-        
+
         # Show sample
         print("\n📝 Sample Entry:")
         print("-" * 60)
@@ -62,9 +64,9 @@ def import_azkar():
             print(f"Arabic: {sample['arabic_text'][:80]}...")
             print(f"Repeat: {sample['repeat_count']}")
             print(f"Reference: {sample['reference']}")
-        
+
         return len(Burhan_duas)
-        
+
     except Exception as e:
         print(f"❌ Error: {e}")
         return 0
