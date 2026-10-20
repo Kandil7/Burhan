@@ -490,7 +490,7 @@ Categories (000-999) likely represent:
 
 ### Files created:
 1. `scripts/LuceneExtractor.java` - Java program to extract Lucene indexes
-2. `scripts/extract_lucene_index.py` - Python wrapper for extraction
+2. `scripts/ingestion/extract_lucene_index.py` - Python wrapper for extraction
 3. `lib/lucene/` - Lucene 10.0.0 JAR files
 4. `output/lucene_title.json` - Sample extracted data (100 docs)
 
