@@ -87,7 +87,7 @@ main
 # 1. Zakat Calculator
 git checkout -b phase-2/zakat-calculator
 # ... implement ...
-git add src/tools/zakat_calculator.py tests/test_zakat.py
+git add src/tools/zakat_calculator.py tests/test_zakat_calculator.py
 git commit -m "feat(tools): Add deterministic Zakat calculator
 
 - Implement nisab calculation (gold/silver)
