@@ -99,7 +99,7 @@ uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 Open a **new terminal** and run:
 
 ```bash
-python scripts/test_api.py
+python scripts/tests/test_api.py
 ```
 
 **Or** open your browser and go to:
