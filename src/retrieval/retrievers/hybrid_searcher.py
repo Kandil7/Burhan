@@ -82,9 +82,7 @@ class HybridSearcher:
         keyword_scores = self._keyword_search(query, semantic_results)
 
         # Step 3: Reciprocal rank fusion
-        fused_results = self._reciprocal_rank_fusion(
-            semantic_results, keyword_scores, top_k
-        )
+        fused_results = self._reciprocal_rank_fusion(semantic_results, keyword_scores, top_k)
 
         logger.info(
             "hybrid_search.complete",
@@ -130,9 +128,7 @@ class HybridSearcher:
         expanded_k = top_k * 5 if filters else top_k * 2
 
         # Step 2: Semantic search
-        semantic_results = await self.vector_store.search(
-            collection, query_embedding, top_k=expanded_k
-        )
+        semantic_results = await self.vector_store.search(collection, query_embedding, top_k=expanded_k)
 
         # Step 3: Apply facet filters
         if filters:
@@ -148,9 +144,7 @@ class HybridSearcher:
         keyword_scores = self._keyword_search(query, semantic_results)
 
         # Step 5: Reciprocal rank fusion
-        fused_results = self._reciprocal_rank_fusion(
-            semantic_results, keyword_scores, top_k
-        )
+        fused_results = self._reciprocal_rank_fusion(semantic_results, keyword_scores, top_k)
 
         logger.info(
             "hybrid_search.faceted_complete",
@@ -161,9 +155,7 @@ class HybridSearcher:
 
         return fused_results
 
-    def _apply_filters(
-        self, results: list[dict], filters: dict[str, Any]
-    ) -> list[dict]:
+    def _apply_filters(self, results: list[dict], filters: dict[str, Any]) -> list[dict]:
         """Apply metadata filters to search results."""
         filtered = []
 
@@ -290,10 +282,7 @@ class HybridSearcher:
         # Build rank maps
         semantic_ranks = {r["id"]: i for i, r in enumerate(semantic_results)}
         keyword_ranks = {
-            id_: i
-            for i, (id_, _) in enumerate(
-                sorted(keyword_scores.items(), key=lambda x: x[1], reverse=True)
-            )
+            id_: i for i, (id_, _) in enumerate(sorted(keyword_scores.items(), key=lambda x: x[1], reverse=True))
         }
 
         # Calculate fused scores
