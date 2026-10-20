@@ -1,8 +1,7 @@
 # Hadith Prompt Module
 """Prompts for Hadith responses."""
 
-from typing import Dict, Any, Optional
-
+from typing import Any
 
 HADITH_SYSTEM_PROMPT = """You are an expert in Hadith literature and sciences.
 Your responses should:
@@ -26,8 +25,8 @@ Provide a detailed explanation of the hadith, its authenticity, and its implicat
 def get_hadith_prompt(
     question: str,
     sources: str,
-    collection: Optional[str] = None,
-) -> Dict[str, Any]:
+    collection: str | None = None,
+) -> dict[str, Any]:
     """Get a Hadith-specific prompt."""
     user_prompt = HADITH_USER_PROMPT_TEMPLATE.format(
         question=question,
