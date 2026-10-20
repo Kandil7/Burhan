@@ -51,19 +51,21 @@ EXPECTED_TOTAL_BOOKS = 8425
 
 # Arabic Unicode ranges for validation
 ARABIC_RANGES = [
-    (0x0600, 0x06FF),   # Arabic
-    (0x0750, 0x077F),   # Arabic Supplement
-    (0x08A0, 0x08FF),   # Arabic Extended-A
-    (0xFB50, 0xFDFF),   # Arabic Presentation Forms-A
-    (0xFE70, 0xFEFF),   # Arabic Presentation Forms-B
+    (0x0600, 0x06FF),  # Arabic
+    (0x0750, 0x077F),  # Arabic Supplement
+    (0x08A0, 0x08FF),  # Arabic Extended-A
+    (0xFB50, 0xFDFF),  # Arabic Presentation Forms-A
+    (0xFE70, 0xFEFF),  # Arabic Presentation Forms-B
 ]
 
 
 # ── Data Classes ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class BookContentStats:
     """Content statistics for a single book."""
+
     book_id: int
     title: str
     page_count: int = 0
@@ -79,6 +81,7 @@ class BookContentStats:
 @dataclass
 class QualityReport:
     """Overall quality report."""
+
     # Book coverage
     total_expected_books: int = 0
     books_with_pages: int = 0
@@ -132,9 +135,9 @@ class QualityReport:
                 "books_with_titles": self.books_with_titles,
                 "books_with_esnad": self.books_with_esnad,
                 "books_with_any_content": self.books_with_any_content,
-                "coverage_percentage": round(
-                    self.books_with_any_content / self.total_expected_books * 100, 2
-                ) if self.total_expected_books > 0 else 0,
+                "coverage_percentage": round(self.books_with_any_content / self.total_expected_books * 100, 2)
+                if self.total_expected_books > 0
+                else 0,
                 "missing_books_count": len(self.books_missing),
             },
             "content_statistics": {
@@ -148,9 +151,9 @@ class QualityReport:
             "encoding_quality": {
                 "files_with_mojibake": self.files_with_mojibake,
                 "files_with_errors": self.files_with_errors,
-                "mojibake_rate": round(
-                    self.files_with_mojibake / self.total_files * 100, 2
-                ) if self.total_files > 0 else 0,
+                "mojibake_rate": round(self.files_with_mojibake / self.total_files * 100, 2)
+                if self.total_files > 0
+                else 0,
                 "error_details": self.encoding_error_details[:50],  # Limit
             },
             "page_distribution": {
@@ -179,6 +182,7 @@ class QualityReport:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────
+
 
 def count_arabic_chars(text: str) -> int:
     """Count Arabic characters in text."""
@@ -301,6 +305,7 @@ def sample_file_content(filepath: Path, n: int = 5) -> List[Dict[str, Any]]:
 
 # ── Verification Functions ────────────────────────────────────────────────
 
+
 def verify_book_coverage(
     pages_dir: Path,
     titles_dir: Path,
@@ -375,9 +380,7 @@ def verify_encoding_quality(
                         if isinstance(value, str) and len(value) > 20:
                             if detect_mojibake(value):
                                 has_mojibake = True
-                                error_details.append(
-                                    f"{filepath.name}: mojibake in field '{key}'"
-                                )
+                                error_details.append(f"{filepath.name}: mojibake in field '{key}'")
                                 break
                     if has_mojibake:
                         break
@@ -544,6 +547,7 @@ def verify_collection_balance(
 
 # ── Main Verification Pipeline ────────────────────────────────────────────
 
+
 def run_full_verification(quick: bool = False) -> QualityReport:
     """
     Run complete quality verification.
@@ -579,10 +583,7 @@ def run_full_verification(quick: bool = False) -> QualityReport:
     ) = verify_book_coverage(pages_dir, titles_dir, esnad_dir, expected_ids)
 
     coverage = report.books_with_any_content / report.total_expected_books * 100
-    logger.info(
-        f"Coverage: {report.books_with_any_content}/{report.total_expected_books} "
-        f"({coverage:.1f}%)"
-    )
+    logger.info(f"Coverage: {report.books_with_any_content}/{report.total_expected_books} ({coverage:.1f}%)")
 
     # 3. Page distribution
     logger.info("Analyzing page distribution...")
@@ -617,9 +618,7 @@ def run_full_verification(quick: bool = False) -> QualityReport:
 
     # 6. Collection balance
     logger.info("Checking collection balance...")
-    report.collection_book_counts, report.collection_doc_counts = (
-        verify_collection_balance(collections_dir)
-    )
+    report.collection_book_counts, report.collection_doc_counts = verify_collection_balance(collections_dir)
 
     # 7. File statistics
     total_files = 0
@@ -684,22 +683,32 @@ def write_quality_report(report: QualityReport) -> Path:
     if report.books_missing:
         missing_path = LUCENE_PAGES_DIR / "missing_books.json"
         with open(missing_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "missing_count": len(report.books_missing),
-                "missing_book_ids": report.books_missing,
-            }, f, indent=2, ensure_ascii=False)
+            json.dump(
+                {
+                    "missing_count": len(report.books_missing),
+                    "missing_book_ids": report.books_missing,
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
 
     # Write page distribution
     if report.page_count_distribution:
         dist_path = LUCENE_PAGES_DIR / "page_distribution.json"
         with open(dist_path, "w", encoding="utf-8") as f:
-            json.dump({
-                "distribution": report.page_count_distribution,
-                "min": report.min_pages_per_book,
-                "max": report.max_pages_per_book,
-                "median": report.median_pages_per_book,
-                "mean": report.mean_pages_per_book,
-            }, f, indent=2, ensure_ascii=False)
+            json.dump(
+                {
+                    "distribution": report.page_count_distribution,
+                    "min": report.min_pages_per_book,
+                    "max": report.max_pages_per_book,
+                    "median": report.median_pages_per_book,
+                    "mean": report.mean_pages_per_book,
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
 
     logger.info(f"Quality report saved to {report_path}")
     return report_path
@@ -712,8 +721,9 @@ def print_quality_summary(report: QualityReport) -> None:
     print(f"{'=' * 70}")
 
     # Book coverage
-    coverage = report.books_with_any_content / report.total_expected_books * 100 \
-        if report.total_expected_books > 0 else 0
+    coverage = (
+        report.books_with_any_content / report.total_expected_books * 100 if report.total_expected_books > 0 else 0
+    )
     print(f"\nBOOK COVERAGE:")
     print(f"  Expected books:      {report.total_expected_books:,}")
     print(f"  Books with content:  {report.books_with_any_content:,}")
@@ -746,8 +756,7 @@ def print_quality_summary(report: QualityReport) -> None:
     print(f"  Median pages/book:   {report.median_pages_per_book:.1f}")
     if report.page_count_distribution:
         print(f"  Distribution:")
-        for bucket in ["empty", "1-10", "11-50", "51-100", "101-200",
-                        "201-500", "501-1000", "1000+"]:
+        for bucket in ["empty", "1-10", "11-50", "51-100", "101-200", "201-500", "501-1000", "1000+"]:
             count = report.page_count_distribution.get(bucket, 0)
             if count > 0:
                 print(f"    {bucket:>8s}: {count:>6,} books")
@@ -783,13 +792,12 @@ def print_quality_summary(report: QualityReport) -> None:
 
 # ── Main ──────────────────────────────────────────────────────────────────
 
+
 def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Verify quality of Lucene extraction"
-    )
+    parser = argparse.ArgumentParser(description="Verify quality of Lucene extraction")
     parser.add_argument(
         "--quick",
         action="store_true",
