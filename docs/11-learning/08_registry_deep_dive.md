@@ -232,13 +232,14 @@ registry.register_tool("zakat_tool", ZakatCalculator(gold_price=75, silver_price
 ### الأسطر 131-150: get_agent() و get_tool()
 
 ```python
-    def get_agent(self, name: str) -> Optional[BaseAgent]:
-        """Get agent by name."""
-        return self.agents.get(name)
+def get_agent(self, name: str) -> Optional[BaseAgent]:
+    """Get agent by name."""
+    return self.agents.get(name)
 
-    def get_tool(self, name: str) -> Optional[BaseTool]:
-        """Get tool by name."""
-        return self.tools.get(name)
+
+def get_tool(self, name: str) -> Optional[BaseTool]:
+    """Get tool by name."""
+    return self.tools.get(name)
 ```
 
 **شرح**:
@@ -317,36 +318,39 @@ tool = registry.get_tool("zakat_tool")
 ### الأسطر 181-200: دوال مساعدة
 
 ```python
-    def is_available(self, name: str) -> bool:
-        """Check if agent or tool is available."""
-        return name in self.agents or name in self.tools
+def is_available(self, name: str) -> bool:
+    """Check if agent or tool is available."""
+    return name in self.agents or name in self.tools
 
-    def list_agents(self) -> list[str]:
-        """List all registered agent names."""
-        return list(self.agents.keys())
 
-    def list_tools(self) -> list[str]:
-        """List all registered tool names."""
-        return list(self.tools.keys())
+def list_agents(self) -> list[str]:
+    """List all registered agent names."""
+    return list(self.agents.keys())
 
-    def get_status(self) -> dict:
-        """Get registry status."""
-        return {
-            "agents": list(self.agents.keys()),
-            "tools": list(self.tools.keys()),
-            "total": len(self.agents) + len(self.tools),
-            "initialized": self._initialized,
-        }
+
+def list_tools(self) -> list[str]:
+    """List all registered tool names."""
+    return list(self.tools.keys())
+
+
+def get_status(self) -> dict:
+    """Get registry status."""
+    return {
+        "agents": list(self.agents.keys()),
+        "tools": list(self.tools.keys()),
+        "total": len(self.agents) + len(self.tools),
+        "initialized": self._initialized,
+    }
 ```
 
 **شرح**:
 
 ```python
-registry.is_available("fiqh_agent")       # True
-registry.is_available("unknown_agent")    # False
+registry.is_available("fiqh_agent")  # True
+registry.is_available("unknown_agent")  # False
 
 registry.list_agents()  # ["fiqh_agent", "chatbot_agent", "hadith_agent", "seerah_agent"]
-registry.list_tools()   # ["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"]
+registry.list_tools()  # ["zakat_tool", "inheritance_tool", "prayer_tool", "hijri_tool", "dua_tool"]
 
 registry.get_status()
 # {
