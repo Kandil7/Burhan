@@ -10,12 +10,10 @@ For production, use the full MasterHybridClassifier via build_classifier().
 
 from __future__ import annotations
 
-from src.domain.intents import Intent
 from src.application.router.classifier_factory import (
     KeywordBasedClassifier,
-    normalize_arabic,
 )
-
+from src.domain.intents import Intent
 
 # Intent to agent mapping
 INTENT_TO_AGENT: dict[Intent, str] = {
@@ -47,7 +45,7 @@ class IntentRouter:
     This is the v2 canonical routing component.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the intent router with keyword classifier."""
         self._classifier = KeywordBasedClassifier()
         self._routing_enabled = True
