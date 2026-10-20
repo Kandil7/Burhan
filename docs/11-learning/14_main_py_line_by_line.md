@@ -60,10 +60,12 @@ Phase 5: Security improvements and performance optimizations.
 app = FastAPI(...)  # ← تطبيق واحد فقط
 # مشكلة: صعب الاختبار، صعب إعادة الاستخدام
 
+
 # مع Factory Pattern:
 def create_app() -> FastAPI:
     app = FastAPI(...)
     return app  # ← يمكنك إنشاء تطبيقات متعددة
+
 
 # مثال:
 app1 = create_app()  # تطبيق للاختبار
@@ -309,13 +311,13 @@ from src.api.routes.quran import router as quran_router
 ```python
 # كل الملفات تستخدم اسم "router"
 from src.api.routes.health import router  # ← router
-from src.api.routes.query import router   # ← router أيضاً!
+from src.api.routes.query import router  # ← router أيضاً!
 
 # مشكلة: اسم متكرر!
 # حل: نعيد تسمية عند الاستيراد
 
 from src.api.routes.health import router as health_router  # ← health_router
-from src.api.routes.query import router as query_router    # ← query_router
+from src.api.routes.query import router as query_router  # ← query_router
 ```
 
 ---
@@ -405,15 +407,15 @@ def setup_logging():
         processors=[
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.add_log_level,
-            structlog.processors.JSONRenderer()  # في production
+            structlog.processors.JSONRenderer(),  # في production
         ],
         logger_factory=structlog.PrintLoggerFactory(),
     )
-    
+
     # 2. يحدد مستوى logging
     #    development: DEBUG (كل شيء)
     #    production: INFO (مهم فقط)
-    
+
     # 3. يحدد الشكل
     #    development: console ملون
     #    production: JSON (سهل التحليل)
@@ -424,10 +426,10 @@ def setup_logging():
 ```python
 # ما يحدث:
 logger.info(
-    "app.startup",                      # اسم الحدث
-    app_name=settings.app_name,         # "Burhan"
-    version="0.5.0",                    # الإصدار
-    environment=settings.app_env,       # "development"
+    "app.startup",  # اسم الحدث
+    app_name=settings.app_name,  # "Burhan"
+    version="0.5.0",  # الإصدار
+    environment=settings.app_env,  # "development"
 )
 
 # ما يطبعه (development):
@@ -1293,13 +1295,13 @@ async def lifespan(app: FastAPI):
 
 ### 🔜 الخطوة التالية
 
-اقرأ الملف التالي: `src/api/routes/query.py` (الـ endpoint الرئيسي)
+اقرأ الملف التالي: `src/api/routes/ask.py` (الـ endpoint الرئيسي)
 
 ---
 
 **📖 الدليل الكامل:** [`docs/mentoring/`](docs/mentoring/)
 
-**🚀 الملف التالي:** `src/api/routes/query.py`
+**🚀 الملف التالي:** `src/api/routes/ask.py`
 
 ---
 
