@@ -361,12 +361,18 @@ from pydantic import BaseModel
 
 
 IntentLabel = Literal[
-    "fiqh_hukm", "fiqh_tarjih",
-    "hadith_takhrij", "hadith_sharh",
-    "tafsir_ayah", "aqeedah_masalah",
-    "seerah_event", "history_event",
-    "lugha_explanation", "tazkiyah_mauidha",
-    "general_info", "usul_qawaid",
+    "fiqh_hukm",
+    "fiqh_tarjih",
+    "hadith_takhrij",
+    "hadith_sharh",
+    "tafsir_ayah",
+    "aqeedah_masalah",
+    "seerah_event",
+    "history_event",
+    "lugha_explanation",
+    "tazkiyah_mauidha",
+    "general_info",
+    "usul_qawaid",
 ]
 
 
@@ -420,28 +426,24 @@ class CollectionAgent(ABC):
         self,
         question: str,
         meta: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
     @abstractmethod
-    async def classify_intent(self, intake: Dict[str, Any]) -> IntentLabel:
-        ...
+    async def classify_intent(self, intake: Dict[str, Any]) -> IntentLabel: ...
 
     @abstractmethod
     async def retrieve_candidates(
         self,
         intent: IntentLabel,
         intake: Dict[str, Any],
-    ) -> List[Dict[str, Any]]:
-        ...
+    ) -> List[Dict[str, Any]]: ...
 
     @abstractmethod
     async def rerank_candidates(
         self,
         docs: List[Dict[str, Any]],
         intent: IntentLabel,
-    ) -> List[Dict[str, Any]]:
-        ...
+    ) -> List[Dict[str, Any]]: ...
 
     @abstractmethod
     async def run_verification(
@@ -449,24 +451,21 @@ class CollectionAgent(ABC):
         docs: List[Dict[str, Any]],
         intent: IntentLabel,
         intake: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
     @abstractmethod
     async def generate_answer(
         self,
         verified: Dict[str, Any],
         intake: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
     @abstractmethod
     async def assemble_output(
         self,
         draft: Dict[str, Any],
         verified: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
     # ==== Orchestrator ====
 
@@ -631,6 +630,7 @@ from agents.base import (
     VerificationCheck,
     FallbackPolicy,
 )
+
 
 def load_agent_config(path: str, system_prompt: str) -> CollectionAgentConfig:
     data = yaml.safe_load(open(path, "r", encoding="utf-8"))
@@ -1095,6 +1095,7 @@ from pathlib import Path
 
 PROMPTS_DIR = Path("prompts")
 
+
 def load_prompt(name: str) -> str:
     shared = (PROMPTS_DIR / "_shared_preamble.txt").read_text(encoding="utf-8").strip()
     agent = (PROMPTS_DIR / name).read_text(encoding="utf-8").strip()
@@ -1198,20 +1199,24 @@ Final answer
 ```python
 from smolagents import CodeAgent, LiteLLMModel, tool
 
+
 @tool
 def search_fiqh(question: str) -> str:
     """Search fiqh collection and return top verified passages."""
     ...
+
 
 @tool
 def search_hadith(question: str) -> str:
     """Search hadith collection and return takhrij-oriented passages."""
     ...
 
+
 @tool
 def verify_evidence(context: str) -> str:
     """Run Burhan verification checks on retrieved evidence."""
     ...
+
 
 model = LiteLLMModel(model_id="openai/gpt-4o-mini")  # example only
 
@@ -1575,6 +1580,7 @@ from app.compose_answer_service import compose_answer_service
 try:
     from smolagents import tool
 except Exception:
+
     def tool(func):
         return func
 
