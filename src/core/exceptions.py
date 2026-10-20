@@ -34,18 +34,34 @@ class BurhanErrorCode(str, Enum):
 class BurhanException(Exception):
     """Base exception with structured error code."""
 
+    # Default HTTP status for each error code. Explicit status_code wins.
+    _DEFAULT_STATUS_CODES: dict[BurhanErrorCode, int] = {
+        BurhanErrorCode.INVALID_QUERY: 400,
+        BurhanErrorCode.AUTHENTICATION_FAILED: 401,
+        BurhanErrorCode.NOT_FOUND: 404,
+        BurhanErrorCode.VALIDATION_ERROR: 422,
+        BurhanErrorCode.CLASSIFICATION_FAILED: 422,
+        BurhanErrorCode.RATE_LIMIT_EXCEEDED: 429,
+        BurhanErrorCode.QUOTA_EXCEEDED: 429,
+        BurhanErrorCode.LLM_GENERATION_FAILED: 502,
+        BurhanErrorCode.EMBEDDING_FAILED: 502,
+        BurhanErrorCode.RETRIEVAL_FAILED: 503,
+        BurhanErrorCode.VECTOR_STORE_UNAVAILABLE: 503,
+        BurhanErrorCode.AGENT_TIMEOUT: 504,
+    }
+
     def __init__(
         self,
         message: str,
         code: BurhanErrorCode,
         details: dict[str, Any] | None = None,
-        status_code: int = 500,
+        status_code: int | None = None,
     ):
         super().__init__(message)
         self.message = message
         self.code = code
         self.details = details or {}
-        self.status_code = status_code
+        self.status_code = status_code if status_code is not None else self._DEFAULT_STATUS_CODES.get(code, 500)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for API response."""
