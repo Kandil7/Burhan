@@ -10,9 +10,11 @@ Fixes:
 
 from __future__ import annotations
 
-from src.domain.intents import QuranSubIntent
+from typing import Any
+
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+from src.domain.intents import QuranSubIntent
 
 logger = get_logger()
 
@@ -147,7 +149,7 @@ class QuranSubRouter:
     Fallback: VERSE_LOOKUP.
     """
 
-    def __init__(self, llm_client=None) -> None:
+    def __init__(self, llm_client: Any = None) -> None:
         self.llm_client = llm_client
 
     # ── Public API ─────────────────────────────────────────────────────────────
