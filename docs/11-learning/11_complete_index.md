@@ -17,7 +17,7 @@
 | **5** | `src/core/citation.py` | 350 | ✅ مشروح | [`09_citation_deep_dive.md`](09_citation_deep_dive.md) |
 | **6** | `src/agents/base.py` | 90 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
 | **7** | `src/agents/chatbot_agent.py` | 160 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
-| **8** | `src/agents/fiqh_agent.py` | 280 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
+| **8** | `src/agents/collection/fiqh.py` | 280 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
 | **9** | `src/tools/base.py` | 70 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
 | **10** | `src/tools/zakat_calculator.py` | 350 | ✅ مشروح | [`10_agents_and_tools_combined.md`](10_agents_and_tools_combined.md) |
 
