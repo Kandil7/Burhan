@@ -68,10 +68,10 @@ KEYWORD_RULES = {
 ```python
 class ToolOutput(BaseModel):
     answer: str
-    citations: list[Citation]        # [{ref, url, text_snippet}]
-    metadata: dict                   # predicted_intent, tool_name, ...
+    citations: list[Citation]  # [{ref, url, text_snippet}]
+    metadata: dict  # predicted_intent, tool_name, ...
     confidence: float
-    execution_trace: list[str]       # للتدقيق
+    execution_trace: list[str]  # للتدقيق
 ```
 كل tool (Verse, NL2SQL, Calendar, Dua, Prayer) ترجع هذا النموذج بالضبط. [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
 
@@ -159,7 +159,7 @@ class ResponseAssembler:
                 "tools_invoked": [...],
                 "retrieval_sources": [...],
                 "confidence": ...,
-            }
+            },
         )
 ```
 
