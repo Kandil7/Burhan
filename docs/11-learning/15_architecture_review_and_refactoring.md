@@ -1,5 +1,9 @@
 # 🔍 مراجعة معمارية شاملة لمشروع Burhan - Refactoring Report
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 ## 📋 معلومات المراجعة
 
 | البند | القيمة |
@@ -66,6 +70,7 @@ version="0.5.0"  # السطر 61: FastAPI constructor
 class Settings(BaseSettings):
     app_version: str = "0.5.0"  # ← مكان واحد
 
+
 # src/api/main.py
 app = FastAPI(
     title=settings.app_name,
@@ -73,6 +78,7 @@ app = FastAPI(
 )
 
 logger.info("app.startup", version=settings.app_version)
+
 
 @app.get("/")
 async def root():
@@ -99,16 +105,13 @@ rate_limit_enabled: bool = True  # ← مفعل دائماً
 
 # src/api/main.py
 if settings.rate_limit_enabled:
-    app.add_middleware(
-        RateLimitMiddleware,
-        requests_per_minute=settings.rate_limit_per_minute
-    )
+    app.add_middleware(RateLimitMiddleware, requests_per_minute=settings.rate_limit_per_minute)
 
 # .env.development
-RATE_LIMIT_PER_MINUTE=1000  # ← عالٍ جداً للاختبار
+RATE_LIMIT_PER_MINUTE = 1000  # ← عالٍ جداً للاختبار
 
 # .env.production
-RATE_LIMIT_PER_MINUTE=60  # ← حقيقي
+RATE_LIMIT_PER_MINUTE = 60  # ← حقيقي
 ```
 
 ---
@@ -131,12 +134,14 @@ _fiqh_lock = threading.Lock()
 _general_agent = None
 _general_lock = threading.Lock()
 
+
 def get_chatbot():
     global _chatbot
     with _chatbot_lock:
         if _chatbot is None:
             _chatbot = ChatbotAgent()
         return _chatbot
+
 
 # ... 4 مرات أخرى بنفس الشكل!
 ```
@@ -150,33 +155,37 @@ from typing import Callable, TypeVar, Generic, Optional
 
 T = TypeVar("T")
 
+
 class LazySingleton(Generic[T]):
     """
     Thread-safe lazy singleton pattern.
-    
+
     Usage:
         _chatbot = LazySingleton(lambda: ChatbotAgent())
         chatbot = _chatbot.get()
     """
+
     def __init__(self, factory: Callable[[], T]):
         self._factory = factory
         self._lock = threading.Lock()
         self._instance: Optional[T] = None
-    
+
     def get(self) -> T:
         with self._lock:
             if self._instance is None:
                 self._instance = self._factory()
             return self._instance
-    
+
     def reset(self):
         """للإختبار"""
         with self._lock:
             self._instance = None
 
+
 # src/api/routes/query.py - قبل
 _chatbot = None
 _chatbot_lock = threading.Lock()
+
 
 def get_chatbot():
     global _chatbot
@@ -184,6 +193,7 @@ def get_chatbot():
         if _chatbot is None:
             _chatbot = ChatbotAgent()
         return _chatbot
+
 
 # بعد
 _chatbot = LazySingleton(ChatbotAgent)
@@ -205,6 +215,7 @@ chatbot = _chatbot.get()  # ← سطر واحد!
 # الكود الحالي
 _agents_loaded = False  # ← متغير واحد لكلا الوكيلين!
 
+
 async def get_fiqh_agent():
     global _fiqh_agent, _agents_loaded
     with _fiqh_lock:
@@ -213,6 +224,7 @@ async def get_fiqh_agent():
             await _fiqh_agent._initialize()
             _agents_loaded = True  # ← يضبط للوكيلين!
         return _fiqh_agent
+
 
 async def get_general_agent():
     global _general_agent, _agents_loaded
@@ -263,32 +275,32 @@ else:
 # src/api/routes/query.py
 from src.core.registry import get_registry
 
+
 @router.post("")
 async def handle_query(request: QueryRequest):
     # تصنيف النية
     classifier = await get_classifier()
     router_result = await classifier.classify(request.query)
     intent = router_result.intent
-    
+
     # استخدام Registry (بدلاً من if/elif)
     registry = get_registry()
     agent, is_agent = registry.get_for_intent(intent)
-    
+
     if agent:
         agent_input = AgentInput(
             query=request.query,
             language=request.language or router_result.language,
-            metadata={"madhhab": request.madhhab}
+            metadata={"madhhab": request.madhhab},
         )
         agent_result = await agent.execute(agent_input)
     else:
         # Fallback للـ chatbot
         chatbot = _chatbot.get()
-        agent_result = await chatbot.execute(AgentInput(
-            query=request.query,
-            language=request.language or router_result.language
-        ))
-    
+        agent_result = await chatbot.execute(
+            AgentInput(query=request.query, language=request.language or router_result.language)
+        )
+
     return QueryResponse(...)
 ```
 
@@ -312,6 +324,7 @@ def __init__(self):
     self.hybrid_searcher = None
     self.citation_normalizer = CitationNormalizer()
 
+
 # HadithAgent.__init__() - نفس الشيء!
 def __init__(self):
     self.embedding_model = None
@@ -319,6 +332,7 @@ def __init__(self):
     self.llm_client = None
     self.hybrid_searcher = None
     self.citation_normalizer = CitationNormalizer()
+
 
 # GeneralIslamicAgent.__init__() - نفس الشيء!
 def __init__(self):
@@ -351,16 +365,17 @@ from typing import Optional
 from src.agents.base import BaseAgent, AgentInput, AgentOutput, Citation
 from src.core.citation import CitationNormalizer
 
+
 class BaseRAGAgent(BaseAgent):
     """
     قاعدة مشتركة لكل وكلاء RAG.
-    
+
     الوكلاء يرثون منها ويحددون فقط:
     - COLLECTION
     - TOP_K
     - SYSTEM_PROMPT
     """
-    
+
     # يجب تحديد هذه في كل وكيل
     COLLECTION: str = None
     TOP_K_RETRIEVAL: int = 15
@@ -368,7 +383,7 @@ class BaseRAGAgent(BaseAgent):
     TEMPERATURE: float = 0.1
     SYSTEM_PROMPT: str = None
     USER_PROMPT: str = None
-    
+
     def __init__(self):
         self.embedding_model = None
         self.vector_store = None
@@ -376,42 +391,46 @@ class BaseRAGAgent(BaseAgent):
         self.hybrid_searcher = None
         self.citation_normalizer = CitationNormalizer()
         self._initialized = False
-    
+
     async def _initialize(self):
         """تهيئة كسولة - مرة واحدة فقط"""
         if self._initialized:
             return
-        
+
         # تحميل Embedding Model
         if self.embedding_model is None:
             from src.knowledge.embedding_model import EmbeddingModel
+
             self.embedding_model = EmbeddingModel()
             await self.embedding_model.load_model()
-        
+
         # تحميل Vector Store
         if self.vector_store is None:
             from src.knowledge.vector_store import VectorStore
+
             self.vector_store = VectorStore()
             await self.vector_store.initialize()
-            
+
             from src.knowledge.hybrid_search import HybridSearcher
+
             self.hybrid_searcher = HybridSearcher(self.vector_store)
-        
+
         # تحميل LLM
         if self.llm_client is None:
             from src.infrastructure.llm_client import get_llm_client
+
             self.llm_client = await get_llm_client()
-        
+
         self._initialized = True
-    
+
     async def execute(self, input: AgentInput) -> AgentOutput:
         """RAG Pipeline كاملة"""
         await self._initialize()
-        
+
         try:
             # 1. Embed query
             query_embedding = await self.embedding_model.encode_query(input.query)
-            
+
             # 2. Search
             passages = await self.hybrid_searcher.search(
                 query=input.query,
@@ -419,30 +438,23 @@ class BaseRAGAgent(BaseAgent):
                 collection=self.COLLECTION,
                 top_k=self.TOP_K_RETRIEVAL,
             )
-            
+
             # 3. Filter
-            good_passages = [
-                p for p in passages
-                if p.get("score", 0) >= 0.15
-            ]
-            
+            good_passages = [p for p in passages if p.get("score", 0) >= 0.15]
+
             # 4. Format
-            formatted = self._format_passages(good_passages[:self.TOP_K_USED])
-            
+            formatted = self._format_passages(good_passages[: self.TOP_K_USED])
+
             # 5. Generate
-            answer = await self._generate_with_llm(
-                query=input.query,
-                passages=formatted,
-                language=input.language
-            )
-            
+            answer = await self._generate_with_llm(query=input.query, passages=formatted, language=input.language)
+
             # 6. Normalize citations
             normalized = self.citation_normalizer.normalize(answer)
             citations = self.citation_normalizer.get_citations()
-            
+
             # 7. Add disclaimer
             final_answer = self._add_disclaimer(normalized)
-            
+
             return AgentOutput(
                 answer=final_answer,
                 citations=citations,
@@ -454,10 +466,10 @@ class BaseRAGAgent(BaseAgent):
                 confidence=self._calculate_confidence(good_passages),
                 requires_human_review=len(good_passages) == 0,
             )
-        
+
         except Exception as e:
             return self._handle_error(e, input.language)
-    
+
     def _format_passages(self, passages: list[dict]) -> str:
         """تنسيق الوثائق للـ LLM"""
         formatted = []
@@ -466,20 +478,18 @@ class BaseRAGAgent(BaseAgent):
             source = passage.get("metadata", {}).get("source", "Unknown")
             formatted.append(f"[C{i}] {content}\nالمصدر: {source}")
         return "\n\n".join(formatted)
-    
+
     async def _generate_with_llm(self, query: str, passages: str, language: str) -> str:
         """توليد الإجابة بـ LLM"""
         from src.config.settings import settings
-        
+
         if not passages or not passages.strip():
             return "لا توجد نصوص كافية للإجابة على هذا السؤال."
-        
+
         user_prompt = self.USER_PROMPT.format(
-            query=query,
-            language="العربية" if language == "ar" else "الإنجليزية",
-            passages=passages
+            query=query, language="العربية" if language == "ar" else "الإنجليزية", passages=passages
         )
-        
+
         response = await self.llm_client.chat.completions.create(
             model=settings.llm_model,
             messages=[
@@ -489,18 +499,18 @@ class BaseRAGAgent(BaseAgent):
             temperature=self.TEMPERATURE,
             max_tokens=2048,
         )
-        
+
         return response.choices[0].message.content
-    
+
     def _calculate_confidence(self, passages: list[dict]) -> float:
         """حساب الثقة بناءً على جودة الاسترجاع"""
         if not passages:
             return 0.0
-        
+
         scores = [p.get("score", 0) for p in passages[:5]]
         avg_score = sum(scores) / len(scores) if scores else 0.0
         return min(1.0, avg_score)
-    
+
     def _add_disclaimer(self, text: str) -> str:
         """إضافة تنويه"""
         disclaimer = (
@@ -509,14 +519,14 @@ class BaseRAGAgent(BaseAgent):
             "يجب استفتاء عالم متخصص للتأكد من الحكم في حالتك الخاصة."
         )
         return text + disclaimer
-    
+
     def _handle_error(self, error: Exception, language: str) -> AgentOutput:
         """معالجة الأخطاء"""
         if language == "ar":
             answer = f"خطأ في معالجة الطلب: {str(error)}\n\nيرجى استفتاء عالم متخصص."
         else:
             answer = f"Error processing query: {str(error)}\n\nPlease consult a scholar."
-        
+
         return AgentOutput(
             answer=answer,
             confidence=0.0,
@@ -531,14 +541,15 @@ class BaseRAGAgent(BaseAgent):
 # src/agents/fiqh_agent.py (قبل: 280 سطر)
 from src.agents.base_rag_agent import BaseRAGAgent
 
+
 class FiqhAgent(BaseRAGAgent):
     name = "fiqh_agent"
-    
+
     COLLECTION = "fiqh_passages"
     TOP_K_RETRIEVAL = 15
     TOP_K_USED = 5
     TEMPERATURE = 0.1
-    
+
     SYSTEM_PROMPT = """أنت مساعد إسلامي متخصص في الفقه الإسلامي.
 
 المهم:
@@ -562,14 +573,15 @@ class FiqhAgent(BaseRAGAgent):
 # src/agents/hadith_agent.py (قبل: 220 سطر)
 from src.agents.base_rag_agent import BaseRAGAgent
 
+
 class HadithAgent(BaseRAGAgent):
     name = "hadith_agent"
-    
+
     COLLECTION = "hadith_passages"
     TOP_K_RETRIEVAL = 10
     TOP_K_USED = 5
     TEMPERATURE = 0.1
-    
+
     SYSTEM_PROMPT = """أنت مساعد إسلامي متخصص في الحديث النبوي.
 
 المهم:
@@ -591,14 +603,15 @@ class HadithAgent(BaseRAGAgent):
 # src/agents/general_islamic_agent.py (قبل: 270 سطر)
 from src.agents.base_rag_agent import BaseRAGAgent
 
+
 class GeneralIslamicAgent(BaseRAGAgent):
     name = "general_islamic_agent"
-    
+
     COLLECTION = "general_islamic"
     TOP_K_RETRIEVAL = 10
     TOP_K_USED = 5
     TEMPERATURE = 0.3
-    
+
     SYSTEM_PROMPT = """أنت مساعد إسلامي يقدم معلومات عامة عن الإسلام.
 
 المهم:
@@ -634,6 +647,7 @@ class GeneralIslamicAgent(BaseRAGAgent):
 # src/knowledge/embedding_cache.py
 import redis  # ← متزامن! يحجب event loop
 
+
 class EmbeddingCache:
     def __init__(self):
         self._redis = redis.Redis(...)  # ← Blocking I/O!
@@ -646,6 +660,7 @@ class EmbeddingCache:
 ```python
 # src/knowledge/embedding_cache.py
 import redis.asyncio as redis  # ← غير متزامن!
+
 
 class EmbeddingCache:
     def __init__(self):
@@ -660,11 +675,12 @@ class EmbeddingCache:
 # الكود الحالي
 from uuid import uuid4
 
+
 def upsert(self, doc: dict):
     point = PointStruct(
         id=str(uuid4()),  # ← جديد كل مرة!
         vector=embedding,
-        payload=doc
+        payload=doc,
     )
 ```
 
@@ -675,15 +691,16 @@ def upsert(self, doc: dict):
 ```python
 import hashlib
 
+
 def upsert(self, doc: dict):
     # UUID ثابت بناءً على المحتوى
     content = doc.get("content", "")
     doc_id = hashlib.sha256(content.encode()).hexdigest()[:16]
-    
+
     point = PointStruct(
         id=doc_id,  # ← ثابت لنفس المحتوى
         vector=embedding,
-        payload=doc
+        payload=doc,
     )
 ```
 
@@ -696,6 +713,7 @@ def upsert(self, doc: dict):
 # 1. HybridSearcher._classify_era()
 # 2. CitationNormalizer._classify_era()
 # 3. HadithAuthenticityGrader._classify_era()
+
 
 def _classify_era(death_year_hijri: int) -> str:
     if death_year_hijri <= 100:
@@ -725,8 +743,10 @@ class EraClassifier:
         else:
             return "modern"
 
+
 # استخدام
 from src.utils.era_classifier import EraClassifier
+
 era = EraClassifier.classify(death_year)
 ```
 
@@ -740,6 +760,7 @@ era = EraClassifier.classify(death_year)
 # src/infrastructure/llm_client.py
 llm_client: Optional[AsyncOpenAI] = None
 groq_client: Optional[AsyncGroq] = None
+
 
 async def get_llm_client():
     global groq_client
@@ -758,19 +779,20 @@ import asyncio
 _groq_client: Optional[AsyncGroq] = None
 _client_lock: asyncio.Lock = asyncio.Lock()
 
+
 async def get_llm_client() -> AsyncGroq:
     global _groq_client
-    
+
     if _groq_client is not None:
         return _groq_client
-    
+
     async with _client_lock:
         # تحقق مرة أخرى داخل الـ lock (double-checked locking)
         if _groq_client is None:
             _groq_client = AsyncGroq(
                 api_key=settings.groq_api_key,
             )
-        
+
         return _groq_client
 ```
 
