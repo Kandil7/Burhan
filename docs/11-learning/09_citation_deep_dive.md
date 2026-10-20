@@ -46,58 +46,37 @@ logger = get_logger()
 ### الأسطر 16-80: PATTERNS (6 أنماط regex)
 
 ```python
-    PATTERNS = [
-        # Quran: "Quran 2:255" or "القرآن 2:255" or "البقرة 255"
-        (
-            r'(?:quran|القرآن|سورة)\s*(\d+)\s*[:\-]\s*(\d+)',
-            "quran",
-            "quran_reference"
-        ),
-
-        # Quran by surah name: "سورة البقرة آية 255"
-        (
-            r'(?:سورة)\s+([\u0600-\u06FF\s]+?)\s*(?:آية|اية)\s*(\d+)',
-            "quran",
-            "quran_surah_ayah"
-        ),
-
-        # Hadith: "صحيح البخاري، حديث 1234" or "Sahih Bukhari 1234"
-        (
-            r'(?:صحيح|سنن|مسند)\s+(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)'
-            r'\s*(?:،|,)?\s*(?:حديث|رقم|hadith|no\.?)\s*(\d+)',
-            "hadith",
-            "hadith_reference"
-        ),
-
-        # Simplified hadith: "رواه البخاري"
-        (
-            r'(?:رواه|mentioned in)\s+(صحيح\s+)?(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)',
-            "hadith",
-            "hadith_book"
-        ),
-
-        # Fatwa: "فتوى رقم 12345" or "IslamWeb Fatwa #12345"
-        (
-            r'(?:فتوى|fatwa)\s*(?:رقم|#)?\s*((\d+)',
-            "fatwa",
-            "fatwa_reference"
-        ),
-
-        # Generic book: "كتاب كذا، باب كذا، رقم 123"
-        (
-            r'([\u0600-\u06FFa-zA-Z\s]+?)\s*(?:،|,)\s*(?:باب|chapter)\s+([\u0600-\u06FFa-zA-Z\s]+?)'
-            r'\s*(?:،|,)?\s*(?:رقم|no\.?|hadith)\s*(\d+)',
-            "fiqh_book",
-            "fiqh_reference"
-        ),
-    ]
+PATTERNS = [
+    # Quran: "Quran 2:255" or "القرآن 2:255" or "البقرة 255"
+    (r"(?:quran|القرآن|سورة)\s*(\d+)\s*[:\-]\s*(\d+)", "quran", "quran_reference"),
+    # Quran by surah name: "سورة البقرة آية 255"
+    (r"(?:سورة)\s+([\u0600-\u06FF\s]+?)\s*(?:آية|اية)\s*(\d+)", "quran", "quran_surah_ayah"),
+    # Hadith: "صحيح البخاري، حديث 1234" or "Sahih Bukhari 1234"
+    (
+        r"(?:صحيح|سنن|مسند)\s+(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)"
+        r"\s*(?:،|,)?\s*(?:حديث|رقم|hadith|no\.?)\s*(\d+)",
+        "hadith",
+        "hadith_reference",
+    ),
+    # Simplified hadith: "رواه البخاري"
+    (r"(?:رواه|mentioned in)\s+(صحيح\s+)?(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)", "hadith", "hadith_book"),
+    # Fatwa: "فتوى رقم 12345" or "IslamWeb Fatwa #12345"
+    (r"(?:فتوى|fatwa)\s*(?:رقم|#)?\s*((\d+)", "fatwa", "fatwa_reference"),
+    # Generic book: "كتاب كذا، باب كذا، رقم 123"
+    (
+        r"([\u0600-\u06FFa-zA-Z\s]+?)\s*(?:،|,)\s*(?:باب|chapter)\s+([\u0600-\u06FFa-zA-Z\s]+?)"
+        r"\s*(?:،|,)?\s*(?:رقم|no\.?|hadith)\s*(\d+)",
+        "fiqh_book",
+        "fiqh_reference",
+    ),
+]
 ```
 
 **شرح كل pattern**:
 
 #### Pattern 1: Quran reference
 ```python
-r'(?:quran|القرآن|سورة)\s*(\d+)\s*[:\-]\s*(\d+)'
+r"(?:quran|القرآن|سورة)\s*(\d+)\s*[:\-]\s*(\d+)"
 ```
 
 **ما يتطابق**:
@@ -115,7 +94,7 @@ r'(?:quran|القرآن|سورة)\s*(\d+)\s*[:\-]\s*(\d+)'
 
 #### Pattern 2: Quran by surah name
 ```python
-r'(?:سورة)\s+([\u0600-\u06FF\s]+?)\s*(?:آية|اية)\s*(\d+)'
+r"(?:سورة)\s+([\u0600-\u06FF\s]+?)\s*(?:آية|اية)\s*(\d+)"
 ```
 
 **ما يتطابق**:
@@ -130,8 +109,9 @@ r'(?:سورة)\s+([\u0600-\u06FF\s]+?)\s*(?:آية|اية)\s*(\d+)'
 
 #### Pattern 3: Hadith reference
 ```python
-r'(?:صحيح|سنن|مسند)\s+(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)'
-r'\s*(?:،|,)?\s*(?:حديث|رقم|hadith|no\.?)\s*(\d+)'
+r"(?:صحيح|سنن|مسند)\s+(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)"
+
+r"\s*(?:،|,)?\s*(?:حديث|رقم|hadith|no\.?)\s*(\d+)"
 ```
 
 **ما يتطابق**:
@@ -153,7 +133,7 @@ r'\s*(?:،|,)?\s*(?:حديث|رقم|hadith|no\.?)\s*(\d+)'
 
 #### Pattern 4: Simplified hadith
 ```python
-r'(?:رواه|mentioned in)\s+(صحيح\s+)?(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)'
+r"(?:رواه|mentioned in)\s+(صحيح\s+)?(البخاري|مسلم|الترمذي|أبو داود|النسائي|ابن ماجه)"
 ```
 
 **ما يتطابق**:
@@ -165,7 +145,7 @@ r'(?:رواه|mentioned in)\s+(صحيح\s+)?(البخاري|مسلم|الترم�
 
 #### Pattern 5: Fatwa reference
 ```python
-r'(?:فتوى|fatwa)\s*(?:رقم|#)?\s*(\d+)'
+r"(?:فتوى|fatwa)\s*(?:رقم|#)?\s*(\d+)"
 ```
 
 **ما يتطابق**:
@@ -177,8 +157,9 @@ r'(?:فتوى|fatwa)\s*(?:رقم|#)?\s*(\d+)'
 
 #### Pattern 6: Generic fiqh book
 ```python
-r'([\u0600-\u06FFa-zA-Z\s]+?)\s*(?:،|,)\s*(?:باب|chapter)\s+([\u0600-\u06FFa-zA-Z\s]+?)'
-r'\s*(?:،|,)?\s*(?:رقم|no\.?|hadith)\s*(\d+)'
+r"([\u0600-\u06FFa-zA-Z\s]+?)\s*(?:،|,)\s*(?:باب|chapter)\s+([\u0600-\u06FFa-zA-Z\s]+?)"
+
+r"\s*(?:،|,)?\s*(?:رقم|no\.?|hadith)\s*(\d+)"
 ```
 
 **ما يتطابق**:
@@ -225,47 +206,37 @@ r'\s*(?:،|,)?\s*(?:رقم|no\.?|hadith)\s*(\d+)'
 ### الأسطر 101-150: normalize() - الدالة الرئيسية
 
 ```python
-    def normalize(self, text: str) -> str:
-        """
-        Normalize all citations in text to [C1], [C2] format.
-        """
-        normalized_text = text
-        self.citation_counter = 0
-        self.citation_map = {}
+def normalize(self, text: str) -> str:
+    """
+    Normalize all citations in text to [C1], [C2] format.
+    """
+    normalized_text = text
+    self.citation_counter = 0
+    self.citation_map = {}
 
-        for pattern, citation_type, pattern_name in self.PATTERNS:
-            matches = list(re.finditer(pattern, normalized_text, re.IGNORECASE))
+    for pattern, citation_type, pattern_name in self.PATTERNS:
+        matches = list(re.finditer(pattern, normalized_text, re.IGNORECASE))
 
-            # Process matches in reverse to preserve positions
-            for match in reversed(matches):
-                self.citation_counter += 1
-                citation_id = f"C{self.citation_counter}"
+        # Process matches in reverse to preserve positions
+        for match in reversed(matches):
+            self.citation_counter += 1
+            citation_id = f"C{self.citation_counter}"
 
-                # Build citation object
-                citation = self._build_citation(match, citation_type, pattern_name)
-                citation.id = citation_id
-                self.citation_map[citation_id] = citation
+            # Build citation object
+            citation = self._build_citation(match, citation_type, pattern_name)
+            citation.id = citation_id
+            self.citation_map[citation_id] = citation
 
-                # Replace in text
-                normalized_text = (
-                    normalized_text[:match.start()] +
-                    f"[{citation_id}]" +
-                    normalized_text[match.end():]
-                )
+            # Replace in text
+            normalized_text = normalized_text[: match.start()] + f"[{citation_id}]" + normalized_text[match.end() :]
 
-        # Reverse the order since we processed in reverse
-        self.citation_map = dict(
-            sorted(self.citation_map.items(), key=lambda x: int(x[0][1:]))
-        )
+    # Reverse the order since we processed in reverse
+    self.citation_map = dict(sorted(self.citation_map.items(), key=lambda x: int(x[0][1:])))
 
-        if self.citation_counter > 0:
-            logger.info(
-                "citation.normalized",
-                count=self.citation_counter,
-                citations=list(self.citation_map.keys())
-            )
+    if self.citation_counter > 0:
+        logger.info("citation.normalized", count=self.citation_counter, citations=list(self.citation_map.keys()))
 
-        return normalized_text
+    return normalized_text
 ```
 
 **شرح خطوة بخطوة**:
@@ -309,29 +280,19 @@ text = "قال تعالى في Quran 2:255 ورواه البخاري حديث 12
 ### الأسطر 151-200: _build_citation()
 
 ```python
-    def _build_citation(
-        self,
-        match,
-        citation_type: str,
-        pattern_name: str
-    ) -> Citation:
-        """Build structured citation from regex match."""
+def _build_citation(self, match, citation_type: str, pattern_name: str) -> Citation:
+    """Build structured citation from regex match."""
 
-        if citation_type == "quran":
-            return self._build_quran_citation(match, pattern_name)
-        elif citation_type == "hadith":
-            return self._build_hadith_citation(match, pattern_name)
-        elif citation_type == "fatwa":
-            return self._build_fatwa_citation(match)
-        elif citation_type == "fiqh_book":
-            return self._build_fiqh_citation(match)
-        else:
-            return Citation(
-                id="",
-                type="unknown",
-                source=match.group(0),
-                reference=match.group(0)
-            )
+    if citation_type == "quran":
+        return self._build_quran_citation(match, pattern_name)
+    elif citation_type == "hadith":
+        return self._build_hadith_citation(match, pattern_name)
+    elif citation_type == "fatwa":
+        return self._build_fatwa_citation(match)
+    elif citation_type == "fiqh_book":
+        return self._build_fiqh_citation(match)
+    else:
+        return Citation(id="", type="unknown", source=match.group(0), reference=match.group(0))
 ```
 
 **شرح**:
@@ -343,29 +304,29 @@ text = "قال تعالى في Quran 2:255 ورواه البخاري حديث 12
 ### الأسطر 201-230: _build_quran_citation()
 
 ```python
-    def _build_quran_citation(self, match, pattern_name: str) -> Citation:
-        """Build Quran citation from match."""
-        if pattern_name == "quran_reference":
-            surah = match.group(1)
-            ayah = match.group(2)
-            return Citation(
-                id="",
-                type="quran",
-                source=f"Quran {surah}:{ayah}",
-                reference=f"Surah {surah}, Ayah {ayah}",
-                url=self.QURAN_URL_TEMPLATE.format(surah=surah, ayah=ayah)
-            )
-        else:
-            # Surah name + ayah pattern
-            surah_name = match.group(1).strip()
-            ayah = match.group(2)
-            return Citation(
-                id="",
-                type="quran",
-                source=f"Quran: {surah_name}:{ayah}",
-                reference=f"Surah {surah_name}, Ayah {ayah}",
-                url=None  # Would need surah number lookup
-            )
+def _build_quran_citation(self, match, pattern_name: str) -> Citation:
+    """Build Quran citation from match."""
+    if pattern_name == "quran_reference":
+        surah = match.group(1)
+        ayah = match.group(2)
+        return Citation(
+            id="",
+            type="quran",
+            source=f"Quran {surah}:{ayah}",
+            reference=f"Surah {surah}, Ayah {ayah}",
+            url=self.QURAN_URL_TEMPLATE.format(surah=surah, ayah=ayah),
+        )
+    else:
+        # Surah name + ayah pattern
+        surah_name = match.group(1).strip()
+        ayah = match.group(2)
+        return Citation(
+            id="",
+            type="quran",
+            source=f"Quran: {surah_name}:{ayah}",
+            reference=f"Surah {surah_name}, Ayah {ayah}",
+            url=None,  # Would need surah number lookup
+        )
 ```
 
 **شرح**:
@@ -375,13 +336,7 @@ text = "قال تعالى في Quran 2:255 ورواه البخاري حديث 12
 # pattern_name = "quran_reference"
 
 # Output:
-Citation(
-    id="",
-    type="quran",
-    source="Quran 2:255",
-    reference="Surah 2, Ayah 255",
-    url="https://quran.com/2/255"
-)
+Citation(id="", type="quran", source="Quran 2:255", reference="Surah 2, Ayah 255", url="https://quran.com/2/255")
 
 # Input: match("سورة البقرة آية 255")
 # pattern_name = "quran_surah_ayah"
@@ -392,7 +347,7 @@ Citation(
     type="quran",
     source="Quran: البقرة:255",
     reference="Surah البقرة, Ayah 255",
-    url=None  # يحتاج lookup لرقم السورة
+    url=None,  # يحتاج lookup لرقم السورة
 )
 ```
 
@@ -401,34 +356,28 @@ Citation(
 ### الأسطر 231-270: _build_hadith_citation()
 
 ```python
-    def _build_hadith_citation(self, match, pattern_name: str) -> Citation:
-        """Build Hadith citation from match."""
-        if pattern_name == "hadith_reference":
-            book = match.group(1)
-            number = match.group(2)
-            book_key = book.strip().lower().replace(" ", "")
-            url = self.HADITH_URLS.get(book_key, self.HADITH_URLS.get(book, ""))
+def _build_hadith_citation(self, match, pattern_name: str) -> Citation:
+    """Build Hadith citation from match."""
+    if pattern_name == "hadith_reference":
+        book = match.group(1)
+        number = match.group(2)
+        book_key = book.strip().lower().replace(" ", "")
+        url = self.HADITH_URLS.get(book_key, self.HADITH_URLS.get(book, ""))
 
-            return Citation(
-                id="",
-                type="hadith",
-                source=f"Sahih {book}",
-                reference=f"Hadith #{number}",
-                url=f"{url}/{number}" if url else None
-            )
-        else:
-            # Simplified: "رواه البخاري"
-            book = match.group(2) if match.group(2) else match.group(1)
-            book_key = book.strip().lower().replace(" ", "")
-            url = self.HADITH_URLS.get(book_key, self.HADITH_URLS.get(book, ""))
+        return Citation(
+            id="",
+            type="hadith",
+            source=f"Sahih {book}",
+            reference=f"Hadith #{number}",
+            url=f"{url}/{number}" if url else None,
+        )
+    else:
+        # Simplified: "رواه البخاري"
+        book = match.group(2) if match.group(2) else match.group(1)
+        book_key = book.strip().lower().replace(" ", "")
+        url = self.HADITH_URLS.get(book_key, self.HADITH_URLS.get(book, ""))
 
-            return Citation(
-                id="",
-                type="hadith",
-                source=f"Collected by {book}",
-                reference=match.group(0),
-                url=url
-            )
+        return Citation(id="", type="hadith", source=f"Collected by {book}", reference=match.group(0), url=url)
 ```
 
 **شرح**:
@@ -438,13 +387,7 @@ Citation(
 # pattern_name = "hadith_reference"
 
 # Output:
-Citation(
-    id="",
-    type="hadith",
-    source="Sahih البخاري",
-    reference="Hadith #1234",
-    url="https://sunnah.com/bukhari/1234"
-)
+Citation(id="", type="hadith", source="Sahih البخاري", reference="Hadith #1234", url="https://sunnah.com/bukhari/1234")
 ```
 
 ---
@@ -452,29 +395,25 @@ Citation(
 ### الأسطر 271-300: _build_fatwa_citation() و _build_fiqh_citation()
 
 ```python
-    def _build_fatwa_citation(self, match) -> Citation:
-        """Build Fatwa citation from match."""
-        fatwa_number = match.group(1)
-        return Citation(
-            id="",
-            type="fatwa",
-            source=f"IslamWeb Fatwa",
-            reference=f"Fatwa #{fatwa_number}",
-            url=self.FATWA_URL_TEMPLATE.format(id=fatwa_number)
-        )
+def _build_fatwa_citation(self, match) -> Citation:
+    """Build Fatwa citation from match."""
+    fatwa_number = match.group(1)
+    return Citation(
+        id="",
+        type="fatwa",
+        source=f"IslamWeb Fatwa",
+        reference=f"Fatwa #{fatwa_number}",
+        url=self.FATWA_URL_TEMPLATE.format(id=fatwa_number),
+    )
 
-    def _build_fiqh_citation(self, match) -> Citation:
-        """Build Fiqh book citation from match."""
-        book = match.group(1).strip()
-        chapter = match.group(2).strip()
-        number = match.group(3)
 
-        return Citation(
-            id="",
-            type="fiqh_book",
-            source=book,
-            reference=f"Chapter: {chapter}, #{number}"
-        )
+def _build_fiqh_citation(self, match) -> Citation:
+    """Build Fiqh book citation from match."""
+    book = match.group(1).strip()
+    chapter = match.group(2).strip()
+    number = match.group(3)
+
+    return Citation(id="", type="fiqh_book", source=book, reference=f"Chapter: {chapter}, #{number}")
 ```
 
 **شرح**:
@@ -487,17 +426,12 @@ Citation(
     type="fatwa",
     source="IslamWeb Fatwa",
     reference="Fatwa #12345",
-    url="https://www.islamweb.net/en/fatwa/12345"
+    url="https://www.islamweb.net/en/fatwa/12345",
 )
 
 # Fiqh Input: match("موطأ مالك، باب الصلاة، رقم 123")
 # Output:
-Citation(
-    id="",
-    type="fiqh_book",
-    source="موطأ مالك",
-    reference="Chapter: الصلاة, #123"
-)
+Citation(id="", type="fiqh_book", source="موطأ مالك", reference="Chapter: الصلاة, #123")
 ```
 
 ---
@@ -505,81 +439,81 @@ Citation(
 ### الأسطر 301-330: enrich_citations()
 
 ```python
-    def enrich_citations(self, passages: list[Dict[str, Any]]) -> list[Citation]:
-        """
-        Enhance citations with rich metadata from retrieved passages.
+def enrich_citations(self, passages: list[Dict[str, Any]]) -> list[Citation]:
+    """
+    Enhance citations with rich metadata from retrieved passages.
 
-        Adds:
-        - Book title and author name
-        - Author death year (Hijri)
-        - Page number and chapter/section
-        - Collection category
-        - Scholarly era classification
-        - Source text link
-        """
-        citations = self.get_citations()
-        enriched = []
+    Adds:
+    - Book title and author name
+    - Author death year (Hijri)
+    - Page number and chapter/section
+    - Collection category
+    - Scholarly era classification
+    - Source text link
+    """
+    citations = self.get_citations()
+    enriched = []
 
-        for i, citation in enumerate(citations):
-            # Get corresponding passage metadata
-            passage = passages[i] if i < len(passages) else {}
+    for i, citation in enumerate(citations):
+        # Get corresponding passage metadata
+        passage = passages[i] if i < len(passages) else {}
 
-            # Extract metadata from passage
-            book_id = passage.get("book_id")
-            book_title = passage.get("title", "")
-            author = passage.get("author", "")
-            author_death = passage.get("author_death")
-            page = passage.get("page")
-            chapter = passage.get("chapter", "")
-            section = passage.get("section", "")
-            collection = passage.get("collection", "")
-            doc_id = passage.get("doc_id", "")
+        # Extract metadata from passage
+        book_id = passage.get("book_id")
+        book_title = passage.get("title", "")
+        author = passage.get("author", "")
+        author_death = passage.get("author_death")
+        page = passage.get("page")
+        chapter = passage.get("chapter", "")
+        section = passage.get("section", "")
+        collection = passage.get("collection", "")
+        doc_id = passage.get("doc_id", "")
 
-            # Build rich metadata
-            meta = citation.metadata.copy() if hasattr(citation, 'metadata') and citation.metadata else {}
+        # Build rich metadata
+        meta = citation.metadata.copy() if hasattr(citation, "metadata") and citation.metadata else {}
 
-            if book_id:
-                meta["book_id"] = book_id
-            if book_title:
-                meta["book_title"] = book_title
-            if author:
-                meta["author"] = author
-            if author_death:
-                meta["author_death"] = author_death
-                meta["scholarly_era"] = self._classify_era(author_death)
+        if book_id:
+            meta["book_id"] = book_id
+        if book_title:
+            meta["book_title"] = book_title
+        if author:
+            meta["author"] = author
+        if author_death:
+            meta["author_death"] = author_death
+            meta["scholarly_era"] = self._classify_era(author_death)
+        if page:
+            meta["page"] = page
+        if chapter:
+            meta["chapter"] = chapter
+        if section:
+            meta["section"] = section
+        if collection:
+            meta["collection"] = collection
+        if doc_id:
+            meta["doc_id"] = doc_id
+
+        # Build enhanced display text
+        if author and book_title:
+            meta["display_source"] = f"{author} - {book_title}"
             if page:
-                meta["page"] = page
-            if chapter:
-                meta["chapter"] = chapter
-            if section:
-                meta["section"] = section
-            if collection:
-                meta["collection"] = collection
-            if doc_id:
-                meta["doc_id"] = doc_id
+                meta["display_source"] += f", p. {page}"
+        elif book_title:
+            meta["display_source"] = book_title
+            if page:
+                meta["display_source"] += f", p. {page}"
 
-            # Build enhanced display text
-            if author and book_title:
-                meta["display_source"] = f"{author} - {book_title}"
-                if page:
-                    meta["display_source"] += f", p. {page}"
-            elif book_title:
-                meta["display_source"] = book_title
-                if page:
-                    meta["display_source"] += f", p. {page}"
+        # Create enriched citation
+        enriched_citation = Citation(
+            id=citation.id,
+            type=citation.type,
+            source=meta.get("display_source", citation.source),
+            reference=citation.reference,
+            url=citation.url,
+            metadata=meta,
+        )
+        enriched.append(enriched_citation)
 
-            # Create enriched citation
-            enriched_citation = Citation(
-                id=citation.id,
-                type=citation.type,
-                source=meta.get("display_source", citation.source),
-                reference=citation.reference,
-                url=citation.url,
-                metadata=meta,
-            )
-            enriched.append(enriched_citation)
-
-        return enriched
+    return enriched
 ```
 
 **شرح**:
@@ -594,7 +528,7 @@ passages = [
         "author_death": 179,
         "page": 45,
         "chapter": "الصلاة",
-        "collection": "fiqh_passages"
+        "collection": "fiqh_passages",
     }
 ]
 
@@ -613,8 +547,8 @@ Citation(
         "page": 45,
         "chapter": "الصلاة",
         "collection": "fiqh_passages",
-        "display_source": "الإمام مالك - موطأ مالك, p. 45"
-    }
+        "display_source": "الإمام مالك - موطأ مالك, p. 45",
+    },
 )
 ```
 
@@ -653,12 +587,12 @@ Citation(
 **شرح**:
 
 ```python
-_classify_era(95)   # "prophetic"    → الصحابة
+_classify_era(95)  # "prophetic"    → الصحابة
 _classify_era(150)  # "tabiun"      → التابعون
 _classify_era(179)  # "classical"   → الإمام مالك
 _classify_era(600)  # "medieval"    → النووي
-_classify_era(1000) # "ottoman"     → ابن حجر
-_classify_era(1400) # "modern"      → علماء العصر الحديث
+_classify_era(1000)  # "ottoman"     → ابن حجر
+_classify_era(1400)  # "modern"      → علماء العصر الحديث
 ```
 
 **لماذا مهم**:
