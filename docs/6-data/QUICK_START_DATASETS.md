@@ -15,10 +15,10 @@
 
 ```bash
 # Step 1: Create category mapping (1 minute)
-python scripts/create_category_mapping.py
+python scripts/data/create_category_mapping.py
 
 # Step 2: Prepare datasets with hierarchical chunks (1-2 hours)
-python scripts/prepare_datasets_for_upload_v2.py
+python scripts/data/prepare_datasets_for_upload_v2.py
 
 # This will:
 # - Chunk all 8,424 books hierarchically
@@ -65,7 +65,7 @@ data/Burhan-datasets-v2/
 
 ```bash
 # Single command (1-2 hours)
-python scripts/prepare_datasets_for_upload.py
+python scripts/data/prepare_datasets_for_upload.py
 ```
 
 ### Output Structure
@@ -140,15 +140,13 @@ import json
 
 # Download a collection
 path = hf_hub_download(
-    repo_id="Kandil7/Burhan-Datasets-v2",
-    filename="hierarchical_chunks/fiqh_passages.jsonl",
-    repo_type="dataset"
+    repo_id="Kandil7/Burhan-Datasets-v2", filename="hierarchical_chunks/fiqh_passages.jsonl", repo_type="dataset"
 )
 
 # Load and inspect
 with open(path) as f:
     chunk = json.loads(f.readline())
-    
+
 print(f"Book: {chunk['book_title']}")
 print(f"Author: {chunk['author']}")
 print(f"Category: {chunk['category']}")
@@ -173,13 +171,13 @@ print(f"Content: {chunk['content'][:200]}...")
 ### Resume If Interrupted
 ```bash
 # V2 supports resume via chunk_all_books.py
-python scripts/chunk_all_books.py --resume
+python scripts/ingestion/chunk_all_books.py --resume
 ```
 
 ### Verify Quality
 ```bash
 # After chunking, analyze quality
-python scripts/analyze_chunk_quality.py
+python src/indexing/pipelines/analyze_chunks.py
 ```
 
 ---
