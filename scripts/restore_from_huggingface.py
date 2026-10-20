@@ -21,10 +21,12 @@ import time
 from pathlib import Path
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 try:
     from huggingface_hub import hf_hub_download, HfApi, login
+
     HAS_HF = True
 except ImportError:
     print("❌ huggingface_hub not installed")
@@ -32,6 +34,7 @@ except ImportError:
 
 try:
     import numpy as np
+
     HAS_NUMPY = True
 except ImportError:
     print("❌ numpy not installed")
@@ -42,7 +45,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 EMBEDDINGS_DIR = PROJECT_ROOT / "data" / "processed" / "embeddings"
 QDRANT_EXPORT_DIR = PROJECT_ROOT / "data" / "processed" / "qdrant_exports"
 
-REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Burhan-Embeddings")
+REPO_ID = os.environ.get("HF_EMBEDDINGS_REPO_ID", "Kandil7/Athar-Embeddings")
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 COLLECTIONS = [
@@ -61,7 +64,7 @@ COLLECTIONS = [
 
 def format_size(size_bytes: int) -> str:
     """Format bytes to human-readable size."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024.0:
             return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024.0
@@ -92,15 +95,11 @@ def restore_embeddings():
 
         try:
             # Download
-            filepath = hf_hub_download(
-                repo_id=REPO_ID,
-                filename=f"embeddings/{filename}",
-                repo_type="dataset"
-            )
+            filepath = hf_hub_download(repo_id=REPO_ID, filename=f"embeddings/{filename}", repo_type="dataset")
 
             # Decompress
-            with gzip.open(filepath, 'rb') as f_in:
-                with open(output_file, 'wb') as f_out:
+            with gzip.open(filepath, "rb") as f_in:
+                with open(output_file, "wb") as f_out:
                     f_out.write(f_in.read())
 
             # Verify
@@ -115,9 +114,9 @@ def restore_embeddings():
         except Exception as e:
             print(f"  ❌ Failed: {e}")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"📊 RESTORE SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  Restored: {restored}/{len(COLLECTIONS)} collections")
 
     return restored == len(COLLECTIONS)
@@ -158,13 +157,10 @@ def restore_qdrant():
         # Download if not exists
         if not export_file.exists():
             try:
-                filepath = hf_hub_download(
-                    repo_id=REPO_ID,
-                    filename=f"qdrant_exports/{filename}",
-                    repo_type="dataset"
-                )
+                filepath = hf_hub_download(repo_id=REPO_ID, filename=f"qdrant_exports/{filename}", repo_type="dataset")
                 # Copy to local dir
                 import shutil
+
                 shutil.copy2(filepath, export_file)
             except Exception as e:
                 print(f"  ❌ Download failed: {e}")
@@ -172,7 +168,7 @@ def restore_qdrant():
 
         # Load export
         try:
-            with open(export_file, 'r', encoding='utf-8') as f:
+            with open(export_file, "r", encoding="utf-8") as f:
                 export_data = json.load(f)
 
             points = export_data.get("points", [])
@@ -185,8 +181,7 @@ def restore_qdrant():
             # Create collection
             try:
                 client.create_collection(
-                    collection_name=collection,
-                    vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
+                    collection_name=collection, vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
                 )
                 print(f"  ✅ Created collection: {collection}")
             except Exception as e:
@@ -195,31 +190,24 @@ def restore_qdrant():
             # Upload points
             batch_size = 1000
             for i in range(0, points_count, batch_size):
-                batch_points = points[i:i+batch_size]
+                batch_points = points[i : i + batch_size]
 
                 qdrant_points = []
                 for point in batch_points:
-                    qdrant_points.append(PointStruct(
-                        id=point["id"],
-                        vector=point["vector"],
-                        payload=point["payload"]
-                    ))
+                    qdrant_points.append(PointStruct(id=point["id"], vector=point["vector"], payload=point["payload"]))
 
-                client.upsert(
-                    collection_name=collection,
-                    points=qdrant_points
-                )
+                client.upsert(collection_name=collection, points=qdrant_points)
 
-            elapsed = time.time() - start if 'start' in dir() else 0
+            elapsed = time.time() - start if "start" in dir() else 0
             print(f"  ✅ Restored {points_count:,} points")
             restored += 1
 
         except Exception as e:
             print(f"  ❌ Failed: {e}")
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"📊 RESTORE SUMMARY")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"  Restored: {restored}/{len(COLLECTIONS)} collections")
 
     return restored == len(COLLECTIONS)
@@ -244,6 +232,7 @@ def verify_restore():
     # Check Qdrant
     try:
         from qdrant_client import QdrantClient
+
         QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
         QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY")
         client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
