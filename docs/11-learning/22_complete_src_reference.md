@@ -15,7 +15,7 @@ This document provides the most comprehensive explanation of every single file i
    - [src/api/](#srcapi)
    - [src/application/](#srcapplication)
    - [src/config/](#srcconfig)
-   - [src/config_runtime/](#srcconfig_runtime)
+   - [src/config/](#srcconfig_runtime)
    - [src/core/](#srccore)
    - [src/data/](#srcdata)
    - [src/domain/](#srcdomain)
@@ -23,14 +23,11 @@ This document provides the most comprehensive explanation of every single file i
    - [src/generation/](#srcgeneration)
    - [src/indexing/](#srcindexing)
    - [src/infrastructure/](#srcinfrastructure)
-   - [src/knowledge/](#srcknowledge)
    - [src/quran/](#srcquran)
    - [src/retrieval/](#srcretrieval)
-   - [src/services/](#srcservices)
    - [src/tools/](#srctools)
    - [src/utils/](#srcutils)
    - [src/verification/](#srcverification)
-   - [src/verifiers/](#srcverifiers)
 4. [Execution Flows](#execution-flows)
 5. [Key Patterns](#key-patterns)
 
@@ -111,7 +108,7 @@ from src.agents.base import AgentInput, AgentOutput, Citation, strip_cot_leakage
 
 ---
 
-#### src/agents/collection_agent.py
+#### src/agents/collection/base.py
 
 **Purpose**: Legacy alias for backward compatibility. Many existing files import from this path.
 
@@ -128,7 +125,7 @@ from src.agents.collection.base import (
 ```
 
 **Used By**: 
-- `src/verifiers/suite_builder.py`
+- `src/verification/suite_builder.py`
 - `src/retrieval/strategies.py`
 - Various test files
 
@@ -186,7 +183,7 @@ from src.agents.collection.tazkiyah import TazkiyahCollectionAgent
 | `VerificationCheck` | A single verification check (name, fail_policy, enabled) |
 | `VerificationSuite` | Collection of verification checks |
 | `VerificationReport` | Results from verification (status, confidence, verified_passages) |
-| `IntentLabel` | Domain-specific intents enum |
+| `Intent` | Domain-specific intents enum (`src/domain/intents.py`) |
 
 **Abstract Base Class**: `CollectionAgent`
 
@@ -438,10 +435,10 @@ app.include_router(classify_router)
 # v1 endpoints
 v1 = settings.api_v1_prefix  # "/api/v1"
 
-app.include_router(ask_router, prefix=v1)      # /api/v1/ask
-app.include_router(search_router, prefix=v1)   # /api/v1/search
-app.include_router(tools_router, prefix=v1)    # /api/v1/tools
-app.include_router(quran_router, prefix=v1)    # /api/v1/quran
+app.include_router(ask_router, prefix=v1)  # /api/v1/ask
+app.include_router(search_router, prefix=v1)  # /api/v1/search
+app.include_router(tools_router, prefix=v1)  # /api/v1/tools
+app.include_router(quran_router, prefix=v1)  # /api/v1/quran
 ```
 
 **Router Registration**:
@@ -467,40 +464,41 @@ app.include_router(quran_router, prefix=v1)    # /api/v1/quran
 async def lifespan(app: FastAPI):
     # ── 1. Settings ─────────────────────────────────────────────
     settings = get_settings()
-    
+
     # ── 2. Registry ───────────────────────────────────────────
     registry = get_registry()
-    
+
     # ── 3. Infrastructure ────────────────────────────────────────
     # Qdrant
     app.state.qdrant = get_qdrant_client()
-    
+
     # Redis
     app.state.redis = get_redis()
-    
+
     # PostgreSQL
     app.state.db = get_database()
-    
+
     # ── 4. Embedding Model ────────────────────────────────
     app.state.embedding_model = get_embedding_model()
-    
+
     # ── 5. Classifier & Router ───────────────────────────
     from src.application.classifier_factory import build_classifier
+
     classifier = build_classifier(embedding_model=app.state.embedding_model)
     router = RouterAgent(classifier=classifier)
     app.state.router = router
-    
+
     # ── 6. Use Case & Service ───────────────────────────
     use_case = AnswerQueryUseCase(agent_registry=registry, router=router)
     app.state.ask_service = AskService(answer_query_use_case=use_case)
-    
+
     # ── 7. Standard Agents (Static) ──────────────────────
     # Register collection agents
     registry.register("fiqh:rag", FiQHCollectionAgent(config))
     # ... more agents
-    
+
     yield
-    
+
     # ── Cleanup ────────────────────────────────────────
     await app.state.qdrant.close()
     await app.state.redis.close()
@@ -875,11 +873,11 @@ def validate_environment() -> list[str]
 
 ---
 
-### src/config_runtime/
+### src/config/
 
 Runtime configuration management.
 
-#### src/config_runtime/__init__.py
+#### src/config/__init__.py
 
 **Purpose**: Runtime config exports.
 
@@ -1044,7 +1042,7 @@ def list_prompts() -> list[str]
 
 ---
 
-#### src/generation/llm_client.py
+#### src/infrastructure/llm_client.py
 
 **Purpose**: LLM client for generating answers.
 
@@ -1192,23 +1190,24 @@ class QdrantClient:
 
 ---
 
-### src/knowledge/
+### src/indexing/ and src/retrieval/ (replacing src/knowledge/)
 
-Legacy wrapper module - facade that wraps src/retrieval/ for backward compatibility.
+The former `src/knowledge/` package was split into `src/indexing/` and `src/retrieval/`.
 
-#### src/knowledge/vector_store.py
+
+#### src/indexing/vectorstores/qdrant_store.py
 
 **Purpose**: Legacy vector store wrapper.
 
 ---
 
-#### src/knowledge/hybrid_search.py
+#### src/indexing/vectorstores/hybrid_client.py
 
 **Purpose**: Legacy hybrid search wrapper.
 
 ---
 
-#### src/knowledge/hadith_grader.py
+#### src/verification/checks/hadith_grade.py
 
 **Purpose**: Hadith grading logic.
 
@@ -1276,6 +1275,7 @@ class RetrievalResult(BaseModel):
     score: float
     collection: str
     metadata: dict
+
 
 class QueryType(str, Enum):
     SEMANTIC = "semantic"
@@ -1408,11 +1408,11 @@ Retrieval policies.
 
 ---
 
-### src/services/
+### src/application/services/
 
 Business services.
 
-#### src/services/citation_service.py
+#### src/application/services/citation_service.py
 
 **Purpose**: Citation management service.
 
@@ -1484,7 +1484,7 @@ class InheritanceCalculator(Tool):
     "heirs": [
         {"relationship": "wife", "count": 1},
         {"relationship": "son", "count": 2},
-    ]
+    ],
 }
 ```
 
@@ -1530,13 +1530,13 @@ Utility functions.
 
 ---
 
-### src/verification/ vs src/verifiers/
+### src/verification/ (single package)
 
-Two verification modules exist for historical reasons.
+The former `src/verifiers/` package no longer exists; base classes and every check live under `src/verification/`.
 
 #### src/verification/__init__.py
 
-**Purpose**: New verification layer wrapper - re-exports from verifiers.
+**Purpose**: Public exports for the verification layer.
 
 ```python
 from src.verification.schemas import (...)
@@ -1563,17 +1563,25 @@ from src.verification.trace import (...)
 
 ---
 
-### src/verifiers/
+### src/verification/ (checks and suite)
 
-Full verification implementation.
-
-#### src/verifiers/base.py
+#### src/verification/base.py
 
 **Purpose**: Base verifier class.
 
 ---
 
-#### src/verifiers/suite_builder.py
+#### src/verification/suite_builder.py
+
+**Purpose**: Build and run verification suites.
+
+#### src/verification/base.py
+
+**Purpose**: Base verifier class.
+
+---
+
+#### src/verification/suite_builder.py
 
 **Purpose**: Build and run verification suites.
 
@@ -1590,91 +1598,91 @@ async def run_verification_suite(
 
 ---
 
-#### src/verifiers/exact_quote.py
+#### src/verification/checks/exact_quote.py
 
 **Purpose**: Verify that quotes in answer match source passages exactly.
 
 ---
 
-#### src/verifiers/source_attribution.py
+#### src/verification/checks/source_attribution.py
 
 **Purpose**: Verify that sources are correctly attributed.
 
 ---
 
-#### src/verifiers/hadith_grade.py
+#### src/verification/checks/hadith_grade.py
 
 **Purpose**: Verify hadith grading is correct.
 
 ---
 
-#### src/verifiers/contradiction.py
+#### src/verification/checks/contradiction.py
 
 **Purpose**: Check for contradictions in answer.
 
 ---
 
-#### src/verifiers/evidence_sufficiency.py
+#### src/verification/checks/evidence_sufficiency.py
 
 **Purpose**: Check if evidence is sufficient.
 
 ---
 
-#### src/verifiers/temporal_consistency.py
+#### src/verification/checks/temporal_consistency.py
 
 **Purpose**: Time-based consistency checks.
 
 ---
 
-#### src/verifiers/school_consistency.py
+#### src/verification/checks/school_consistency.py
 
 **Purpose**: Madhhab consistency checks.
 
 ---
 
-#### src/verifiers/groundedness_judge.py
+#### src/verification/checks/groundedness_judge.py
 
 **Purpose**: Judge if answer is grounded in sources.
 
 ---
 
-#### src/verifiers/quote_span.py
+#### src/verification/checks/quote_span.py
 
 **Purpose**: Extract and validate quote spans.
 
 ---
 
-#### src/verifiers/policies.py
+#### src/verification/policies.py
 
 **Purpose**: Verification policies.
 
 ---
 
-#### src/verifiers/pipeline.py
+#### src/verification/pipeline.py
 
 **Purpose**: Verification pipeline orchestration.
 
 ---
 
-#### src/verifiers/missing_evidence.py
+#### src/verification/checks/missing_evidence.py
 
 **Purpose**: Check for missing evidence.
 
 ---
 
-#### src/verifiers/misattribution.py
+#### src/verification/checks/misattribution.py
 
 **Purpose**: Check for misattributed sources.
 
 ---
 
-#### src/verifiers/fiqh_checks.py
+#### src/verification/checks/fiqh_checks.py
 
 **Purpose**: FiQH-specific verification checks.
 
 ---
 
-#### src/verifiers/__init__.py
+#### src/verification/__init__.py
 
 **Purpose**: Verifiers module exports.
 
