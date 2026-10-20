@@ -7,13 +7,14 @@ between the user query and intent 'anchors' (descriptions).
 
 from __future__ import annotations
 
-import numpy as np
-from typing import Dict, List, Tuple, Any
+from typing import Any
 
-from src.domain.intents import Intent, INTENT_DESCRIPTIONS
-from src.domain.models import ClassificationResult
+import numpy as np
+
 from src.application.interfaces import IntentClassifier
 from src.config.logging_config import get_logger
+from src.domain.intents import INTENT_DESCRIPTIONS, Intent
+from src.domain.models import ClassificationResult
 
 logger = get_logger()
 
@@ -26,14 +27,14 @@ class EmbeddingClassifier(IntentClassifier):
     def __init__(self, embedding_model: Any, threshold: float = 0.45):
         """
         Initialize with an embedding model.
-        
+
         Args:
             embedding_model: Instance of EmbeddingModel (e.g., BGE-M3 wrapper)
             threshold: Minimum similarity score for a valid classification
         """
         self.model = embedding_model
         self.threshold = threshold
-        self._anchor_embeddings: Dict[Intent, np.ndarray] = {}
+        self._anchor_embeddings: dict[Intent, np.ndarray] = {}
 
     async def _ensure_anchors(self) -> None:
         """Lazily encode intent descriptions as vector anchors."""
@@ -57,9 +58,9 @@ class EmbeddingClassifier(IntentClassifier):
 
         # 1. Encode user query
         query_emb = np.array(await self.model.encode_query(query))
-        
+
         # 2. Calculate similarities
-        scores: List[Tuple[Intent, float]] = []
+        scores: list[tuple[Intent, float]] = []
         for intent, anchor_emb in self._anchor_embeddings.items():
             # Cosine similarity
             dot = np.dot(query_emb, anchor_emb)
@@ -73,17 +74,16 @@ class EmbeddingClassifier(IntentClassifier):
 
         # Log top 3 for debugging
         logger.debug(
-            "embedding_classifier.ranked",
-            top_3=[{"intent": i.value, "score": round(s, 4)} for i, s in scores[:3]]
+            "embedding_classifier.ranked", top_3=[{"intent": i.value, "score": round(s, 4)} for i, s in scores[:3]]
         )
 
         # Scale semantic score [0.3-0.8] to confidence [0.4-0.95]
         confidence = min(0.95, max(0.4, (best_score - 0.3) * 2))
-        
+
         return ClassificationResult(
             intent=best_intent,
             confidence=round(confidence, 4),
-            language="ar", # Detection could be injected here
+            language="ar",  # Detection could be injected here
             reasoning=f"Semantic similarity match ({best_score:.3f}) using BGE-M3",
             requires_retrieval=True,
             method="embedding",
