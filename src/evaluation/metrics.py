@@ -8,10 +8,9 @@ citation correctness, Ikhtilaf coverage, and abstention behavior.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.agents.base import AgentOutput
     from src.evaluation.golden_set_schema import GoldenSetItem
 
 
@@ -271,7 +270,7 @@ class EvaluationResult:
 
 
 async def run_evaluation(
-    agent: "BaseAgent", golden_set: list["GoldenSetItem"], k: int = 5, abstention_threshold: float = 0.5
+    agent: BaseAgent, golden_set: list[GoldenSetItem], k: int = 5, abstention_threshold: float = 0.5
 ) -> EvaluationResult:
     """
     Run evaluation on a golden set using an agent.
@@ -302,7 +301,7 @@ async def run_evaluation(
 
         try:
             output = await agent.execute(input_)
-        except Exception as e:
+        except Exception:
             # Handle agent execution errors gracefully
             precisions.append(0.0)
             recalls.append(0.0)
@@ -368,4 +367,6 @@ async def run_evaluation(
 class BaseAgent:
     """Placeholder for type checking - actual import from src.agents.base."""
 
-    pass
+    async def execute(self, input_: Any) -> Any:
+        """Execute the agent (placeholder signature for type checking)."""
+        raise NotImplementedError
