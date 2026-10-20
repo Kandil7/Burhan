@@ -4,6 +4,8 @@ API request schemas for Burhan Islamic QA system.
 Pydantic models for request validation and documentation.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -40,7 +42,7 @@ class QueryRequest(BaseModel):
 
     @field_validator("query")
     @classmethod
-    def validate_query_not_empty(cls, v):
+    def validate_query_not_empty(cls, v: Any) -> Any:
         """Validate query is not empty or whitespace."""
         if not v.strip():
             raise ValueError("Query cannot be empty or whitespace only")
@@ -52,7 +54,7 @@ class QueryRequest(BaseModel):
 
     @field_validator("session_id")
     @classmethod
-    def validate_session_id(cls, v):
+    def validate_session_id(cls, v: Any) -> Any:
         """Sanitize session ID."""
         if v is not None:
             # Only allow alphanumeric, dash, underscore
@@ -63,7 +65,7 @@ class QueryRequest(BaseModel):
 
     @field_validator("location")
     @classmethod
-    def validate_location(cls, v):
+    def validate_location(cls, v: Any) -> Any:
         """Validate location has required fields."""
         if v is not None:
             if "lat" not in v or "lng" not in v:
