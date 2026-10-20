@@ -43,11 +43,11 @@ class AgentExecutor:
         result = await executor.execute("fiqh", query)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the executor."""
-        self._agent_registry = {}
+        self._agent_registry: dict[str, Any] = {}
 
-    def register_agent(self, name: str, agent: Any):
+    def register_agent(self, name: str, agent: Any) -> None:
         """Register an agent for execution."""
         self._agent_registry[name] = agent
 
@@ -56,7 +56,7 @@ class AgentExecutor:
         agent_name: str,
         query: str,
         language: str = "ar",
-        **kwargs,
+        **kwargs: Any,
     ) -> ExecutionResult:
         """
         Execute query against a single agent.
@@ -140,7 +140,7 @@ class AgentExecutor:
         # Convert exceptions to failed results
         processed_results = []
         for i, result in enumerate(results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 processed_results.append(
                     ExecutionResult(
                         agent_name=agent_names[i],
