@@ -72,7 +72,7 @@ class PayloadMapper:
         if len(payloads) != len(scores):
             raise ValueError("Number of payloads must match number of scores")
 
-        return [PayloadMapper.from_payload(p, s, collection) for p, s in zip(payloads, scores)]
+        return [PayloadMapper.from_payload(p, s, collection) for p, s in zip(payloads, scores, strict=True)]
 
     @staticmethod
     def to_payload(passage: RetrievalPassage) -> dict[str, Any]:
@@ -85,7 +85,7 @@ class PayloadMapper:
         Returns:
             Qdrant-compatible payload dict
         """
-        payload = {"content": passage.content}
+        payload: dict[str, Any] = {"content": passage.content}
         payload.update(passage.metadata)
 
         if passage.score_vector is not None:
