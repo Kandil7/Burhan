@@ -6,6 +6,7 @@ Tests the main query and health endpoints.
 
 import pytest
 from fastapi.testclient import TestClient
+
 from src.api.main import app
 
 
@@ -27,12 +28,18 @@ class TestHealthEndpoint:
         assert "version" in data
 
     def test_readiness_check(self, client):
-        """Test /ready endpoint returns 200."""
+        """Test /ready endpoint returns 200 and reports per-service health.
+
+        Readiness reflects real dependencies, so the aggregate status is
+        "degraded" whenever Postgres, Redis, or Qdrant are unreachable.
+        """
         response = client.get("/ready")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("ok", "degraded")
         assert "services" in data
+        for name in ("api", "postgres", "redis", "qdrant"):
+            assert name in data["services"]
 
     def test_root_endpoint(self, client):
         """Test / endpoint returns API information."""
