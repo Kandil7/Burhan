@@ -60,6 +60,7 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
@@ -300,20 +301,21 @@ Internet → error_handler → API_key → sanitize → CORS → rate_limit → 
 ### إعدادات إضافية
 
 ```python
-    # Health check endpoint for Docker
-    @app.get("/ping")
-    async def ping():
-        return {"status": "ok"}
-    
-    # Root endpoint
-    @app.get("/")
-    async def root():
-        return {
-            "name": "Burhan Islamic QA System",
-            "version": "0.5.0",
-            "phase": "Phase 5: Security & Performance",
-            "docs": "/docs",
-        }
+# Health check endpoint for Docker
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
+
+
+# Root endpoint
+@app.get("/")
+async def root():
+    return {
+        "name": "Burhan Islamic QA System",
+        "version": "0.5.0",
+        "phase": "Phase 5: Security & Performance",
+        "docs": "/docs",
+    }
 ```
 
 **ما يفعله**:
@@ -517,8 +519,8 @@ async def lifespan(app: FastAPI):
 
 ### 🔜 الخطوة التالية المنطقية
 
-اقرأ الملف التالي: `src/api/routes/query.py` (الـ endpoint الرئيسي)
+اقرأ الملف التالي: `src/api/routes/ask.py` (الـ endpoint الرئيسي)
 
 ---
 
-**📖 الملف التالي في السلسلة:** الجزء الرابع - الـ endpoint الرئيسي (`src/api/routes/query.py`)
+**📖 الملف التالي في السلسلة:** الجزء الرابع - الـ endpoint الرئيسي (`src/api/routes/ask.py`)
