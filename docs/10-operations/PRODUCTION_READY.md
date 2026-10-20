@@ -69,7 +69,7 @@
 - [ ] **Configure log aggregation** (ELK stack or similar)
 
 ### Medium Priority
-- [ ] **Refactor 7 agents** to use BaseRAGAgent pattern (currently only 2/9 refactored)
+- [x] **All 11 agents use the v2 `CollectionAgent` pattern** (`src/agents/collection/`)
 - [ ] **Add API versioning** strategy (currently hardcoded to v1)
 - [ ] **Implement caching** for LLM responses (Redis-based)
 - [ ] **Add pagination** for large result sets
