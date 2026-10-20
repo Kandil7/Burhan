@@ -1,11 +1,11 @@
 # School Consistency Verifier Module
 """Verifier for Islamic school (madhhab) consistency."""
 
-from typing import Optional, Dict, Any, List
-from ..schemas import CheckResult, VerificationStatus, VerifierType
-from ..base import BaseVerifier
 from dataclasses import dataclass
+from typing import Any
 
+from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 # School of thought definitions
 ISLAMIC_SCHOOLS = {
@@ -29,7 +29,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
 
     def __init__(
         self,
-        criteria: Optional[SchoolConsistencyCriteria] = None,
+        criteria: SchoolConsistencyCriteria | None = None,
     ):
         self.verifier_type = VerifierType.SCHOOL_CONSISTENCY
         self.criteria = criteria or SchoolConsistencyCriteria()
@@ -38,7 +38,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """Verify school consistency."""
         # Extract claimed school from claim
@@ -50,6 +50,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         if not claimed_school:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=1.0,
                 message="No specific school claimed",
@@ -58,6 +59,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         if not evidence_schools:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=0.5,
                 message="No school information in evidence",
@@ -68,6 +70,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
             if claimed_school not in evidence_schools:
                 return CheckResult(
                     check_name=self.verifier_type.value,
+                    status=VerificationStatus.FAILED,
                     passed=False,
                     confidence=0.8,
                     message=f"Claimed school '{claimed_school}' not found in evidence",
@@ -76,6 +79,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.85,
             message="School consistency verified",
@@ -85,7 +89,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
         """Check if this verifier is applicable."""
         return True
 
-    def _extract_school(self, claim: str) -> Optional[str]:
+    def _extract_school(self, claim: str) -> str | None:
         """Extract school of thought from claim."""
         # Placeholder - would implement actual extraction
         claim_lower = claim.lower()
@@ -99,7 +103,7 @@ class SchoolConsistencyVerifier(BaseVerifier):
     def _extract_schools_from_evidence(
         self,
         evidence: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Extract schools from evidence."""
         # Placeholder - would implement actual extraction
         return []
