@@ -15,13 +15,13 @@ import pytest
 
 from src.agents.collection import (
     CollectionAgentConfig,
-    IntentLabel,
     RetrievalStrategy,
 )
 from src.agents.collection.fiqh import (
     FiqhCollectionAgent,
     _normalize_arabic,
 )
+from src.domain.intents import Intent
 
 
 class TestArabicNormalization:
@@ -62,10 +62,10 @@ class TestFiqhCollectionAgentInstantiation:
         """Test agent can be instantiated with default config."""
         agent = FiqhCollectionAgent()
 
-        assert agent.name == "fiqh_agent"
-        assert agent.COLLECTION == "fiqh"
+        assert agent.name == "fiqh"
+        assert agent.COLLECTION == "fiqh_passages"
         assert isinstance(agent.config, CollectionAgentConfig)
-        assert agent.config.collection_name == "fiqh"
+        assert agent.config.collection_name == "fiqh_passages"
 
     def test_custom_config_instantiation(self):
         """Test agent with custom configuration."""
@@ -84,7 +84,7 @@ class TestFiqhCollectionAgentInstantiation:
 
         agent = FiqhCollectionAgent(config=config)
 
-        assert agent.name == "fiqh_agent"
+        assert agent.name == "fiqh"
         assert agent.config.strategy.top_k == 100
         assert agent.config.strategy.score_threshold == 0.7
 
@@ -136,62 +136,52 @@ class TestQueryIntake:
 class TestIntentClassification:
     """Tests for classify_intent method."""
 
-    def test_fiqh_hukm_intent_ruling_keywords(self):
-        """Test FiqhHukm intent with ruling keywords."""
+    def test_ruling_keywords_classify_as_fiqh(self):
+        """Ruling keywords always classify as FIQH."""
         agent = FiqhCollectionAgent()
 
-        # Test various hukm keywords that should trigger FiqhHukm
-        assert agent.classify_intent("ما حكم الصلاة؟") == IntentLabel.FiqhHukm
-        assert agent.classify_intent("هل الحضور واجب؟") == IntentLabel.FiqhHukm
-        assert agent.classify_intent("هل هذا حرام؟") == IntentLabel.FiqhHukm
-        assert agent.classify_intent("حكم الصيام") == IntentLabel.FiqhHukm
-        assert agent.classify_intent("هذا فرض") == IntentLabel.FiqhHukm
+        assert agent.classify_intent("ما حكم الصلاة؟") == Intent.FIQH
+        assert agent.classify_intent("هل الحضور واجب؟") == Intent.FIQH
+        assert agent.classify_intent("هل هذا حرام؟") == Intent.FIQH
+        assert agent.classify_intent("حكم الصيام") == Intent.FIQH
+        assert agent.classify_intent("هذا فرض") == Intent.FIQH
 
-    def test_fiqh_masaail_intent_question_keywords(self):
-        """Test FiqhMasaail intent with question keywords."""
+    def test_masaail_keywords_classify_as_fiqh(self):
+        """Question-form fiqh queries also classify as FIQH."""
         agent = FiqhCollectionAgent()
 
-        # Test masaail keywords - these don't contain hukm keywords
-        assert agent.classify_intent("ما مسألة الصيام؟") == IntentLabel.FiqhMasaail
-        assert agent.classify_intent("سؤال عن الزكاة") == IntentLabel.FiqhMasaail
-        # Note: "ما هو حكم" contains "حكم" so triggers hukm not masaail
-        # Use queries without hukm keywords
-        assert agent.classify_intent("ما هو تعريف الصيام؟") == IntentLabel.FiqhMasaail
+        assert agent.classify_intent("ما مسألة الصيام؟") == Intent.FIQH
+        assert agent.classify_intent("سؤال عن الزكاة") == Intent.FIQH
+        assert agent.classify_intent("ما هو تعريف الصيام؟") == Intent.FIQH
 
-    def test_unknown_intent_fallback(self):
-        """Test Unknown intent for non-matching queries."""
+    def test_fiqh_agent_defaults_to_fiqh(self):
+        """The fiqh agent classifies every query as FIQH."""
         agent = FiqhCollectionAgent()
 
-        # Generic queries without fiqh keywords
-        result = agent.classify_intent("أخبرني عن التاريخ")
-
-        # Default should be masaail since it's a question format
-        assert result in [IntentLabel.FiqhMasaail, IntentLabel.Unknown]
+        assert agent.classify_intent("أخبرني عن التاريخ") == Intent.FIQH
 
 
 class TestStrategyConfiguration:
     """Tests for strategy configuration."""
 
     def test_default_strategy_values(self):
-        """Test default strategy from get_strategy_for_agent."""
+        """Test default strategy values."""
         agent = FiqhCollectionAgent()
 
         assert agent.strategy is not None
-        assert agent.strategy.dense_weight == 0.6
-        assert agent.strategy.sparse_weight == 0.4
-        assert agent.strategy.top_k == 80
+        assert agent.strategy.dense_weight == 0.4
+        assert agent.strategy.sparse_weight == 0.6
+        assert agent.strategy.top_k == 15
         assert agent.strategy.rerank is True
         assert agent.strategy.score_threshold == 0.65
 
-    def test_class_config_overrides(self):
-        """Test class-level config overrides."""
-        agent = FiqhCollectionAgent()
+    def test_default_strategy_is_sparse_heavy(self):
+        """Fiqh retrieval is sparse-heavy for precise wording."""
+        strategy = FiqhCollectionAgent.DEFAULT_STRATEGY
 
-        assert agent.TOP_K_RETRIEVAL == 80
-        assert agent.TOP_K_RERANK == 5
-        assert agent.SCORE_THRESHOLD == 0.65
-        assert agent.TEMPERATURE == 0.15
-        assert agent.MAX_TOKENS == 2048
+        assert strategy.sparse_weight > strategy.dense_weight
+        assert FiqhCollectionAgent.COLLECTION == "fiqh_passages"
+        assert FiqhCollectionAgent.NO_PASSAGES_MESSAGE
 
 
 class TestRetrieval:
@@ -214,8 +204,10 @@ class TestRetrieval:
             {"content": "نص فقهي 1", "score": 0.9, "metadata": {"source": "test"}},
             {"content": "نص فقهي 2", "score": 0.8, "metadata": {"source": "test2"}},
         ]
+        mock_embedding = AsyncMock()
+        mock_embedding.encode_query = AsyncMock(return_value=[0.1, 0.2, 0.3])
 
-        agent = FiqhCollectionAgent(vector_store=mock_store)
+        agent = FiqhCollectionAgent(embedding_model=mock_embedding, vector_store=mock_store)
 
         result = await agent.retrieve_candidates("ما حكم الصيام؟")
 
@@ -331,8 +323,8 @@ class TestAssembleCitations:
         citations = agent.assemble_citations(passages)
 
         assert len(citations) == 1
-        assert citations[0].id == "C1"
-        assert citations[0].type == "fiqh_book"
+        assert citations[0].source_id == "C1"
+        assert citations[0].metadata["collection"] == "fiqh"
 
 
 class TestFullPipeline:
@@ -353,11 +345,8 @@ class TestFullPipeline:
         assert hasattr(result, "answer")
         assert hasattr(result, "citations")
         assert hasattr(result, "metadata")
-        assert result.metadata.get("intent") in [
-            IntentLabel.FiqhHukm.value,
-            IntentLabel.FiqhMasaail.value,
-        ]
-        assert result.metadata.get("collection") == "fiqh"
+        assert result.metadata.get("intent") == "fiqh"
+        assert result.metadata.get("collection") == "fiqh_passages"
 
     @pytest.mark.asyncio
     async def test_run_intent_classification(self):
@@ -369,23 +358,26 @@ class TestFullPipeline:
             meta={"language": "ar"},
         )
 
-        assert result.metadata.get("intent") == IntentLabel.FiqhHukm.value
+        assert result.metadata.get("intent") == "fiqh"
 
 
 class TestClassAttributes:
     """Tests for class-level attributes."""
 
     def test_system_prompt_arabic(self):
-        """Test system prompt is in Arabic."""
-        assert "مساعد إسلامي متخصص في الفقه الإسلامي" in FiqhCollectionAgent.SYSTEM_PROMPT
+        """Test the system prompt is loaded from the prompt file."""
+        agent = FiqhCollectionAgent()
 
-    def test_user_prompt_template(self):
-        """Test user prompt has required placeholders."""
-        prompt = FiqhCollectionAgent.USER_PROMPT
+        assert "وكيل مجموعة فقهية" in agent._get_system_prompt()
 
-        assert "{query}" in prompt
-        assert "{passages}" in prompt
-        assert "{num_passages}" in prompt
+    def test_user_prompt_includes_query_and_passages(self):
+        """Test the user prompt embeds the query and the passages."""
+        agent = FiqhCollectionAgent()
+
+        prompt = agent._build_user_prompt("ما حكم الصيام؟", "[C1] نص فقهي", "ar")
+
+        assert "ما حكم الصيام؟" in prompt
+        assert "[C1]" in prompt
 
     def test_no_passages_message_arabic(self):
         """Test fallback message is in Arabic."""
