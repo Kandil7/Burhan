@@ -4,11 +4,15 @@ Tests for Fiqh API endpoint.
 Tests the /fiqh/answer endpoint with collection-aware RAG.
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 
-from src.agents.base import AgentInput, AgentOutput, Citation
+from src.agents.base import AgentOutput, Citation
+from src.config.settings import settings
+
+FIQH_BASE = f"{settings.api_v1_prefix}/fiqh"
 
 
 @pytest.fixture
@@ -29,11 +33,13 @@ def mock_fiqh_agent():
             answer="الزكاة فرض على كل مسلم بالغ عاقل يملك نصاباً حولاً.",
             citations=[
                 Citation(
-                    id="C1",
-                    type="fiqh_book",
-                    source="المجموع",
-                    reference="ابن المنذر — ت 436 هـ",
-                    text_excerpt="الزكاة فرض على كل مسلم...",
+                    source_id="C1",
+                    text="الزكاة فرض على كل مسلم...",
+                    book_title="المجموع",
+                    metadata={
+                        "content_type": "fiqh_book",
+                        "section_title": "ابن المنذر — ت 436 هـ",
+                    },
                 ),
             ],
             confidence=0.95,
@@ -50,7 +56,7 @@ class TestFiqhEndpoint:
     def test_fiqh_endpoint_exists(self, client):
         """Test /fiqh/answer endpoint exists."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={"query": "ما حكم الزكاة؟"},
         )
         # Will be 503 if agent not initialized, but endpoint exists
@@ -59,7 +65,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_empty_query(self, client):
         """Test validation rejects empty query."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={"query": ""},
         )
         # Either 422 (validation) or 503 (agent not available - dependency runs first)
@@ -68,7 +74,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_whitespace_query(self, client):
         """Test validation rejects whitespace query."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={"query": "   "},
         )
         # Either 422 (validation) or 503 (agent not available - dependency runs first)
@@ -77,7 +83,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_invalid_language(self, client):
         """Test validation rejects invalid language."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={
                 "query": "Test query",
                 "language": "fr",  # Invalid
@@ -89,7 +95,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_valid_language(self, client):
         """Test validation accepts valid language."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={
                 "query": "Test query",
                 "language": "en",
@@ -101,7 +107,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_invalid_madhhab(self, client):
         """Test validation rejects invalid madhhab."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={
                 "query": "Test query",
                 "madhhab": "invalid",
@@ -113,7 +119,7 @@ class TestFiqhEndpoint:
     def test_fiqh_request_validation_valid_madhhab(self, client):
         """Test validation accepts valid madhhab."""
         response = client.post(
-            "/fiqh/answer",
+            f"{FIQH_BASE}/answer",
             json={
                 "query": "Test query",
                 "madhhab": "hanafi",
@@ -128,7 +134,7 @@ class TestFiqhTestEndpoint:
 
     def test_fiqh_test_endpoint_exists(self, client):
         """Test /fiqh/test endpoint exists."""
-        response = client.get("/fiqh/test")
+        response = client.get(f"{FIQH_BASE}/test")
         # Will be 503 if agent not initialized
         assert response.status_code in [200, 503]
 
@@ -139,7 +145,7 @@ class TestFiqhFilters:
     def test_fiqh_author_filter(self, client):
         """Test author filter parameter."""
         response = client.post(
-            "/fiqh/answer?author=الشاطبي",
+            f"{FIQH_BASE}/answer?author=الشاطبي",
             json={"query": "ما حكم الصيام؟"},
         )
         # Either 200 or 503 (agent not initialized in tests)
@@ -148,7 +154,7 @@ class TestFiqhFilters:
     def test_fiqh_era_filter(self, client):
         """Test era filter parameter."""
         response = client.post(
-            "/fiqh/answer?era=القرن الرابع الهجري",
+            f"{FIQH_BASE}/answer?era=القرن الرابع الهجري",
             json={"query": "ما حكم الزكاة؟"},
         )
         assert response.status_code in [200, 503]
@@ -156,7 +162,7 @@ class TestFiqhFilters:
     def test_fiqh_book_id_filter(self, client):
         """Test book_id filter parameter."""
         response = client.post(
-            "/fiqh/answer?book_id=1",
+            f"{FIQH_BASE}/answer?book_id=1",
             json={"query": "ما حكم الزكاة؟"},
         )
         assert response.status_code in [200, 503]
@@ -218,16 +224,18 @@ class TestFiqhRequestModel:
 
     def test_invalid_language_rejected(self):
         """Test invalid language is rejected."""
-        from src.api.routes.fiqh import FiqhRequest
         from pydantic import ValidationError
+
+        from src.api.routes.fiqh import FiqhRequest
 
         with pytest.raises(ValidationError):
             FiqhRequest(query="test", language="fr")
 
     def test_invalid_madhhab_rejected(self):
         """Test invalid madhhab is rejected."""
-        from src.api.routes.fiqh import FiqhRequest
         from pydantic import ValidationError
+
+        from src.api.routes.fiqh import FiqhRequest
 
         with pytest.raises(ValidationError):
             FiqhRequest(query="test", madhhab="invalid")
@@ -254,8 +262,9 @@ class TestFiqhResponseModel:
 
     def test_confidence_bounds(self):
         """Test confidence must be between 0 and 1."""
-        from src.api.routes.fiqh import FiqhResponse
         from pydantic import ValidationError
+
+        from src.api.routes.fiqh import FiqhResponse
 
         # Test above 1.0
         with pytest.raises(ValidationError):
