@@ -340,7 +340,7 @@ JOIN author a ON ab.author_id = a.author_id
 
 ### Phase 1: Extract Master Catalog (5 min) ⏱️
 ```bash
-python scripts/extract_master_catalog.py
+python scripts/data/extract_master_catalog.py
 ```
 **Output:** 
 - `data/processed/master_catalog.json` (8,425 books)
@@ -349,14 +349,14 @@ python scripts/extract_master_catalog.py
 
 ### Phase 2: Extract Lucene Content (2-4 hours) ⏱️
 ```bash
-python scripts/extract_lucene_pages.py
+python scripts/data/lucene/extract_lucene_pages.py
 ```
 **Output:**
 - `data/processed/lucene_pages/` (8-12 GB Arabic text)
 
 ### Phase 3: Build Hierarchical Chunks (1-2 hours) ⏱️
 ```bash
-python scripts/chunk_system_books.py
+python scripts/ingestion/chunk_books.py
 ```
 **Output:**
 - `data/processed/{collection}.jsonl` (11 files, 2-3 GB)
