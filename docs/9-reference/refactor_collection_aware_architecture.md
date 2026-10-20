@@ -1,3 +1,7 @@
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 الهيكل ده **قوي جدًا بالفعل**، وفيه معظم اللبنات الصحيحة لبناء Burhan كنظام Islamic RAG إنتاجي: فصل طبقات، agents، hybrid search، tools، quran module، وتهيئة لـ DI والاختبارات. [dev](https://dev.to/markoulis/layered-architecture-dependency-injection-a-recipe-for-clean-and-testable-fastapi-code-3ioo)
 لكن لو هدفك فعلًا “أفضل Islamic RAG”، فالمطلوب الآن ليس إعادة بناء كل شيء من الصفر، بل **تقليل التداخل، إغلاق الفجوات المعمارية، وتحويل الهيكل من good backend إلى trustworthy agentic Islamic QA system**. [qdrant](https://qdrant.tech/articles/hybrid-search/)
 
