@@ -7,7 +7,7 @@ Adds unique request ID to each request for tracing.
 from __future__ import annotations
 
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -37,7 +37,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         request.state.request_id = request_id
 
         # Add to response headers
-        response = await call_next(request)
+        response: Response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
 
         return response
