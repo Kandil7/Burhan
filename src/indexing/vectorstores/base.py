@@ -193,7 +193,7 @@ class VectorStoreBase(abc.ABC):
         filtered = [r for r in results if r["score"] >= score_threshold]
         return filtered[:top_k]
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # noqa: B027 - optional default no-op hook
         """
         Close any open connections.
         Default implementation does nothing.
