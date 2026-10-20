@@ -256,7 +256,7 @@ Burhan/
 | `src/agents/` | الوكلاء المتخصصون | خبراء متخصصون |
 | `src/tools/` | أدوات حتمية | حاسبات |
 | `src/quran/` | القرآن | قسم القرآن |
-| `src/knowledge/` | RAG | المكتبة |
+| `src/indexing/` + `src/retrieval/` | RAG | المكتبة |
 | `src/infrastructure/` | DB, Redis | البنية التحتية |
 
 ---
@@ -534,12 +534,14 @@ curl http://localhost:8002/health
 # افتح src/api/main.py
 # ابحث عن:
 
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Burhan Islamic QA System",  # ← اسم التطبيق
-        version="0.5.0",                   # ← الإصدار
-        docs_url="/docs",                  # ← Swagger UI
+        version="0.5.0",  # ← الإصدار
+        docs_url="/docs",  # ← Swagger UI
     )
+
 
 # ما يحدث عند التشغيل:
 # 1. يستدعي create_app()
@@ -558,9 +560,9 @@ from src.api.main import create_app
 
 app = create_app()
 
-print(app.title)       # "Burhan Islamic QA System"
-print(app.version)     # "0.5.0"
-print(app.routes)      # قائمة الـ routes
+print(app.title)  # "Burhan Islamic QA System"
+print(app.version)  # "0.5.0"
+print(app.routes)  # قائمة الـ routes
 ```
 
 ---
@@ -579,10 +581,12 @@ print(app.routes)      # قائمة الـ routes
 
 # 2. كيف يعمل:
 
+
 class Settings(BaseSettings):
     app_name: str = "Burhan"
     llm_provider: str = "groq"
     database_url: str = "postgresql+asyncpg://..."
+
 
 # ما يحدث:
 # 1. يبحث عن ملف .env
@@ -642,12 +646,14 @@ class Settings(BaseSettings):
 
 # 3. كيف تستخدم:
 
+
 class Intent(str, Enum):
-    FIQH = "fiqh"                    # أحكام فقهية
-    QURAN = "quran"                  # أسئلة عن القرآن
-    GREETING = "greeting"            # تحيات
-    ZAKAT = "zakat"                  # حساب الزكاة
+    FIQH = "fiqh"  # أحكام فقهية
+    QURAN = "quran"  # أسئلة عن القرآن
+    GREETING = "greeting"  # تحيات
+    ZAKAT = "zakat"  # حساب الزكاة
     # ... (16 نوع)
+
 
 # ما يحدث عند سؤال:
 # "ما حكم صلاة العيد؟"
@@ -947,6 +953,7 @@ POST /api/v1/query
 # Tier 1: Keyword Matching
 # ==========================================
 
+
 def _keyword_match(self, query: str) -> Optional[RouterResult]:
     query_lower = query.lower()
 
@@ -957,8 +964,9 @@ def _keyword_match(self, query: str) -> Optional[RouterResult]:
                     intent=intent,
                     confidence=0.92,  # ← لماذا 0.92؟
                     method="keyword",
-                    reason=f"Keyword match: '{pattern}'"
+                    reason=f"Keyword match: '{pattern}'",
                 )
+
 
 # لماذا 0.92 وليس 1.0؟
 # ← لأنه سريع لكن ليس دقيقاً 100%
@@ -969,22 +977,21 @@ def _keyword_match(self, query: str) -> Optional[RouterResult]:
 # Tier 2: LLM Classification
 # ==========================================
 
+
 async def _llm_classify(self, query: str) -> RouterResult:
-    prompt = self.LLM_CLASSIFIER_PROMPT.format(
-        intent_descriptions=intent_descriptions,
-        query=query
-    )
+    prompt = self.LLM_CLASSIFIER_PROMPT.format(intent_descriptions=intent_descriptions, query=query)
 
     response = await self.llm_client.chat.completions.create(
         model=settings.llm_model,
         messages=[
             {"role": "system", "content": "You are an expert intent classifier..."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
-        temperature=0.0,       # ← لماذا 0.0؟
+        temperature=0.0,  # ← لماذا 0.0؟
         max_tokens=300,
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
     )
+
 
 # لماذا temperature=0.0؟
 # ← نريد إجابة دقيقة ومتسقة
@@ -995,6 +1002,7 @@ async def _llm_classify(self, query: str) -> RouterResult:
 # Tier 3: Embedding Fallback
 # ==========================================
 
+
 async def _embedding_classify(self, query: str) -> RouterResult:
     # يحول السؤال لمتجه
     # يقارن مع متجهات مصنفة
@@ -1002,8 +1010,9 @@ async def _embedding_classify(self, query: str) -> RouterResult:
     return RouterResult(
         intent=Intent.ISLAMIC_KNOWLEDGE,
         confidence=0.6,  # ← لماذا 0.6؟
-        method="embedding"
+        method="embedding",
     )
+
 
 # لماذا 0.6؟
 # ← أقل من tier 1 (0.92) و tier 2 (0.75)
@@ -1026,10 +1035,11 @@ async def _embedding_classify(self, query: str) -> RouterResult:
 
 # 2. كيف يعمل:
 
+
 class AgentRegistry:
     def __init__(self):
         self.agents: dict[str, BaseAgent] = {}  # ← قاموس الوكلاء
-        self.tools: dict[str, BaseTool] = {}    # ← قاموس الأدوات
+        self.tools: dict[str, BaseTool] = {}  # ← قاموس الأدوات
 
     def register_tool(self, name: str, tool: BaseTool):
         self.tools[name] = tool
@@ -1042,7 +1052,9 @@ class AgentRegistry:
             return self.tools[target], False
         return None, False
 
+
 # 3. التهيئة:
+
 
 def initialize_registry():
     _registry = AgentRegistry()
@@ -1368,7 +1380,7 @@ AgentOutput(
 **ما يجب أن تفهمه:**
 
 ```python
-# الملف: src/knowledge/embedding_model.py
+# الملف: src/indexing/embeddings/embedding_model.py
 
 # 1. ما هو Embedding؟
 #    ← تحويل النص لمتجه رقمي
@@ -1383,6 +1395,7 @@ AgentOutput(
 
 # 3. كيف يعمل:
 
+
 class EmbeddingModel:
     async def load_model(self):
         # يحمل النموذج في الذاكرة
@@ -1395,6 +1408,7 @@ class EmbeddingModel:
         outputs = self.model(**inputs)
         embedding = outputs.last_hidden_state[:, 0].tolist()
         return embedding  # [0.12, -0.34, ...] (1024 رقم)
+
 
 # 4. لماذا caching؟
 #    ← توليد المتجهات بطيء (~6 ثواني/وثيقة على CPU)
@@ -1409,7 +1423,7 @@ class EmbeddingModel:
 **ما يجب أن تفهمه:**
 
 ```python
-# الملف: src/knowledge/vector_store.py
+# الملف: src/indexing/vectorstores/qdrant_store.py
 
 # 1. ما هو Qdrant؟
 #    ← قاعدة بيانات متخصصة في المتجهات
@@ -1456,7 +1470,7 @@ class VectorStore:
 **ما يجب أن تفهمه:**
 
 ```python
-# الملف: src/knowledge/hybrid_search.py
+# الملف: src/indexing/vectorstores/hybrid_client.py
 
 # 1. ما هو Hybrid Search؟
 #    ← دمج نوعين من البحث:
@@ -1631,57 +1645,77 @@ GET  /ready
 **تمرين تطبيقي: أضف intent جديد `fatwa`**
 
 ```python
-# الخطوة 1: أضف النية في intents.py
+# الخطوة 1: أضف النية في src/domain/intents.py
+
 
 class Intent(str, Enum):
     # ... (الأنواع الموجودة)
     FATWA = "fatwa"  # ← جديد
 
+
 INTENT_ROUTING = {
     # ... (التوجيه الموجود)
     Intent.FATWA: "fatwa_agent",  # ← جديد
 }
+```
 
-KEYWORD_PATTERNS = {
-    # ... (الأنماط الموجودة)
-    Intent.FATWA: [  # ← جديد
-        "فتوى",
-        "fatwa",
-        "ما رأيكم في",
-        "ما حكمكم في",
-    ],
-}
+```yaml
+# الخطوة 2: أضف ملف الإعداد config/agents/fatwa.yaml
 
-# الخطوة 2: أنشئ الوكيل الجديد
+name: FatwaAgent
+domain: fatwa
+collection_name: fatwa_passages
 
-# src/agents/fatwa_agent.py
-from src.agents.base import BaseAgent, AgentInput, AgentOutput
-from src.knowledge.embedding_model import EmbeddingModel
-from src.knowledge.vector_store import VectorStore
-from src.knowledge.hybrid_search import HybridSearcher
-from src.core.citation import CitationNormalizer
+retrieval:
+  primary: hybrid
+  alpha: 0.6
+  topk_initial: 60
+  topk_reranked: 12
+  min_relevance: 0.45
 
-class FatwaAgent(BaseAgent):
-    name = "fatwa_agent"
+verification:
+  fail_fast: true
+  checks:
+    - name: quote_validator
+      enabled: true
+      fail_policy: abstain
+    - name: evidence_sufficiency
+      enabled: true
+      fail_policy: abstain
 
-    def __init__(self):
-        self.embedding_model = None
-        self.vector_store = None
-        self.hybrid_searcher = None
-        self.citation_normalizer = CitationNormalizer()
+fallback:
+  strategy: chatbot
+  message: null
+```
 
-    async def execute(self, input: AgentInput) -> AgentOutput:
-        # يطبق نفس RAG flow مثل FiqhAgent
-        # لكن يستخدم fatwa_passages collection
-        pass
+```python
+# الخطوة 3: أنشئ الوكيل في src/agents/collection/fatwa.py
+#           وأضف ملف الإيعاز prompts/fatwa_agent.txt
 
-# الخطوة 3: سجل الوكيل في registry.py
+from src.agents.collection.base import CollectionAgent
 
-from src.agents.fatwa_agent import FatwaAgent
 
-def initialize_registry():
-    # ... (التسجيل الموجود)
-    _registry.register_agent("fatwa_agent", FatwaAgent())
+class FatwaCollectionAgent(CollectionAgent):
+    """وكيل الفتوى: يرث خط الـ RAG الكامل من CollectionAgent."""
+
+    def _get_system_prompt(self) -> str:
+        preamble = self._load_shared_preamble()
+        with open("prompts/fatwa_agent.txt", encoding="utf-8") as f:
+            agent_prompt = f.read()
+        return f"{preamble}\n\n{agent_prompt}" if preamble else agent_prompt
+```
+
+```python
+# الخطوة 4: سجّل الوكيل في src/core/registry.py
+
+
+def build_fatwa() -> Any:
+    from src.agents.collection.fatwa import FatwaCollectionAgent
+
+    return FatwaCollectionAgent(**get_deps())
+
+
+registry.register_agent("fatwa_agent", factory=build_fatwa)
 ```
 
 ---
