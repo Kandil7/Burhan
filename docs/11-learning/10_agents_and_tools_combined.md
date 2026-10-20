@@ -8,7 +8,7 @@
 |-------|--------|---------|
 | **6** | `src/agents/base.py` | 90 | الفئات الأساسية للوكلاء |
 | **7** | `src/agents/chatbot_agent.py` | 160 | وكيل الترحيب |
-| **8** | `src/agents/fiqh_agent.py` | 280 | وكيل الفقه (RAG) |
+| **8** | `src/agents/collection/fiqh.py` | 280 | وكيل الفقه (RAG) |
 | **9** | `src/tools/base.py` | 70 | فئة الأدوات |
 | **10** | `src/tools/zakat_calculator.py` | 350 | حاسبة الزكاة |
 
@@ -45,6 +45,7 @@ class Citation(BaseModel):
     Every agent returns citations in this standardized format,
     which are then normalized to [C1], [C2], etc. for display.
     """
+
     id: str = Field(description="Citation ID: C1, C2, C3, etc.")
     type: str = Field(description="Type: quran, hadith, fatwa, fiqh_book, dua")
     source: str = Field(description="Normalized source name")
@@ -73,7 +74,7 @@ Citation(
     source="Quran 2:255",
     reference="Surah 2, Ayah 255 - Ayat al-Kursi",
     url="https://quran.com/2/255",
-    text_excerpt="اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ..."
+    text_excerpt="اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ...",
 )
 ```
 
@@ -94,20 +95,14 @@ class AgentInput(BaseModel):
     Contains query text, language preference, optional context,
     and metadata from the intent classifier.
     """
+
     query: str = Field(description="User's question")
     language: str = Field(default="ar", description="Response language: ar or en")
     context: Optional[dict] = Field(
-        default=None,
-        description="Conversation context (previous queries, user preferences)"
+        default=None, description="Conversation context (previous queries, user preferences)"
     )
-    retrieved_passages: Optional[list] = Field(
-        default=None,
-        description="Retrieved documents from RAG (if applicable)"
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Additional metadata (location, madhhab, session_id)"
-    )
+    retrieved_passages: Optional[list] = Field(default=None, description="Retrieved documents from RAG (if applicable)")
+    metadata: dict = Field(default_factory=dict, description="Additional metadata (location, madhhab, session_id)")
 ```
 
 **شرح كل حقل**:
@@ -129,13 +124,9 @@ AgentInput(
     context=None,
     retrieved_passages=[
         {"content": "صلاة العيد سنة مؤكدة...", "source": "موطأ مالك"},
-        {"content": "كان النبي يصلي العيد...", "source": "صحيح البخاري"}
+        {"content": "كان النبي يصلي العيد...", "source": "صحيح البخاري"},
     ],
-    metadata={
-        "madhhab": "shafii",
-        "location": "Riyadh",
-        "session_id": "abc123"
-    }
+    metadata={"madhhab": "shafii", "location": "Riyadh", "session_id": "abc123"},
 )
 ```
 
@@ -150,25 +141,12 @@ class AgentOutput(BaseModel):
 
     Contains answer, citations, and metadata for response assembly.
     """
+
     answer: str = Field(description="Agent's answer text")
-    citations: list[Citation] = Field(
-        default_factory=list,
-        description="List of citations with structured references"
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Metadata (agent name, processing time, madhhab, etc.)"
-    )
-    confidence: float = Field(
-        default=1.0,
-        ge=0.0,
-        le=1.0,
-        description="Confidence in the answer (0.0-1.0)"
-    )
-    requires_human_review: bool = Field(
-        default=False,
-        description="Flag if this response needs scholarly review"
-    )
+    citations: list[Citation] = Field(default_factory=list, description="List of citations with structured references")
+    metadata: dict = Field(default_factory=dict, description="Metadata (agent name, processing time, madhhab, etc.)")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in the answer (0.0-1.0)")
+    requires_human_review: bool = Field(default=False, description="Flag if this response needs scholarly review")
 ```
 
 **شرح كل حقل**:
@@ -339,58 +317,58 @@ EID_GREETINGS = [
 ### الأسطر 81-130: execute()
 
 ```python
-    async def execute(self, input: AgentInput) -> AgentOutput:
-        """Generate appropriate greeting or small talk response."""
-        query = input.query.lower()
-        language = input.language or self._detect_language(input.query)
+async def execute(self, input: AgentInput) -> AgentOutput:
+    """Generate appropriate greeting or small talk response."""
+    query = input.query.lower()
+    language = input.language or self._detect_language(input.query)
 
-        # Check for special occasions
-        is_ramadan = input.metadata.get("is_ramadan", False)
-        is_eid = input.metadata.get("is_eid", False)
+    # Check for special occasions
+    is_ramadan = input.metadata.get("is_ramadan", False)
+    is_eid = input.metadata.get("is_eid", False)
 
-        # Determine response type
-        if self._is_greeting(query):
-            if is_ramadan:
-                response = random.choice(RAMADAN_GREETINGS)
-            elif is_eid:
-                response = random.choice(EID_GREETINGS)
-            elif language == "ar":
-                response = random.choice(GREETINGS_AR)
-            else:
-                response = random.choice(GREETINGS_EN)
-
-            answer = response["text"]
-            if response.get("translation"):
-                answer += f"\n\n({response['translation']})"
-
-        elif self._is_small_talk(query):
-            intent = self._classify_small_talk(query)
-            templates = SMALL_TALK_AR if language == "ar" else SMALL_TALK_EN
-            response = random.choice(templates.get(intent, [{"text": "..."}]))
-            answer = response["text"]
-            if response.get("translation"):
-                answer += f"\n\n({response['translation']})"
-
+    # Determine response type
+    if self._is_greeting(query):
+        if is_ramadan:
+            response = random.choice(RAMADAN_GREETINGS)
+        elif is_eid:
+            response = random.choice(EID_GREETINGS)
+        elif language == "ar":
+            response = random.choice(GREETINGS_AR)
         else:
-            # Fallback for unrecognized input
-            answer = (
-                "أعتذر، لم أفهم سؤالك بشكل كامل. يرجى السؤال عن:\n"
-                "- أحكام فقهية\n"
-                "- آيات قرآنية\n"
-                "- زكاة أو ميراث\n"
-                "- أذكار وأدعية"
-            )
+            response = random.choice(GREETINGS_EN)
 
-        return AgentOutput(
-            answer=answer,
-            citations=[],
-            metadata={
-                "agent": self.name,
-                "language": language,
-                "response_type": "greeting" if self._is_greeting(query) else "small_talk",
-            },
-            confidence=0.95
+        answer = response["text"]
+        if response.get("translation"):
+            answer += f"\n\n({response['translation']})"
+
+    elif self._is_small_talk(query):
+        intent = self._classify_small_talk(query)
+        templates = SMALL_TALK_AR if language == "ar" else SMALL_TALK_EN
+        response = random.choice(templates.get(intent, [{"text": "..."}]))
+        answer = response["text"]
+        if response.get("translation"):
+            answer += f"\n\n({response['translation']})"
+
+    else:
+        # Fallback for unrecognized input
+        answer = (
+            "أعتذر، لم أفهم سؤالك بشكل كامل. يرجى السؤال عن:\n"
+            "- أحكام فقهية\n"
+            "- آيات قرآنية\n"
+            "- زكاة أو ميراث\n"
+            "- أذكار وأدعية"
         )
+
+    return AgentOutput(
+        answer=answer,
+        citations=[],
+        metadata={
+            "agent": self.name,
+            "language": language,
+            "response_type": "greeting" if self._is_greeting(query) else "small_talk",
+        },
+        confidence=0.95,
+    )
 ```
 
 **شرح التدفق**:
@@ -420,40 +398,63 @@ Input: AgentInput(query="السلام عليكم", language="ar")
 ### الأسطر 131-160: Helper functions
 
 ```python
-    def _is_greeting(self, query: str) -> bool:
-        """Check if query is a greeting."""
-        greeting_keywords = [
-            "سلام", "السلام", "مرحبا", "اهلا", "هلا",
-            "hello", "hi", "hey", "greetings", "assalam",
-            "ramadan", "eid", "رمضان", "عيد"
-        ]
-        return any(keyword in query.lower() for keyword in greeting_keywords)
+def _is_greeting(self, query: str) -> bool:
+    """Check if query is a greeting."""
+    greeting_keywords = [
+        "سلام",
+        "السلام",
+        "مرحبا",
+        "اهلا",
+        "هلا",
+        "hello",
+        "hi",
+        "hey",
+        "greetings",
+        "assalam",
+        "ramadan",
+        "eid",
+        "رمضان",
+        "عيد",
+    ]
+    return any(keyword in query.lower() for keyword in greeting_keywords)
 
-    def _is_small_talk(self, query: str) -> bool:
-        """Check if query is small talk."""
-        small_talk_keywords = [
-            "كيف حالك", "كيفك", "شلونك", "عامل",
-            "how are you", "how do you do",
-            "شكراً", "شكرا", "ممنون", "جزاك",
-            "thank", "thanks", "jazak"
-        ]
-        return any(keyword in query.lower() for keyword in small_talk_keywords)
 
-    def _classify_small_talk(self, query: str) -> Optional[str]:
-        """Classify small talk intent."""
-        if any(k in query for k in ["كيف حالك", "كيفك", "how are you"]):
-            return "how_are_you"
-        elif any(k in query for k in ["شكر", "thank", "جزاك"]):
-            return "thank_you"
-        return None
+def _is_small_talk(self, query: str) -> bool:
+    """Check if query is small talk."""
+    small_talk_keywords = [
+        "كيف حالك",
+        "كيفك",
+        "شلونك",
+        "عامل",
+        "how are you",
+        "how do you do",
+        "شكراً",
+        "شكرا",
+        "ممنون",
+        "جزاك",
+        "thank",
+        "thanks",
+        "jazak",
+    ]
+    return any(keyword in query.lower() for keyword in small_talk_keywords)
 
-    def _detect_language(self, query: str) -> str:
-        """Detect if query is Arabic or English."""
-        arabic_chars = sum(1 for c in query if '\u0600' <= c <= '\u06FF')
-        total_chars = len(query.replace(" ", ""))
-        if total_chars == 0:
-            return "ar"
-        return "ar" if (arabic_chars / total_chars) > 0.3 else "en"
+
+def _classify_small_talk(self, query: str) -> Optional[str]:
+    """Classify small talk intent."""
+    if any(k in query for k in ["كيف حالك", "كيفك", "how are you"]):
+        return "how_are_you"
+    elif any(k in query for k in ["شكر", "thank", "جزاك"]):
+        return "thank_you"
+    return None
+
+
+def _detect_language(self, query: str) -> str:
+    """Detect if query is Arabic or English."""
+    arabic_chars = sum(1 for c in query if "\u0600" <= c <= "\u06ff")
+    total_chars = len(query.replace(" ", ""))
+    if total_chars == 0:
+        return "ar"
+    return "ar" if (arabic_chars / total_chars) > 0.3 else "en"
 ```
 
 **شرح**:
@@ -461,23 +462,23 @@ Input: AgentInput(query="السلام عليكم", language="ar")
 ```python
 # _is_greeting()
 _is_greeting("السلام عليكم")  # True (يجد "سلام")
-_is_greeting("hello world")   # True (يجد "hello")
-_is_greeting("ما حكم الصلاة؟") # False
+_is_greeting("hello world")  # True (يجد "hello")
+_is_greeting("ما حكم الصلاة؟")  # False
 
 # _is_small_talk()
-_is_small_talk("كيف حالك؟")   # True (يجد "كيف حالك")
-_is_small_talk("شكراً جزيلاً") # True (يجد "شكر")
-_is_small_talk("ما حكم الزكاة؟") # False
+_is_small_talk("كيف حالك؟")  # True (يجد "كيف حالك")
+_is_small_talk("شكراً جزيلاً")  # True (يجد "شكر")
+_is_small_talk("ما حكم الزكاة؟")  # False
 
 # _classify_small_talk()
-_classify_small_talk("كيف حالك؟")   # "how_are_you"
-_classify_small_talk("شكراً")       # "thank_you"
-_classify_small_talk("ما هذا؟")     # None
+_classify_small_talk("كيف حالك؟")  # "how_are_you"
+_classify_small_talk("شكراً")  # "thank_you"
+_classify_small_talk("ما هذا؟")  # None
 
 # _detect_language()
-_detect_language("السلام عليكم")    # "ar" (100% عربي)
-_detect_language("hello мир")       # "en" (أقل من 30% عربي)
-_detect_language("مرحبا hello")     # "ar" (أكثر من 30% عربي)
+_detect_language("السلام عليكم")  # "ar" (100% عربي)
+_detect_language("hello мир")  # "en" (أقل من 30% عربي)
+_detect_language("مرحبا hello")  # "ar" (أكثر من 30% عربي)
 ```
 
 ---
@@ -493,7 +494,7 @@ _detect_language("مرحبا hello")     # "ar" (أكثر من 30% عربي)
 
 ---
 
-# الملف 8: `src/agents/fiqh_agent.py` (280 سطر)
+# الملف 8: `src/agents/collection/fiqh.py` (280 سطر)
 
 ## 1️⃣ وظيفة الملف
 
@@ -563,15 +564,17 @@ class ToolInput(BaseModel):
     query: str
     metadata: dict  # معاملات خاصة (location, assets, ...)
 
+
 class ToolOutput(BaseModel):
-    result: dict    # نتيجة الحساب
-    success: bool   # نجاح أم خطأ
-    error: str      # رسالة الخطأ
+    result: dict  # نتيجة الحساب
+    success: bool  # نجاح أم خطأ
+    error: str  # رسالة الخطأ
     metadata: dict  # بيانات إضافية
+
 
 class BaseTool(ABC):
     name: str = "base_tool"
-    
+
     @abstractmethod
     async def execute(self, **kwargs) -> ToolOutput:
         pass
@@ -602,13 +605,13 @@ class BaseTool(ABC):
 
 ```python
 class ZakatType(str, Enum):
-    WEALTH = "wealth"        # المال
-    GOLD = "gold"            # الذهب
-    SILVER = "silver"        # الفضة
+    WEALTH = "wealth"  # المال
+    GOLD = "gold"  # الذهب
+    SILVER = "silver"  # الفضة
     TRADE_GOODS = "trade_goods"  # عروض التجارة
-    STOCKS = "stocks"        # الأسهم
+    STOCKS = "stocks"  # الأسهم
     LIVESTOCK = "livestock"  # الماشية
-    CROPS = "crops"          # الزروع
+    CROPS = "crops"  # الزروع
 ```
 
 ### Madhhab enum (4 مذاهب)
@@ -626,23 +629,23 @@ class Madhhab(str, Enum):
 ```python
 def calculate(self, assets: ZakatAssets, debts: float = 0.0, madhhab: Madhhab = Madhhab.GENERAL) -> ZakatResult:
     # 1. حساب النصاب
-    nisab_gold = 85 * gold_price      # 85 جرام ذهب
-    nisab_silver = 595 * silver_price # 595 جرام فضة
+    nisab_gold = 85 * gold_price  # 85 جرام ذهب
+    nisab_silver = 595 * silver_price  # 595 جرام فضة
     nisab_effective = min(nisab_gold, nisab_silver)  # الأدنى (أفضل للفقراء)
-    
+
     # 2. حساب الأصول
     total_assets = cash + gold_value + silver_value + ...
-    
+
     # 3. خصم الديون
     zakatable_wealth = total_assets - debts
-    
+
     # 4. مقارنة بالنصاب
     is_zakatable = zakatable_wealth >= nisab_effective
-    
+
     # 5. حساب الزكاة
     if is_zakatable:
         zakat_amount = zakatable_wealth * 0.025  # 2.5%
-    
+
     return ZakatResult(...)
 ```
 
@@ -753,10 +756,7 @@ from src.agents.collection import FiqhAgent
 agent = FiqhAgent()
 
 # أو من التكوين المخصص
-agent = FiqhAgent(
-    config_path="config/agents/fiqh.yaml",
-    prompt_path="prompts/fiqh/"
-)
+agent = FiqhAgent(config_path="config/agents/fiqh.yaml", prompt_path="prompts/fiqh/")
 ```
 
 ### لماذا لم تتغير الأدوات؟
