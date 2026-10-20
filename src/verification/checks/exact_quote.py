@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from ..schemas import CheckResult, VerificationStatus, VerifierType
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 from .quote_span import QuoteSpanDetector
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class ExactQuoteVerifier(BaseVerifier):
         is_applicable(claim, evidence)   -> bool
     """
 
-    def __init__(self, quran_validator=None) -> None:
+    def __init__(self, quran_validator: Any = None) -> None:
         """Initialize the exact quote verifier.
 
         Args:
@@ -49,7 +49,7 @@ class ExactQuoteVerifier(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         from src.verification.checks.quote_span import RELAXED_DELIMITER_TYPES
 
@@ -58,6 +58,7 @@ class ExactQuoteVerifier(BaseVerifier):
         if not spans:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
                 passed=True,
                 confidence=1.0,
                 message="No quotes found in claim",
@@ -65,8 +66,8 @@ class ExactQuoteVerifier(BaseVerifier):
 
         source_type = context.get("source_type", "general") if context else "general"
 
-        failed_quotes: List[str] = []
-        passed_quotes: List[str] = []
+        failed_quotes: list[str] = []
+        passed_quotes: list[str] = []
 
         for span in spans:
             relaxed = span["delimiter_type"] in RELAXED_DELIMITER_TYPES
@@ -84,6 +85,7 @@ class ExactQuoteVerifier(BaseVerifier):
         if failed_quotes:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.8,
                 message=f"Strict-type quotes not found in evidence: {failed_quotes}",
@@ -96,6 +98,7 @@ class ExactQuoteVerifier(BaseVerifier):
 
         return CheckResult(
             check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
             passed=True,
             confidence=0.95,
             message="All quotes found in evidence",
@@ -119,15 +122,15 @@ class ExactQuoteVerifier(BaseVerifier):
         if not evidence:
             return False
 
-        passages: List[str] = []
+        passages: list[str] = []
         if isinstance(evidence, list):
             for e in evidence:
                 if isinstance(e, dict):
-                    passages.append(e.get("content", e.get("text", "")))
+                    passages.append(str(e.get("content", e.get("text", "")) or ""))
                 else:
                     passages.append(str(e))
         elif isinstance(evidence, dict):
-            passages = [evidence.get("content", evidence.get("text", ""))]
+            passages = [str(evidence.get("content", evidence.get("text", "")) or "")]
         else:
             passages = [str(evidence)]
 
@@ -193,7 +196,7 @@ class ExactQuoteVerifier(BaseVerifier):
         """Light normalisation for substring matching (case + whitespace)."""
         return " ".join(text.lower().split())
 
-    def set_quran_validator(self, validator) -> None:
+    def set_quran_validator(self, validator: Any) -> None:
         """Inject a QuotationValidator instance (e.g., in tests).
 
         Args:
