@@ -1,5 +1,9 @@
 # Burhan v2 Architecture — Complete Implementation Report
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 **Branch:** `refactor/Burhan-v2-architecture`  
 **Date:** April 2026  
 **Status:** ✅ Major refactoring complete
@@ -342,8 +346,8 @@ class IntentLabel(str, Enum):
 
 ```python
 class RetrievalStrategy(BaseModel):
-    dense_weight: float = 0.7       # Semantic weight
-    sparse_weight: float = 0.3      # Keyword weight
+    dense_weight: float = 0.7  # Semantic weight
+    sparse_weight: float = 0.3  # Keyword weight
     top_k: int = 12
     rerank: bool = True
     score_threshold: float = 0.65
@@ -355,7 +359,7 @@ class VerificationSuite(BaseModel):
 
 
 class FallbackPolicy(BaseModel):
-    strategy: str = "chatbot"     # chatbot/human_review/clarify
+    strategy: str = "chatbot"  # chatbot/human_review/clarify
     message: str | None = None
 
 
@@ -446,19 +450,19 @@ Key features:
 class HadithCollectionAgent(CollectionAgent):
     name = "hadith"
     COLLECTION = "hadith_passages"
-    
+
     DEFAULT_STRATEGY = RetrievalStrategy(
-        dense_weight=0.3,    # Sparse-heavy
+        dense_weight=0.3,  # Sparse-heavy
         sparse_weight=0.7,
         top_k=10,
         rerank=True,
         score_threshold=0.50,
     )
-    
+
     _TAKHRIJ_KEYWORDS = ["حديث", "راوي", "مروي", "أخرج", "صحيح", "ضعيف", ...]
     _SANAD_KEYWORDS = ["إسناد", "سند", "راوي", ...]
     _MATN_KEYWORDS = ["متن", "الحديث", "قوله", "فعل"]
-    
+
     # NO text generation - preserve exact hadith text
     async def generate_answer(self, query: str, verified_passages: list[dict], language: str) -> str:
         # Citation-only response
@@ -553,9 +557,9 @@ suite = VerificationSuiteBuilder.build("fiqh")
 ```python
 # Fail policies
 class FailPolicy(str, Enum):
-    ABSTAIN = "abstain"    # Don't answer if check fails
-    WARN = "warn"        # Answer with warning
-    PROCEED = "proceed"   # Ignore failure, continue
+    ABSTAIN = "abstain"  # Don't answer if check fails
+    WARN = "warn"  # Answer with warning
+    PROCEED = "proceed"  # Ignore failure, continue
 ```
 
 ### 3.7 Post-Generation Verification
@@ -615,12 +619,12 @@ class ScholarlyReranker:
     3. Intent-based category boosting
     4. Madhhab-specific boosting
     """
-    
+
     # Composite score formula
     scholarly_score = (
-        (base_score * 0.4) +        # Semantic relevance
-        (importance_weight * 0.3) +  # Authority
-        (intent_boost * 0.3)        # Domain relevance
+        (base_score * 0.4)  # Semantic relevance
+        + (importance_weight * 0.3)  # Authority
+        + (intent_boost * 0.3)  # Domain relevance
     ) * madhhab_boost
 ```
 
@@ -732,7 +736,8 @@ abstention:
 ```python
 def load_agent_config(agent_name: str, load_prompts: bool = True) -> dict:
     """Load YAML config and optionally load system prompts."""
-    
+
+
 def load_agent_config_typed(
     agent_name: str,
     config_class: type[BaseModel],
@@ -806,9 +811,9 @@ def load_agent_config_typed(
 
 ```python
 class AnswerMode(str, Enum):
-    ANSWER = "answer"         # Normal answer
-    ABSTAIN = "abstain"     # No evidence found
-    CLARIFY = "clarify"     # Ambiguous query
+    ANSWER = "answer"  # Normal answer
+    ABSTAIN = "abstain"  # No evidence found
+    CLARIFY = "clarify"  # Ambiguous query
 ```
 
 ### 7.2 Policy Gate Logic
@@ -863,8 +868,8 @@ def strip_cot_leakage(answer: str) -> str:
 
 ```python
 class OrchestrationPattern(str, Enum):
-    SEQUENTIAL = "sequential"   # Single agent
-    PARALLEL = "parallel"     # Multiple agents concurrently
+    SEQUENTIAL = "sequential"  # Single agent
+    PARALLEL = "parallel"  # Multiple agents concurrently
     HIERARCHICAL = "hierarchical"  # Primary + sub-agents
 
 
@@ -877,14 +882,14 @@ class OrchestrationPlan:
 
 def create_orchestration_plan(query: str, intent: Intent) -> OrchestrationPlan:
     """Factory for creating orchestration plans."""
-    
+
     # Detect complex queries → parallel execution
     if _detect_complex_query(query):
         return OrchestrationPlan(
             pattern=OrchestrationPattern.PARALLEL,
             tasks=[primary_task] + secondary_tasks,
         )
-    
+
     # Simple queries → sequential
     return OrchestrationPlan(
         pattern=OrchestrationPattern.SEQUENTIAL,
@@ -1535,14 +1540,14 @@ class Citation(BaseModel):
 **2. citation_chunks (for frontend display):**
 ```python
 class CitationChunk(BaseModel):
-    chunk_id: str           # From Qdrant
-    source_id: str          # book_id
+    chunk_id: str  # From Qdrant
+    source_id: str  # book_id
     collection: str
     book_id: int
     page_number: int
     section_title: str
-    text: str               # Passage content
-    metadata: dict        # Full author, category, etc.
+    text: str  # Passage content
+    metadata: dict  # Full author, category, etc.
 ```
 
 ---
@@ -1657,15 +1662,15 @@ class AskRequest(BaseModel):
 ```python
 class AskResponse(BaseModel):
     query_id: str
-    intent: str                    # "seerah", "fiqh", "hadith", etc.
-    sub_intent: str               # "seerah_event", "fiqh_hukm", etc.
+    intent: str  # "seerah", "fiqh", "hadith", etc.
+    sub_intent: str  # "seerah_event", "fiqh_hukm", etc.
     intent_confidence: float
-    answer: str                  # Raw answer with [C1] citations
-    answer_clean: str | None       # Clean answer without citation markers
-    answer_mode: str              # "answer" | "abstain" | "clarify"
-    citations: list[Citation]      # Structured citation objects
-    citation_chunks: list[dict]    # Frontend-ready chunks
-    citations_footnotes: list[dict] # Footnote formatted citations
+    answer: str  # Raw answer with [C1] citations
+    answer_clean: str | None  # Clean answer without citation markers
+    answer_mode: str  # "answer" | "abstain" | "clarify"
+    citations: list[Citation]  # Structured citation objects
+    citation_chunks: list[dict]  # Frontend-ready chunks
+    citations_footnotes: list[dict]  # Footnote formatted citations
     metadata: dict
     follow_up_suggestions: list[str]
     requires_human_review: bool
