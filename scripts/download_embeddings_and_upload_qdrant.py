@@ -505,7 +505,7 @@ def main():
                 force=args.force,
             )
         except Exception as exc:
-            print(f"  [error] {coll}: {exc}")
+            print(f"  [error] {coll}: {type(exc).__name__}: {exc}")
             continue
 
         result["total_time"] = time.time() - coll_start
