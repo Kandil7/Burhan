@@ -113,15 +113,24 @@ from typing import List, Dict, Literal, Optional, Any
 from pydantic import BaseModel
 
 IntentLabel = Literal[
-    'fiqh_hukm', 'fiqh_tarjih', 'hadith_takhrij', 'hadith_sharh',
-    'tafsir_ayah', 'aqeedah_masalah', 'seerah_event', 'history_event',
-    'lugha_explanation', 'tazkiyah_mauidha', 'general_info', 'usul_qawaid'
+    "fiqh_hukm",
+    "fiqh_tarjih",
+    "hadith_takhrij",
+    "hadith_sharh",
+    "tafsir_ayah",
+    "aqeedah_masalah",
+    "seerah_event",
+    "history_event",
+    "lugha_explanation",
+    "tazkiyah_mauidha",
+    "general_info",
+    "usul_qawaid",
 ]
 
 
 class RetrievalStrategy(BaseModel):
     name: str
-    primary: Literal['dense', 'sparse', 'hybrid']
+    primary: Literal["dense", "sparse", "hybrid"]
     alpha: float  # dense weight in [0,1]
     topk_initial: int
     topk_reranked: int
@@ -133,7 +142,7 @@ class VerificationCheck(BaseModel):
     name: str
     input_schema: str
     output_schema: str
-    fail_policy: Literal['abstain', 'warn', 'proceed']
+    fail_policy: Literal["abstain", "warn", "proceed"]
 
 
 class VerificationSuite(BaseModel):
@@ -141,8 +150,8 @@ class VerificationSuite(BaseModel):
 
 
 class FallbackPolicy(BaseModel):
-    on_low_recall: Literal['fallback_dense', 'fallback_sparse', 'delegate', 'abstain']
-    on_verification_failure: Literal['delegate', 'abstain']
+    on_low_recall: Literal["fallback_dense", "fallback_sparse", "delegate", "abstain"]
+    on_verification_failure: Literal["delegate", "abstain"]
     delegate_agent: Optional[str] = None
 
 
@@ -162,45 +171,32 @@ class CollectionAgent(ABC):
         self.llm = llm
 
     @abstractmethod
-    def query_intake(self, raw_question: str, meta: Optional[Dict[str, Any]] = None) -> 'NormalizedQuery':
-        ...
+    def query_intake(self, raw_question: str, meta: Optional[Dict[str, Any]] = None) -> "NormalizedQuery": ...
 
     @abstractmethod
-    def classify_intent(self, normalized: 'NormalizedQuery') -> IntentLabel:
-        ...
+    def classify_intent(self, normalized: "NormalizedQuery") -> IntentLabel: ...
 
     @abstractmethod
-    def retrieve_candidates(self, intent: IntentLabel, normalized: 'NormalizedQuery') -> List['RetrievedPassage']:
-        ...
+    def retrieve_candidates(self, intent: IntentLabel, normalized: "NormalizedQuery") -> List["RetrievedPassage"]: ...
 
     @abstractmethod
-    def rerank_candidates(self, candidates: List['RetrievedPassage']) -> List['RetrievedPassage']:
-        ...
+    def rerank_candidates(self, candidates: List["RetrievedPassage"]) -> List["RetrievedPassage"]: ...
 
     @abstractmethod
     def run_verification(
-        self,
-        reranked: List['RetrievedPassage'],
-        normalized: 'NormalizedQuery'
-    ) -> 'VerificationResult':
-        ...
+        self, reranked: List["RetrievedPassage"], normalized: "NormalizedQuery"
+    ) -> "VerificationResult": ...
 
     @abstractmethod
     def generate_answer(
         self,
-        verified: 'VerifiedEvidence',
-        normalized: 'NormalizedQuery',
-        verification_result: 'VerificationResult',
-    ) -> 'LLMAnswerDraft':
-        ...
+        verified: "VerifiedEvidence",
+        normalized: "NormalizedQuery",
+        verification_result: "VerificationResult",
+    ) -> "LLMAnswerDraft": ...
 
     @abstractmethod
-    def assemble_citations(
-        self,
-        draft: 'LLMAnswerDraft',
-        verified: 'VerifiedEvidence'
-    ) -> 'FinalAnswer':
-        ...
+    def assemble_citations(self, draft: "LLMAnswerDraft", verified: "VerifiedEvidence") -> "FinalAnswer": ...
 ```
 
 
@@ -613,10 +609,10 @@ payload_schema_example = {
         "author_id": "...",
         "author_name": "...",
         "author_death_year": 1234,
-        "madhhab": "hanbali",          # or "shafii", "hanafi", "maliki", "zahiri", "unknown"
-        "aqeedah_school": "Burhani",     # or "ashari", "maturidi", etc.
-        "era": "classical",             # sahabah / tabiin / classical / medieval / contemporary
-        "category_main": "fiqh",        # from category_mapping
+        "madhhab": "hanbali",  # or "shafii", "hanafi", "maliki", "zahiri", "unknown"
+        "aqeedah_school": "Burhani",  # or "ashari", "maturidi", etc.
+        "era": "classical",  # sahabah / tabiin / classical / medieval / contemporary
+        "category_main": "fiqh",  # from category_mapping
         "category_sub": "fiqh_ibadah",  # fine-grained
         "collection": "fiqh_passages",  # name of Burhan collection
         "page_number": 45,
@@ -749,7 +745,7 @@ Example configurations:
 
 ```python
 large_hnsw = models.HnswConfigDiff(
-    m=32,            # higher connectivity for recall
+    m=32,  # higher connectivity for recall
     ef_construct=256,
     full_scan_threshold=10000,
 )
