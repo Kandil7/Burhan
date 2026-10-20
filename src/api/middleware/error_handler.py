@@ -3,8 +3,10 @@ Error handling middleware for Burhan Islamic QA system.
 
 Catches all exceptions and returns structured error responses.
 """
+
 import traceback
 import uuid
+from typing import Any
 
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
@@ -22,7 +24,7 @@ def _safe_error_str(e: Exception) -> str:
     produce multi-line output with special characters.
     """
     # For ExceptionGroup, just get the exception type and first sub-exception
-    if hasattr(e, 'exceptions') and callable(e.exceptions):
+    if hasattr(e, "exceptions") and callable(e.exceptions):
         sub_exceptions = e.exceptions()
         if sub_exceptions:
             first = sub_exceptions[0]
@@ -34,15 +36,15 @@ def _safe_error_str(e: Exception) -> str:
         if tb:
             # Return just the exception line, limited to 500 chars
             return tb[-1].strip()[:500]
-    except Exception as e:
-        logger.warning("error_handler.safe_str_failed", error=str(e))
+    except Exception as exc:
+        logger.warning("error_handler.safe_str_failed", error=str(exc))
         pass
 
     # Fallback to type name only
     return f"{type(e).__name__}"
 
 
-async def error_handler_middleware(request: Request, call_next):
+async def error_handler_middleware(request: Request, call_next: Any) -> Any:
     """
     Global error handling middleware.
 
@@ -57,11 +59,11 @@ async def error_handler_middleware(request: Request, call_next):
 
     except Exception as e:
         error_str = _safe_error_str(e)
-        
+
         # Determine status code and public message
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         public_message = "An unexpected error occurred"
-        
+
         # Infrastructure error detection
         infra_keywords = ["Connection refused", "OperationalError", "ConnectionError", "Vector store not available"]
         if any(kw in error_str for kw in infra_keywords) or "sqlalchemy" in str(type(e)).lower():
@@ -74,7 +76,7 @@ async def error_handler_middleware(request: Request, call_next):
             method=request.method,
             path=request.url.path,
             error=error_str,
-            status_code=status_code
+            status_code=status_code,
         )
 
         return JSONResponse(
@@ -82,6 +84,6 @@ async def error_handler_middleware(request: Request, call_next):
             content={
                 "error": "Internal Server Error" if status_code == 500 else "Service Unavailable",
                 "detail": error_str if request.app.debug else public_message,
-                "request_id": request_id
-            }
+                "request_id": request_id,
+            },
         )
