@@ -97,6 +97,7 @@ POST /ask
 # في src/api/schemas/ask.py
 class AskRequest(BaseModel):
     """نموذج طلب السؤال."""
+
     query: str = Field(..., description="سؤال المستخدم")
     language: str = Field(default="ar", description="لغة السؤال")
     collection: str | None = Field(default=None, description="المجموعة المحددة")
@@ -139,15 +140,7 @@ async def ask_question(request: AskRequest) -> AskResponse:
 
 ```python
 # مثال على خطأ
-{
-    "detail": [
-        {
-            "loc": ["body", "query"],
-            "msg": "Field required",
-            "type": "missing"
-        }
-    ]
-}
+{"detail": [{"loc": ["body", "query"], "msg": "Field required", "type": "missing"}]}
 ```
 
 ---
@@ -165,33 +158,29 @@ Pydantic يقوم بالتحقق تلقائياً:
 ```python
 class AskRequest(BaseModel):
     """نموذج طلب مع قواعد التحقق."""
-    
+
     query: str = Field(
         ...,  # مطلوب
         min_length=1,  # 최소 1 حرف
         max_length=1000,  # الحد الأقصى 1000 حرف
-        description="سؤال المستخدم"
+        description="سؤال المستخدم",
     )
-    
+
     language: str = Field(
         default="ar",  # الافتراضي
         pattern="^(ar|en)$",  # فقط Arabic أو English
-        description="لغة السؤال"
+        description="لغة السؤال",
     )
-    
+
     collection: str | None = Field(
         default=None,  # اختياري
-        description="المجموعة المحددة"
+        description="المجموعة المحددة",
     )
-    
-    madhhab: str | None = Field(
-        default=None,
-        pattern="^(hanafi|maliki|shafii|hanbali)$",
-        description="المذهب المفضل"
-    )
-    
+
+    madhhab: str | None = Field(default=None, pattern="^(hanafi|maliki|shafii|hanbali)$", description="المذهب المفضل")
+
     model_config = {
-        "extra": "forbid"  #不允许 حقول إضافية
+        "extra": "forbid"  # 不允许 حقول إضافية
     }
 ```
 
@@ -228,17 +217,11 @@ async def validate_request(request: AskRequest) -> bool:
 
 ```python
 # إنشاء كائن الطلب النهائي
-valid_request = AskRequest(
-    query="ما حكم صلاة الجماعة؟",
-    language="ar",
-    madhhab="hanafi"
-)
+valid_request = AskRequest(query="ما حكم صلاة الجماعة؟", language="ar", madhhab="hanafi")
 
 # تحويل إلى AgentInput
 agent_input = AgentInput(
-    query=valid_request.query,
-    language=valid_request.language,
-    metadata={"madhhab": valid_request.madhhab}
+    query=valid_request.query, language=valid_request.language, metadata={"madhhab": valid_request.madhhab}
 )
 ```
 
@@ -255,7 +238,7 @@ agent_input = AgentInput(
 نظام Burhan يستخدم تصنيفاً هجيناً يجمع بين طريقتين:
 
 ```python
-# في src/application/hybrid_classifier.py
+# في src/application/router/hybrid_classifier.py
 class MasterHybridClassifier:
     """مصنف النية الهجين."""
     
@@ -335,7 +318,6 @@ KEYWORD_PATTERNS = {
         r"Makruh",
         r"Mustahabb",
     ],
-    
     # زكاة
     "ZAKAT": [
         r"زكاة",
@@ -343,7 +325,6 @@ KEYWORD_PATTERNS = {
         r" Nisab",
         r"الزكاة",
     ],
-    
     # إرث
     "INHERITANCE": [
         r"إرث",
@@ -351,7 +332,6 @@ KEYWORD_PATTERNS = {
         r"وراثة",
         r" inherit",
     ],
-    
     # حديث
     "HADITH_TAKHRIJ": [
         r"حديث",
@@ -359,7 +339,6 @@ KEYWORD_PATTERNS = {
         r"ضعيف",
         r"الحديث",
     ],
-    
     # قرآن
     "QURAN_VERSE": [
         r"آية",
@@ -367,21 +346,18 @@ KEYWORD_PATTERNS = {
         r"قرآن",
         r"القرآن",
     ],
-    
     # تفسير
     "TAFSIR": [
         r"تفسير",
         r"معنى",
         r"فسير",
     ],
-    
     # عقيدة
     "AQEEDAH": [
         r"عقيدة",
         r"إيمان",
         r"توحيد",
     ],
-    
     # سيرة
     "SEERAH": [
         r"سيرة",
@@ -394,7 +370,7 @@ KEYWORD_PATTERNS = {
 ### 4.5 المصنف الثاني: التضمينات (Embeddings)
 
 ```python
-# في src/application/embedding_classifier.py
+# في src/application/router/embedding_classifier.py
 class EmbeddingClassifier:
     """مصنف التضمينات."""
     
@@ -431,16 +407,16 @@ class EmbeddingClassifier:
 ```python
 # في src/domain/intents.py
 INTENT_PRIORITIES = {
-    "ZAKAT": 1,           # الأعلى - قضايا مالية مهمة
-    "INHERITANCE": 2,      # إرث - قضايا قانونية مهمة
-    "FIQH_HUKM": 3,       # أحكام - فقه أساسي
-    "FIQH_MASAIL": 4,       # مسائل - فقه
-    "HADITH_TAKHRIJ": 5,   # حديث - مصادر مهمة
-    "QURAN_VERSE": 6,       # آيات - مصادر مهمة
-    "TAFSIR": 7,           # تفسير - قرآن
-    "AQEEDAH": 8,         # عقيدة - أساسيات
-    "SEERAH": 9,          # سيرة - تاريخ
-    "GENERAL_ISLAMIC": 10,   # عام - افتراضي
+    "ZAKAT": 1,  # الأعلى - قضايا مالية مهمة
+    "INHERITANCE": 2,  # إرث - قضايا قانونية مهمة
+    "FIQH_HUKM": 3,  # أحكام - فقه أساسي
+    "FIQH_MASAIL": 4,  # مسائل - فقه
+    "HADITH_TAKHRIJ": 5,  # حديث - مصادر مهمة
+    "QURAN_VERSE": 6,  # آيات - مصادر مهمة
+    "TAFSIR": 7,  # تفسير - قرآن
+    "AQEEDAH": 8,  # عقيدة - أساسيات
+    "SEERAH": 9,  # سيرة - تاريخ
+    "GENERAL_ISLAMIC": 10,  # عام - افتراضي
 }
 ```
 
@@ -449,12 +425,15 @@ INTENT_PRIORITIES = {
 4 subtypes للقرآن specifically:
 
 ```python
-QuranSubIntent = Enum("QuranSubIntent", {
-    "VERSE_LOOKUP": "استعلام عن آية محددة",
-    "ANALYTICS": "إحصاءات قرآنية",
-    "INTERPRETATION": "تفسير آية",
-    "QUOTATION_VALIDATION": "تحقق من اقتباس قرآني",
-})
+QuranSubIntent = Enum(
+    "QuranSubIntent",
+    {
+        "VERSE_LOOKUP": "استعلام عن آية محددة",
+        "ANALYTICS": "إحصاءات قرآنية",
+        "INTERPRETATION": "تفسير آية",
+        "QUOTATION_VALIDATION": "تحقق من اقتباس قرآني",
+    },
+)
 ```
 
 ### 4.8 مخرجات التصنيف
@@ -462,10 +441,11 @@ QuranSubIntent = Enum("QuranSubIntent", {
 ```python
 class ClassificationResult:
     """نتيجة التصنيف."""
-    intent: IntentType              # نوع النية
-    confidence: float            # 0.0 - 1.0
-    language: str              # "ar" أو "en"
-    requires_retrieval: bool   # هل يحتاج استرجاع؟
+
+    intent: IntentType  # نوع النية
+    confidence: float  # 0.0 - 1.0
+    language: str  # "ar" أو "en"
+    requires_retrieval: bool  # هل يحتاج استرجاع؟
     sub_intent: QuranSubIntent | None = None
 ```
 
@@ -476,12 +456,7 @@ class ClassificationResult:
 **المخرجات**:
 
 ```python
-{
-    "intent": "FIQH_HUKM",
-    "confidence": 0.92,
-    "language": "ar",
-    "requires_retrieval": True
-}
+{"intent": "FIQH_HUKM", "confidence": 0.92, "language": "ar", "requires_retrieval": True}
 ```
 
 ---
@@ -559,23 +534,17 @@ INTENT_TO_AGENT = {
     # FiQH
     "FIQH_HUKM": "fiqh:rag",
     "FIQH_MASAIL": "fiqh:rag",
-    
     # Hadith
     "HADITH_TAKHRIJ": "hadith:rag",
-    
     # Quran/Tafsir
     "QURAN_VERSE": "tafsir:rag",
     "TAFSIR": "tafsir:rag",
-    
     # Aqeedah
     "AQEEDAH": "aqeedah:rag",
-    
     # Seerah
     "SEERAH": "seerah:rag",
-    
     # History
     "HISTORY": "history:rag",
-    
     # General
     "ISLAMIC_KNOWLEDGE": "general:rag",
 }
@@ -648,12 +617,12 @@ def _get_agent_for_intent(intent: IntentType) -> str:
 # في src/retrieval/retrievers/hybrid_retriever.py
 class HybridSearcher:
     """بائع هجين."""
-    
+
     def __init__(self, embedding_model, qdrant_client):
         self._semantic = DenseRetriever(embedding_model, qdrant_client)
         self._bm25 = BM25Retriever()
         self._rrf = ReciprocalRankFusion()
-    
+
     async def search(
         self,
         query: str,
@@ -661,23 +630,16 @@ class HybridSearcher:
         top_k: int = 10,
     ) -> list[RetrievalResult]:
         """بحث هجين."""
-        
+
         # البحث الدلالي
-        semantic_results = await self._semantic.search(
-            query, collection, top_k
-        )
-        
+        semantic_results = await self._semantic.search(query, collection, top_k)
+
         # البحث بـ BM25
-        keyword_results = await self._bm25.search(
-            query, collection, top_k
-        )
-        
+        keyword_results = await self._bm25.search(query, collection, top_k)
+
         # دمج النتائج
-        fused = self._rrf.fuse(
-            [semantic_results, keyword_results],
-            k=60
-        )
-        
+        fused = self._rrf.fuse([semantic_results, keyword_results], k=60)
+
         return fused[:top_k]
 ```
 
@@ -717,7 +679,7 @@ class DenseRetriever:
 # في src/retrieval/retrievers/bm25_retriever.py
 class BM25Retriever:
     """بائع BM25."""
-    
+
     async def search(
         self,
         query: str,
@@ -725,20 +687,16 @@ class BM25Retriever:
         top_k: int,
     ) -> list[RetrievalResult]:
         """بحث بالكلمات المفتاحية."""
-        
+
         # 1. فهرسة السؤال
         query_tokens = self._tokenize(query)
-        
+
         # 2. حسابScores
         scores = self._index.score(query_tokens)
-        
+
         # 3. ترتيب النتائج
-        top_results = sorted(
-            scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:top_k]
-        
+        top_results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+
         return [self._to_result(doc_id, score) for doc_id, score in top_results]
 ```
 
@@ -748,31 +706,27 @@ class BM25Retriever:
 # في src/retrieval/fusion/rrf.py
 class ReciprocalRankFusion:
     """دمج الترتيب المتبادل."""
-    
+
     def fuse(
         self,
         result_lists: list[list[RetrievalResult]],
         k: int = 60,
     ) -> list[RetrievalResult]:
         """دمج النتائج."""
-        
+
         scores = {}
-        
+
         for results in result_lists:
             for rank, result in enumerate(results):
                 doc_id = result.id
-                
+
                 # صيغة RRF
                 score = 1.0 / (k + rank + 1)
                 scores[doc_id] = scores.get(doc_id, 0) + score
-        
+
         # ترتيب بالنتيجة النهائية
-        sorted_docs = sorted(
-            scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
-        
+        sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
         return [self._get_result(doc_id) for doc_id, _ in sorted_docs]
 ```
 
@@ -792,7 +746,6 @@ RETRIEVAL_MATRIX = {
         },
         rerank=True,
     ),
-    
     "hadith_agent": RetrievalStrategy(
         collection="hadith_passages",
         top_k=10,
@@ -801,14 +754,12 @@ RETRIEVAL_MATRIX = {
         },
         rerank=True,
     ),
-    
     "tafsir_agent": RetrievalStrategy(
         collection="tafsir_passages",
         top_k=10,
         filters={"type": "tafsir"},
         rerank=True,
     ),
-    
     # الافتراضي
     "default": RetrievalStrategy(
         collection="default",
@@ -817,6 +768,7 @@ RETRIEVAL_MATRIX = {
         rerank=False,
     ),
 }
+
 
 def get_strategy(agent_name: str) -> RetrievalStrategy:
     """الحصول على استراتيجية الوكيل."""
@@ -828,18 +780,19 @@ def get_strategy(agent_name: str) -> RetrievalStrategy:
 ```python
 class RetrievalResult(BaseModel):
     """نتيجة الاسترجاع."""
-    id: str                        # معرف الوثيقة
-    text: str                      # نص الوثيقة
-    score: float                   # الدرجة
-    collection: str               # المجموعة
-    metadata: dict               # البيانات الوصفية
-    
+
+    id: str  # معرف الوثيقة
+    text: str  # نص الوثيقة
+    score: float  # الدرجة
+    collection: str  # المجموعة
+    metadata: dict  # البيانات الوصفية
+
     # حقول إضافية
-    book_title: str | None        # عنوان الكتاب
-    author: str | None         # المؤلف
-    page: int | None          # الصفحة
-    grade: str | None        # الدرجة (للأحاديث)
-    chapter: str | None      # الفصل
+    book_title: str | None  # عنوان الكتاب
+    author: str | None  # المؤلف
+    page: int | None  # الصفحة
+    grade: str | None  # الدرجة (للأحاديث)
+    chapter: str | None  # الفصل
 ```
 
 ### 6.8 مثال على استرجاع
@@ -853,27 +806,23 @@ class RetrievalResult(BaseModel):
     {
         "id": "fiqh_passage_001",
         "text": "صلاة الجماعة فرض عين على كل ذكر بالغ قادر خلافاً للعلماء.\n"
-                "قال ابن المنذر: أجمع العلماء على أن صلاة الجماعة.vast"
-                "هي الفرض العين.",
+        "قال ابن المنذر: أجمع العلماء على أن صلاة الجماعة.vast"
+        "هي الفرض العين.",
         "score": 0.92,
         "collection": "fiqh_passages",
         "metadata": {
             "book_title": "الموسوعة الفقهية",
             "author": "الشيخ عبد الرحمن السديس",
             "page": 150,
-            "chapter": "صلاة الجماعة"
-        }
+            "chapter": "صلاة الجماعة",
+        },
     },
     {
         "id": "fiqh_passage_002",
         "text": "ويستحب التكبير في أول صلاة العيد...",
         "score": 0.85,
         "collection": "fiqh_passages",
-        "metadata": {
-            "book_title": "تحديد فروع الإيمان",
-            "author": "ابن حزم",
-            "page": 78
-        }
+        "metadata": {"book_title": "تحديد فروع الإيمان", "author": "ابن حزم", "page": 78},
     },
 ]
 ```
@@ -891,10 +840,10 @@ class RetrievalResult(BaseModel):
 لكل وكيل مجموعة تحقق خاصة:
 
 ```python
-# في src/verifiers/suite_builder.py
+# في src/verification/suite_builder.py
 def build_suite(agent_name: str) -> VerificationSuite:
     """بناء مجموعة التحقق للوكيل."""
-    
+
     suites = {
         "fiqh": VerificationSuite(
             checks=[
@@ -924,7 +873,6 @@ def build_suite(agent_name: str) -> VerificationSuite:
                 ),
             ]
         ),
-        
         "hadith": VerificationSuite(
             checks=[
                 VerificationCheck(name="exact_quote", fail_policy="abstain"),
@@ -933,7 +881,7 @@ def build_suite(agent_name: str) -> VerificationSuite:
             ]
         ),
     }
-    
+
     return suites.get(agent_name, VerificationSuite(checks=[]))
 ```
 
@@ -942,94 +890,76 @@ def build_suite(agent_name: str) -> VerificationSuite:
 #### 7.3.1 التحقق من الاقتباس الدقيق
 
 ```python
-# في src/verifiers/exact_quote.py
+# في src/verification/checks/exact_quote.py
 async def check_exact_quote(
     answer: str,
     passages: list[RetrievalResult],
 ) -> CheckResult:
     """التحقق من أن الاقتباسات دقيقة."""
-    
+
     # استخراج الاقتباسات من الإجابة
     quotes = extract_quotes(answer)
-    
+
     for quote in quotes:
         # البحث في المصادر
         match = find_in_passages(quote, passages)
-        
+
         if not match:
-            return CheckResult(
-                status="failed",
-                message=f"اقتباس غير موجود: {quote[:50]}..."
-            )
-        
+            return CheckResult(status="failed", message=f"اقتباس غير موجود: {quote[:50]}...")
+
         # التحقق من التطابق Exact
         if not is_exact_match(quote, match.text):
-            return CheckResult(
-                status="warning",
-                message="الاقتباس غير حرفي"
-            )
-    
+            return CheckResult(status="warning", message="الاقتباس غير حرفي")
+
     return CheckResult(status="passed")
 ```
 
 #### 7.3.2 التحقق من المصدر
 
 ```python
-# في src/verifiers/source_attribution.py
+# في src/verification/checks/source_attribution.py
 async def check_source_attribution(
     answer: str,
     passages: list[RetrievalResult],
 ) -> CheckResult:
     """التحقق من صحة المصادر."""
-    
+
     # استخراج أسماء المصادر
     mentioned_sources = extract_sources(answer)
-    
+
     for source in mentioned_sources:
         # البحث في المصادر
-        valid = any(
-            source.lower() in p.metadata.get("book_title", "").lower()
-            for p in passages
-        )
-        
+        valid = any(source.lower() in p.metadata.get("book_title", "").lower() for p in passages)
+
         if not valid:
-            return CheckResult(
-                status="warning",
-                message=f"مصدر غير موجود: {source}"
-            )
-    
+            return CheckResult(status="warning", message=f"مصدر غير موجود: {source}")
+
     return CheckResult(status="passed")
 ```
 
 #### 7.3.3 التحقق من درجة الحديث
 
 ```python
-# في src/verifiers/hadith_grade.py
+# في src/verification/checks/hadith_grade.py
 async def check_hadith_grade(
     answer: str,
     passages: list[RetrievalResult],
 ) -> CheckResult:
     """التحقق من صحة الأحاديث."""
-    
+
     # استخراج الأحاديث
     ahadith = extract_ahadith(answer)
-    
+
     for hadith_text in ahadith:
         # البحث عن الدرجة
         grade = get_grade_from_passages(hadith_text, passages)
-        
+
         if grade == "mawdu":
-            return CheckResult(
-                status="failed",
-                message="يشير إلى حديث موضوع (مكذوب)"
-            )
-        
+            return CheckResult(status="failed", message="يشير إلى حديث موضوع (مكذوب)")
+
         if grade == "daif":
-            return CheckResult(
-                status="warning",
-                message="يشير إلى حديث ضعيف"
-            )
-    
+            return CheckResult(status="warning", message="يشير إلى حديث ضعيف")
+
     return CheckResult(status="passed")
 ```
 
@@ -1046,15 +976,16 @@ async def check_hadith_grade(
 ```python
 class VerificationReport(BaseModel):
     """تقرير التحقق."""
-    status: str                # "passed" | "failed" | "abstained"
-    confidence: float          # 0.0 - 1.0
-    verified_passages: list[str] # المقاطع المحققة
-    abstained: bool          # هل توقف؟
+
+    status: str  # "passed" | "failed" | "abstained"
+    confidence: float  # 0.0 - 1.0
+    verified_passages: list[str]  # المقاطع المحققة
+    abstained: bool  # هل توقف؟
     abstention_reason: str | None  # سبب التوقف
-    
-    checks_passed: int       # عدد الفحوصات الناجحة
-    checks_failed: int        # عدد الفحوصات الفاشلة
-    warnings: list[str]      # التحذيرات
+
+    checks_passed: int  # عدد الفحوصات الناجحة
+    checks_failed: int  # عدد الفحوصات الفاشلة
+    warnings: list[str]  # التحذيرات
 ```
 
 ### 7.6 مثال على تحقق
@@ -1067,14 +998,11 @@ class VerificationReport(BaseModel):
 {
     "status": "passed",
     "confidence": 0.95,
-    "verified_passages": [
-        "fiqh_passage_001",
-        "fiqh_passage_002"
-    ],
+    "verified_passages": ["fiqh_passage_001", "fiqh_passage_002"],
     "abstained": False,
     "checks_passed": 3,
     "checks_failed": 0,
-    "warnings": []
+    "warnings": [],
 }
 ```
 
@@ -1089,14 +1017,14 @@ class VerificationReport(BaseModel):
 ### 8.2 عميل LLM
 
 ```python
-# في src/generation/llm_client.py
+# في src/infrastructure/llm_client.py
 class LLMClient:
     """عميل LLM."""
-    
+
     def __init__(self, api_key: str, provider: str = "openai"):
         self._api_key = api_key
         self._provider = provider
-    
+
     async def generate(
         self,
         prompt: str,
@@ -1105,21 +1033,15 @@ class LLMClient:
         temperature: float = 0.7,
     ) -> str:
         """توليد إجابة."""
-        
+
         # بناء الرسالة
         messages = []
-        
+
         if system_prompt:
-            messages.append({
-                "role": "system",
-                "content": system_prompt
-            })
-        
-        messages.append({
-            "role": "user",
-            "content": prompt
-        })
-        
+            messages.append({"role": "system", "content": system_prompt})
+
+        messages.append({"role": "user", "content": prompt})
+
         # استدعاء API
         if self._provider == "openai":
             response = await openai.chat.completions.create(
@@ -1128,14 +1050,14 @@ class LLMClient:
                 temperature=temperature,
                 max_tokens=2000,
             )
-        
+
         elif self._provider == "groq":
             response = await groq.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
             )
-        
+
         return response.choices[0].message.content
 ```
 
@@ -1146,9 +1068,10 @@ class LLMClient:
 def load_prompt(template_name: str) -> str:
     """تحميل نموذج المذكرة."""
     path = f"prompts/{template_name}.txt"
-    
+
     with open(path, "r", encoding="utf-8") as f:
         return f.read()
+
 
 def list_prompts() -> list[str]:
     """قائمة النماذج المتاحة."""
@@ -1165,21 +1088,18 @@ def _build_prompt(
     contexts: list[str],
 ) -> str:
     """بناء سؤال LLM."""
-    
+
     # تحميل النموذج
     template = self._load_prompt_template()
-    
+
     # بناء السياق
-    context_text = "\n\n".join([
-        f"[المصدر {i+1}]: {ctx}"
-        for i, ctx in enumerate(contexts)
-    ])
-    
+    context_text = "\n\n".join([f"[المصدر {i + 1}]: {ctx}" for i, ctx in enumerate(contexts)])
+
     # استبدال العناصر
     prompt = template.replace("{{query}}", query)
     prompt = prompt.replace("{{context}}", context_text)
     prompt = prompt.replace("{{language}}", self.config.language)
-    
+
     return prompt
 ```
 
@@ -1204,25 +1124,23 @@ def _build_prompt(
 ```python
 def _get_system_prompt(self) -> str:
     """_BUILD سؤال النظام."""
-    
+
     prompts = {
         "fiqh": """أنت عالم إسلامي متخصص في الفقه الإسلامي.
             - أجب باللغة العربية فصيحى
             - استخدم المذاهب الأربعة
             - اذكر المصادر بوضوح
             - تجنب الآراء الشاذة""",
-        
         "hadith": """أنت عالم حديث متخصص.
             -اذكر درجة الحديث (صحيح، حسن، ضعيف)
             -اذكر اسم الراوي
             -تجنب الأحاديث الضعيفة بدون سياق""",
-        
         "tafsir": """أنت مفسر قرآن متخصص.
             - أفسروا الآية بوضوح
             - اذكروا أسباب النزول
             - استخدموا التفاسير المعتمدة""",
     }
-    
+
     return prompts.get(self.config.name, "")
 ```
 
@@ -1288,31 +1206,23 @@ async def generate(
 # في src/agents/base.py
 _COT_PATTERNS = [
     # Markdown Headers
-    re.compile(
-        r"##?\s*(Analysis|Reasoning|Thought).*?\n\n",
-        re.IGNORECASE | re.DOTALL
-    ),
+    re.compile(r"##?\s*(Analysis|Reasoning|Thought).*?\n\n", re.IGNORECASE | re.DOTALL),
     # XML Tags
-    re.compile(
-        r"<\s*(analysis|reasoning|thought)\s*>.*?<\s*/\s*>",
-        re.IGNORECASE | re.DOTALL
-    ),
+    re.compile(r"<\s*(analysis|reasoning|thought)\s*>.*?<\s*/\s*>", re.IGNORECASE | re.DOTALL),
     # Let me / I'll
-    re.compile(
-        r"###\s*(?:Let me|I'll|I will).*?\n\s*",
-        re.IGNORECASE
-    ),
+    re.compile(r"###\s*(?:Let me|I'll|I will).*?\n\s*", re.IGNORECASE),
 ]
+
 
 def strip_cot_leakage(text: str) -> str:
     """إزالة تسرب التفكير."""
     if not text:
         return text
-    
+
     result = text
     for pattern in _COT_PATTERNS:
         result = pattern.sub("", result)
-    
+
     return result.strip()
 ```
 
@@ -1357,13 +1267,14 @@ def strip_cot_leakage(text: str) -> str:
 ```python
 class Citation(BaseModel):
     """اقتباس."""
-    source_id: str           # معرف المصدر
-    text: str             # النص المقتبس
+
+    source_id: str  # معرف المصدر
+    text: str  # النص المقتبس
     book_title: str | None  # عنوان الكتاب
-    page: int | None      # الصفحة
-    grade: str | None    # الدرجة (للأحاديث)
-    url: str | None     # الرابط
-    metadata: dict      # البيانات الوصفية
+    page: int | None  # الصفحة
+    grade: str | None  # الدرجة (للأحاديث)
+    url: str | None  # الرابط
+    metadata: dict  # البيانات الوصفية
 ```
 
 ### 10.3 بناء الاقتباسات
@@ -1374,10 +1285,10 @@ def _build_citations(
     passages: list[RetrievalResult],
 ) -> list[Citation]:
     """بناء الاقتباسات."""
-    
+
     citations = []
-    
-    for passage in passages[:self.config.max_citations]:
+
+    for passage in passages[: self.config.max_citations]:
         citation = Citation(
             source_id=passage.id,
             text=passage.text[:200],  # أول 200 حرف
@@ -1388,7 +1299,7 @@ def _build_citations(
             metadata=passage.metadata,
         )
         citations.append(citation)
-    
+
     return citations
 ```
 
@@ -1397,6 +1308,7 @@ def _build_citations(
 ```python
 class CitationResponse(BaseModel):
     """نموذج الاقتباس في الاستجابة."""
+
     source_id: str
     text: str
     book_title: str | None
@@ -1418,11 +1330,12 @@ class CitationResponse(BaseModel):
 ```python
 class AskResponse(BaseModel):
     """نموذج الاستجابة."""
-    answer: str                       # الإجابة
+
+    answer: str  # الإجابة
     citations: list[CitationResponse]  # الاقتباسات
-    intent: str                     # النية
-    confidence: float               # الثقة
-    processing_time_ms: int         # زمن المعالجة
+    intent: str  # النية
+    confidence: float  # الثقة
+    processing_time_ms: int  # زمن المعالجة
 ```
 
 ### 11.3 حساب الزمن
