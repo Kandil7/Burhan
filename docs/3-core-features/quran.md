@@ -306,7 +306,7 @@ results = await engine.search_tafsir("توحيد", limit=5)
 ### From Quran.com API
 
 ```bash
-python scripts/seed_quran_data.py --source api
+python scripts/data/seed_quran_data.py --source api
 ```
 
 **Process:**
@@ -319,13 +319,13 @@ python scripts/seed_quran_data.py --source api
 ### From Local JSON
 
 ```bash
-python scripts/seed_quran_data.py --source json --file data/seed/quran_full.json
+python scripts/data/seed_quran_data.py --source json --file data/seed/quran_sample.json
 ```
 
 ### Sample Data
 
 ```bash
-python scripts/seed_quran_data.py --sample
+python scripts/data/seed_quran_data.py --sample
 ```
 
 Loads 4 complete surahs for testing:
