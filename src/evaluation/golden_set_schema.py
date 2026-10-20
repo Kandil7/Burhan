@@ -8,7 +8,6 @@ on Islamic scholarly questions, particularly in Fiqh domain.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
 
 
 @dataclass
@@ -177,6 +176,6 @@ def load_golden_set(path: str) -> list[GoldenSetItem]:
     """
     import json
 
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
     return [GoldenSetItem(**item) for item in data]
