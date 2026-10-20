@@ -1,8 +1,7 @@
 # Clarify Prompt Module
 """Prompts for clarification requests."""
 
-from typing import Dict, Any, List, Optional
-
+from typing import Any
 
 CLARIFY_SYSTEM_PROMPT = """You are helping clarify user intent when questions are ambiguous.
 Your goal is to:
@@ -34,9 +33,9 @@ AMBIGUITY_TYPES = {
 
 def get_clarify_prompt(
     question: str,
-    ambiguities: List[str],
-    context: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    ambiguities: list[str],
+    context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Get a clarification prompt."""
     ambiguity_descriptions = [AMBIGUITY_TYPES.get(amb, amb) for amb in ambiguities]
 
