@@ -220,7 +220,7 @@ class BM25Retriever:
 
         scores = self.bm25.search(query, top_k=top_k)
 
-        results = []
+        results: list[dict[str, Any]] = []
         for doc_idx, score in scores:
             doc = self._documents[doc_idx].copy()
             doc["bm25_score"] = score
@@ -260,7 +260,7 @@ class BM25Retriever:
         else:
             scores = self.bm25.search(query, top_k=top_k)
 
-        results = []
+        results: list[dict[str, Any]] = []
         for doc_idx, score in scores:
             doc = filtered_docs[doc_idx].copy()
             doc["bm25_score"] = score
