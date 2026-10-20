@@ -1,5 +1,10 @@
 # 🎨 Burhan Frontend Documentation
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+> Current equivalents: the web frontend is not part of this repository.
+
 Complete guide to the Burhan Next.js frontend application.
 
 ---
