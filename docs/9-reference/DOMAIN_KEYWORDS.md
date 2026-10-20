@@ -199,7 +199,8 @@ To add domain-specific keywords:
 DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "fiqh": [
         # Existing keywords
-        "حكم", " يجوز",
+        "حكم",
+        " يجوز",
         # Add new keyword
         "جمعة",  # Friday prayer
     ],
