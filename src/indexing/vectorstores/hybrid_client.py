@@ -9,7 +9,7 @@ Provides:
 Phase 3.2: Qdrant Collections Setup for hybrid search.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from qdrant_client import QdrantClient
@@ -17,6 +17,8 @@ from qdrant_client.models import (
     FieldCondition,
     Filter,
     MatchValue,
+    Modifier,
+    SparseIndexParams,
     SparseVector,
     SparseVectorParams,
     VectorParams,
@@ -25,13 +27,10 @@ from qdrant_client.models import (
 from src.config.logging_config import get_logger
 
 from .hybrid_config import (
-    COLLECTION_CONFIGS,
-    CollectionConfig,
     DenseVectorConfig,
     HNSWConfig,
     QuantizationConfig,
     SparseVectorConfig,
-    get_collection_config,
 )
 
 logger = get_logger()
@@ -73,7 +72,7 @@ class HybridQdrantClient:
             url: Qdrant server URL (default: from settings)
             api_key: Qdrant API key (optional)
         """
-        self._client: Optional[QdrantClient] = None
+        self._client: QdrantClient | None = None
         self._url = url
         self._api_key = api_key
         self._initialized = False
@@ -114,7 +113,7 @@ class HybridQdrantClient:
     def collection_exists(self, collection_name: str) -> bool:
         """Check if collection exists."""
         self._ensure_initialized()
-        return self._client.collection_exists(collection_name)
+        return self.client.collection_exists(collection_name)
 
     def create_hybrid_collection(
         self,
@@ -146,22 +145,20 @@ class HybridQdrantClient:
             )
         }
 
-        # Build sparse vector params for BM25
+        # Build sparse vector params for BM25. Sparse vectors must be passed
+        # through the separate `sparse_vectors_config` argument.
         sparse_vectors_config = {
             "sparse": SparseVectorParams(
-                modifier=SparseVectorParams.Modifier.IDF,
-                invert=True,
-                index=True,
+                modifier=Modifier.IDF,
+                index=SparseIndexParams(on_disk=False),
             )
         }
 
-        # Combine both vector configs
-        all_vectors = {**dense_vectors_config, **sparse_vectors_config}
-
         # Create collection
-        self._client.create_collection(
+        self.client.create_collection(
             collection_name=collection_name,
-            vectors_config=all_vectors,
+            vectors_config=dense_vectors_config,
+            sparse_vectors_config=sparse_vectors_config,
         )
 
         logger.info(
@@ -175,8 +172,8 @@ class HybridQdrantClient:
         self,
         collection: str,
         dense_vec: np.ndarray,
-        sparse_vec: Optional[SparseVector] = None,
-        filters: Optional[dict[str, Any]] = None,
+        sparse_vec: SparseVector | None = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
         alpha: float = 0.6,
     ) -> list[dict[str, Any]]:
@@ -204,11 +201,13 @@ class HybridQdrantClient:
         # Build Qdrant filter
         qdrant_filter = None
         if filters:
-            conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()]
+            conditions: list[Any] = [
+                FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()
+            ]
             qdrant_filter = Filter(must=conditions)
 
         # Prepare query vectors
-        query_params = {
+        query_params: dict[str, Any] = {
             "collection_name": collection,
             "query_filter": qdrant_filter,
             "limit": top_k,
@@ -216,8 +215,8 @@ class HybridQdrantClient:
 
         # If sparse vector provided, use hybrid search with both
         if sparse_vec is not None:
-            sparse_weight = 1.0 - alpha
-
+            # Both prefetch branches are submitted; Qdrant fuses their
+            # results. `alpha` is reported for observability only.
             # Use prefetch for hybrid search
             query_params["prefetch"] = [
                 {
@@ -248,8 +247,8 @@ class HybridQdrantClient:
                     {
                         "id": point.id,
                         "score": point.score,
-                        "content": point.payload.get("content", ""),
-                        "metadata": {k: v for k, v in point.payload.items() if k != "content"},
+                        "content": (point.payload or {}).get("content", ""),
+                        "metadata": {k: v for k, v in (point.payload or {}).items() if k != "content"},
                     }
                 )
 
@@ -271,7 +270,7 @@ class HybridQdrantClient:
         self,
         collection: str,
         query_vector: np.ndarray,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
     ) -> list[dict[str, Any]]:
         """
@@ -290,7 +289,9 @@ class HybridQdrantClient:
 
         qdrant_filter = None
         if filters:
-            conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()]
+            conditions: list[Any] = [
+                FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()
+            ]
             qdrant_filter = Filter(must=conditions)
 
         try:
@@ -308,8 +309,8 @@ class HybridQdrantClient:
                     {
                         "id": point.id,
                         "score": point.score,
-                        "content": point.payload.get("content", ""),
-                        "metadata": {k: v for k, v in point.payload.items() if k != "content"},
+                        "content": (point.payload or {}).get("content", ""),
+                        "metadata": {k: v for k, v in (point.payload or {}).items() if k != "content"},
                     }
                 )
 
@@ -323,7 +324,7 @@ class HybridQdrantClient:
         self,
         collection: str,
         sparse_query: SparseVector,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 10,
     ) -> list[dict[str, Any]]:
         """
@@ -342,7 +343,9 @@ class HybridQdrantClient:
 
         qdrant_filter = None
         if filters:
-            conditions = [FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()]
+            conditions: list[Any] = [
+                FieldCondition(key=key, match=MatchValue(value=value)) for key, value in filters.items()
+            ]
             qdrant_filter = Filter(must=conditions)
 
         try:
@@ -360,8 +363,8 @@ class HybridQdrantClient:
                     {
                         "id": point.id,
                         "score": point.score,
-                        "content": point.payload.get("content", ""),
-                        "metadata": {k: v for k, v in point.payload.items() if k != "content"},
+                        "content": (point.payload or {}).get("content", ""),
+                        "metadata": {k: v for k, v in (point.payload or {}).items() if k != "content"},
                     }
                 )
 
@@ -376,7 +379,7 @@ class HybridQdrantClient:
         collection: str,
         documents: list[dict[str, Any]],
         dense_embeddings: np.ndarray,
-        sparse_vectors: Optional[list[SparseVector]] = None,
+        sparse_vectors: list[SparseVector] | None = None,
     ) -> int:
         """
         Upsert documents with both dense and sparse vectors.
@@ -442,7 +445,7 @@ class HybridQdrantClient:
         """Delete a collection."""
         self._ensure_initialized()
         try:
-            self._client.delete_collection(collection_name=collection_name)
+            self.client.delete_collection(collection_name=collection_name)
             logger.info("hybrid_client.collection_deleted", collection=collection_name)
             return True
         except Exception as e:
@@ -453,7 +456,7 @@ class HybridQdrantClient:
         """Get collection information."""
         self._ensure_initialized()
         try:
-            info = self._client.get_collection(collection_name)
+            info = self.client.get_collection(collection_name)
             return {
                 "name": collection_name,
                 "vectors_count": getattr(info, "vectors_count", 0),
@@ -468,38 +471,12 @@ class HybridQdrantClient:
         """List all collections."""
         self._ensure_initialized()
         try:
-            collections = self._client.get_collections()
+            collections = self.client.get_collections()
             return [c.name for c in collections.collections]
         except Exception as e:
             logger.error("hybrid_client.list_error", error=str(e))
             return []
 
 
-# Extend HNSWConfig and QuantizationConfig with to_grpc methods
-def _extend_config_classes():
-    """Add to_grpc methods to config classes for Qdrant compatibility."""
-
-    def hnsw_to_grpc(self):
-        """Convert to Qdrant HNSW config."""
-        from qdrant_client.models import HnswConfigDiff
-
-        return HnswConfigDiff(
-            m=self.m,
-            ef_construct=self.ef_construct,
-            full_scan_threshold=self.full_scan_threshold,
-        )
-
-    def quantization_to_grpc(self):
-        """Convert to Qdrant quantization config."""
-        from qdrant_client.models import QuantizationConfigDiff
-
-        return QuantizationConfigDiff(
-            quantized_by_default=True,
-            always_ram=self.always_ram,
-        )
-
-    HNSWConfig.to_grpc = hnsw_to_grpc
-    QuantizationConfig.to_grpc = quantization_to_grpc
-
-
-_extend_config_classes()
+# `HNSWConfig.to_grpc()` and `QuantizationConfig.to_grpc()` are defined on the
+# dataclasses in `hybrid_config.py`; no runtime monkey-patching is needed here.
