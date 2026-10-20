@@ -18,7 +18,7 @@ This document provides a detailed index of every file in the `src/` directory wi
 | File | Lines | Domain | Config |
 |------|-------|--------|---------|
 | `collection/__init__.py` | ~50 | Export all agents | - |
-| `collection/base.py` | ~546 | **BASE** - CollectionAgent base classes | `CollectionAgentConfig`, `RetrievalStrategy`, `IntentLabel` |
+| `collection/base.py` | ~546 | **BASE** - CollectionAgent base classes | `CollectionAgentConfig`, `RetrievalStrategy`, `VerificationCheck` |
 | `collection/fiqh.py` | ~280 | FiQH (jurisprudence) | `fiqh.yaml` |
 | `collection/hadith.py` | ~240 | Hadith | `hadith.yaml` |
 | `collection/tafsir.py` | ~180 | Tafsir (Quran exegesis) | `tafsir.yaml` |
@@ -224,59 +224,54 @@ This document provides a detailed index of every file in the `src/` directory wi
 
 ---
 
-## 🗂️ src/verification/ vs src/verifiers/
+## 🗂️ src/verification/ (single package)
 
-### verification/ (Wrapper - Empty)
+### verification/
 
 | File | Lines | Purpose |
 |------|-------|---------|
 | `__init__.py` | ~21 | Re-exports |
 | `schemas.py` | ~100 | Verification schemas |
-| `trace.py` | ~100 | Trace |
-| `checks/__init__.py` | ~30 | Checks wrapper |
-
-### verifiers/ (Active - Deprecated)
-
-| File | Lines | Purpose |
-|------|-------|---------|
-| `__init__.py` | ~30 | ⚠️ DEPRECATED notice |
-| `suite_builder.py` | ~475 | Build/Run verification |
-| `base.py` | ~100 | Base classes |
-| `exact_quote.py` | ~200 | Quote validation |
-| `source_attribution.py` | ~200 | Source verification |
-| `hadith_grade.py` | ~200 | Hadith grading |
-| `contradiction.py` | ~150 | Check contradictions |
-| `evidence_sufficiency.py` | ~150 | Evidence check |
-| `temporal_consistency.py` | ~100 | Time checks |
-| `school_consistency.py` | ~100 | Madhhab checks |
-| `groundedness_judge.py` | ~100 | Grounding check |
-| `quote_span.py` | ~100 | Quote spans |
+| `trace.py` | ~100 | Verification trace |
+| `pipeline.py` | ~100 | Verification pipeline |
 | `policies.py` | ~100 | Verification policies |
-| `pipeline.py` | ~100 | Pipeline |
-| `fiqh_checks.py` | ~100 | FiQH checks |
+| `suite_builder.py` | ~475 | Build/run verification suites |
+| `base.py` | ~100 | Base classes |
+| `checks/__init__.py` | ~30 | Checks package |
+| `checks/exact_quote.py` | ~200 | Quote validation |
+| `checks/source_attribution.py` | ~200 | Source verification |
+| `checks/hadith_grade.py` | ~200 | Hadith grading |
+| `checks/contradiction.py` | ~150 | Check contradictions |
+| `checks/evidence_sufficiency.py` | ~150 | Evidence check |
+| `checks/temporal_consistency.py` | ~100 | Time checks |
+| `checks/school_consistency.py` | ~100 | Madhhab checks |
+| `checks/groundedness_judge.py` | ~100 | Grounding check |
+| `checks/quote_span.py` | ~100 | Quote spans |
+| `checks/fiqh_checks.py` | ~100 | Fiqh checks |
+
+The former `src/verifiers/` package no longer exists.
 
 ---
 
-## 🗂️ src/knowledge/ (Legacy Wrapper - 14 files)
+## 🗂️ src/indexing/ and src/retrieval/ (replacing src/knowledge/)
 
-**Purpose**: Legacy facade wrapping `src/retrieval/`. Kept for backward compatibility.
+**Purpose**: The former `src/knowledge/` package was split into `src/indexing/` and `src/retrieval/`.
 
 | File | Purpose |
 |------|---------|
-| `__init__.py` | Re-exports |
-| `embedding_model.py` | BGE-M3 embeddings |
-| `vector_store.py` | Qdrant client |
-| `hybrid_search.py` | Hybrid search |
-| `bm25_retriever.py` | BM25 (wraps retrieval) |
-| `query_expander.py` | Query expansion |
-| `hierarchical_retriever.py` | Hierarchical |
-| `reranker.py` | Re-ranking |
-| `book_weighter.py` | Book weighting |
-| `title_loader.py` | Load titles |
-| `hadith_grader.py` | Hadith grading |
-| `hadith_grader_original.py` | Original grader |
-| `embedding_cache.py` | Embedding cache |
-| `hierarchical_chunker.py` | Text chunking |
+| `indexing/embeddings/embedding_model.py` | BGE-M3 embeddings |
+| `indexing/embeddings/embedding_cache.py` | Embedding cache |
+| `indexing/vectorstores/qdrant_store.py` | Qdrant client |
+| `indexing/vectorstores/hybrid_client.py` | Hybrid search |
+| `indexing/lexical/bm25_index.py` | BM25 index |
+| `indexing/metasrc/indexing/metadata/title_loader.py` | Load titles |
+| `retrieval/retrievers/bm25_retriever.py` | BM25 retriever |
+| `retrieval/retrievers/hierarchical_retriever.py` | Hierarchical retrieval |
+| `retrieval/ranking/reranker.py` | Re-ranking |
+| `retrieval/ranking/book_weighter.py` | Book weighting |
+| `retrieval/expanders/query_expander.py` | Query expansion |
+| `verification/checks/hadith_grade.py` | Hadith grading |
+| `scripts/ingestion/chunk_all_books.py` | Text chunking |
 
 ---
 
@@ -296,7 +291,7 @@ This document provides a detailed index of every file in the `src/` directory wi
 | Module | Files | Purpose |
 |--------|-------|---------|
 | `src/config/` | ~10 | Configuration |
-| `src/config_runtime/` | ~5 | Runtime config |
+| `src/config/` | ~5 | Runtime config |
 | `src/generation/` | ~15 | Answer generation |
 | `src/tools/` | ~10 | Islamic tools |
 | `src/quran/` | ~10 | Quran logic |
