@@ -28,24 +28,25 @@
 ### 1.2 الفحوصات المتاحة
 
 ```
-src/verifiers/
+src/verification/
     ├── base.py
     ├── __init__.py
-    ├── exact_quote.py          # التحقق من الاقتباس
-    ├── source_attribution.py   # التحقق من المصدر
-    ├── hadith_grade.py        # التحقق من درجة الحديث
-    ├── contradiction.py       # التحقق من التناقض
-    ├── evidence_sufficiency.py # التحقق من كفاية الدليل
-    ├── temporal_consistency.py  # التحقق الزمني
-    ├── school_consistency.py    # التحقق من اتساق المذهب
-    ├── groundedness_judge.py      # الحكم في الت grounding
-    ├── quote_span.py            # استخراج الاقتباسات
-    ├── policies.py              # السياسات
-    ├── pipeline.py            # خط الأنابيب
-    ├── suite_builder.py        # بناء المجموعات
-    ├── misattribution.py      # التحقق من نسب المصدر
-    ├── missing_evidence.py     # التحقق من الشهود المفقودين
-    ├── fiqh_checks.py          # فحوصات فقهية
+    ├── checks/
+    │   ├── exact_quote.py          # التحقق من الاقتباس
+    │   ├── source_attribution.py   # التحقق من المصدر
+    │   ├── hadith_grade.py         # التحقق من درجة الحديث
+    │   ├── contradiction.py        # التحقق من التناقض
+    │   ├── evidence_sufficiency.py # التحقق من كفاية الدليل
+    │   ├── temporal_consistency.py # التحقق الزمني
+    │   ├── school_consistency.py   # التحقق من اتساق المذهب
+    │   ├── groundedness_judge.py   # الحكم في ال grounding
+    │   ├── quote_span.py           # استخراج الاقتباسات
+    │   ├── misattribution.py       # التحقق من نسب المصدر
+    │   ├── missing_evidence.py     # التحقق من الشهود المفقودين
+    │   └── fiqh_checks.py          # فحوصات فقهية
+    ├── policies.py                 # السياسات
+    ├── pipeline.py                 # خط الأنابيب
+    └── suite_builder.py            # بناء المجموعات
 ```
 
 ---
@@ -59,7 +60,7 @@ src/verifiers/
 ### 2.2 المنطق
 
 ```python
-# في src/verifiers/exact_quote.py
+# في src/verification/checks/exact_quote.py
 
 import re
 from typing import Optional
@@ -182,42 +183,40 @@ class ExactQuoteValidator:
 ### 3.2 المنطق
 
 ```python
-# في src/verifiers/source_attribution.py
+# في src/verification/checks/source_attribution.py
+
 
 class SourceAttributionValidator:
     """مدقق نسب المصادر."""
-    
+
     async def validate(
         self,
         answer: str,
         passages: list[RetrievalResult],
     ) -> CheckResult:
         """تحقق من نسب المصادر."""
-        
+
         # 1. استخراج أسماء المصادر
         sources = self._extract_sources(answer)
-        
+
         # 2. التحقق من كل مصدر
         valid_sources = []
         invalid_sources = []
-        
+
         for source in sources:
             if self._validate_source(source, passages):
                 valid_sources.append(source)
             else:
                 invalid_sources.append(source)
-        
+
         if invalid_sources:
-            return CheckResult(
-                status="warning",
-                message=f"Unverified sources: {invalid_sources}"
-            )
-        
+            return CheckResult(status="warning", message=f"Unverified sources: {invalid_sources}")
+
         return CheckResult(status="passed")
-    
+
     def _extract_sources(self, text: str) -> list[str]:
         """استخراج أسماء المصادر."""
-        
+
         patterns = [
             # صحيح البخاري
             r"(?:صحيح|سنن|مجمع) (\w+)",
@@ -226,28 +225,28 @@ class SourceAttributionValidator:
             # الموسوعة الفقهية
             r"(\w+) الفقهية",
         ]
-        
+
         sources = []
         for pattern in patterns:
             matches = re.finditer(pattern, text)
             sources.extend([m.group(0).strip() for m in matches])
-        
+
         return list(set(sources))
-    
+
     def _validate_source(
         self,
         source: str,
         passages: list[RetrievalResult],
     ) -> bool:
         """التحقق من المصدر."""
-        
+
         for passage in passages:
             metadata = passage.metadata
             book_title = metadata.get("book_title", "")
-            
+
             if source.lower() in book_title.lower():
                 return True
-        
+
         return False
 ```
 
@@ -262,78 +261,73 @@ class SourceAttributionValidator:
 ### 4.2 المنطق
 
 ```python
-# في src/verifiers/hadith_grade.py
+# في src/verification/checks/hadith_grade.py
+
 
 class HadithGradeValidator:
     """مدقق درجات الأحاديث."""
-    
+
     async def validate(
         self,
         answer: str,
         passages: list[RetrievalResult],
     ) -> CheckResult:
         """تحقق من درجات الأحاديث."""
-        
+
         # 1. استخراج الأحاديث
         ahadith = self._extract_ahadith(answer)
-        
+
         if not ahadith:
             return CheckResult(status="passed")
-        
+
         # 2. التحقق من كل حديث
         weak_mentioned = []
         fabricated = []
-        
+
         for hadith in ahadith:
             grade = self._get_grade(hadith, passages)
-            
+
             if grade == "ضعيف":
                 weak_mentioned.append(hadith[:50])
             elif grade == "موضوع":
                 fabricated.append(hadith[:50])
-        
+
         # 3. تقرير النتيجة
         if fabricated:
-            return CheckResult(
-                status="failed",
-                message=f"Fabricated hadith mentioned: {fabricated}"
-            )
-        
+            return CheckResult(status="failed", message=f"Fabricated hadith mentioned: {fabricated}")
+
         if weak_mentioned:
-            return CheckResult(
-                status="warning",
-                message=f"Weak hadith mentioned: {weak_mentioned}"
-            )
-        
+            return CheckResult(status="warning", message=f"Weak hadith mentioned: {weak_mentioned}")
+
         return CheckResult(status="passed")
-    
+
     def _extract_ahadith(self, text: str) -> list[str]:
         """استخراج الأحاديث."""
-        
+
         patterns = [
             r"(?:قال|أخبر) النبي",
             r"حديث (?:عمر|علي|أبي|ابن) \w+",
             r"heard from",
         ]
-        
+
         ahadith = []
         for pattern in patterns:
             matches = re.finditer(pattern, text)
             ahadith.extend([m.group(0) for m in matches])
-        
+
         return ahadith
-    
+
     def _get_grade(
         self,
         hadith: str,
         passages: list[RetrievalResult],
     ) -> str:
         """الحصول على درجة الحديث."""
-        
+
         for passage in passages:
             if hadith in passage.text:
                 return passage.metadata.get("grade", "unknown")
-        
+
         return "unknown"
 ```
 
@@ -348,73 +342,71 @@ class HadithGradeValidator:
 ### 5.2 المنطق
 
 ```python
-# في src/verifiers/contradiction.py
+# في src/verification/checks/contradiction.py
+
 
 class ContradictionDetector:
     """كاشف التناقضات."""
-    
+
     async def validate(
         self,
         answer: str,
         passages: list[RetrievalResult],
     ) -> CheckResult:
         """تحقق من التناقضات."""
-        
+
         # 1. استخراج الادعاءات
         claims = self._extract_claims(answer)
-        
+
         # 2. التحقق من التناقضات
         contradictions = []
-        
+
         for i, claim1 in enumerate(claims):
-            for claim2 in claims[i+1:]:
+            for claim2 in claims[i + 1 :]:
                 if self._is_contradiction(claim1, claim2):
                     contradictions.append((claim1, claim2))
-        
+
         if contradictions:
-            return CheckResult(
-                status="warning",
-                message=f"Possible contradictions: {contradictions}"
-            )
-        
+            return CheckResult(status="warning", message=f"Possible contradictions: {contradictions}")
+
         return CheckResult(status="passed")
-    
+
     def _extract_claims(self, text: str) -> list[str]:
         """استخراج الادعاءات."""
-        
+
         # جمل affirmative
         patterns = [
             r"[^\.]+\.(?:قال|ذهب|فرض|واجب|حظر|حرام)",
         ]
-        
+
         claims = []
         for pattern in patterns:
             matches = re.finditer(pattern, text)
             claims.extend([m.group(0).strip() for m in matches])
-        
+
         return claims
-    
+
     def _is_contradiction(self, claim1: str, claim2: str) -> bool:
         """التحقق من التناقض."""
-        
+
         # Keywords المتناقضة
         pairs = [
             (["فرض", "واجب"], ["سنة", "مستحب"]),
             (["حلال", "حرام"], ["مكروه", "حرام"]),
             (["صحيح", "موضوع"], ["ضعيف", "موضوع"]),
         ]
-        
+
         for pair1, pair2 in pairs:
             has_pair1_in_claim1 = any(w in claim1 for w in pair1)
             has_pair2_in_claim2 = any(w in claim2 for w in pair2)
             has_pair2_in_claim1 = any(w in claim1 for w in pair2)
             has_pair1_in_claim2 = any(w in claim2 for w in pair1)
-            
+
             if has_pair1_in_claim1 and has_pair2_in_claim2:
                 return True
             if has_pair2_in_claim1 and has_pair1_in_claim2:
                 return True
-        
+
         return False
 ```
 
@@ -429,71 +421,61 @@ class ContradictionDetector:
 ### 6.2 المنطق
 
 ```python
-# في src/verifiers/evidence_sufficiency.py
+# في src/verification/checks/evidence_sufficiency.py
+
 
 class EvidenceSufficiencyValidator:
     """مدقق كفاية الأدلة."""
-    
+
     async def validate(
         self,
         answer: str,
         passages: list[RetrievalResult],
     ) -> CheckResult:
         """تحقق من كفاية الأدلة."""
-        
+
         # 1. تقييم قوة الأدلة
         score = self._evaluate_evidence(passages)
-        
+
         if score < 0.3:
-            return CheckResult(
-                status="failed",
-                confidence=score,
-                message="Evidence insufficient"
-            )
-        
+            return CheckResult(status="failed", confidence=score, message="Evidence insufficient")
+
         if score < 0.6:
-            return CheckResult(
-                status="warning",
-                confidence=score,
-                message="Evidence moderate"
-            )
-        
-        return CheckResult(
-            status="passed",
-            confidence=score
-        )
-    
+            return CheckResult(status="warning", confidence=score, message="Evidence moderate")
+
+        return CheckResult(status="passed", confidence=score)
+
     def _evaluate_evidence(self, passages: list[RetrievalResult]) -> float:
         """تقييم قوة الأدلة."""
-        
+
         if not passages:
             return 0.0
-        
+
         # Factors
         scores = []
-        
+
         for passage in passages:
             score = 0.0
-            
+
             # 1. Grade
             grade = passage.metadata.get("grade", "")
             if grade in ["sahih", "hasan"]:
                 score += 0.4
             elif grade == "weak":
                 score += 0.2
-            
+
             # 2. Score
             score += passage.score * 0.3
-            
+
             # 3. Source authority
             book = passage.metadata.get("book_title", "").lower()
             if book in ["صحيح البخاري", "صحيح مسلم"]:
                 score += 0.3
             elif "سنن" in book:
                 score += 0.2
-            
+
             scores.append(score)
-        
+
         return sum(scores) / len(scores)
 ```
 
@@ -506,15 +488,18 @@ class EvidenceSufficiencyValidator:
 يبني مجموعات التحقق لكل وكيل.
 
 ```python
-# في src/verifiers/suite_builder.py
+# في src/verification/suite_builder.py
+
 
 class VerificationSuite(BaseModel):
     """مجموعة التحقق."""
+
     checks: list[VerificationCheck]
 
 
 class VerificationCheck(BaseModel):
     """فحص واحد."""
+
     name: str
     fail_policy: str  # "abstain" | "warn" | "proceed"
     enabled: bool = True
@@ -522,54 +507,31 @@ class VerificationCheck(BaseModel):
 
 def build_suite(agent_name: str) -> VerificationSuite:
     """بناء مجموعة التحقق."""
-    
+
     suites = {
-        "fiqh": VerificationSuite(checks=[
-            VerificationCheck(
-                name="exact_quote",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="source_attribution",
-                fail_policy="warn"
-            ),
-            VerificationCheck(
-                name="contradiction_detector",
-                fail_policy="proceed"
-            ),
-            VerificationCheck(
-                name="evidence_sufficiency",
-                fail_policy="abstain"
-            ),
-        ]),
-        
-        "hadith": VerificationSuite(checks=[
-            VerificationCheck(
-                name="exact_quote",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="hadith_grade",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="source_attribution",
-                fail_policy="warn"
-            ),
-        ]),
-        
-        "tafsir": VerificationSuite(checks=[
-            VerificationCheck(
-                name="exact_quote",
-                fail_policy="abstain"
-            ),
-            VerificationCheck(
-                name="source_attribution",
-                fail_policy="warn"
-            ),
-        ]),
+        "fiqh": VerificationSuite(
+            checks=[
+                VerificationCheck(name="exact_quote", fail_policy="abstain"),
+                VerificationCheck(name="source_attribution", fail_policy="warn"),
+                VerificationCheck(name="contradiction_detector", fail_policy="proceed"),
+                VerificationCheck(name="evidence_sufficiency", fail_policy="abstain"),
+            ]
+        ),
+        "hadith": VerificationSuite(
+            checks=[
+                VerificationCheck(name="exact_quote", fail_policy="abstain"),
+                VerificationCheck(name="hadith_grade", fail_policy="abstain"),
+                VerificationCheck(name="source_attribution", fail_policy="warn"),
+            ]
+        ),
+        "tafsir": VerificationSuite(
+            checks=[
+                VerificationCheck(name="exact_quote", fail_policy="abstain"),
+                VerificationCheck(name="source_attribution", fail_policy="warn"),
+            ]
+        ),
     }
-    
+
     return suites.get(agent_name, VerificationSuite(checks=[]))
 ```
 
