@@ -1,5 +1,9 @@
 # Burhan Refactor Plan (v2)
 
+> **Status: historical record.** This document captures the repository as it was at the
+> time of writing. Some module, script, and data paths below have since been moved or
+> removed.
+
 This document defines a clean, low-risk refactor path for the Burhan backend into a clearer layered architecture suitable for FastAPI, hybrid retrieval, agentic orchestration, and explicit verification.[cite:80][cite:81][cite:83]
 
 The current Burhan structure already contains strong building blocks such as FastAPI routes, specialized agents, hybrid search, reranking, deterministic tools, and Quran-specific validation, but several responsibilities are still too tightly grouped, especially around routing, retrieval, indexing, and verification.[cite:80][cite:82]
