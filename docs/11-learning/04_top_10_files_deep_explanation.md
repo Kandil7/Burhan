@@ -15,7 +15,7 @@
 | 5 | `src/core/citation.py` | 350 سطر | تطبيع الاقتباسات |
 | 6 | `src/agents/base.py` | 90 سطر | الفئات الأساسية |
 | 7 | `src/agents/chatbot_agent.py` | 160 سطر | أبسط وكيل |
-| 8 | `src/agents/fiqh_agent.py` | 280 سطر | وكيل RAG كامل |
+| 8 | `src/agents/collection/fiqh.py` | 280 سطر | وكيل RAG كامل |
 | 9 | `src/tools/base.py` | 70 سطر | فئة الأدوات |
 | 10 | `src/tools/zakat_calculator.py` | 350 سطر | حاسبة الزكاة |
 
@@ -73,12 +73,7 @@ from pathlib import Path
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore")
 ```
 
 **شرح**:
@@ -233,24 +228,25 @@ redis://localhost:6379/0
 ### الأسطر 61-75: إعدادات LLM
 
 ```python
-    # ==========================================
-    # LLM Provider
-    # ==========================================
-    llm_provider: str = "openai"  # openai or groq
-    openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-4o-mini"
-    groq_api_key: Optional[str] = None
-    groq_model: str = "qwen/qwen3-32b"
-    llm_temperature: float = 0.1
-    llm_max_tokens: int = 2048
+# ==========================================
+# LLM Provider
+# ==========================================
+llm_provider: str = "openai"  # openai or groq
+openai_api_key: Optional[str] = None
+openai_model: str = "gpt-4o-mini"
+groq_api_key: Optional[str] = None
+groq_model: str = "qwen/qwen3-32b"
+llm_temperature: float = 0.1
+llm_max_tokens: int = 2048
 
-    # HuggingFace
-    hf_token: Optional[str] = None
+# HuggingFace
+hf_token: Optional[str] = None
 
-    @property
-    def llm_model(self) -> str:
-        """Return the correct model based on provider."""
-        return self.groq_model if self.llm_provider == "groq" else self.openai_model
+
+@property
+def llm_model(self) -> str:
+    """Return the correct model based on provider."""
+    return self.groq_model if self.llm_provider == "groq" else self.openai_model
 ```
 
 **شرح**:
@@ -409,14 +405,15 @@ def llm_model(self) -> str:
 ---
 
 ```python
-    @field_validator("secret_key")
-    @classmethod
-    def validate_secret_key(cls, v):
-        """Ensure secret key is changed from default."""
-        if v == "change-this-in-production-please-use-random-string":
-            import warnings
-            warnings.warn("Using default secret key! Change this in production.", UserWarning)
-        return v
+@field_validator("secret_key")
+@classmethod
+def validate_secret_key(cls, v):
+    """Ensure secret key is changed from default."""
+    if v == "change-this-in-production-please-use-random-string":
+        import warnings
+
+        warnings.warn("Using default secret key! Change this in production.", UserWarning)
+    return v
 ```
 
 **شرح**:
