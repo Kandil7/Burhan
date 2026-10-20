@@ -109,11 +109,8 @@ scripts/
 ### Dataset Management
 
 ```bash
-# Check dataset integrity
-python scripts/analysis/check_datasets.py
-
-# Analyze datasets
-python scripts/analysis/analyze_dataset.py --report
+# Analyze chunk quality and dataset statistics
+python src/indexing/pipelines/analyze_chunks.py
 
 # Create mini-dataset for MVP
 python scripts/data/create_mini_dataset.py
@@ -228,13 +225,13 @@ Used for testing the system:
 
 ```python
 from scripts.utils import (
-    get_project_root,      # Project root path
-    get_data_dir,          # Data directory path
-    get_datasets_dir,      # Datasets directory path
-    setup_script_logger,   # Consistent logging setup
-    ProgressBar,           # Progress bar wrapper
-    format_size,           # Human-readable file sizes
-    format_duration,      # Human-readable durations
+    get_project_root,  # Project root path
+    get_data_dir,  # Data directory path
+    get_datasets_dir,  # Datasets directory path
+    setup_script_logger,  # Consistent logging setup
+    ProgressBar,  # Progress bar wrapper
+    format_size,  # Human-readable file sizes
+    format_duration,  # Human-readable durations
 )
 ```
 
