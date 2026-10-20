@@ -27,14 +27,14 @@ import json
 
 # تحميل الـ eval set
 eval_data = []
-with open('rag_eval_seerah.jsonl', 'r') as f:
+with open("rag_eval_seerah.jsonl", "r") as f:
     for line in f:
         eval_data.append(json.loads(line))
 
 # لكل سؤال → retrieve → check if gold_passages موجودة في top-k
 for item in eval_data:
-    query = item['query']
-    gold_passages = item['gold_passages']
+    query = item["query"]
+    gold_passages = item["gold_passages"]
     # ... your RAG pipeline here
 ```
 
@@ -57,15 +57,15 @@ from typing import Dict, List, Any
 
 # الـAPI endpoint
 API_URL = "http://localhost:8002/api/v1/ask"
-HEADERS = {
-    "accept": "application/json",
-    "Content-Type": "application/json"
-}
+HEADERS = {"accept": "application/json", "Content-Type": "application/json"}
 
 # الـeval dataset (انسخ الـJSONL اللي عملناه)
 EVAL_DATA = [
     {"query": "ما الحدث التاريخي الذي تدور حوله الفقرة الأولى؟", "gold_passages": [{"book_id": 77, "page_number": 1}]},
-    {"query": "ما النص الذي أورده الكاتب عند دخول النبي المدينة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]},
+    {
+        "query": "ما النص الذي أورده الكاتب عند دخول النبي المدينة؟",
+        "gold_passages": [{"book_id": 77, "page_number": 1}],
+    },
     {"query": "ما وصف الكاتب لأثر الهجرة على التاريخ؟", "gold_passages": [{"book_id": 77, "page_number": 2}]},
     {"query": "لماذا اعتنى المسلمون بسيرة النبي؟", "gold_passages": [{"book_id": 77, "page_number": 2}]},
     {"query": "ما الغاية من ذكرى الهجرة اليوم؟", "gold_passages": [{"book_id": 77, "page_number": 2}]},
@@ -86,6 +86,7 @@ EVAL_DATA = [
     {"query": "ما الهدف من خطبة المدينة؟", "gold_passages": [{"book_id": 77, "page_number": 1}]},
 ]
 
+
 def query_rag(question: str) -> Dict[str, Any]:
     """يبعت السؤال للـAPI ويرجع الـresponse"""
     payload = {"query": question}
@@ -96,72 +97,79 @@ def query_rag(question: str) -> Dict[str, Any]:
     except Exception as e:
         return {"error": str(e), "query": question}
 
+
 def evaluate_response(response: Dict, gold_passages: List[Dict]) -> Dict:
     """يحسب الـmetrics للـresponse"""
     if "error" in response:
         return {"hit_rate": 0, "precision": 0, "citations": 0, "error": response["error"]}
-    
+
     retrieved_books = [c.get("source_id") for c in response.get("citations", [])]
     retrieved_pages = set((c.get("source_id"), c.get("page_number")) for c in response.get("citations", []))
-    
+
     # Hit rate: هل واحد على الأقل من الـgold موجود؟
     gold_books = [g["book_id"] for g in gold_passages]
     hit_rate = 1 if any(book in retrieved_books for book in gold_books) else 0
-    
+
     # Precision: نسبة الـcitations الصحيحة
     correct_cites = sum(1 for book in retrieved_books if book in gold_books)
     precision = correct_cites / max(len(retrieved_books), 1)
-    
+
     return {
         "hit_rate": hit_rate,
         "precision": precision,
         "citations": len(retrieved_books),
         "intent": response.get("intent"),
         "confidence": response.get("metadata", {}).get("intent_confidence", 0),
-        "processing_time": response.get("metadata", {}).get("processing_time_ms", 0)
+        "processing_time": response.get("metadata", {}).get("processing_time_ms", 0),
     }
+
 
 def main():
     """الـmain function"""
     results = []
-    
+
     print("🧪 بدء الـEvaluation على 20 سؤال...")
     for i, item in enumerate(tqdm(EVAL_DATA, desc="Testing")):
-        print(f"\n[{i+1}/20] {item['query'][:50]}...")
+        print(f"\n[{i + 1}/20] {item['query'][:50]}...")
         time.sleep(0.5)  # Rate limiting
-        
+
         response = query_rag(item["query"])
         metrics = evaluate_response(response, item["gold_passages"])
-        results.append({
-            **metrics,
-            "query": item["query"],
-            "gold_books": [g["book_id"] for g in item["gold_passages"]],
-            "retrieved_books": [c.get("source_id") for c in response.get("citations", [])] if "error" not in response else []
-        })
-    
+        results.append(
+            {
+                **metrics,
+                "query": item["query"],
+                "gold_books": [g["book_id"] for g in item["gold_passages"]],
+                "retrieved_books": [c.get("source_id") for c in response.get("citations", [])]
+                if "error" not in response
+                else [],
+            }
+        )
+
     # حفظ النتايج
     df = pd.DataFrame(results)
     df.to_csv("rag_eval_results.csv", index=False)
-    
+
     # الـSummary
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("📊 RESULTS SUMMARY")
-    print("="*50)
+    print("=" * 50)
     print(f"Hit Rate العام: {df['hit_rate'].mean():.2%}")
     print(f"Precision المتوسط: {df['precision'].mean():.3f}")
     print(f"Citations/سؤال: {df['citations'].mean():.1f}")
     print(f"Intent Confidence: {df['confidence'].mean():.3f}")
     print(f"Processing Time: {df['processing_time'].mean():.0f}ms")
-    
+
     # Top/Bottom performers
     print("\n🏆 أفضل 5 أسئلة:")
-    print(df.nlargest(5, 'precision')[['query', 'precision', 'hit_rate']].to_string(index=False))
-    
+    print(df.nlargest(5, "precision")[["query", "precision", "hit_rate"]].to_string(index=False))
+
     print("\n💔 أسوأ 5 أسئلة:")
-    print(df.nsmallest(5, 'precision')[['query', 'precision', 'hit_rate']].to_string(index=False))
-    
+    print(df.nsmallest(5, "precision")[["query", "precision", "hit_rate"]].to_string(index=False))
+
     print(f"\n💾 النتايج محفوظة في: rag_eval_results.csv")
     print("✅ Done!")
+
 
 if __name__ == "__main__":
     main()
