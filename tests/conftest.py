@@ -4,9 +4,9 @@ Pytest configuration and fixtures for Burhan tests.
 Provides common fixtures and configuration for all tests.
 """
 
-import pytest
 import asyncio
-from typing import AsyncGenerator
+
+import pytest
 
 
 @pytest.fixture(scope="session")
@@ -25,22 +25,22 @@ async def mock_llm_client():
     Returns predefined responses instead of calling actual LLM.
     """
 
+    class MockMessage:
+        content = '{"intent": "fiqh", "confidence": 0.95, "language": "ar"}'
+
+    class MockChoices:
+        message = MockMessage()
+
+    class MockCompletions:
+        async def create(self, *args, **kwargs):
+            response = type("Response", (), {})()
+            response.choices = [MockChoices()]
+            return response
+
+    class MockChat:
+        completions = MockCompletions()
+
     class MockLLMClient:
-        class MockCompletions:
-            class MockChoices:
-                class MockMessage:
-                    content = '{"intent": "fiqh", "confidence": 0.95, "language": "ar"}'
-
-                message = MockMessage()
-
-            async def create(self, *args, **kwargs):
-                response = type("Response", (), {})()
-                response.choices = [self.MockChoices()]
-                return response
-
-        class MockChat:
-            completions = MockLLMClient.MockCompletions()
-
         chat = MockChat()
 
     return MockLLMClient()
