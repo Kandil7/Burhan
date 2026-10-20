@@ -28,6 +28,7 @@ from fastapi_limiter import Limiter
 
 limiter = Limiter(key_func=get_user_id)
 
+
 @limiter.limit("10/minute")
 async def ask_question(request):
     pass
