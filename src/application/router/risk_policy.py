@@ -1,7 +1,6 @@
 # Risk Policy Module
 """Risk assessment policies for the router."""
 
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -20,8 +19,8 @@ class RiskAssessment:
     """Assessment of query risk."""
 
     level: RiskLevel
-    reasons: List[str]
-    recommendations: List[str]
+    reasons: list[str]
+    recommendations: list[str]
 
 
 # Sensitive query patterns
@@ -73,7 +72,7 @@ SENSITIVE_PATTERNS = {
 class RiskPolicy:
     """Policy for assessing and managing query risk."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.sensitive_patterns = SENSITIVE_PATTERNS
 
     def assess_risk(self, query: str) -> RiskAssessment:
@@ -123,7 +122,7 @@ class RiskPolicy:
         self,
         query: str,
         risk: RiskAssessment,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get filtered response based on risk."""
         if risk.level == RiskLevel.BLOCKED:
             return "I'm sorry, but I cannot help with this query. Please consult with a qualified scholar."
