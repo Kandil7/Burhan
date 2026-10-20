@@ -6,21 +6,12 @@ import pytest
 from src.agents.collection.base import (
     VerificationCheck,
     VerificationSuite,
-    VerificationReport,
 )
 from src.verification.suite_builder import (
-    build_verification_suite_for,
-    run_verification_suite,
-    FIQH_VERIFICATION_SUITE,
-    HADITH_VERIFICATION_SUITE,
-    TAFSIR_VERIFICATION_SUITE,
-    AQEEDAH_VERIFICATION_SUITE,
-    SEERAH_VERIFICATION_SUITE,
-    USUL_FIQH_VERIFICATION_SUITE,
-    HISTORY_VERIFICATION_SUITE,
-    LANGUAGE_VERIFICATION_SUITE,
     AGENT_SUITE_MAP,
+    build_verification_suite_for,
     list_available_suites,
+    run_verification_suite,
 )
 
 
