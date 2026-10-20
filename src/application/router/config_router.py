@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +274,7 @@ class ConfigRouter:
         "general": "general_islamic_agent",
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the config router."""
         self._domain_keywords = DOMAIN_KEYWORDS
 
@@ -394,7 +393,7 @@ class ConfigRouter:
 # ============================================================================
 
 
-_config_router: Optional[ConfigRouter] = None
+_config_router: ConfigRouter | None = None
 
 
 def get_config_router() -> ConfigRouter:
