@@ -1,9 +1,7 @@
 # Classify Service Module
 """Service for handling classification operations."""
 
-from typing import Dict, Any
 from src.application.use_cases.classify_query import (
-    ClassifyQueryInput,
     ClassifyQueryOutput,
 )
 
@@ -11,7 +9,7 @@ from src.application.use_cases.classify_query import (
 class ClassifyService:
     """Service for processing classification queries."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def classify(
@@ -29,18 +27,11 @@ class ClassifyService:
         Returns:
             ClassifyQueryOutput with classification
         """
-        # Placeholder - would execute classification
-        input_data = ClassifyQueryInput(
-            query=query,
-            language=language,
-        )
+        # Placeholder - full classification is not wired yet.
+        from src.application.use_cases.classify_schemas import QueryIntent
 
-        # For now, return placeholder
         return ClassifyQueryOutput(
-            intent=ClassifyQueryOutput.__dataclass_fields__["intent"].type.__members__.get(
-                "GENERAL_ISLAMIC",
-                None,
-            ),
+            intent=QueryIntent.GENERAL_ISLAMIC,
             confidence=0.0,
             suggested_agent="general_islamic_agent",
             suggested_collections=[],
