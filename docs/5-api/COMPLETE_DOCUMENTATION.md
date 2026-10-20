@@ -166,7 +166,7 @@ Response with [C1], [C2] citations
 
 **Files:**
 - `src/core/router.py` - Hybrid Intent Classifier
-- `src/core/orchestrator.py` - Response Orchestrator
+- `src/application/router/orchestration.py` - Response Orchestrator
 - `src/core/citation.py` - Citation Normalizer
 - `src/core/registry.py` - Agent Registry
 
@@ -381,17 +381,17 @@ class BaseAgent:
 
 **Step 1: Extract Master Catalog** (5 minutes)
 ```bash
-python scripts/extract_master_catalog.py
+python scripts/data/extract_master_catalog.py
 ```
 
 **Step 2: Extract Lucene Indexes** (3-5 hours)
 ```bash
-python scripts/extract_all_lucene_pipeline.py
+python scripts/data/lucene/run_pipeline.py
 ```
 
 **Step 3: Build Hierarchical Chunks** (1-2 hours)
 ```bash
-python scripts/chunk_all_books.py
+python scripts/ingestion/chunk_all_books.py
 ```
 
 **Step 4: Upload to Hugging Face** (2-4 hours, Colab)
@@ -406,7 +406,7 @@ notebooks/01_embed_all_collections.ipynb
 
 **Step 6: Import to Qdrant** (1 hour)
 ```bash
-python scripts/import_to_qdrant.py
+python scripts/download_embeddings_and_upload_qdrant.py
 ```
 
 ---
@@ -517,19 +517,13 @@ Burhan/
 │   │   ├── citation.py           # Citation normalizer
 │   │   └── registry.py           # Agent registry
 │   │
-│   ├── agents/                   # 13 agents
-│   │   ├── base.py               # Base class
-│   │   ├── fiqh_agent.py
-│   │   ├── hadith_agent.py
-│   │   ├── sanadset_hadith_agent.py
-│   │   ├── tafsir_agent.py
-│   │   ├── aqeedah_agent.py
-│   │   ├── seerah_agent.py
-│   │   ├── islamic_history_agent.py
-│   │   ├── fiqh_usul_agent.py
-│   │   ├── arabic_language_agent.py
-│   │   ├── general_islamic_agent.py
-│   │   └── chatbot_agent.py
+│   ├── agents/                   # Base agent + v2 collection agents
+│   │   ├── base.py               # BaseAgent, Citation
+│   │   ├── chatbot_agent.py      # Greeting/small talk
+│   │   └── collection/           # v2 canonical agents
+│   │       ├── base.py           # CollectionAgent base
+│   │       ├── fiqh.py, usul_fiqh.py, hadith.py, tafsir.py, aqeedah.py
+│   │       └── seerah.py, history.py, language.py, tazkiyah.py, general.py
 │   │
 │   ├── tools/                    # 5 tools
 │   │   ├── base.py
@@ -572,7 +566,7 @@ Burhan/
 │
 ├── scripts/                      # 40+ utility scripts
 │   ├── extract_master_catalog.py
-│   ├── extract_all_lucene_pipeline.py
+│   ├── scripts/data/lucene/run_pipeline.py
 │   ├── LuceneExtractor.java
 │   ├── create_mini_dataset.py
 │   ├── chunk_all_books.py
@@ -618,15 +612,15 @@ make format                 # Auto-format code
 make test                   # Run tests
 
 # Data Processing
-python scripts/extract_master_catalog.py    # Extract master.db
-python scripts/extract_all_lucene_pipeline.py  # Extract Lucene
-python scripts/chunk_all_books.py           # Build chunks
-python scripts/create_category_mapping.py   # Category mapping
+python scripts/data/extract_master_catalog.py    # Extract master.db
+python scripts/data/lucene/run_pipeline.py  # Extract Lucene
+python scripts/ingestion/chunk_all_books.py           # Build chunks
+python scripts/data/create_category_mapping.py   # Category mapping
 
 # Testing
 python scripts/quick_test.py                # Quick API test
-python scripts/test_all_endpoints_detailed.py  # Full test
-python scripts/check_datasets.py            # Dataset integrity
+python scripts/tests/test_all_endpoints_detailed.py  # Full test
+python scripts/data/lucene/verify_lucene_extraction.py            # Dataset integrity
 
 # Docker
 make docker-up            # Start all services
@@ -730,7 +724,7 @@ docker compose -f docker/docker-compose.prod.yml up -d
 
 ### Hugging Face Datasets
 
-1. Prepare datasets: `python scripts/prepare_datasets_for_upload_v2.py`
+1. Prepare datasets: `python scripts/data/prepare_datasets_for_upload_v2.py`
 2. Upload via Colab notebook
 3. Repository: `https://huggingface.co/datasets/Kandil7/Burhan-Datasets`
 
@@ -765,7 +759,7 @@ python scripts/quick_test.py --port 8002
 ### Comprehensive Test Suite
 
 ```bash
-python scripts/test_all_endpoints_detailed.py
+python scripts/tests/test_all_endpoints_detailed.py
 ```
 
 ---
@@ -815,8 +809,8 @@ huggingface-cli download Qwen/Qwen3-Embedding-0.6B
 # Check collections
 curl http://localhost:6333/collections
 
-# Create collection
-python scripts/create_collection.py fiqh_passages
+# Create/repopulate the collection from HuggingFace embeddings
+python scripts/download_embeddings_and_upload_qdrant.py --collections fiqh_passages
 ```
 
 ---
