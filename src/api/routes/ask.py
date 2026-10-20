@@ -8,13 +8,15 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import Any
 
 from fastapi import APIRouter, Request
 
 from src.api.schemas.ask import AskRequest, AskResponse
 from src.api.schemas.common import ErrorResponse
+from src.application.services.citation_service import enrich_response_with_citations
 from src.config.logging_config import get_logger
-from src.application.services.citation_service import enrich_response_with_citations 
+
 logger = get_logger()
 ask_router = APIRouter(prefix="/ask", tags=["Ask"])
 
@@ -93,6 +95,6 @@ async def handle_ask(raw_request: Request, request: AskRequest) -> AskResponse:
 
 
 @ask_router.get("/health")
-async def health_check():
+async def health_check() -> Any:
     """Simple health check for the ask router."""
     return {"status": "ok", "service": "ask"}
