@@ -153,34 +153,35 @@ for i, coll in enumerate(sorted(collections_in_mini), 1):
 # دالة تنظيف النصوص - تزيل العلامات غير الضرورية
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def clean_text(text: str) -> str:
     """
     تنظيف النص من العلامات غير الضرورية.
-    
+
     المعالجات:
     - استبدال مسافات الأسطر والعودة للسطر بمسافة واحدة
     - دمج المسافات المتعددة في مسافة واحدة
     - إزالة علامات الحواشي من نوع (¬1)
-    
+
     Args:
         text: النص المراد تنظيفه
-        
+
     Returns:
         النص المنظف
     """
     # التحويل إلى نص إذا كان نوع آخر
     if not isinstance(text, str):
         return ""
-    
+
     # استبدال رموز الأسطر
     text = text.replace("\r", " ").replace("\n", " ")
-    
+
     # دمج المسافات المتعددة
     text = re.sub(r"\s+", " ", text).strip()
-    
+
     # إزالة علامات الحواشي (مثل: ¬1, ¬٢, ¬3)
     text = re.sub(r"\(\u00ac\d+\)", "", text)
-    
+
     return text
 ```
 
@@ -191,30 +192,31 @@ def clean_text(text: str) -> str:
 # دالة معالجة كل سجل - إضافة حقول منظفة
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def clean_row(row):
     """
     معالجة سجل واحد - إضافة حقول منظفة.
-    
+
     تُنشئ هذه الدالة الحقول التال��ة:
     - content_clean: النص المنظف
     - section_title_clean: عنوان القسم المنظف
-    
+
     Args:
         row: سجل واحد من مجموعة البيانات
-        
+
     Returns:
         السجل مع الحقول الجديدة
     """
     # تنظيف المحتوى
     row["content_clean"] = clean_text(row.get("content", ""))
-    
+
     # تنظيف عنوان القسم (إن وُجد)
     section_title = row.get("section_title", "") or ""
     row["section_title_clean"] = clean_text(section_title)
-    
+
     # التأكد من وجود collection
     row["collection"] = row.get("collection", "unknown")
-    
+
     return row
 ```
 
@@ -317,13 +319,14 @@ SYSTEM_PROMPT = (
 # دالة بناء الأمر الكامل للمستخدم بناءً على المقطع
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def build_hf_prompt(passage: dict) -> str:
     """
     بناء الأمر الكامل بناءً على المقطع المُعطى.
-    
+
     Args:
         passage: قاموس يحتوي على معلومات المقطع
-        
+
     Returns:
         الأمر الكامل جاهز للإرسال إلى النموذج
     """
@@ -332,7 +335,7 @@ def build_hf_prompt(passage: dict) -> str:
     section = passage.get("section_title_clean", "") or ""
     book = passage.get("book_title", "")
     collection = passage.get("collection", "")
-    
+
     # بناء الأمر للمستخدم
     user = textwrap.dedent(f"""
     النص التالي من مجموعة '{collection}'، من كتاب '{book}'، تحت عنوان فرعي '{section}':
@@ -363,10 +366,10 @@ def build_hf_prompt(passage: dict) -> str:
       ]
     }}
     """).strip()
-    
+
     # بناء الأمر الشبيه بـ Chat Template لمعظم نماذج instruct
     prompt = f"<|system|>\n{SYSTEM_PROMPT}\n<|user|>\n{user}\n<|assistant|>\n"
-    
+
     return prompt
 ```
 
@@ -381,20 +384,21 @@ def build_hf_prompt(passage: dict) -> str:
 # دالة توليد الأسئلة لمقطع واحد باستخدام LLM
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def hf_llm_generate_questions_for_passage(passage: dict, max_new_tokens: int = 512) -> list:
     """
     توليد أسئل�� تقييم لمقطع واحد.
-    
+
     Args:
         passage: قاموس معلومات المقطع
         max_new_tokens: الحد الأقصى للرموز المُولَّدة
-        
+
     Returns:
         قائمة الأسئلة المُولَّدة
     """
     # بناء الأمر
     prompt = build_hf_prompt(passage)
-    
+
     # توليد النص
     out = gen_pipe(
         prompt,
@@ -404,14 +408,14 @@ def hf_llm_generate_questions_for_passage(passage: dict, max_new_tokens: int = 5
         top_p=0.9,
         eos_token_id=tokenizer.eos_token_id,
     )[0]["generated_text"]
-    
+
     # استخراج الجزء بعد <|assistant|>
     if "<|assistant|>" in out:
         out = out.split("<|assistant|>")[-1].strip()
-    
+
     # إزالة رموز markdown
     text = out.replace("```json", "").replace("```", "").strip()
-    
+
     # محاولة تحليل JSON
     questions = []
     try:
@@ -423,15 +427,12 @@ def hf_llm_generate_questions_for_passage(passage: dict, max_new_tokens: int = 5
         # fallback: استخراج الأسطر التي تنتهي بعلامة استفهام
         candidates = re.findall(r"[^\n]+؟", text)
         questions = [c.strip() for c in candidates]
-    
+
     # فلترة الأسئلة:
     # - إزالة الأسئلة القصيرة جداً
     # - إزالة الأسئلة التي تحتوي على أقواس JSON
-    questions = [
-        q for q in questions 
-        if len(q) > 10 and "}" not in q and "{" not in q
-    ]
-    
+    questions = [q for q in questions if len(q) > 10 and "}" not in q and "{" not in q]
+
     # تحديد الحد الأقصى بـ 4 أسئلة
     return questions[:4]
 ```
@@ -475,15 +476,15 @@ for i, q in enumerate(test_questions, 1):
 # قائمة الحدود لكل مجموعة (يمكن تعديلها حسب الاحتياجات)
 MAX_PER_COLLECTION = {
     # المجموعات الرئيسية في Burhan Mini
-    "seerah_passages": 1000,      # السيرة النبوية
-    "fiqh_passages": 500,         # الفقه
-    "aqeedah_passages": 500,       # العقيدة
-    "hadith_passages": 800,        # الحديث
-    "tafsir_passages": 400,        # التفسير
-    "sirah_passages": 400,         # السيرة (بديل)
-    "tarikh_passages": 300,        # التاريخ
-    "adab_passages": 200,          # الأدب
-    "unknown": 200,               # غير مصنف
+    "seerah_passages": 1000,  # السيرة النبوية
+    "fiqh_passages": 500,  # الفقه
+    "aqeedah_passages": 500,  # العقيدة
+    "hadith_passages": 800,  # الحديث
+    "tafsir_passages": 400,  # التفسير
+    "sirah_passages": 400,  # السيرة (بديل)
+    "tarikh_passages": 300,  # التاريخ
+    "adab_passages": 200,  # الأدب
+    "unknown": 200,  # غير مصنف
 }
 
 # الحد الافتراضي للمجموعات غير المحددة
@@ -501,64 +502,63 @@ DEFAULT_MAX = 300
 # دالة بناء سجلات التقييم لجميع المقاطع
 # ══════════════════════════════════════════════════════════════════════════════
 
-def build_eval_with_hf_llm(
-    ds, 
-    max_per_collection_map=None, 
-    default_max=300
-):
+
+def build_eval_with_hf_llm(ds, max_per_collection_map=None, default_max=300):
     """
     بناء سجلات التقييم باستخدام LLM.
-    
+
     Args:
         ds: مجموعة البيانات المنظفة
         max_per_collection_map: خريطة الحدود لكل مجموعة
         default_max: الحد الافتراضي
-        
+
     Returns:
         قائمة السجلات +counts =counts لكل مجموعة
     """
     if max_per_collection_map is None:
         max_per_collection_map = {}
-    
-    #计数器 للمجاميع
+
+    # 计数器 للمجاميع
     counts = {}
     records = []
-    
+
     # التكرار على جميع السجلات
     for row in tqdm(ds, total=len(ds), desc="Building eval records"):
         coll = row.get("collection", "unknown")
         max_allowed = max_per_collection_map.get(coll, default_max)
-        
-        #تحقق من الحد
+
+        # تحقق من الحد
         counts.setdefault(coll, 0)
         if counts[coll] >= max_allowed:
             continue
-        
+
         # التحقق من وجود محتوى
         if not row.get("content_clean"):
             continue
-        
+
         # توليد الأسئلة
         questions = hf_llm_generate_questions_for_passage(row)
         if not questions:
             continue
-        
+
         # إنشاء سجل لكل سؤال
         for q in questions:
             if counts[coll] >= max_allowed:
                 break
-            
+
             # إنشاء السجل الذهبي (gold passage)
-            gold = [{
-                "collection": coll,
-                "book_id": row.get("book_id"),
-                "page_number": row.get("page_number"),
-                "section_title": row.get("section_title_clean"),
-                "content_snippet": row["content_clean"][:400],
-                "author": row.get("author", ""),
-                "book_title": row.get("book_title", ""),
-            }]
-            
+            gold = [
+                {
+                    "collection": coll,
+                    "book_id": row.get("book_id"),
+                    "page_number": row.get("page_number"),
+                    "section_title": row.get("section_title_clean"),
+                    "content_snippet": row["content_clean"][:400],
+                    "author": row.get("author", ""),
+                    "book_title": row.get("book_title", ""),
+                }
+            ]
+
             # إنشاء السجل
             rec = {
                 "query": q,
@@ -571,7 +571,7 @@ def build_eval_with_hf_llm(
             }
             records.append(rec)
             counts[coll] += 1
-    
+
     # عرض النتائج
     print("╔════════════════════════════════════════════════════════════════════╗")
     print("║  ملخص التوزيع                                               ║")
@@ -579,7 +579,7 @@ def build_eval_with_hf_llm(
     for coll, count in sorted(counts.items()):
         print(f"  • {coll}: {count} question")
     print(f"\n• Total: {len(records)} eval records")
-    
+
     return records, counts
 ```
 
@@ -734,18 +734,20 @@ import requests
 # عنوان API (يُرجى تعديله حسب الإعداد المحلي)
 API_URL = "http://localhost:8002/api/v1/ask"
 
+
 def query_rag_api(q: str):
     """
     إرسال سؤال إلى RAG API والحصول على الإجابة.
-    
+
     Args:
         q: السؤال
-        
+
     Returns:
         JSON response
     """
     resp = requests.post(API_URL, json={"query": q})
     return resp.json()
+
 
 # اختبار على عينة
 example = rag_eval[0]
@@ -755,7 +757,7 @@ print(f"╚═══════════════════════
 print(f"Q: {example['query']}")
 
 try:
-    resp = query_rag_api(example['query'])
+    resp = query_rag_api(example["query"])
     print(f"\n• Response keys: {list(resp.keys())}")
 except Exception as e:
     print(f"\n• Error: {e}")
@@ -888,24 +890,34 @@ import traceback
 import sys
 from functools import wraps
 
+
 class EvaluationError(Exception):
     """الخطأ الأساسي لتقييم RAG."""
+
     pass
+
 
 class ModelLoadError(EvaluationError):
     """خطأ في تحميل النموذج."""
+
     pass
+
 
 class GenerationError(EvaluationError):
     """خطأ في توليد الأسئلة."""
+
     pass
+
 
 class DatasetError(EvaluationError):
     """خطأ في مجموعة البيانات."""
+
     pass
 
+
 def handle_errors(func):
-    """ Decorator لمعالجة الأخطاء تلقائياً."""
+    """Decorator لمعالجة الأخطاء تلقائياً."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -914,6 +926,7 @@ def handle_errors(func):
             print(f"❌ خطأ في {func.__name__}: {str(e)}")
             traceback.print_exc()
             return None
+
     return wrapper
 ```
 
@@ -927,16 +940,17 @@ def handle_errors(func):
 import pickle
 from pathlib import Path
 
+
 class EvalCheckpoint:
     """
     نظام النقاط للحفظ والاستئناف عند الانقطاع.
-    
+
     يُتيح هذا النظام:
     - حفظ التقدم بشكل دوري
     - استئناف العمل من آخر نقطة
     - تجنب فقدان البيانات عند انقطاع Colab
     """
-    
+
     def __init__(self, checkpoint_path: str = "output/eval_checkpoints.pkl"):
         self.checkpoint_path = checkpoint_path
         self.state = {
@@ -946,7 +960,7 @@ class EvalCheckpoint:
             "last_update": None,
         }
         self.load()
-    
+
     def load(self):
         """تحميل النقطة الأخيرة."""
         if Path(self.checkpoint_path).exists():
@@ -956,7 +970,7 @@ class EvalCheckpoint:
                 print(f"✓ تم تحميل نقطة التقييم: {len(self.state['processed_indices'])} processed")
             except Exception as e:
                 print(f"⚠️ خطأ في تحميل النقطة: {e}")
-    
+
     def save(self):
         """حفظ النقطة الحالية."""
         self.state["last_update"] = str(datetime.now())
@@ -964,11 +978,11 @@ class EvalCheckpoint:
         with open(self.checkpoint_path, "wb") as f:
             pickle.dump(self.state, f)
         print(f"✓ تم حفظ نقطة التقييم")
-    
+
     def is_processed(self, idx: int) -> bool:
         """التحقق مما إذا كان الفهرس قد عولج."""
         return idx in self.state["processed_indices"]
-    
+
     def mark_processed(self, idx: int, count: int, records: list):
         """وضع علامة على الفهرس كمُعالج."""
         self.state["processed_indices"].add(idx)
@@ -986,19 +1000,20 @@ class EvalCheckpoint:
 
 import gc
 
+
 def check_gpu_memory():
     """
     فحص استخدام GPU والذاكرة.
-    
+
     Returns:
         قاموس يحتوي على معلومات الذاكرة
     """
     if not torch.cuda.is_available():
         return {"available": False}
-    
-    #_allocated = torch.cuda.memory_allocated() / 1024**3
-    #_reserved = torch.cuda.memory_reserved() / 1024**3
-    
+
+    # _allocated = torch.cuda.memory_allocated() / 1024**3
+    # _reserved = torch.cuda.memory_reserved() / 1024**3
+
     return {
         "available": True,
         "allocated_gb": torch.cuda.memory_allocated() / 1024**3,
@@ -1006,12 +1021,14 @@ def check_gpu_memory():
         "max_allocated_gb": torch.cuda.max_memory_allocated() / 1024**3,
     }
 
+
 def clear_gpu_cache():
     """مسح ذاكرة GPU المؤقتة."""
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         gc.collect()
         print("✓ تم مسح ذاكرة GPU المؤقتة")
+
 
 def print_gpu_status():
     """عرض حالة GPU."""
@@ -1038,25 +1055,26 @@ def print_gpu_status():
 # دالة توليد الأسئلة بالدفعات (Batching)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def generate_questions_batch(passages: list, batch_size: int = 4) -> list:
     """
     توليد الأسئلة لعدة مقاطع دفعة واحدة.
-    
+
     Args:
         passages: قائمة المقاطع
         batch_size: حجم الدفعة
-        
+
     Returns:
         قائمة الأسئلة المُولَّدة
     """
     results = []
-    
+
     for i in range(0, len(passages), batch_size):
-        batch = passages[i:i + batch_size]
-        
+        batch = passages[i : i + batch_size]
+
         # بناء الأوامر للدفعة
         prompts = [build_hf_prompt(p) for p in batch]
-        
+
         # توليد كل الأسئلة
         for prompt in prompts:
             out = gen_pipe(
@@ -1066,13 +1084,13 @@ def generate_questions_batch(passages: list, batch_size: int = 4) -> list:
                 temperature=0.4,
                 top_p=0.9,
             )[0]["generated_text"]
-            
+
             # استخراج الأسئلة (نفس المنطق السابق)
             if "<|assistant|>" in out:
                 out = out.split("<|assistant|>")[-1].strip()
-            
+
             text = out.replace("```json", "").replace("```", "").strip()
-            
+
             try:
                 obj = json.loads(text)
                 qs = obj.get("questions", [])
@@ -1081,17 +1099,14 @@ def generate_questions_batch(passages: list, batch_size: int = 4) -> list:
                 # fallback
                 candidates = re.findall(r"[^\n]+؟", text)
                 results.extend([c.strip() for c in candidates])
-        
+
         # مسح الذاكرة بعد كل دفعة
         if i % (batch_size * 5) == 0:
             clear_gpu_cache()
-    
+
     # فلترة نهائية
-    results = [
-        q for q in results 
-        if len(q) > 10 and "}" not in q and "{" not in q
-    ][:len(passages) * 4]  # الحد الأقصى
-    
+    results = [q for q in results if len(q) > 10 and "}" not in q and "{" not in q][: len(passages) * 4]  # الحد الأقصى
+
     return results
 ```
 
@@ -1102,15 +1117,16 @@ def generate_questions_batch(passages: list, batch_size: int = 4) -> list:
 # دالة آمنة لتوليد الأسئلة مع معالجة الأخطاء
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @handle_errors
 def safe_generate_questions(passage: dict, max_retries: int = 3) -> list:
     """
     توليد الأسئلة مع معالجة الأخطاء وإعادة المحاولة.
-    
+
     Args:
         passage: قاموس المقطع
         max_retries: عدد المحاولات
-        
+
     Returns:
         قائمة الأسئلة أو قائمة فارغة عند الفشل
     """
@@ -1122,7 +1138,7 @@ def safe_generate_questions(passage: dict, max_retries: int = 3) -> list:
         except Exception as e:
             print(f"  ⚠️ المحاولة {attempt + 1} failed: {e}")
             clear_gpu_cache()  # مسح الذاكرة عند الفشل
-    
+
     print(f"  ❌ فشل بعد {max_retries} محاولات")
     return []  # إرجاع قائمة فارغة عند الفشل النهائي
 ```
@@ -1138,20 +1154,21 @@ def safe_generate_questions(passage: dict, max_retries: int = 3) -> list:
 # تقييم جودة الأسئلة المُولَّدة
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def assess_question_quality(question: str, passage: dict) -> dict:
     """
     تقييم جودة سؤال واحد.
-    
+
     Checks:
     - length: هل السؤال طويل بما يكفي؟
     - relevance: هل يحتوي على كلمات مفتاحية من النص؟
     - format: هل ينتهي بعلامة استفهام؟
     - no_leak: هل لا يكشف عن الإجابة؟
-    
+
     Args:
         question: السؤال
         passage: المقطع الأصلي
-        
+
     Returns:
         قاموس نتائج التقييم
     """
@@ -1162,35 +1179,36 @@ def assess_question_quality(question: str, passage: dict) -> dict:
         "no_book_name": passage.get("book_title", "") not in question,
         "no_author": passage.get("author", "") not in question,
     }
-    
+
     results["pass"] = all(results.values())
     return results
+
 
 def evaluate_dataset_quality(eval_records: list) -> dict:
     """
     تقييم جودة مجموعة التقييم الكاملة.
-    
+
     Args:
         eval_records: قائمة سجلات التقييم
-        
+
     Returns:
         قاموس إحصائيات الجودة
     """
     total = len(eval_records)
     if total == 0:
         return {"error": "No records"}
-    
+
     stats = {
         "total": total,
         "by_collection": {},
         "length_distribution": {"short": 0, "medium": 0, "long": 0},
         "quality_pass": 0,
     }
-    
+
     for rec in eval_records:
         coll = rec.get("collection", "unknown")
         stats["by_collection"][coll] = stats["by_collection"].get(coll, 0) + 1
-        
+
         q_len = len(rec["query"])
         if q_len < 20:
             stats["length_distribution"]["short"] += 1
@@ -1198,13 +1216,10 @@ def evaluate_dataset_quality(eval_records: list) -> dict:
             stats["length_distribution"]["medium"] += 1
         else:
             stats["length_distribution"]["long"] += 1
-    
-    stats["quality_pass"] = sum(
-        1 for rec in eval_records 
-        if len(rec["query"]) >= 15
-    )
+
+    stats["quality_pass"] = sum(1 for rec in eval_records if len(rec["query"]) >= 15)
     stats["quality_rate"] = stats["quality_pass"] / total * 100
-    
+
     return stats
 ```
 
@@ -1245,34 +1260,35 @@ if eval_records_mini_hf:
 
 import openai
 
+
 def generate_questions_openai(passage: dict, model: str = "gpt-4o") -> list:
     """
     توليد الأسئلة باستخدام OpenAI API.
-    
+
     Args:
         passage: قاموس المقطع
         model: اسم النموذج
-        
+
     Returns:
         قائمة الأسئلة
     """
     # إعداد OpenAI
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    
+
     prompt = build_hf_prompt(passage)
-    
+
     response = openai.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt.split("<|user|>")[1].split("<|assistant|>")[0]}
+            {"role": "user", "content": prompt.split("<|user|>")[1].split("<|assistant|>")[0]},
         ],
         response_format={"type": "json_object"},
         temperature=0.4,
     )
-    
+
     result = response.choices[0].message.content
-    
+
     try:
         obj = json.loads(result)
         return [q.strip() for q in obj.get("questions", [])]
@@ -1294,18 +1310,18 @@ def generate_questions_openai(passage: dict, model: str = "gpt-4o") -> list:
 #     توليد الأسئلة باستخدام Claude API.
 #     """
 #     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-#     
+#
 #     prompt = build_hf_prompt(passage)
-#     
+#
 #     message = client.messages.create(
 #         model="claude-3-5-sonnet-20241022",
 #         max_tokens=1024,
 #         system=SYSTEM_PROMPT,
 #         messages=[{"role": "user", "content": prompt}]
 #     )
-#     
+#
 #     text = message.content[0].text
-#     
+#
 #     try:
 #         obj = json.loads(text)
 #         return [q.strip() for q in obj.get("questions", [])]
@@ -1324,15 +1340,16 @@ def generate_questions_openai(passage: dict, model: str = "gpt-4o") -> list:
 # التحقق من صحة مجموعة البيانات النهائية
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def validate_eval_dataset(eval_records: list) -> dict:
     """
     التحقق من صحة مجموعة بيانات التقييم.
-    
+
     Checks:
     - 所有 السجلات تحتوي على الحقول المطلوبة
     - gold_passages غير فارغة
     - لا توجد حقول مفقودة
-        
+
     Returns:
         قاموس نتائج التحقق
     """
@@ -1342,23 +1359,23 @@ def validate_eval_dataset(eval_records: list) -> dict:
         "errors": [],
         "warnings": [],
     }
-    
+
     for i, rec in enumerate(eval_records):
         # التحقق من الحقول المطلوبة
         for field in required_fields:
             if field not in rec:
                 validation["errors"].append(f"Row {i}: missing field '{field}'")
                 validation["valid"] = False
-        
+
         # التحقق من gold_passages
         if not rec.get("gold_passages"):
             validation["errors"].append(f"Row {i}: empty gold_passages")
             validation["valid"] = False
-        
+
         # التحقق من طول السؤال
         if len(rec.get("query", "")) < 5:
             validation["warnings"].append(f"Row {i}: very short query")
-    
+
     return validation
 ```
 
@@ -1400,20 +1417,17 @@ if eval_records_mini_hf:
 # تصدير البيانات بعدة تنسيقات
 # ══════════════════════════════════════════════════════════════════════════════
 
-def export_eval_dataset(
-    eval_records: list, 
-    base_path: str = "output/Burhan-RAG-Eval",
-    formats: list = None
-):
+
+def export_eval_dataset(eval_records: list, base_path: str = "output/Burhan-RAG-Eval", formats: list = None):
     """
     تصدير مجموعة البيانات بعدة تنسيقات.
-    
+
     Supported formats:
     - jsonl: JSON Lines (default)
     - json: JSON array
     - parquet: Apache Parquet
     - csv: CSV (مع استخراج الحقول المتداخلة)
-    
+
     Args:
         eval_records: قائمة السجلات
         base_path: مسار الملف الأساسي
@@ -1421,9 +1435,9 @@ def export_eval_dataset(
     """
     if formats is None:
         formats = ["jsonl", "json", "parquet"]
-    
+
     results = {}
-    
+
     # JSONL
     if "jsonl" in formats:
         jsonl_path = f"{base_path}.jsonl"
@@ -1431,29 +1445,30 @@ def export_eval_dataset(
             for rec in eval_records:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         results["jsonl"] = jsonl_path
-    
+
     # JSON
     if "json" in formats:
         json_path = f"{base_path}.json"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(eval_records, f, ensure_ascii=False, indent=2)
         results["json"] = json_path
-    
+
     # Parquet
     if "parquet" in formats:
         import pandas as pd
+
         # تسوية gold_passages
         flat_records = []
         for rec in eval_records:
             flat = rec.copy()
             flat["gold_passages"] = json.dumps(flat["gold_passages"])
             flat_records.append(flat)
-        
+
         df = pd.DataFrame(flat_records)
         parquet_path = f"{base_path}.parquet"
         df.to_parquet(parquet_path)
         results["parquet"] = parquet_path
-    
+
     return results
 ```
 
@@ -1466,11 +1481,9 @@ def export_eval_dataset(
 
 if eval_records_mini_hf:
     export_results = export_eval_dataset(
-        eval_records_mini_hf,
-        base_path="output/Burhan-RAG-Eval-HFLLM-Mini-v1",
-        formats=["jsonl", "json", "parquet"]
+        eval_records_mini_hf, base_path="output/Burhan-RAG-Eval-HFLLM-Mini-v1", formats=["jsonl", "json", "parquet"]
     )
-    
+
     print(f"╔════════════════════════════════════════════════════════════════════╗")
     print(f"║  الملفات المُصدَّرة                                            ║")
     print(f"╚════════════════════════════════════════════════════════════════════╝")
@@ -1564,10 +1577,10 @@ if eval_records_mini_hf:
 MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
 
 # الحل 2: استخدام FP16 بدلاً من BF16
-torch_dtype=torch.float16
+torch_dtype = torch.float16
 
 # الحل 3: CPU فقط (بطيء جداً)
-device_map="cpu"
+device_map = "cpu"
 ```
 
 ### المشكلة 2: فشل تحليل JSON
