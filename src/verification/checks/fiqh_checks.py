@@ -3,9 +3,10 @@ Verification checks specific to Fiqh (Islamic Jurisprudence) domain.
 """
 
 import re
-from typing import Any, Dict, List, Optional
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from typing import Any
+
 from ..base import BaseVerifier
+from ..schemas import CheckResult, VerificationStatus, VerifierType
 
 
 class QuoteValidator(BaseVerifier):
@@ -14,7 +15,7 @@ class QuoteValidator(BaseVerifier):
     Supports [CX] citation markers.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.verifier_type = VerifierType.EXACT_QUOTE
 
     def _normalize(self, text: str) -> str:
@@ -25,13 +26,19 @@ class QuoteValidator(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         """
         Detects hallucinated quotes by checking specific [CX] attributions.
         """
         if not isinstance(evidence, list):
-            return CheckResult(passed=True, confidence=1.0, message="Evidence not a list")
+            return CheckResult(
+                check_name=self.verifier_type.value,
+                status=VerificationStatus.SKIPPED,
+                passed=True,
+                confidence=1.0,
+                message="Evidence not a list",
+            )
 
         # 1. Find all citation segments, e.g. 'text text "quote" [C1]'
         # This regex looks for text in quotes followed by a citation marker
@@ -58,18 +65,22 @@ class QuoteValidator(BaseVerifier):
         if failed_quotes:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.0,
                 message="Citation-specific hallucination detected.",
                 details={"issues": failed_quotes},
             )
 
-        # 2. Fallback: check general quotes without specific markers
-        general_quotes = re.findall(r'["«](.*?)["»]', claim)
-        # (Already handled by logic above if they have [CX], this catches the rest)
-
+        # 2. Fallback: check general quotes without specific markers.
+        #    Quotes that carry no [CX] marker are not attributed yet; the
+        #    attribution check above only covers explicitly cited quotes.
         return CheckResult(
-            check_name=self.verifier_type.value, passed=True, confidence=1.0, message="All attributed quotes verified."
+            check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
+            passed=True,
+            confidence=1.0,
+            message="All attributed quotes verified.",
         )
 
     def is_applicable(self, claim: str, evidence: Any) -> bool:
@@ -81,18 +92,22 @@ class SourceAttributor(BaseVerifier):
     Verifies that sources mentioned in the answer are present in the evidence metadata.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.verifier_type = VerifierType.SOURCE_ATTRIBUTION
 
     async def verify(
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         # Simplified implementation for now
         return CheckResult(
-            check_name=self.verifier_type.value, passed=True, confidence=0.9, message="Source attribution verified."
+            check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
+            passed=True,
+            confidence=0.9,
+            message="Source attribution verified.",
         )
 
     def is_applicable(self, claim: str, evidence: Any) -> bool:
@@ -113,17 +128,22 @@ class EvidenceSufficiency(BaseVerifier):
         self,
         claim: str,
         evidence: Any,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> CheckResult:
         if not evidence or not isinstance(evidence, list):
             return CheckResult(
-                check_name=self.verifier_type.value, passed=False, confidence=0.0, message="No evidence provided."
+                check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
+                passed=False,
+                confidence=0.0,
+                message="No evidence provided.",
             )
 
         # 1. Quantity check
         if len(evidence) < self.min_passages:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.FAILED,
                 passed=False,
                 confidence=0.5,
                 message=f"Insufficient evidence: found {len(evidence)}, need at least {self.min_passages}.",
@@ -139,13 +159,18 @@ class EvidenceSufficiency(BaseVerifier):
         if len(authors) < 2:
             return CheckResult(
                 check_name=self.verifier_type.value,
+                status=VerificationStatus.WARNING,
                 passed=True,
                 confidence=0.7,
                 message="Sufficient quantity, but low diversity (single source only).",
             )
 
         return CheckResult(
-            check_name=self.verifier_type.value, passed=True, confidence=1.0, message="Sufficient diverse evidence."
+            check_name=self.verifier_type.value,
+            status=VerificationStatus.PASSED,
+            passed=True,
+            confidence=1.0,
+            message="Sufficient diverse evidence.",
         )
 
     def is_applicable(self, claim: str, evidence: Any) -> bool:
@@ -154,7 +179,7 @@ class EvidenceSufficiency(BaseVerifier):
 
 def register_fiqh_checks() -> None:
     """Register Fiqh checks with the suite builder."""
-    from .suite_builder import register_check
+    from src.verification.suite_builder import register_check
 
     register_check("quote_validator", QuoteValidator)
     register_check("source_attributor", SourceAttributor)
