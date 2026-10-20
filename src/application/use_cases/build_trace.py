@@ -1,9 +1,9 @@
 # Build Trace Use Case
 """Use case for building execution traces."""
 
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass
@@ -13,7 +13,7 @@ class TraceEvent:
     timestamp: datetime
     event_type: str
     component: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
 
 
 @dataclass
@@ -21,8 +21,8 @@ class BuildTraceInput:
     """Input for build trace use case."""
 
     query_id: str
-    events: List[TraceEvent]
-    final_response: Optional[str] = None
+    events: list[TraceEvent]
+    final_response: str | None = None
 
 
 @dataclass
@@ -30,14 +30,14 @@ class BuildTraceOutput:
     """Output for build trace use case."""
 
     trace_id: str
-    trace_data: Dict[str, Any]
-    summary: Optional[Dict[str, Any]] = None
+    trace_data: dict[str, Any]
+    summary: dict[str, Any] | None = None
 
 
 class BuildTraceUseCase:
     """Use case for building execution traces."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     async def execute(self, input: BuildTraceInput) -> BuildTraceOutput:
@@ -54,7 +54,7 @@ class BuildTraceUseCase:
         trace_id = f"trace_{input.query_id}_{int(datetime.now().timestamp())}"
 
         # Group events by component
-        events_by_component: Dict[str, List[TraceEvent]] = {}
+        events_by_component: dict[str, list[TraceEvent]] = {}
         for event in sorted(input.events, key=lambda e: e.timestamp):
             if event.component not in events_by_component:
                 events_by_component[event.component] = []
