@@ -8,8 +8,9 @@ Tests the three-tier classification system:
 """
 
 import pytest
-from src.core.router import HybridQueryClassifier
+
 from src.config.intents import Intent
+from src.core.router import HybridQueryClassifier
 
 
 class TestHybridQueryClassifier:
@@ -57,7 +58,7 @@ class TestHybridQueryClassifier:
         """Test dua keyword detection."""
         result = classifier._keyword_match("ما دعاء السفر؟")
         assert result is not None
-        assert result.intent == Intent.DUA
+        assert result.intent == Intent.DUAS
         assert result.confidence >= 0.90
 
     def test_keyword_prayer_times_detection(self, classifier):
