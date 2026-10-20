@@ -7,8 +7,10 @@ livestock and agricultural products.
 
 Based on Fanar-Sadiq architecture: No LLM involvement for calculations.
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 from src.config.logging_config import get_logger
 
@@ -17,6 +19,7 @@ logger = get_logger()
 
 class ZakatType(str, Enum):
     """Types of zakat calculations."""
+
     WEALTH = "wealth"
     GOLD = "gold"
     SILVER = "silver"
@@ -29,6 +32,7 @@ class ZakatType(str, Enum):
 
 class Madhhab(str, Enum):
     """Islamic schools of jurisprudence."""
+
     HANAFI = "hanafi"
     MALIKI = "maliki"
     SHAFII = "shafii"
@@ -43,6 +47,7 @@ class ZakatAssets:
 
     All values should be in the same currency (e.g., USD, QAR).
     """
+
     cash: float = 0.0
     bank_accounts: float = 0.0
     gold_grams: float = 0.0
@@ -58,6 +63,7 @@ class ZakatAssets:
 @dataclass
 class ZakatBreakdown:
     """Detailed breakdown of zakat calculation."""
+
     cash: float = 0.0
     gold_value: float = 0.0
     silver_value: float = 0.0
@@ -75,6 +81,7 @@ class ZakatResult:
     Contains all information needed to present the calculation
     to the user with transparency and scholarly references.
     """
+
     # Nisab calculation
     nisab_gold: float  # Nisab based on gold (85g)
     nisab_silver: float  # Nisab based on silver (595g)
@@ -143,7 +150,7 @@ class ZakatCalculator:
             gold_price=gold_price_per_gram,
             silver_price=silver_price_per_gram,
             nisab_gold=self._calculate_nisab_gold(),
-            nisab_silver=self._calculate_nisab_silver()
+            nisab_silver=self._calculate_nisab_silver(),
         )
 
     def calculate(
@@ -151,7 +158,7 @@ class ZakatCalculator:
         assets: ZakatAssets,
         debts: float = 0.0,
         madhhab: Madhhab = Madhhab.GENERAL,
-        crop_irrigation_type: str = "irrigated"
+        crop_irrigation_type: str = "irrigated",
     ) -> ZakatResult:
         """
         Calculate zakat for a complete financial picture.
@@ -172,15 +179,17 @@ class ZakatCalculator:
 
         # Step 2: Calculate asset values
         breakdown = self._calculate_asset_values(assets, madhhab)
-        total_assets = sum([
-            breakdown.cash,
-            breakdown.gold_value,
-            breakdown.silver_value,
-            breakdown.trade_goods,
-            breakdown.stocks,
-            breakdown.receivables,
-            breakdown.other,
-        ])
+        total_assets = sum(
+            [
+                breakdown.cash,
+                breakdown.gold_value,
+                breakdown.silver_value,
+                breakdown.trade_goods,
+                breakdown.stocks,
+                breakdown.receivables,
+                breakdown.other,
+            ]
+        )
 
         # Step 3: Deduct debts
         debts_deducted = min(debts, total_assets)  # Can't deduct more than assets
@@ -235,25 +244,14 @@ class ZakatCalculator:
             gold_price_per_gram=self.gold_price,
             silver_price_per_gram=self.silver_price,
             notes=notes,
-            references=references
+            references=references,
         )
 
-        logger.info(
-            "zakat.calculated",
-            is_zakatable=is_zakatable,
-            zakat_amount=zakat_amount,
-            madhhab=madhhab.value
-        )
+        logger.info("zakat.calculated", is_zakatable=is_zakatable, zakat_amount=zakat_amount, madhhab=madhhab.value)
 
         return result
 
-    def calculate_livestock_zakat(
-        self,
-        camels: int = 0,
-        cows: int = 0,
-        goats: int = 0,
-        sheep: int = 0
-    ) -> dict:
+    def calculate_livestock_zakat(self, camels: int = 0, cows: int = 0, goats: int = 0, sheep: int = 0) -> dict:
         """
         Calculate zakat for livestock based on specific hadith rates.
 
@@ -268,7 +266,7 @@ class ZakatCalculator:
         Returns:
             Dictionary with zakat obligations for each animal type
         """
-        result = {
+        result: dict[str, Any] = {
             "camels": self._calculate_camels_zakat(camels),
             "cows": self._calculate_cows_zakat(cows),
             "goats_sheep": self._calculate_goats_sheep_zakat(goats + sheep),
@@ -282,16 +280,12 @@ class ZakatCalculator:
         result["summary"] = ", ".join(total_due) if total_due else "No zakat due"
         result["references"] = [
             "Hadith: Zakat rates for livestock are specified in Sahih Bukhari",
-            "Book: Kitab Az-Zakat, Hadith 1454"
+            "Book: Kitab Az-Zakat, Hadith 1454",
         ]
 
         return result
 
-    def calculate_crops_zakat(
-        self,
-        total_value: float,
-        irrigation_type: str = "irrigated"
-    ) -> dict:
+    def calculate_crops_zakat(self, total_value: float, irrigation_type: str = "irrigated") -> dict:
         """
         Calculate zakat for agricultural products.
 
@@ -317,7 +311,7 @@ class ZakatCalculator:
             "amount": amount,
             "rate": rate,
             "irrigation_type": irrigation_type,
-            "reference": "Quran 6:141 - He it is who produces gardens... and give its due on the day of harvest"
+            "reference": "Quran 6:141 - He it is who produces gardens... and give its due on the day of harvest",
         }
 
     # ==========================================
@@ -332,11 +326,7 @@ class ZakatCalculator:
         """Calculate nisab based on silver (595 grams)."""
         return self.SILVER_NISAB_GRAMS * self.silver_price
 
-    def _calculate_asset_values(
-        self,
-        assets: ZakatAssets,
-        madhhab: Madhhab
-    ) -> ZakatBreakdown:
+    def _calculate_asset_values(self, assets: ZakatAssets, madhhab: Madhhab) -> ZakatBreakdown:
         """Calculate monetary value of all assets."""
         gold_value = assets.gold_grams * self.gold_price
         silver_value = assets.silver_grams * self.silver_price
@@ -351,7 +341,7 @@ class ZakatCalculator:
             trade_goods=assets.trade_goods_value,
             stocks=assets.stocks_value,
             receivables=receivables,
-            other=assets.livestock_value + assets.crops_value + assets.minerals_value
+            other=assets.livestock_value + assets.crops_value + assets.minerals_value,
         )
 
     def _calculate_camels_zakat(self, count: int) -> dict:
@@ -394,11 +384,7 @@ class ZakatCalculator:
 
         # 121+ camels
         if count >= 121:
-            return {
-                "due": True,
-                "amount": "1 bint labun per 40, 1 hiqqah per 50",
-                "animal": "mixed"
-            }
+            return {"due": True, "amount": "1 bint labun per 40, 1 hiqqah per 50", "animal": "mixed"}
 
         return {"due": False, "amount": 0, "animal": "sheep"}
 
