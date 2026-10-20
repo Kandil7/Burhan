@@ -24,7 +24,7 @@ EMBEDDING_MODEL=Qwen/Qwen3-Embedding-0.6B  # Correct
 
 ### 3. Token Authentication Added ✅
 - `src/config/settings.py` - Added `hf_token` field
-- `src/knowledge/embedding_model.py` - Uses token from settings
+- `src/indexing/embeddings/embedding_model.py` - Uses token from settings
 - Token passed to `from_pretrained()` for authentication
 
 ### 4. Qdrant API Fixed ✅
@@ -93,11 +93,11 @@ curl -X POST http://localhost:8000/api/v1/rag/general ^
 |------|---------|
 | `.env` | Added HF_TOKEN, updated model name |
 | `src/config/settings.py` | Added hf_token field |
-| `src/knowledge/embedding_model.py` | Uses token from settings |
-| `src/knowledge/vector_store.py` | Fixed Qdrant API |
-| `src/api/routes/rag.py` | Graceful fallbacks |
-| `src/agents/fiqh_agent.py` | Embedding fallback |
-| `src/agents/general_islamic_agent.py` | Embedding fallback |
+| `src/indexing/embeddings/embedding_model.py` | Uses token from settings |
+| `src/indexing/vectorstores/qdrant_store.py` | Fixed Qdrant API |
+| `src/api/routes/search.py` | Graceful fallbacks |
+| `src/agents/collection/fiqh.py` | Embedding fallback |
+| `src/agents/collection/general.py` | Embedding fallback |
 
 ---
 
