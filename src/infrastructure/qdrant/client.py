@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 from src.indexing.vectorstores.qdrant_store import VectorStore as QdrantVectorStore
 
 
@@ -30,7 +32,7 @@ class QdrantClientWrapper:
         results = await client.search("fiqh", query="...", top_k=10)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the Qdrant client wrapper."""
         self._client = QdrantVectorStore()
         self._initialized = False
@@ -66,13 +68,13 @@ class QdrantClientWrapper:
         Returns:
             List of result dictionaries with content, score, metadata
         """
-        # Delegate to underlying client
-        # Note: This is a simplified interface - the actual implementation
-        # may differ based on the underlying VectorStore API
+        # Delegate to underlying client. The underlying VectorStore.search
+        # performs dense (embedding) search, so an embedding is required.
+        if embedding is None:
+            raise ValueError("embedding is required for search; use search_by_embedding")
         return await self._client.search(
             collection=collection,
-            query_embedding=embedding,
-            query=query,
+            query_embedding=np.asarray(embedding, dtype=np.float32),
             top_k=top_k,
             filters=filters,
         )
@@ -87,7 +89,7 @@ class QdrantClientWrapper:
         """Search by embedding only (semantic search)."""
         return await self._client.search(
             collection=collection,
-            query_embedding=embedding,
+            query_embedding=np.asarray(embedding, dtype=np.float32),
             top_k=top_k,
         )
 
@@ -98,10 +100,8 @@ class QdrantClientWrapper:
         top_k: int = 10,
     ) -> list[dict[str, Any]]:
         """Search by text only (keyword search)."""
-        return await self._client.search(
-            collection=collection,
-            query=query,
-            top_k=top_k,
+        raise NotImplementedError(
+            "Text search requires an embedding model. Use search_by_embedding with a query embedding."
         )
 
     async def get_collection_info(self, collection: str) -> dict[str, Any]:
