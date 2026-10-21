@@ -40,6 +40,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `migrations/versions/003_align_unique_constraint_names.sql` renames the
   database-generated UNIQUE constraints on `ayahs`, `translations`, and
   `tafsirs` to the names the SQLAlchemy models declare.
+- `scripts/data/embed_full_to_qdrant.py` embeds the full text corpora from
+  `Kandil7/Athar-Datasets` and loads them into Qdrant. The Hub carries
+  precomputed embeddings for six collections only, so the other four
+  (fiqh, hadith, islamic history, general Islamic) are embedded locally with
+  the same encoder, the same pooling, and the same collection layout as the
+  six preloaded ones. It accepts `--recreate`, `--start-row`, `--end-row`,
+  `--limit`, `--device`, and `--half`, and it uses absolute row ids, so
+  re-running a row window rewrites the same points.
+- `scripts/quality/reachability_report.py` measures which modules of the
+  source tree the running system can reach, and `--check` fails when the
+  legacy manifest is violated. The measurement found that 129 of the 237
+  modules, 8,778 code lines, are unreachable from any entry point.
+- `scripts/quality/eval_harness.py` is the evaluation harness. It retrieves
+  with point ids so the results can be scored, it scores a run against a
+  curated question set, and it captures a behavioural fingerprint of the
+  running API for refactor regression checks.
+- `scripts/quality/golden_set.json` holds 20 questions, two per collection,
+  with the point ids that answer each question and the ids on its subject.
+- `scripts/quality/baseline/` holds the recorded retrieval runs, their scores,
+  and the API fingerprint of the system as it was on 2026-10-21.
+- `docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md` is the
+  authoritative refactor plan. It is grounded in the reachability
+  measurement, and it supersedes the earlier plans in the same folder.
 
 ### Changed
 - **BREAKING**: Default embedding model from `qwen3-embedding-0.5b` to `BAAI/bge-m3`
@@ -142,6 +165,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-minute output quota rejected every request. Each agent now calls
   `settings.resolve_max_tokens(budget)`, which clamps to the configured
   ceiling. `/api/v1/search/simple` applies the same clamp to `RAG_MAX_TOKENS`.
+- A metered provider that refuses a request over its output budget made the
+  answer degrade to the raw evidence, because the agents had no second try.
+  The shared `CollectionAgent._complete` helper now retries with a smaller
+  budget when the refusal is a budget refusal, and the ten copies of the
+  model call were replaced by that helper. The three questions of the
+  evaluation set that returned `evidence` mode now return `answer` mode with
+  a composed answer, with `LLM_MAX_TOKENS` still at 2048.
 - The contradiction verifier flattened every retrieved passage into one text
   block and treated a substring `"لا "` as a negation. Any answer sentence
   without a negation then "contradicted" the block, because the block always
@@ -160,6 +190,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   named them after their columns while the models declare `uq_ayah_surah_number`,
   `uq_translation`, and `uq_tafsir`. Migration
   `003_align_unique_constraint_names.sql` renames them idempotently.
+- The intent tables for Arabic language, spirituality, and the principles of
+  jurisprudence were too thin, and the ethics words sat in the Seerah table.
+  The measured routing accuracy over a 20-question set was 15 of 20, with
+  "ما الفرق بين الفاعل ونائب الفاعل؟" reaching the general collection, "ما
+  أثر الصبر على النفس؟" reaching the general collection, "ما هي أخلاق
+  المؤمن" reaching Seerah, and "ما الفرق بين النص الظاهر والنص المؤول؟"
+  reaching the general collection. The tables now hold the vocabulary the
+  corpora are actually made of, and the ethics words moved to the
+  spirituality table. Measured routing accuracy is now 20 of 20.
+- The metrics collector was never written to, so `/metrics`,
+  `/metrics/counters`, and `/metrics/timings` always answered with empty
+  structures while looking healthy. The request logging middleware now
+  records a counter per route, a counter per status class, and a timing per
+  route, labelled on the route template so one id does not create one
+  counter.
 - `python scripts/cli.py db migrate` could not run on Windows: it built
   `docker exec ... < file`, and PowerShell does not support the `<` operator.
   The CLI now feeds each SQL file to `psql` as stdin, which works on both

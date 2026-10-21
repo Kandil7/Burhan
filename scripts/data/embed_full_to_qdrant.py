@@ -23,10 +23,12 @@ import asyncio
 import gzip
 import json
 import os
+import shutil
 import sys
 import time
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -79,11 +81,14 @@ def remote_size(repo: str, filename: str) -> int | None:
 def download_collection(collection: str) -> Path:
     """Fetch the gzipped corpus for one collection and return its local path.
 
-    The hub client downloads through the Xet content store, which failed
-    midway on this workstation with a decoding error and left nothing behind.
-    A plain streamed request with a Range header resumes instead, and the
-    file lands under the model root, not in the repository.
+    The Xet content store failed midway on this workstation with a decoding
+    error and left nothing behind, so the classic HTTP transfer is used. It
+    writes into the model cache under the model root, not into the repository,
+    and it resumes a partial file.
     """
+    os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
     filename = f"collections/{collection}.jsonl.gz"
     target = RAW_DIR / "Athar-Datasets" / filename
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +98,24 @@ def download_collection(collection: str) -> Path:
         print(f"  {target} already downloaded ({target.stat().st_size / 1e6:.1f} MB)", flush=True)
         return target
 
+    print(f"  downloading {filename}", flush=True)
+    try:
+        from huggingface_hub import hf_hub_download
+
+        path = hf_hub_download(repo_id=HF_REPO, filename=filename, repo_type="dataset")
+    except Exception as exc:  # noqa: BLE001 - fall back to the raw transfer
+        print(f"  the hub client failed ({exc}), falling back to a direct transfer", flush=True)
+        return _direct_download(filename, target, expected)
+
+    source = Path(path)
+    if source != target:
+        shutil.copy2(source, target)
+    print(f"  downloaded {target.stat().st_size / 1e6:.1f} MB", flush=True)
+    return target
+
+
+def _direct_download(filename: str, target: Path, expected: int | None) -> Path:
+    """Stream a file over plain HTTP, resuming a partial transfer."""
     url = f"{HF_ENDPOINT}/datasets/{HF_REPO}/resolve/main/{filename}"
     partial = target.with_suffix(target.suffix + ".part")
     have = partial.stat().st_size if partial.exists() else 0
@@ -104,10 +127,8 @@ def download_collection(collection: str) -> Path:
     if have:
         headers["Range"] = f"bytes={have}-"
 
-    print(f"  downloading {filename} to {target}", flush=True)
     with httpx.stream("GET", url, headers=headers, follow_redirects=True, timeout=300.0) as response:
         if have and response.status_code == 200:
-            # The server ignored the range request, so start over.
             have = 0
         response.raise_for_status()
         mode = "ab" if have else "wb"
@@ -118,18 +139,11 @@ def download_collection(collection: str) -> Path:
                 handle.write(chunk)
                 downloaded += len(chunk)
                 if time.time() - last_report > 30:
-                    rate = (downloaded - have) / max(time.time() - last_report, 0.001)
-                    print(
-                        f"    {downloaded / 1e6:.0f} MB of {(expected or 0) / 1e6:.0f} MB ({rate / 1e6:.1f} MB/s)",
-                        flush=True,
-                    )
+                    print(f"    {downloaded / 1e6:.0f} MB of {(expected or 0) / 1e6:.0f} MB", flush=True)
                     last_report = time.time()
 
     if expected is not None and partial.stat().st_size != expected:
-        print(
-            f"  size mismatch: {partial.stat().st_size} of {expected} bytes, retrying later",
-            flush=True,
-        )
+        print(f"  size mismatch: {partial.stat().st_size} of {expected} bytes", flush=True)
         return partial
 
     partial.replace(target)

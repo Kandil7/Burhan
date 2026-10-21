@@ -28,8 +28,10 @@ Verified on 2026-10-21 against the running Docker stack.
 set `requires_human_review`. This matters on metered providers: Groq's free
 tier caps output at 1000 tokens per minute for some models, so a generation
 request above that ceiling is rejected and the endpoint degrades to `evidence`.
-Set `LLM_MAX_TOKENS` at or below the provider quota; each agent now clamps its
-own budget to that value.
+Each agent now clamps its own budget to `LLM_MAX_TOKENS` and retries with a
+smaller budget when the provider refuses over the output quota, so the
+degradation only happens when the provider refuses every budget. Lowering
+`LLM_MAX_TOKENS` to 1000 still removes the first rejection.
 
 ## Data
 
@@ -107,8 +109,12 @@ takes effect on the next request without an image rebuild.
    those verses return two sources instead of three. Al-Qurtubi has one blank
    entry upstream. Both are upstream data limits, not pipeline faults.
 2. **Sparse collections:** fiqh, hadith, history, and general hold 10k-row
-   samples. Full-corpus embeddings need to be generated and uploaded with the
-   importer.
+   samples. The evaluation harness measured what that costs: for those four
+   collections the curated questions have no answering passage at all, while
+   the six full collections return an on-topic passage for every question.
+   The samples are missing the subject matter, not merely fewer passages.
+   Full-corpus embeddings need to be generated and uploaded with
+   `scripts/data/embed_full_to_qdrant.py`.
 3. **Repository hygiene:** scratch files at the repo root are tracked
    (`debug_*.py`, `classifier_debug.txt`, `rag_eval_*`). Removing tracked files
    is a user decision.

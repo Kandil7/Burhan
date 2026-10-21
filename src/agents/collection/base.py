@@ -37,6 +37,21 @@ _COLON_SPACES_RE = re.compile(r"\s*:\s*")
 # Maximum seconds allowed for retrieve_candidates() before TimeoutError
 _RETRIEVAL_TIMEOUT_SECONDS = 8.0
 
+# Markers of a provider rejection that a smaller output budget can fix.
+_BUDGET_ERROR_MARKERS = (
+    "output tokens per minute",
+    "tokens per minute",
+    "request too large",
+    "otpm",
+    "max_tokens",
+)
+
+
+def _is_output_budget_error(exc: Exception) -> bool:
+    """Return True when the provider refused the request over its budget."""
+    text = str(exc).lower()
+    return any(marker in text for marker in _BUDGET_ERROR_MARKERS)
+
 
 def _normalize_source_ref(src: str) -> str:
     """Remove spaces around colon in verse references."""
@@ -146,6 +161,11 @@ class CollectionAgent(ABC):
         # Set by generate_answer when the LLM call fails and raw evidence is
         # returned instead of a composed answer.
         self._generation_failed = False
+        # The collaborators are injected by the registry. They default to
+        # None here so the base class can talk about them safely.
+        self.embedding_model: Any = None
+        self.vector_store: Any = None
+        self.llm_client: Any = None
 
     @abstractmethod
     def query_intake(self, query: str) -> str: ...
@@ -239,6 +259,60 @@ class CollectionAgent(ABC):
                 return f.read().strip()
         except FileNotFoundError:
             return ""
+
+    async def _complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        """Call the model, and survive a rejection over the output budget.
+
+        Metered providers cap the output tokens per minute. Groq's free tier
+        rejects a request whose budget is above the cap with a message about
+        output tokens per minute, and the answer then degrades to the raw
+        evidence even though a smaller request would have been accepted. When
+        the rejection is a budget rejection, the request is retried with a
+        smaller budget before the answer is given up on.
+        """
+        from src.config.settings import settings
+
+        if not self.llm_client:
+            raise RuntimeError("no language model client is configured")
+
+        budgets = [max_tokens]
+        if max_tokens > 1000:
+            budgets.append(1000)
+        if max_tokens > 512:
+            budgets.append(512)
+
+        last_error: Exception | None = None
+        for budget in budgets:
+            try:
+                response = await self.llm_client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    temperature=temperature,
+                    max_tokens=settings.resolve_max_tokens(budget),
+                )
+                return strip_cot_leakage(response.choices[0].message.content)
+            except Exception as exc:
+                last_error = exc
+                if not _is_output_budget_error(exc):
+                    raise
+                logger.warning(
+                    "generation.budget_rejected: agent=%s max_tokens=%s error=%s",
+                    self.name,
+                    budget,
+                    str(exc)[:200],
+                )
+
+        raise last_error if last_error else RuntimeError("the model call failed")
 
     async def execute(self, input_data: AgentInput) -> AgentOutput:
         meta = input_data.metadata or {}

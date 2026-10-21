@@ -14,7 +14,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.agents.base import strip_cot_leakage
 from src.agents.collection.base import (
     Citation,
     CollectionAgent,
@@ -220,19 +219,12 @@ class FiqhCollectionAgent(CollectionAgent):
 
         if self.llm_client:
             try:
-                from src.config.settings import settings
-
-                response = await self.llm_client.chat.completions.create(
-                    model=settings.llm_model,
-                    messages=[
-                        {"role": "system", "content": self._get_system_prompt()},
-                        {"role": "user", "content": self._build_user_prompt(query, formatted, language)},
-                    ],
+                return await self._complete(
+                    system=self._get_system_prompt(),
+                    user=self._build_user_prompt(query, formatted, language),
+                    max_tokens=1024,
                     temperature=0.15,
-                    max_tokens=settings.resolve_max_tokens(1024),
                 )
-                raw_answer = response.choices[0].message.content
-                return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
 

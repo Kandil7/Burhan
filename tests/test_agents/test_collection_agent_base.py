@@ -8,6 +8,8 @@ Tests:
 - Pydantic models work as expected
 """
 
+from types import SimpleNamespace
+
 import pytest
 from pydantic import ValidationError
 
@@ -256,6 +258,90 @@ class ConcreteCollectionAgent(CollectionAgent):
     def assemble_citations(self, passages: list[dict]) -> list[Citation]:
         """Return mock citations."""
         return [Citation.from_passage(p, i) for i, p in enumerate(passages, 1)]
+
+
+class _QuotaLimitedClient:
+    """A model client that refuses any request above its output quota."""
+
+    class _Completions:
+        def __init__(self, outer: "_QuotaLimitedClient") -> None:
+            self.outer = outer
+
+        async def create(self, *, model, messages, temperature, max_tokens):
+            self.outer.calls.append(max_tokens)
+            if max_tokens > self.outer.limit:
+                raise RuntimeError(
+                    "Request too large for model on output tokens per minute (OTPM): "
+                    f"Limit {self.outer.limit}, Requested {max_tokens}"
+                )
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="composed answer"))])
+
+    def __init__(self, limit: int = 1000) -> None:
+        self.limit = limit
+        self.calls: list[int] = []
+        self.chat = SimpleNamespace(completions=self._Completions(self))
+
+
+class TestOutputBudgetRetry:
+    """A metered provider can refuse a request over its output budget."""
+
+    @pytest.mark.asyncio
+    async def test_retries_with_a_smaller_budget(self, monkeypatch):
+        from src.config.settings import settings
+
+        monkeypatch.setattr(settings, "llm_max_tokens", 4096)
+        agent = ConcreteCollectionAgent()
+        agent.llm_client = _QuotaLimitedClient(limit=1000)
+
+        answer = await agent._complete(
+            system="system",
+            user="user",
+            max_tokens=2048,
+            temperature=0.2,
+        )
+
+        assert answer == "composed answer"
+        assert agent.llm_client.calls == [2048, 1000]
+
+    @pytest.mark.asyncio
+    async def test_gives_up_when_every_budget_is_refused(self, monkeypatch):
+        from src.config.settings import settings
+
+        monkeypatch.setattr(settings, "llm_max_tokens", 4096)
+        agent = ConcreteCollectionAgent()
+        agent.llm_client = _QuotaLimitedClient(limit=100)
+
+        with pytest.raises(RuntimeError):
+            await agent._complete(
+                system="system",
+                user="user",
+                max_tokens=2048,
+                temperature=0.2,
+            )
+
+    @pytest.mark.asyncio
+    async def test_another_failure_is_not_retried(self, monkeypatch):
+        from src.config.settings import settings
+
+        monkeypatch.setattr(settings, "llm_max_tokens", 4096)
+        agent = ConcreteCollectionAgent()
+        client = _QuotaLimitedClient(limit=1000)
+
+        async def boom(**kwargs):
+            raise ValueError("connection reset")
+
+        client.chat.completions.create = boom
+        agent.llm_client = client
+
+        with pytest.raises(ValueError):
+            await agent._complete(
+                system="system",
+                user="user",
+                max_tokens=2048,
+                temperature=0.2,
+            )
+
+        assert client.calls == []
 
 
 class _EvidenceFallbackAgent(ConcreteCollectionAgent):
