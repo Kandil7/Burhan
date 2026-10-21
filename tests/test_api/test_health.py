@@ -35,6 +35,18 @@ class TestHealthEndpoints:
         assert response.status_code == 200
         assert "counters" in response.json()
 
+    def test_requests_are_counted(self, client):
+        """The collector must see the traffic, or the metrics endpoints are dead."""
+        metrics.reset()
+
+        client.get("/")
+
+        counters = metrics.get_metrics()["counters"]
+        assert counters.get("GET /") == 1
+        assert counters.get("status.2xx") == 1
+        timings = metrics.get_metrics()["timings"]
+        assert any(entry["name"] == "GET /" for entry in timings)
+
 
 class TestMetricsReset:
     """The reset route is destructive and development-only."""
@@ -51,7 +63,9 @@ class TestMetricsReset:
         response = client.post("/metrics/reset")
 
         assert response.status_code == 204
-        assert metrics.get_metrics()["counters"] == {}
+        # The reset clears what was recorded before it. The reset request
+        # itself is counted afterwards, so the collector is not empty.
+        assert "test.counter" not in metrics.get_metrics()["counters"]
 
     def test_get_method_not_allowed(self, client, monkeypatch):
         """A GET must never mutate metrics."""

@@ -420,12 +420,8 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "تطبيق",
         "اقتداء",
         "قدوة",
-        "أخلاق",
-        "خُلُق",
-        "خُلق",
-        "character",
-        "morals",
-        "behavior",
+        # The ethics and the inner life live with the spirituality collection,
+        # which holds the pages titled "ما الأخلاق" and "صفات المؤمن".
         "نبوية",
         "نبوي",
         "القديم",
@@ -450,6 +446,15 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "الاولويات",
         "المصالح",
         "المرسلات",
+        # The technical vocabulary of the science itself. The corpus holds
+        # pages titled "الفرق بين النص والظاهر" and "تعريف أصول الفقه",
+        # and without these words the question lands in the general bucket.
+        "النص الظاهر",
+        "النص المؤول",
+        "المؤول",
+        "المجمل",
+        "التخصيص",
+        "قواعد الفقه",
     ],
     Intent.ISLAMIC_HISTORY: [
         "تاريخ",
@@ -495,6 +500,16 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "منصوب",
         "مجرور",
         "مفعول",
+        # The grammar the corpus is actually made of. The collection holds
+        # pages titled "تعريف الفاعل", "نائب الفاعل", and "الأسماء الخمسة",
+        # and these questions used to land in the general bucket.
+        "الفاعل",
+        "نائب الفاعل",
+        "الأسماء الخمسة",
+        "الأفعال الخمسة",
+        "المبتدأ",
+        "المنادى",
+        "المشتقات",
     ],
     Intent.ISLAMIC_TAZKIYAH: [
         "تزكية",
@@ -518,6 +533,24 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "الغزالي",
         "ابن عربي",
         "الجيلاني",
+        # The ethics and the inner life. These words sat in the Seerah list,
+        # which sent "ما هي أخلاق المؤمن" to the wrong collection, and they
+        # were missing entirely for the virtues, so "أثر الصبر" fell
+        # through to the general bucket.
+        "صبر",
+        "أخلاق",
+        "خُلُق",
+        "خُلق",
+        "character",
+        "morals",
+        "behavior",
+        "حياء",
+        "تواضع",
+        "زهد",
+        "تقوى القلوب",
+        "تزكية النفس",
+        "فضائل",
+        "إخلاص",
     ],
     Intent.GREETING: ["سلام", "السلام", "مرحبا", "أهلا", "حياك", "الله يبارك"],
     Intent.ZAKAT: ["زكاة", "زكاه", "حساب الزكاة", "زكاة المال", "نصاب", "فطر"],

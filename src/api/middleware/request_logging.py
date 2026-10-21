@@ -11,7 +11,7 @@ from collections.abc import Callable
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.config.logging_config import get_logger
+from src.config.logging_config import get_logger, metrics
 
 logger = get_logger()
 
@@ -70,6 +70,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Calculate duration
         duration_ms = (time.perf_counter() - start_time) * 1000
 
+        # Record the request in the metrics collector. Nothing else writes to
+        # it, so without this the /metrics endpoints always report empty
+        # counters and timings.
+        route_path = self._route_path(request)
+        label = f"{request.method} {route_path}"
+        metrics.increment(label)
+        metrics.increment(f"status.{status_code // 100}xx")
+        metrics.timing(label, duration_ms)
+
         # Log response
         logger.info(
             "http.response",
@@ -93,6 +102,19 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return request.client.host
 
         return "-"
+
+    @staticmethod
+    def _route_path(request: Request) -> str:
+        """Return the route template so metric labels stay bounded.
+
+        The raw path carries every id, so labelling on it would create one
+        counter per request instead of one per route.
+        """
+        route = request.scope.get("route")
+        path = getattr(route, "path", None)
+        if path:
+            return str(path)
+        return request.url.path
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
