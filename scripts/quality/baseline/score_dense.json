@@ -1,0 +1,229 @@
+{
+ "summary": {
+  "strict_scored_items": 15,
+  "precision_at_5": 0.8533,
+  "recall_at_10": 1.0,
+  "mrr": 0.9417,
+  "topic_scored_items": 18,
+  "topic_precision_at_5": 0.8333,
+  "topic_recall_at_10": 1.0,
+  "questions_without_topic_evidence": [
+   "general_01",
+   "general_02"
+  ],
+  "per_collection_topic_hit_rate": {
+   "aqeedah_passages": 1.0,
+   "arabic_language_passages": 1.0,
+   "fiqh_passages": 1.0,
+   "hadith_passages": 0.5,
+   "islamic_history_passages": 0.0,
+   "quran_tafsir": 1.0,
+   "seerah_passages": 1.0,
+   "spirituality_passages": 1.0,
+   "usul_fiqh": 0.5
+  }
+ },
+ "items": [
+  {
+   "id": "fiqh_01",
+   "collection": "fiqh_passages",
+   "gold": 8,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "fiqh_02",
+   "collection": "fiqh_passages",
+   "gold": 0,
+   "skipped": true,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "hadith_01",
+   "collection": "hadith_passages",
+   "gold": 0,
+   "skipped": true,
+   "topic_precision_at_5": 0.2,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "hadith_02",
+   "collection": "hadith_passages",
+   "gold": 2,
+   "precision_at_5": 0.4,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "aqeedah_01",
+   "collection": "aqeedah_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "aqeedah_02",
+   "collection": "aqeedah_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "seerah_01",
+   "collection": "seerah_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "seerah_02",
+   "collection": "seerah_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "history_01",
+   "collection": "islamic_history_passages",
+   "gold": 1,
+   "precision_at_5": 0.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 0.125,
+   "first_relevant_rank": 8,
+   "topic_precision_at_5": 0.2,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "history_02",
+   "collection": "islamic_history_passages",
+   "gold": 0,
+   "skipped": true,
+   "topic_precision_at_5": 0.2,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "language_01",
+   "collection": "arabic_language_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "language_02",
+   "collection": "arabic_language_passages",
+   "gold": 8,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "tazkiyah_01",
+   "collection": "spirituality_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "tazkiyah_02",
+   "collection": "spirituality_passages",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "usul_01",
+   "collection": "usul_fiqh",
+   "gold": 2,
+   "precision_at_5": 0.4,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 0.4,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "usul_02",
+   "collection": "usul_fiqh",
+   "gold": 10,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "general_01",
+   "collection": "general_islamic",
+   "gold": 0,
+   "skipped": true
+  },
+  {
+   "id": "general_02",
+   "collection": "general_islamic",
+   "gold": 0,
+   "skipped": true
+  },
+  {
+   "id": "tafsir_01",
+   "collection": "quran_tafsir",
+   "gold": 8,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  },
+  {
+   "id": "tafsir_02",
+   "collection": "quran_tafsir",
+   "gold": 8,
+   "precision_at_5": 1.0,
+   "recall_at_10": 1.0,
+   "reciprocal_rank": 1.0,
+   "first_relevant_rank": 1,
+   "topic_precision_at_5": 1.0,
+   "topic_recall_at_10": 1.0
+  }
+ ]
+}

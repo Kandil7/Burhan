@@ -1,0 +1,253 @@
+{
+ "created_at": "2026-10-21",
+ "routed_correct": 20,
+ "routed_total": 20,
+ "routing_accuracy": 1.0,
+ "items": [
+  {
+   "id": "fiqh_01",
+   "question": "ما حكم صلاة الجماعة في المسجد؟",
+   "code": 200,
+   "intent": "fiqh",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "fiqh"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "fiqh_02",
+   "question": "ما حكم بيع الغرر في العقود؟",
+   "code": 200,
+   "intent": "fiqh",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "fiqh"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "hadith_01",
+   "question": "ما دلائل حديث إنما الأعمال بالنيات؟",
+   "code": 200,
+   "intent": "hadith",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "hadith"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "hadith_02",
+   "question": "ما حكم من تولى الغسل فلم يجد ماء؟",
+   "code": 200,
+   "intent": "fiqh",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "fiqh",
+    "hadith"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "aqeedah_01",
+   "question": "ما هو توحيد الألوهية؟",
+   "code": 200,
+   "intent": "aqeedah",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "aqeedah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "aqeedah_02",
+   "question": "ما هي أركان الإيمان؟",
+   "code": 200,
+   "intent": "aqeedah",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "aqeedah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "seerah_01",
+   "question": "ما قصة الهجرة إلى المدينة؟",
+   "code": 200,
+   "intent": "seerah",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "seerah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "seerah_02",
+   "question": "ما يوم بدر وأهميته؟",
+   "code": 200,
+   "intent": "seerah",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "seerah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "history_01",
+   "question": "متى كانت الهجرة النبوية إلى المدينة؟",
+   "code": 200,
+   "intent": "seerah",
+   "confidence": 0.95,
+   "method": "keyword",
+   "expected": [
+    "islamic_history",
+    "seerah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "history_02",
+   "question": "من هو عمر بن الخطاب رضي الله عنه؟",
+   "code": 200,
+   "intent": "seerah",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "islamic_history",
+    "seerah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "language_01",
+   "question": "ما الفرق بين الفاعل ونائب الفاعل؟",
+   "code": 200,
+   "intent": "arabic_language",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "arabic_language"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "language_02",
+   "question": "كيف تُصب الأسماء الخمسة؟",
+   "code": 200,
+   "intent": "arabic_language",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "arabic_language"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "tazkiyah_01",
+   "question": "ما أثر الصبر على النفس؟",
+   "code": 200,
+   "intent": "islamic_tazkiyah",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "islamic_tazkiyah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "tazkiyah_02",
+   "question": "ما هي أخلاق المؤمن الصادق؟",
+   "code": 200,
+   "intent": "islamic_tazkiyah",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "islamic_tazkiyah"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "usul_01",
+   "question": "ما الفرق بين النص الظاهر والنص المؤول؟",
+   "code": 200,
+   "intent": "usul_fiqh",
+   "confidence": 0.95,
+   "method": "keyword",
+   "expected": [
+    "usul_fiqh"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "usul_02",
+   "question": "ما هي أصول الفقه؟",
+   "code": 200,
+   "intent": "usul_fiqh",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "usul_fiqh"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "general_01",
+   "question": "ما هي أركان الإسلام؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "confidence": 0.3,
+   "method": "keyword",
+   "expected": [
+    "islamic_knowledge"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "general_02",
+   "question": "ما حكم التبرع لوجه الله في العمل الصالح؟",
+   "code": 200,
+   "intent": "fiqh",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "fiqh",
+    "islamic_knowledge"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "tafsir_01",
+   "question": "ما تفسير قوله تعالى: ويبشر الصابرين؟",
+   "code": 200,
+   "intent": "quran",
+   "confidence": 0.85,
+   "method": "keyword",
+   "expected": [
+    "quran",
+    "tafsir"
+   ],
+   "routed_ok": true
+  },
+  {
+   "id": "tafsir_02",
+   "question": "ما تفسير آية الكوثر؟",
+   "code": 200,
+   "intent": "tafsir",
+   "confidence": 0.7,
+   "method": "keyword",
+   "expected": [
+    "tafsir"
+   ],
+   "routed_ok": true
+  }
+ ]
+}

@@ -1,0 +1,348 @@
+{
+ "created_at": "2026-10-21",
+ "items": [
+  {
+   "id": "fiqh_01",
+   "question": "ما حكم صلاة الجماعة في المسجد؟",
+   "code": 200,
+   "intent": "fiqh",
+   "answer_mode": "answer",
+   "collection": "fiqh_passages",
+   "citation_count": 14,
+   "sources": [
+    "مختصر الفتاوى المصرية - ط ركائز",
+    "مختصر تحفة المحتاج بشرح المنهاج",
+    "مختصر خوقير في فقه الإمام أحمد"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 3746
+  },
+  {
+   "id": "fiqh_02",
+   "question": "ما حكم بيع الغرر في العقود؟",
+   "code": 200,
+   "intent": "fiqh",
+   "answer_mode": "answer",
+   "collection": "fiqh_passages",
+   "citation_count": 14,
+   "sources": [
+    "مختصر الفتاوى المصرية - ط ركائز",
+    "مختصر تحفة المحتاج بشرح المنهاج"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 3709
+  },
+  {
+   "id": "hadith_01",
+   "question": "ما دلائل حديث إنما الأعمال بالنيات؟",
+   "code": 200,
+   "intent": "hadith",
+   "answer_mode": "answer",
+   "collection": "hadith_passages",
+   "citation_count": 6,
+   "sources": [
+    "توفيق الرب المنعم بشرح صحيح الإمام مسلم",
+    "دروس للشيخ عطية سالم"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 6828
+  },
+  {
+   "id": "hadith_02",
+   "question": "ما حكم من تولى الغسل فلم يجد ماء؟",
+   "code": 200,
+   "intent": "fiqh",
+   "answer_mode": "evidence",
+   "collection": "fiqh_passages",
+   "citation_count": 14,
+   "sources": [
+    "مجموع فيه أربع رسائل - الحجاوي",
+    "مختصر الفتاوى المصرية - ط ركائز",
+    "مختصر تحفة المحتاج بشرح المنهاج"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 12594
+  },
+  {
+   "id": "aqeedah_01",
+   "question": "ما هو توحيد الألوهية؟",
+   "code": 200,
+   "intent": "aqeedah",
+   "answer_mode": "answer",
+   "collection": "aqeedah_passages",
+   "citation_count": 7,
+   "sources": [
+    "",
+    "الأجوبة المفيدة لمهمات العقيدة",
+    "رسائل الشيخ الحمد في العقيدة",
+    "شرح فتح المجيد للغنيمان",
+    "مختصر الأسئلة والأجوبة الأصولية على العقيدة الواسطية",
+    "مدخل لدراسة العقيدة الإسلامية"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 20687
+  },
+  {
+   "id": "aqeedah_02",
+   "question": "ما هي أركان الإيمان؟",
+   "code": 200,
+   "intent": "aqeedah",
+   "answer_mode": "answer",
+   "collection": "aqeedah_passages",
+   "citation_count": 6,
+   "sources": [
+    "الأجوبة المفيدة لمهمات العقيدة",
+    "الإيمان حقيقته، خوارمه، نواقضه عند أهل السنة والجماعة",
+    "التعليقات السنية على العقيدة الواسطية - محمد خليفة التميمي",
+    "شرح العقيدة الطحاوية - ابن جبرين",
+    "شرح العقيدة الطحاوية - خالد المصلح",
+    "عقيدة الإيمان باليوم الآخر وآثرها في إصلاح المجتمع"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 64551
+  },
+  {
+   "id": "seerah_01",
+   "question": "ما قصة الهجرة إلى المدينة؟",
+   "code": 200,
+   "intent": "seerah",
+   "answer_mode": "answer",
+   "collection": "seerah_passages",
+   "citation_count": 4,
+   "sources": [
+    "الاكتفاء بما تضمنه من مغازي رسول الله والثلاثة الخلفاء",
+    "التعليق على الرحيق المختوم",
+    "محمد صلى الله عليه وسلم",
+    "مختصر سيرة الرسول صلى الله عليه وسلم لمحمد بن عبد الوهاب"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 16543
+  },
+  {
+   "id": "seerah_02",
+   "question": "ما يوم بدر وأهميته؟",
+   "code": 200,
+   "intent": "seerah",
+   "answer_mode": "answer",
+   "collection": "seerah_passages",
+   "citation_count": 8,
+   "sources": [
+    "إمتاع الأسماع",
+    "السيرة النبوية - راغب السرجاني",
+    "السيرة النبوية لأبي الحسن الندوي",
+    "القول المبين في سيرة سيد المرسلين",
+    "سيرة ابن اسحاق = السير والمغازي",
+    "سيرة ابن هشام ت السقا"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 4821
+  },
+  {
+   "id": "history_01",
+   "question": "متى كانت الهجرة النبوية إلى المدينة؟",
+   "code": 200,
+   "intent": "seerah",
+   "answer_mode": "answer",
+   "collection": "seerah_passages",
+   "citation_count": 6,
+   "sources": [
+    "السيرة النبوية على ضوء القرآن والسنة",
+    "السيرة النبوية والدعوة في العهد المدني",
+    "القول المبين في سيرة سيد المرسلين",
+    "صحيح الأثر وجميل العبر من سيرة خير البشر (صلى الله عليه وسلم)"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 10567
+  },
+  {
+   "id": "history_02",
+   "question": "من هو عمر بن الخطاب رضي الله عنه؟",
+   "code": 200,
+   "intent": "seerah",
+   "answer_mode": "answer",
+   "collection": "seerah_passages",
+   "citation_count": 7,
+   "sources": [
+    "إمتاع الأسماع",
+    "الخصائص الكبرى",
+    "الرصف لما روي عن النبي صلى الله عليه وسلم من الفعل والوصف",
+    "الروض الأنف ت تدمري",
+    "حدائق الأنوار ومطالع الأسرار في سيرة النبي المختار",
+    "سيرة ابن اسحاق = السير والمغازي",
+    "صحيح السيرة النبوية للعلي"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 22050
+  },
+  {
+   "id": "language_01",
+   "question": "ما الفرق بين الفاعل ونائب الفاعل؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "answer_mode": "answer",
+   "collection": "general_islamic",
+   "citation_count": 7,
+   "sources": [
+    "إعراب القراءات السبع وعللها ط العلمية",
+    "ديوان السنة - قسم الطهارة"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 2019
+  },
+  {
+   "id": "language_02",
+   "question": "كيف تُصب الأسماء الخمسة؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "answer_mode": "answer",
+   "collection": "general_islamic",
+   "citation_count": 8,
+   "sources": [
+    "تجريد القواعد والفوائد الأصولية",
+    "ديوان السنة - قسم الطهارة"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 31467
+  },
+  {
+   "id": "tazkiyah_01",
+   "question": "ما أثر الصبر على النفس؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "answer_mode": "answer",
+   "collection": "general_islamic",
+   "citation_count": 9,
+   "sources": [
+    "تجريد القواعد والفوائد الأصولية",
+    "ديوان السنة - قسم الطهارة"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 27723
+  },
+  {
+   "id": "tazkiyah_02",
+   "question": "ما هي أخلاق المؤمن الصادق؟",
+   "code": 200,
+   "intent": "seerah",
+   "answer_mode": "answer",
+   "collection": "seerah_passages",
+   "citation_count": 7,
+   "sources": [
+    "الجامع الصحيح للسيرة النبوية",
+    "السيرة النبوية - راغب السرجاني",
+    "السيرة النبوية على ضوء القرآن والسنة",
+    "السيرة النبوية منهجية دراستها واستعراض أحداثها",
+    "رحمة للعالمين",
+    "من معارك الإسلام الفاصلة = موسوعة الغزوات الكبرى",
+    "وا محمداه إن شانئك هو الأبتر"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 20677
+  },
+  {
+   "id": "usul_01",
+   "question": "ما الفرق بين النص الظاهر والنص المؤول؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "answer_mode": "answer",
+   "collection": "general_islamic",
+   "citation_count": 8,
+   "sources": [
+    "إعراب القراءات السبع وعللها ط العلمية",
+    "تجريد القواعد والفوائد الأصولية",
+    "ديوان السنة - قسم الطهارة"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 18368
+  },
+  {
+   "id": "usul_02",
+   "question": "ما هي أصول الفقه؟",
+   "code": 200,
+   "intent": "usul_fiqh",
+   "answer_mode": "answer",
+   "collection": "usul_fiqh",
+   "citation_count": 4,
+   "sources": [
+    "الأصل الجامع لإيضاح الدرر المنظومة في سلك جمع الجوامع",
+    "الغيث الهامع شرح جمع الجوامع",
+    "الورقات",
+    "شرح المعتمد في أصول الفقه"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 43465
+  },
+  {
+   "id": "general_01",
+   "question": "ما هي أركان الإسلام؟",
+   "code": 200,
+   "intent": "islamic_knowledge",
+   "answer_mode": "answer",
+   "collection": "general_islamic",
+   "citation_count": 7,
+   "sources": [
+    "إعراب القراءات السبع وعللها ط العلمية",
+    "تجريد القواعد والفوائد الأصولية",
+    "ديوان السنة - قسم الطهارة"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 1974
+  },
+  {
+   "id": "general_02",
+   "question": "ما حكم التبرع لوجه الله في العمل الصالح؟",
+   "code": 200,
+   "intent": "fiqh",
+   "answer_mode": "answer",
+   "collection": "fiqh_passages",
+   "citation_count": 15,
+   "sources": [
+    "مختصر الفتاوى المصرية - ط ركائز",
+    "مختصر تحفة المحتاج بشرح المنهاج"
+   ],
+   "requires_human_review": false,
+   "elapsed_ms": 34926
+  },
+  {
+   "id": "tafsir_01",
+   "question": "ما تفسير قوله تعالى: ويبشر الصابرين؟",
+   "code": 200,
+   "intent": "quran",
+   "answer_mode": "answer",
+   "collection": "quran_tafsir",
+   "citation_count": 9,
+   "sources": [
+    "",
+    "تفسير أبي السعود = إرشاد العقل السليم إلى مزايا الكتاب الكريم",
+    "تفسير الطبري جامع البيان - ط دار التربية والتراث",
+    "تفسير القرآن الثري الجامع",
+    "تفسير القرآن الكريم - اللهيميد - من الفاتحة إلى النساء",
+    "موسوعة التفسير المأثور"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 57223
+  },
+  {
+   "id": "tafsir_02",
+   "question": "ما تفسير آية الكوثر؟",
+   "code": 200,
+   "intent": "tafsir",
+   "answer_mode": "evidence",
+   "collection": "quran_tafsir",
+   "citation_count": 7,
+   "sources": [
+    "",
+    "أقوال الحسين بن الفضل في التفسير",
+    "التفسير الميسر",
+    "تفسير الطبري جامع البيان - ط دار التربية والتراث",
+    "تفسير القرآن العظيم - السخاوي"
+   ],
+   "requires_human_review": true,
+   "elapsed_ms": 43669
+  }
+ ],
+ "mode_distribution": {
+  "answer": 18,
+  "evidence": 2
+ }
+}

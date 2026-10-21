@@ -1,0 +1,536 @@
+{
+  "version": 2,
+  "created_at": "2026-10-21",
+  "note": "Two questions per collection. relevant_ids are the point ids that would let a scholar answer the question. topic_ids are the point ids that are on the subject of the question. Both were curated by reading the passage text of a dense retrieval run. The gap between the two is the point: for the four collections that still hold a 10k sample, the subject is often missing from the corpus, so the strict set is empty and the topic set is thin. That is a corpus finding, not a harness bug. acceptable_intents lists the intents that may legitimately serve the question. A hadith question that is really a ruling question may go to fiqh, and a question about the Hijra may go to Seerah as well as to history.",
+  "items": [
+    {
+      "id": "fiqh_01",
+      "question": "ما حكم صلاة الجماعة في المسجد؟",
+      "collection": "fiqh_passages",
+      "intent": "fiqh",
+      "relevant_ids": [
+        1879,
+        6566,
+        4585,
+        2443,
+        9707,
+        6570,
+        6565,
+        6535
+      ],
+      "topic_ids": [
+        1879,
+        6566,
+        4585,
+        2443,
+        9707,
+        6570,
+        6565,
+        6535,
+        9736,
+        9770
+      ],
+      "acceptable_intents": [
+        "fiqh"
+      ]
+    },
+    {
+      "id": "fiqh_02",
+      "question": "ما حكم بيع الغرر في العقود؟",
+      "collection": "fiqh_passages",
+      "intent": "fiqh",
+      "relevant_ids": [],
+      "topic_ids": [
+        6734,
+        6712,
+        6713,
+        6781,
+        6820,
+        6729,
+        6770,
+        6748,
+        6727,
+        9663
+      ],
+      "note": "The 10k sample has no passage on بيع الغرر, only on selling in general.",
+      "acceptable_intents": [
+        "fiqh"
+      ]
+    },
+    {
+      "id": "hadith_01",
+      "question": "ما دلائل حديث إنما الأعمال بالنيات؟",
+      "collection": "hadith_passages",
+      "intent": "hadith",
+      "relevant_ids": [],
+      "topic_ids": [
+        291,
+        9272,
+        5009
+      ],
+      "note": "The 10k sample has no passage on the hadith of intentions, only on hadith in general.",
+      "acceptable_intents": [
+        "hadith"
+      ]
+    },
+    {
+      "id": "hadith_02",
+      "question": "ما حكم من تولى الغسل فلم يجد ماء؟",
+      "collection": "hadith_passages",
+      "intent": "hadith",
+      "relevant_ids": [
+        9785,
+        9786
+      ],
+      "topic_ids": [
+        9785,
+        9786,
+        9759,
+        9776,
+        9758,
+        9757
+      ],
+      "note": "باب إنما الماء من الماء carries the ruling, the sample has no tayammum passage.",
+      "acceptable_intents": [
+        "hadith",
+        "fiqh"
+      ]
+    },
+    {
+      "id": "aqeedah_01",
+      "question": "ما هو توحيد الألوهية؟",
+      "collection": "aqeedah_passages",
+      "intent": "aqeedah",
+      "relevant_ids": [
+        253737,
+        101976,
+        293951,
+        655555,
+        336500,
+        241113,
+        113141,
+        320835,
+        285817,
+        339714
+      ],
+      "topic_ids": [
+        253737,
+        101976,
+        293951,
+        655555,
+        336500,
+        241113,
+        113141,
+        320835,
+        285817,
+        339714
+      ],
+      "acceptable_intents": [
+        "aqeedah"
+      ]
+    },
+    {
+      "id": "aqeedah_02",
+      "question": "ما هي أركان الإيمان؟",
+      "collection": "aqeedah_passages",
+      "intent": "aqeedah",
+      "relevant_ids": [
+        293991,
+        531055,
+        325213,
+        284824,
+        312729,
+        348657,
+        101564,
+        111024,
+        102600,
+        649179
+      ],
+      "topic_ids": [
+        293991,
+        531055,
+        325213,
+        284824,
+        312729,
+        348657,
+        101564,
+        111024,
+        102600,
+        649179
+      ],
+      "acceptable_intents": [
+        "aqeedah"
+      ]
+    },
+    {
+      "id": "seerah_01",
+      "question": "ما قصة الهجرة إلى المدينة؟",
+      "collection": "seerah_passages",
+      "intent": "seerah",
+      "relevant_ids": [
+        206584,
+        203492,
+        162028,
+        87055,
+        244100,
+        269778,
+        279817,
+        247896,
+        247894,
+        108561
+      ],
+      "topic_ids": [
+        206584,
+        203492,
+        162028,
+        87055,
+        244100,
+        269778,
+        279817,
+        247896,
+        247894,
+        108561
+      ],
+      "acceptable_intents": [
+        "seerah"
+      ]
+    },
+    {
+      "id": "seerah_02",
+      "question": "ما يوم بدر وأهميته؟",
+      "collection": "seerah_passages",
+      "intent": "seerah",
+      "relevant_ids": [
+        247992,
+        131479,
+        143190,
+        142447,
+        43889,
+        228935,
+        30142,
+        100620,
+        99759,
+        100288
+      ],
+      "topic_ids": [
+        247992,
+        131479,
+        143190,
+        142447,
+        43889,
+        228935,
+        30142,
+        100620,
+        99759,
+        100288
+      ],
+      "acceptable_intents": [
+        "seerah"
+      ]
+    },
+    {
+      "id": "history_01",
+      "question": "متى كانت الهجرة النبوية إلى المدينة؟",
+      "collection": "islamic_history_passages",
+      "intent": "islamic_history",
+      "relevant_ids": [
+        5385
+      ],
+      "topic_ids": [
+        5385,
+        5919,
+        5270
+      ],
+      "note": "The 10k sample holds one passage on the Hijra, the rest are unrelated.",
+      "acceptable_intents": [
+        "seerah",
+        "islamic_history"
+      ]
+    },
+    {
+      "id": "history_02",
+      "question": "من هو عمر بن الخطاب رضي الله عنه؟",
+      "collection": "islamic_history_passages",
+      "intent": "islamic_history",
+      "relevant_ids": [],
+      "topic_ids": [
+        831
+      ],
+      "note": "The 10k sample holds no biography of Umar, only other people named Umar.",
+      "acceptable_intents": [
+        "seerah",
+        "islamic_history"
+      ]
+    },
+    {
+      "id": "language_01",
+      "question": "ما الفرق بين الفاعل ونائب الفاعل؟",
+      "collection": "arabic_language_passages",
+      "intent": "arabic_language",
+      "relevant_ids": [
+        926220,
+        447526,
+        595847,
+        596282,
+        620975,
+        160107,
+        970018,
+        969965,
+        154478,
+        253747
+      ],
+      "topic_ids": [
+        926220,
+        447526,
+        595847,
+        596282,
+        620975,
+        160107,
+        970018,
+        969965,
+        154478,
+        253747
+      ],
+      "acceptable_intents": [
+        "arabic_language"
+      ]
+    },
+    {
+      "id": "language_02",
+      "question": "كيف تُصب الأسماء الخمسة؟",
+      "collection": "arabic_language_passages",
+      "intent": "arabic_language",
+      "relevant_ids": [
+        925993,
+        269302,
+        940809,
+        596980,
+        956036,
+        955084,
+        925232,
+        924471
+      ],
+      "topic_ids": [
+        925993,
+        269302,
+        940809,
+        596980,
+        956036,
+        955084,
+        925232,
+        924471,
+        926025,
+        905052
+      ],
+      "acceptable_intents": [
+        "arabic_language"
+      ]
+    },
+    {
+      "id": "tazkiyah_01",
+      "question": "ما أثر الصبر على النفس؟",
+      "collection": "spirituality_passages",
+      "intent": "islamic_tazkiyah",
+      "relevant_ids": [
+        392785,
+        394285,
+        402094,
+        19363,
+        414307,
+        312705,
+        284365,
+        394284,
+        347714,
+        392777
+      ],
+      "topic_ids": [
+        392785,
+        394285,
+        402094,
+        19363,
+        414307,
+        312705,
+        284365,
+        394284,
+        347714,
+        392777
+      ],
+      "acceptable_intents": [
+        "islamic_tazkiyah"
+      ]
+    },
+    {
+      "id": "tazkiyah_02",
+      "question": "ما هي أخلاق المؤمن الصادق؟",
+      "collection": "spirituality_passages",
+      "intent": "islamic_tazkiyah",
+      "relevant_ids": [
+        349137,
+        276498,
+        57861,
+        348504,
+        121420,
+        355611,
+        351986,
+        339374,
+        348477,
+        426800
+      ],
+      "topic_ids": [
+        349137,
+        276498,
+        57861,
+        348504,
+        121420,
+        355611,
+        351986,
+        339374,
+        348477,
+        426800
+      ],
+      "acceptable_intents": [
+        "islamic_tazkiyah"
+      ]
+    },
+    {
+      "id": "usul_01",
+      "question": "ما الفرق بين النص الظاهر والنص المؤول؟",
+      "collection": "usul_fiqh",
+      "intent": "usul_fiqh",
+      "relevant_ids": [
+        318983,
+        15334
+      ],
+      "topic_ids": [
+        318983,
+        15334,
+        6863,
+        7207
+      ],
+      "acceptable_intents": [
+        "usul_fiqh"
+      ]
+    },
+    {
+      "id": "usul_02",
+      "question": "ما هي أصول الفقه؟",
+      "collection": "usul_fiqh",
+      "intent": "usul_fiqh",
+      "relevant_ids": [
+        169002,
+        314324,
+        143827,
+        176872,
+        347596,
+        12245,
+        44807,
+        47352,
+        41233,
+        80331
+      ],
+      "topic_ids": [
+        169002,
+        314324,
+        143827,
+        176872,
+        347596,
+        12245,
+        44807,
+        47352,
+        41233,
+        80331
+      ],
+      "acceptable_intents": [
+        "usul_fiqh"
+      ]
+    },
+    {
+      "id": "general_01",
+      "question": "ما هي أركان الإسلام؟",
+      "collection": "general_islamic",
+      "intent": "islamic_knowledge",
+      "relevant_ids": [],
+      "topic_ids": [],
+      "note": "The 10k sample has nothing on أركان الإسلام. Every hit is grammar or Quran recitation.",
+      "acceptable_intents": [
+        "islamic_knowledge"
+      ]
+    },
+    {
+      "id": "general_02",
+      "question": "ما حكم التبرع لوجه الله في العمل الصالح؟",
+      "collection": "general_islamic",
+      "intent": "islamic_knowledge",
+      "relevant_ids": [],
+      "topic_ids": [],
+      "note": "The 10k sample has nothing on التبرع. Every hit is about purification or grammar.",
+      "acceptable_intents": [
+        "islamic_knowledge",
+        "fiqh"
+      ]
+    },
+    {
+      "id": "tafsir_01",
+      "question": "ما تفسير قوله تعالى: ويبشر الصابرين؟",
+      "collection": "quran_tafsir",
+      "intent": "tafsir",
+      "relevant_ids": [
+        169879,
+        174843,
+        206835,
+        201014,
+        335263,
+        330206,
+        169888,
+        196676
+      ],
+      "topic_ids": [
+        169879,
+        174843,
+        206835,
+        201014,
+        335263,
+        330206,
+        228250,
+        222054,
+        169888,
+        196676
+      ],
+      "acceptable_intents": [
+        "quran",
+        "tafsir"
+      ]
+    },
+    {
+      "id": "tafsir_02",
+      "question": "ما تفسير آية الكوثر؟",
+      "collection": "quran_tafsir",
+      "intent": "tafsir",
+      "relevant_ids": [
+        375284,
+        394097,
+        360392,
+        369034,
+        360395,
+        369037,
+        382513,
+        384872
+      ],
+      "topic_ids": [
+        375284,
+        394097,
+        360392,
+        369034,
+        360395,
+        369037,
+        382513,
+        384872,
+        382394,
+        384753
+      ],
+      "acceptable_intents": [
+        "tafsir"
+      ]
+    }
+  ]
+}
