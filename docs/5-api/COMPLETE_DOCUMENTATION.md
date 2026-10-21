@@ -189,37 +189,33 @@ async def route_query(query: str, intent: Intent, **kwargs) -> AgentOutput:
     return citation.normalize(result)
 ```
 
-### 2. Agents (13 Total)
+### 2. Agents (11 Total)
 
-| Agent | Type | Purpose | RAG |
-|-------|------|---------|-----|
-| FiqhAgent | RAG | Islamic jurisprudence | ✅ |
-| HadithAgent | RAG | Prophetic traditions | ✅ |
-| SanadsetHadithAgent | RAG | Sanadset hadith | ✅ |
-| TafsirAgent | RAG | Quran interpretation | ✅ |
-| AqeedahAgent | RAG | Islamic creed | ✅ |
-| SeerahAgent | RAG | Prophet biography | ✅ |
-| IslamicHistoryAgent | RAG | Islamic history | ✅ |
-| FiqhUsulAgent | RAG | Jurisprudence principles | ✅ |
-| ArabicLanguageAgent | RAG | Arabic grammar/literature | ✅ |
-| GeneralIslamicAgent | RAG | General knowledge | ✅ |
-| QuranAgent | NL2SQL | Quran queries | ✅ |
-| ChatbotAgent | Template | Greetings/small talk | ❌ |
+All ten domain agents share `CollectionAgent` in `src/agents/collection/base.py`.
+Each one embeds the query, searches one Qdrant collection, and verifies
+citations before returning an answer.
+
+| Agent | Class | Qdrant collection |
+|-------|-------|-------------------|
+| `fiqh_agent` | FiqhCollectionAgent | `fiqh_passages` |
+| `hadith_agent` | HadithCollectionAgent | `hadith_passages` |
+| `tafsir_agent` | TafsirCollectionAgent | `quran_tafsir` |
+| `aqeedah_agent` | AqeedahCollectionAgent | `aqeedah_passages` |
+| `seerah_agent` | SeerahCollectionAgent | `seerah_passages` |
+| `history_agent` | HistoryCollectionAgent | `islamic_history_passages` |
+| `usul_fiqh_agent` | UsulFiqhCollectionAgent | `usul_fiqh` |
+| `language_agent` | LanguageCollectionAgent | `arabic_language_passages` |
+| `tazkiyah_agent` | TazkiyahCollectionAgent | `spirituality_passages` |
+| `general_islamic_agent` | GeneralCollectionAgent | `general_islamic` |
+| `chatbot_agent` | ChatbotAgent | none (template responses) |
 
 **Agent Base Class:**
 ```python
-class BaseAgent:
-    async def execute(self, input: AgentInput) -> AgentOutput:
-        """Execute agent with input."""
-        pass
-    
-    async def retrieve(self, query: str, top_k: int = 10) -> List[Document]:
-        """Retrieve relevant documents."""
-        pass
-    
-    async def generate(self, query: str, docs: List[Document]) -> str:
-        """Generate answer from documents."""
-        pass
+class CollectionAgent(ABC):
+    COLLECTION: str
+
+    async def retrieve_candidates(self, query: str) -> list[dict[str, Any]]: ...
+    async def execute(self, input: AgentInput) -> AgentOutput: ...
 ```
 
 ### 3. Tools (5 Total)
@@ -232,15 +228,26 @@ class BaseAgent:
 | HijriCalendarTool | Hijri date conversion | ✅ |
 | DuaRetrievalTool | Dua/adhkar retrieval | ✅ |
 
-### 4. API Endpoints (18 Total)
+### 4. API Endpoints (27 Total)
 
-#### Main Endpoints
+#### Core Endpoints
 
-| Endpoint | Method | Purpose | Status |
-|----------|--------|---------|--------|
-| `/api/v1/query` | POST | Main query | ✅ |
-| `/health` | GET | Health check | ✅ |
-| `/ready` | GET | Readiness probe | ✅ |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Service identity |
+| `/health` | GET | Liveness check |
+| `/ready` | GET | Readiness (Postgres, Redis, Qdrant) |
+| `/classify` | POST | Intent classification without retrieval |
+| `/api/v1/ask` | POST | Routed question answering |
+| `/api/v1/ask/health` | GET | Agent registry health |
+| `/api/v1/search/simple` | POST | RAG answer against one collection |
+| `/api/v1/search/stats` | GET | Per-collection vector counts |
+| `/api/v1/fiqh/answer` | POST | Dedicated fiqh RAG endpoint |
+| `/api/v1/fiqh/test` | GET | Development-only smoke check |
+| `/metrics` | GET | Counters, gauges, timings |
+| `/metrics/counters` | GET | Counters only |
+| `/metrics/timings` | GET | Timings only |
+| `/metrics/reset` | POST | Development-only reset |
 
 #### Tool Endpoints
 
@@ -257,19 +264,16 @@ class BaseAgent:
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/v1/quran/surahs` | GET | List all 114 surahs |
-| `/api/v1/quran/surahs/{n}` | GET | Specific surah |
+| `/api/v1/quran/surahs/{n}` | GET | Specific surah with verses |
 | `/api/v1/quran/ayah/{s}:{a}` | GET | Specific ayah |
 | `/api/v1/quran/search` | POST | Verse search |
 | `/api/v1/quran/validate` | POST | Quotation validation |
 | `/api/v1/quran/analytics` | POST | NL2SQL queries |
+| `/api/v1/quran/tafsir/{s}:{a}` | GET | Verse commentary (404 when absent) |
+| `/api/v1/quran/tafsir-sources` | GET | Known tafsir sources |
 
-#### RAG Endpoints
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v1/rag/fiqh` | POST | Fiqh RAG questions |
-| `/api/v1/rag/general` | POST | General Islamic |
-| `/api/v1/rag/stats` | GET | RAG statistics |
+Unknown asset or heir keys on the tool endpoints return 422 with the accepted
+field list. The development-only routes return 404 unless `DEBUG=true`.
 
 ---
 

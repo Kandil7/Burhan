@@ -95,8 +95,7 @@ K:\business\projects_v2\Burhan\
 │   │   ├── models/                              # SQLAlchemy models
 │   │   │   └── quran.py                         # Surah, Ayah, Translation, Tafsir
 │   │   └── ingestion/                           # Data loaders
-│   │       ├── quran_loader.py                  # Quran.com API loader
-│   │       └── hadith_loader.py                 # Hadith collection loader
+│   │       └── quran_loader.py                  # Quran JSON + Quran.com API loader
 │   │
 │   └── infrastructure/                          # External services
 │       ├── __init__.py
@@ -192,11 +191,13 @@ K:\business\projects_v2\Burhan\
 │   ├── chunk_all_books.py                       # Batch book chunking
 │   ├── seed_mvp_data.py                         # MVP data seeder
 │   ├── seed_quran_data.py                       # Quran data seeder
+│   ├── seed_tafsir_data.py                      # Verse-keyed tafsir seeder
+│   ├── embed_mini_v2_to_qdrant.py               # Mini-dataset Qdrant loader
 │   ├── seed_rag_quick.py                        # Quick RAG seeding
 │   ├── generate_embeddings.py                   # Batch embedding generator
 │   ├── embed_sanadset_hadith.py                 # Hadith embedding pipeline
 │   ├── embed_all_collections.py                 # All collections embedding
-│   ├── import_azkar_db.py                       # Azkar-DB importer
+│   ├── scripts/ingestion/import_azkar_db.py     # Azkar-DB importer
 │   ├── inspect_db.py                            # Database inspector
 │   ├── ingest_extracted_books.py                # Book ingestion
 │   ├── complete_ingestion.py                    # Complete ingestion pipeline

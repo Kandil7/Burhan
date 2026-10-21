@@ -40,8 +40,11 @@ The Quran Pipeline provides comprehensive Quran-related functionality:
 |-------|------|---------|
 | `surahs` | 114 | Chapter metadata |
 | `ayahs` | 6,236 | Verse text and metadata |
-| `translations` | 20k+ | Multi-language translations |
-| `tafsirs` | 50k+ | Scholarly commentaries |
+| `translations` | 6,236 | Saheeh International (one translation per verse) |
+| `tafsirs` | 18,676 | al-Jalalayn 6,236, al-Qurtubi 6,235, Ibn Kathir 6,205 |
+
+Rows are per verse. Adding more translations or tafsir editions increases the
+row counts; the seeder upserts on `(ayah_id, source_name)`.
 
 ### Surahs Table
 
