@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from src.config.logging_config import get_logger
 from src.data.models.quran import Ayah, Surah, Tafsir
-from src.quran.verse_retrieval import VerseRetrievalEngine
+from src.quran.verse_retrieval import VerseNotFoundError, VerseRetrievalEngine
 
 logger = get_logger()
 
@@ -117,10 +117,13 @@ class TafsirRetrievalEngine:
             if source:
                 q = q.filter(Tafsir.source_name == source)
 
-            tafsirs = q.all()
+            # Deterministic source order so repeated calls return the same list.
+            tafsirs = q.order_by(Tafsir.source_name, Tafsir.id).all()
 
-            if source and not tafsirs:
-                raise TafsirNotFoundError(f"No tafsir from '{source}' found for {ayah_reference!r}.")
+            if not tafsirs:
+                if source:
+                    raise TafsirNotFoundError(f"No tafsir from '{source}' found for {ayah_reference!r}.")
+                raise TafsirNotFoundError(f"No tafsir found for {ayah_reference!r}.")
 
             # Deterministic source order (dict.fromkeys preserves insertion order)
             seen_sources = list(dict.fromkeys(t.source_name for t in tafsirs))
@@ -136,6 +139,9 @@ class TafsirRetrievalEngine:
 
         except TafsirNotFoundError:
             raise
+        except VerseNotFoundError as e:
+            # A missing verse is a not-found case, not a retrieval failure.
+            raise TafsirNotFoundError(f"No verse found for reference: {ayah_reference!r}") from e
         except Exception as e:
             logger.error("tafsir.retrieval_error", error=str(e), exc_info=True)
             raise TafsirRetrievalError(f"Error retrieving tafsir: {e}") from e
@@ -166,7 +172,7 @@ class TafsirRetrievalEngine:
             if source:
                 q = q.filter(Tafsir.source_name == source)
 
-            tafsirs = q.limit(limit).all()
+            tafsirs = q.order_by(Tafsir.id).limit(limit).all()
 
             results = [self._format_search_result(t) for t in tafsirs]
 

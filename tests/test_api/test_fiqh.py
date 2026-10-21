@@ -132,8 +132,17 @@ class TestFiqhEndpoint:
 class TestFiqhTestEndpoint:
     """Test /fiqh/test endpoint."""
 
-    def test_fiqh_test_endpoint_exists(self, client):
-        """Test /fiqh/test endpoint exists."""
+    def test_fiqh_test_endpoint_hidden_by_default(self, client):
+        """The debug endpoint is not reachable outside debug mode."""
+        response = client.get(f"{FIQH_BASE}/test")
+        assert response.status_code == 404
+
+    def test_fiqh_test_endpoint_available_in_debug(self, client, monkeypatch):
+        """The debug endpoint works when debug mode is enabled."""
+        from src.config.settings import settings
+
+        monkeypatch.setattr(settings, "debug", True)
+
         response = client.get(f"{FIQH_BASE}/test")
         # Will be 503 if agent not initialized
         assert response.status_code in [200, 503]

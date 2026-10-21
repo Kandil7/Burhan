@@ -86,27 +86,22 @@ class CollectionIndexer:
         """
         Index multiple collections.
 
-        NOTE: This is a placeholder. Use scripts/data/embed_*.py for actual indexing.
+        This module is a placeholder; use ``scripts/data/embed_*.py`` for real
+        indexing. Calling it raises instead of reporting a silent success.
 
         Args:
             collections: List of collection names to index
 
         Returns:
             Indexing statistics
+
+        Raises:
+            CollectionIndexError: Always, until the pipeline is implemented.
         """
-        logger.warning(
-            "collection_index.index_not_implemented",
-            collections=collections,
+        raise CollectionIndexError(
+            "Collection indexing is not implemented in this module. "
+            "Use scripts/data/embed_mini_v2_to_qdrant.py or scripts/data/embed_*.py."
         )
-
-        self.stats = {
-            "collections": collections,
-            "total_documents": 0,
-            "total_embeddings": 0,
-            "errors": [],
-        }
-
-        return self.stats
 
     async def index_collection(
         self,
@@ -115,24 +110,13 @@ class CollectionIndexer:
         """
         Index a single collection.
 
-        TODO: Implement single collection indexing
-
-        Args:
-            collection: Collection name
-
-        Returns:
-            Collection indexing statistics
+        Raises:
+            CollectionIndexError: Always, until the pipeline is implemented.
         """
-        logger.warning(
-            "collection_index.single_not_implemented",
-            collection=collection,
+        raise CollectionIndexError(
+            f"Single-collection indexing is not implemented ({collection}). "
+            "Use scripts/data/embed_mini_v2_to_qdrant.py."
         )
-
-        return {
-            "collection": collection,
-            "documents": 0,
-            "embeddings": 0,
-        }
 
     def get_stats(self) -> dict:
         """Get indexing statistics."""
@@ -148,7 +132,8 @@ async def build_collection_indexes(
     """
     Build indexes for specified collections.
 
-    TODO: Implement full pipeline
+    This module is a placeholder; use ``scripts/data/embed_*.py`` for real
+    indexing. Calling it raises instead of reporting a silent success.
 
     Args:
         collections: List of collections to index (default: all)
@@ -157,6 +142,9 @@ async def build_collection_indexes(
 
     Returns:
         Indexing results with statistics
+
+    Raises:
+        CollectionIndexError: Always, until the pipeline is implemented.
     """
     if collections is None:
         collections = [

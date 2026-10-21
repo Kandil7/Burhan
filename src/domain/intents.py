@@ -140,11 +140,13 @@ INTENT_PRIORITY: dict[Intent, int] = {
     # match count ties, so "وقت صلاة المغرب" resolves to prayer times while
     # "ما حكم صيام رمضان؟" stays FIQH on a higher keyword count.
     Intent.PRAYER_TIMES: 6,
-    Intent.HIJRI_CALENDAR: 6,
     Intent.ZAKAT: 6,
     Intent.INHERITANCE: 6,
     Intent.DUAS: 6,
     Intent.FIQH: 5,
+    # A month name ("رمضان") is also a fiqh topic ("صيام رمضان"). Calendar
+    # questions rarely name a worship act, so FIQH wins the tie.
+    Intent.HIJRI_CALENDAR: 4,
     Intent.GREETING: 9,  # A greeting is unambiguous and must win outright
     Intent.ISLAMIC_KNOWLEDGE: 1,  # most general — matched last
 }
@@ -279,7 +281,7 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "منكر",
         "مختلف فيه",
         "بخاري",
-        "مسلم",
+        "صحيح مسلم",
         "ترمذي",
         "نسائي",
         "ابن ماجه",
@@ -386,7 +388,7 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "هجره",
         "الهجرة النبوية",
         "بدر",
-        "أحد",
+        "غزوة أحد",
         "الخندق",
         "فتح مكة",
         "تبوك",
@@ -398,7 +400,7 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
         "أبي بكر",
         "عمر",
         "عثمان",
-        "علي",
+        "علي بن أبي طالب",
         "خالد",
         "عمر بن الخطاب",
         "ابي بكر",
@@ -520,9 +522,9 @@ KEYWORD_PATTERNS: dict[Intent, list[str]] = {
     Intent.GREETING: ["سلام", "السلام", "مرحبا", "أهلا", "حياك", "الله يبارك"],
     Intent.ZAKAT: ["زكاة", "زكاه", "حساب الزكاة", "زكاة المال", "نصاب", "فطر"],
     Intent.INHERITANCE: ["ميراث", "فرائض", "تقسيم", "ورثة", "إرث", "تركة"],
-    Intent.DUAS: ["دعاء", "ادعية", "الدعاء", "تضرع", "طلب", "إجابة"],
+    Intent.DUAS: ["دعاء", "ادعية", "الدعاء", "تضرع"],
     Intent.PRAYER_TIMES: ["مواقيت", "وقت", "وقت الصلاة"],
-    Intent.HIJRI_CALENDAR: ["هجري", "ميلادي", "التقويم", "الشهر", "السنة الهجرية", "رمضان"],
+    Intent.HIJRI_CALENDAR: ["هجري", "ميلادي", "التقويم", "السنة الهجرية", "رمضان"],
 }
 
 

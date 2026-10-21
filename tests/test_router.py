@@ -26,19 +26,30 @@ class TestHybridQueryClassifier:
     # ==========================================
 
     def test_keyword_zakat_detection(self, classifier):
-        """Test zakat keyword detection."""
-        result = classifier._keyword_match("ما حكم زكاة المال؟")
+        """An amount-bearing zakat request resolves to the calculator."""
+        result = classifier._keyword_match("زكاة 100000 ريال")
         assert result is not None
         assert result.intent == Intent.ZAKAT
         assert result.confidence >= 0.90
         assert result.method == "keyword"
 
-    def test_keyword_inheritance_detection(self, classifier):
-        """Test inheritance keyword detection."""
-        result = classifier._keyword_match("كيف أقسم الميراث؟")
+    def test_zakat_ruling_question_goes_to_fiqh(self, classifier):
+        """A ruling question about zakat needs the fiqh collection, not a calculator."""
+        result = classifier._keyword_match("ما حكم زكاة المال؟")
+        assert result is not None
+        assert result.intent == Intent.FIQH
+
+    def test_inheritance_case_detection(self, classifier):
+        """A described inheritance case resolves to the calculator."""
+        result = classifier._keyword_match("ميراث زوجة وأم")
         assert result is not None
         assert result.intent == Intent.INHERITANCE
-        assert result.confidence >= 0.90
+
+    def test_inheritance_method_question_goes_to_fiqh(self, classifier):
+        """Asking how to divide an estate is a knowledge question."""
+        result = classifier._keyword_match("كيف أقسم الميراث؟")
+        assert result is not None
+        assert result.intent == Intent.FIQH
 
     def test_keyword_quran_detection(self, classifier):
         """Test Quran keyword detection."""
@@ -109,8 +120,8 @@ class TestHybridQueryClassifier:
 
     @pytest.mark.asyncio
     async def test_classify_zakat_query(self, classifier):
-        """Test full classification of zakat query."""
-        result = await classifier.classify("كيف أحسب زكاة ذهبي؟")
+        """An amount-bearing zakat request resolves to the calculator."""
+        result = await classifier.classify("زكاة 50000 جنيه")
         assert result.intent == Intent.ZAKAT
         assert result.confidence >= 0.90  # Should match keyword
         assert result.method == "keyword"
@@ -143,13 +154,15 @@ class TestHybridQueryClassifier:
     @pytest.mark.parametrize(
         "query,expected_intent",
         [
-            ("ما حكم زكاة الفطر؟", Intent.ZAKAT),
+            ("ما حكم زكاة الفطر؟", Intent.FIQH),
+            ("زكاة 25000 ريال", Intent.ZAKAT),
             ("كم عدد آيات الفاتحة؟", Intent.QURAN),
             ("السلام عليكم", Intent.GREETING),
             ("دعاء الاستخارة", Intent.DUAS),
             ("متى رمضان؟", Intent.HIJRI_CALENDAR),
             ("وقت صلاة المغرب", Intent.PRAYER_TIMES),
-            ("تقسيم الميراث", Intent.INHERITANCE),
+            ("تقسيم الميراث", Intent.FIQH),
+            ("ميراث زوجة وأم", Intent.INHERITANCE),
         ],
     )
     def test_keyword_classification_parametrized(self, classifier, query, expected_intent):

@@ -93,27 +93,13 @@ class CatalogIndexer:
         """
         Index catalog data (books and titles).
 
-        TODO: Implement full catalog indexing
-
-        Args:
-            book_ids: Specific book IDs to index (default: all)
-
-        Returns:
-            Catalog indexing statistics
+        Raises:
+            CatalogIndexError: Always, until the pipeline is implemented.
         """
-        logger.warning(
-            "catalog_index.index_not_implemented",
-            book_ids=book_ids,
+        raise CatalogIndexError(
+            "Catalog indexing is not implemented in this module. "
+            "Use scripts/data/extract_master_catalog.py and the embedding scripts."
         )
-
-        self.stats = {
-            "total_books": 0,
-            "total_titles": 0,
-            "total_embeddings": 0,
-            "collections": [],
-        }
-
-        return self.stats
 
     async def index_book(
         self,
@@ -122,24 +108,10 @@ class CatalogIndexer:
         """
         Index a single book's catalog data.
 
-        TODO: Implement single book catalog indexing
-
-        Args:
-            book_id: Book identifier
-
-        Returns:
-            Book indexing statistics
+        Raises:
+            CatalogIndexError: Always, until the pipeline is implemented.
         """
-        logger.warning(
-            "catalog_index.book_not_implemented",
-            book_id=book_id,
-        )
-
-        return {
-            "book_id": book_id,
-            "titles": 0,
-            "embeddings": 0,
-        }
+        raise CatalogIndexError(f"Single-book catalog indexing is not implemented ({book_id}).")
 
     async def index_titles(
         self,
@@ -148,26 +120,10 @@ class CatalogIndexer:
         """
         Index chapter/section titles for specified books.
 
-        TODO: Implement title indexing
-        - Load title files using TitleLoader
-        - Generate embeddings for titles
-        - Upsert to catalog collection
-
-        Args:
-            book_ids: Book IDs to index titles for
-
-        Returns:
-            Title indexing statistics
+        Raises:
+            CatalogIndexError: Always, until the pipeline is implemented.
         """
-        logger.warning(
-            "catalog_index.titles_not_implemented",
-            book_ids=book_ids,
-        )
-
-        return {
-            "books_processed": 0,
-            "titles_indexed": 0,
-        }
+        raise CatalogIndexError("Title indexing is not implemented in this module.")
 
     def get_stats(self) -> dict:
         """Get catalog indexing statistics."""
@@ -182,14 +138,8 @@ async def build_catalog_indexes(
     """
     Build catalog indexes for books and titles.
 
-    TODO: Implement full pipeline
-
-    Args:
-        book_ids: Specific books to index (default: all)
-        **kwargs: Additional configuration
-
-    Returns:
-        Catalog indexing results with statistics
+    Raises:
+        CatalogIndexError: Always, until the pipeline is implemented.
     """
     logger.info(
         "build_catalog_indexes.starting",

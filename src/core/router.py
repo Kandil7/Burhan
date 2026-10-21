@@ -162,29 +162,27 @@ Query: {query}"""
         """
         Fast keyword-based intent detection.
 
-        Delegates matching and conflict resolution to the canonical
-        KeywordBasedClassifier so this module cannot drift from it.
-        Returns None when no keyword matches.
+        Delegates matching, conflict resolution, and the calculator downgrade
+        to the canonical KeywordBasedClassifier so this module cannot drift
+        from it. Returns None when no keyword matches.
         """
-        from src.domain.intents import classify_quran_subintent, infer_requires_retrieval
+        from src.domain.intents import infer_requires_retrieval
 
         counts = self._keyword_classifier.match_counts(query)
-        intent = self._keyword_classifier.best_intent(counts)
-        if intent is None:
+        if not counts:
             return None
 
-        sub_intent = None
-        if intent is Intent.QURAN:
-            sub_intent, _ = classify_quran_subintent(query)
-
+        result = self._keyword_classifier.classify_sync(query)
         return RouterResult(
-            intent=intent,
+            intent=result.intent,
+            # The router reports one confidence for any keyword hit; the
+            # graduated 0.70/0.85/0.95 values belong to the classifier API.
             confidence=0.92,
-            method="keyword",
+            method=result.method,
             language=self._detect_language(query),
-            requires_retrieval=infer_requires_retrieval(intent, sub_intent),
-            sub_intent=sub_intent.value if sub_intent else None,
-            reason=f"Keyword match: {counts[intent]} term(s)",
+            requires_retrieval=infer_requires_retrieval(result.intent, result.quran_subintent),
+            sub_intent=result.quran_subintent.value if result.quran_subintent else None,
+            reason=result.reasoning,
         )
 
     async def _llm_classify(self, query: str) -> RouterResult:

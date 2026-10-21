@@ -193,8 +193,16 @@ class ExactQuoteVerifier(BaseVerifier):
 
     @staticmethod
     def _normalize(text: str) -> str:
-        """Light normalisation for substring matching (case + whitespace)."""
-        return " ".join(text.lower().split())
+        """Light normalisation for substring matching.
+
+        Arabic quotes differ from the stored passage in diacritics, alef
+        forms, and ta-marbuta far more often than they differ in wording.
+        Folding those variants stops a correctly quoted passage from being
+        reported as a hallucination.
+        """
+        from src.domain.intents import normalize_arabic
+
+        return normalize_arabic(text)
 
     def set_quran_validator(self, validator: Any) -> None:
         """Inject a QuotationValidator instance (e.g., in tests).

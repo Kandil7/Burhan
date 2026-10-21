@@ -1,8 +1,14 @@
 # Classify Service Module
-"""Service for handling classification operations."""
+"""Service for handling classification operations.
+
+Thin wrapper over :class:`src.application.use_cases.classify_query.ClassifyQueryUseCase`
+so the service layer and the ``/classify`` route share one classifier.
+"""
 
 from src.application.use_cases.classify_query import (
+    ClassifyQueryInput,
     ClassifyQueryOutput,
+    ClassifyQueryUseCase,
 )
 
 
@@ -10,7 +16,7 @@ class ClassifyService:
     """Service for processing classification queries."""
 
     def __init__(self) -> None:
-        pass
+        self.use_case = ClassifyQueryUseCase()
 
     async def classify(
         self,
@@ -27,17 +33,7 @@ class ClassifyService:
         Returns:
             ClassifyQueryOutput with classification
         """
-        # Placeholder - full classification is not wired yet.
-        from src.application.use_cases.classify_schemas import QueryIntent
-
-        return ClassifyQueryOutput(
-            intent=QueryIntent.GENERAL_ISLAMIC,
-            confidence=0.0,
-            suggested_agent="general_islamic_agent",
-            suggested_collections=[],
-            requires_clarification=False,
-            clarification_options=None,
-        )
+        return await self.use_case.execute(ClassifyQueryInput(query=query, language=language))
 
 
 # Default service instance

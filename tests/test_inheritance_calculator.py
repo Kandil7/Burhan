@@ -73,9 +73,55 @@ class TestInheritanceCalculator:
         heirs = Heirs(wife_count=2)
         result = calculator.calculate(100000, heirs)
 
-        wife_share = next(s for s in result.distribution if "Wife" in s.heir_name)
+        wife_share = next(s for s in result.distribution if s.heir_name.startswith("Wive"))
         # Radd applies: wives share full estate (original fard was 1/4)
         assert wife_share.fraction == 1  # 1/1 after radd
+
+    def test_multiple_wives_share_one_fard(self, calculator):
+        """Two wives share a single 1/8, not 1/8 each."""
+        heirs = Heirs(wife_count=2, sons=1)
+        result = calculator.calculate(100000, heirs)
+
+        wives_share = next(s for s in result.distribution if "Wives" in s.heir_name)
+        son_share = next(s for s in result.distribution if "Son" in s.heir_name)
+
+        assert wives_share.fraction == 1 / 8
+        assert wives_share.amount == 12500.0
+        assert son_share.fraction == 7 / 8
+        assert son_share.amount == 87500.0
+        assert result.remaining == 0.0
+
+    def test_sons_asabah_covers_remainder(self, calculator):
+        """Two sons take the whole residue, and the row reports the total."""
+        heirs = Heirs(wife_count=1, sons=2)
+        result = calculator.calculate(100000, heirs)
+
+        sons_share = next(s for s in result.distribution if s.heir_name == "Sons")
+        assert sons_share.fraction == 7 / 8
+        assert sons_share.amount == 87500.0
+        assert result.total_distributed == 100000.0
+        assert result.remaining == 0.0
+
+    def test_multiple_brothers_asabah_cover_remainder(self, calculator):
+        """Residuary brothers with count > 1 report the aggregate amount."""
+        heirs = Heirs(husband=True, full_brothers=2)
+        result = calculator.calculate(100000, heirs)
+
+        brothers_share = next(s for s in result.distribution if "Brother" in s.heir_name)
+        assert brothers_share.fraction == 1 / 2
+        assert brothers_share.amount == 50000.0
+        assert result.remaining == 0.0
+
+    def test_wife_parents_distributes_whole_estate(self, calculator):
+        """Wife, mother, and father leave nothing undistributed."""
+        heirs = Heirs(wife_count=1, father=True, mother=True)
+        result = calculator.calculate(100000, heirs)
+
+        amounts = {s.heir_name: s.amount for s in result.distribution}
+        assert amounts["Wife"] == 25000.0
+        assert amounts["Mother"] == 33333.33
+        assert amounts["Father"] == 41666.67
+        assert result.remaining == 0.0
 
     def test_mother_without_siblings(self, calculator):
         """Test mother gets 1/3 when no siblings of deceased."""

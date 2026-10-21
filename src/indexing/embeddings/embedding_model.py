@@ -253,7 +253,7 @@ class EmbeddingModel:
             pooled /= torch.clamp(mask_expanded.sum(1), min=1e-9)
             normalized = torch.nn.functional.normalize(pooled, p=2, dim=1)
 
-        return [emb.float().numpy() for emb in normalized]
+        return [emb.float().cpu().numpy() for emb in normalized]
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 

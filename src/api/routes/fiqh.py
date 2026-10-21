@@ -353,9 +353,19 @@ async def handle_fiqh_question(
 # ── Route: GET /fiqh/test ───────────────────────────────────────────────────
 
 
+async def _require_debug() -> None:
+    """Block development-only endpoints unless debug mode is on."""
+    if not settings.debug:
+        raise HTTPException(status_code=404, detail="Not found")
+
+
 @fiqh_router.get("/test")
-async def test_fiqh(request: Request, agent: Any = Depends(get_fiqh_agent)) -> Any:
-    """Test endpoint for the fiqh router."""
+async def test_fiqh(
+    request: Request,
+    _: None = Depends(_require_debug),
+    agent: Any = Depends(get_fiqh_agent),
+) -> Any:
+    """Development-only smoke check for the fiqh agent."""
     result = await agent.execute(
         AgentInput(
             query="ما حكم الزكاة؟",

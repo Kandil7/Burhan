@@ -143,15 +143,15 @@ class AqeedahCollectionAgent(CollectionAgent):
                         {"role": "user", "content": self._build_user_prompt(query, formatted, language)},
                     ],
                     temperature=0.2,
-                    max_tokens=1024,
+                    max_tokens=settings.resolve_max_tokens(1024),
                 )
                 raw_answer = response.choices[0].message.content
                 return strip_cot_leakage(raw_answer)
             except Exception as e:
                 import logging
 
+                self._generation_failed = True
                 logging.getLogger(self.__class__.__name__).error(f"LLM generation failed: {e}")
-                pass
         return formatted
 
     def assemble_citations(self, passages: list[dict]) -> list[Citation]:

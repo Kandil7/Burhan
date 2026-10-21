@@ -314,14 +314,15 @@ class InheritanceCalculator:
 
         # Wife's share
         if heirs.wife_count > 0:
+            # The wife's fard (1/8 or 1/4) is a single share split among all
+            # wives; it must not be multiplied by the wife count.
             fraction = self.WIFE_WITH_DESCENDANTS if has_descendants else self.WIFE_WITHOUT_DESCENDANTS
-            total_wife_share = fraction * heirs.wife_count
-            amount = round(float(total_wife_share) * net_estate, 2)
-            percentage = round(float(total_wife_share) * 100, 2)
+            amount = round(float(fraction) * net_estate, 2)
+            percentage = round(float(fraction) * 100, 2)
             shares.append(
                 InheritanceShare(
-                    heir_name=f"Wife{'s' if heirs.wife_count > 1 else ''}",
-                    fraction=total_wife_share,
+                    heir_name="Wives" if heirs.wife_count > 1 else "Wife",
+                    fraction=fraction,
                     percentage=percentage,
                     amount=amount,
                     basis="fard",
@@ -562,13 +563,14 @@ class InheritanceCalculator:
             elif heir_name == "Son":
                 # Only sons, no daughters - sons get all remainder equally
                 share_per_heir = remainder / count if count > 0 else Fraction(0)
-                amount = round(float(share_per_heir) * estate_value, 2)
-                percentage = round(float(share_per_heir * count) * 100, 2)
+                total_fraction = share_per_heir * count
+                amount = round(float(total_fraction) * estate_value, 2)
+                percentage = round(float(total_fraction) * 100, 2)
 
                 shares.append(
                     InheritanceShare(
                         heir_name=f"Son{'s' if count > 1 else ''}",
-                        fraction=share_per_heir * count,
+                        fraction=total_fraction,
                         percentage=percentage,
                         amount=amount,
                         basis="asabah",
@@ -578,13 +580,14 @@ class InheritanceCalculator:
             else:
                 # Equal share for other asabah
                 share_per_heir = remainder / count if count > 0 else Fraction(0)
-                amount = round(float(share_per_heir) * estate_value, 2)
-                percentage = round(float(share_per_heir * count) * 100, 2)
+                total_fraction = share_per_heir * count
+                amount = round(float(total_fraction) * estate_value, 2)
+                percentage = round(float(total_fraction) * 100, 2)
 
                 shares.append(
                     InheritanceShare(
                         heir_name=f"{heir_name}{'s' if count > 1 else ''}",
-                        fraction=share_per_heir * count,
+                        fraction=total_fraction,
                         percentage=percentage,
                         amount=amount,
                         basis="asabah",

@@ -20,6 +20,20 @@ logger = get_logger()
 DUAS_DB_PATH = Path(__file__).parent.parent.parent / "data" / "seed" / "duas.json"
 AZKAR_DB_PATH = Path(__file__).parent.parent.parent / "data" / "seed" / "azkar_imported.json"
 
+# Arabic query hints for the occasions used by the dua datasets. The datasets
+# store occasions in English, so an Arabic request like "أدعية الصباح" would
+# otherwise find nothing.
+_ARABIC_OCCASION_HINTS: dict[str, str] = {
+    "صباح": "morning",
+    "مساء": "evening",
+    "نوم": "before_sleep",
+    "استيقاظ": "upon_waking",
+    "سفر": "traveling",
+    "طعام": "before_eating",
+    "أكل": "before_eating",
+    "حماية": "protection",
+}
+
 
 class DuaRetrievalTool(BaseTool):
     """
@@ -141,7 +155,11 @@ class DuaRetrievalTool(BaseTool):
 
             # Semantic search by query (simple keyword matching for Phase 2)
             if query and not occasion and not category:
-                all_duas = self._search_duas(query, all_duas)
+                hinted_occasion = self._occasion_from_query(query)
+                if hinted_occasion:
+                    all_duas = [d for d in all_duas if d.get("occasion", "").lower() == hinted_occasion]
+                else:
+                    all_duas = self._search_duas(query, all_duas)
 
             # Limit results
             all_duas = all_duas[:limit]
@@ -169,9 +187,17 @@ class DuaRetrievalTool(BaseTool):
             logger.error("dua.retrieval_error", error=str(e))
             return ToolOutput(result={}, success=False, error=f"Error retrieving duas: {str(e)}")
 
+    @staticmethod
+    def _occasion_from_query(query: str) -> str | None:
+        """Map an Arabic query hint to a dataset occasion."""
+        normalized = query.strip().lower()
+        for hint, occasion in _ARABIC_OCCASION_HINTS.items():
+            if hint in normalized:
+                return occasion
+        return None
+
     def _search_duas(self, query: str, duas: list[dict]) -> list[dict]:
-        """
-        Search duas by query terms (simple keyword matching).
+        """Search duas by query terms (simple keyword matching).
 
         Phase 2: Keyword matching
         Phase 4: Will use embedding-based semantic search
@@ -194,6 +220,12 @@ class DuaRetrievalTool(BaseTool):
             for term in query_terms:
                 if term in translation:
                     score += 2  # Medium weight for translation match
+
+            # Search in the dataset's own keyword list (azkar-db "search" field)
+            search_keywords = dua.get("search_keywords", "").lower()
+            for term in query_terms:
+                if term in search_keywords:
+                    score += 2  # Medium weight for curated keyword match
 
             # Search in transliteration
             transliteration = dua.get("transliteration", "").lower()

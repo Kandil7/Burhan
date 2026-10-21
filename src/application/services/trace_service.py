@@ -5,8 +5,10 @@ from datetime import datetime
 from typing import Any
 
 from src.application.use_cases.build_trace import (
+    BuildTraceInput,
     BuildTraceOutput,
     TraceEvent,
+    build_trace_use_case,
 )
 
 
@@ -47,17 +49,14 @@ class TraceService:
         final_response: str | None = None,
     ) -> BuildTraceOutput:
         """Build and finalize the trace."""
-        events = self.active_traces.get(query_id, [])
+        events = self.active_traces.pop(query_id, [])
 
-        # Clear trace after building
-        if query_id in self.active_traces:
-            del self.active_traces[query_id]
-
-        # Return placeholder
-        return BuildTraceOutput(
-            trace_id=f"trace_{query_id}",
-            trace_data={"events": []},
-            summary={"total_events": len(events)},
+        return await build_trace_use_case.execute(
+            BuildTraceInput(
+                query_id=query_id,
+                events=events,
+                final_response=final_response,
+            )
         )
 
     def get_active_trace(self, query_id: str) -> list[TraceEvent]:

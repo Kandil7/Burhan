@@ -18,7 +18,13 @@ class ZakatRequest(BaseModel):
 
     assets: dict = Field(
         ...,
-        description="Asset values: cash, gold_grams, silver_grams, etc.",
+        description=(
+            "Asset values keyed by field: cash, bank_accounts, gold_grams, "
+            "silver_grams, trade_goods_value, stocks_value, receivables, "
+            "livestock_value, crops_value, minerals_value. "
+            "trade_goods, stocks, and bank are accepted aliases. "
+            "Unknown keys are rejected with 422."
+        ),
         examples=[
             {
                 "cash": 10000,

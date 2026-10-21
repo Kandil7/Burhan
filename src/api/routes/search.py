@@ -285,7 +285,7 @@ async def simple_rag_query(
             {"role": "user", "content": rag_prompt["user"]},
         ],
         temperature=settings.rag_temperature,
-        max_tokens=settings.rag_max_tokens,
+        max_tokens=settings.resolve_max_tokens(settings.rag_max_tokens),
     )
 
     processing_time_ms = int((time.time() - start_time) * 1000)

@@ -10,9 +10,10 @@ Alembic is scaffolded (`alembic/`, `alembic.ini`) but has no revisions, so
 |------|---------|
 | `001_initial_schema.sql` | Full initial schema: Quran tables (`surahs`, `ayahs`, ...), `translations`, `tafsirs`, and other core tables. |
 | `versions/002_quran_translations_tafsir.sql` | Delta: full-text search GIN indexes for `tafsirs.text` and `translations.text`. |
+| `versions/003_align_unique_constraint_names.sql` | Delta: renames the database-generated UNIQUE constraints on `ayahs`, `translations`, and `tafsirs` to the names the SQLAlchemy models declare. |
 
-Both files are idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`),
-so they are safe to re-run.
+Every file is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`,
+guarded `DO` blocks), so they are safe to re-run.
 
 ## Applying Migrations
 
@@ -21,9 +22,10 @@ In order:
 ```bash
 docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/001_initial_schema.sql
 docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/versions/002_quran_translations_tafsir.sql
+docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < migrations/versions/003_align_unique_constraint_names.sql
 ```
 
-Or use the CLI, which applies both files in order:
+Or use the CLI, which applies every file in order:
 
 ```bash
 python scripts/cli.py db migrate

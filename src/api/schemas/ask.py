@@ -118,7 +118,11 @@ class AgentMetadata(BaseModel):
     collection: str = Field(description="Qdrant collection used")
     answer_mode: str = Field(
         default="answer",
-        description="Pipeline decision: answer, clarify, or abstain",
+        description=(
+            "Pipeline decision: answer, clarify, abstain, or evidence. Evidence "
+            "means the LLM call failed and the response is the verified passage "
+            "text without composed prose."
+        ),
     )
     retrieved: int = Field(default=0, ge=0, description="Number of passages retrieved")
     verified: int = Field(default=0, ge=0, description="Number of passages that passed verification")
@@ -179,8 +183,11 @@ class AskResponse(BaseModel):
 
     answer_mode: str = Field(
         default="answer",
-        description="Pipeline decision: answer, clarify, or abstain",
-        examples=["answer", "clarify", "abstain"],
+        description=(
+            "Pipeline decision: answer, clarify, abstain, or evidence. Evidence "
+            "means the LLM call failed and the response is raw verified evidence."
+        ),
+        examples=["answer", "clarify", "abstain", "evidence"],
     )
     citations: list[dict[str, Any]] = Field(
         default_factory=list,

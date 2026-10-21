@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from dataclasses import fields as dataclass_fields
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -35,6 +36,50 @@ GENERIC_TOOL_ERROR = "Unable to process the request right now."
 def _build_trace_id() -> str:
     """Generate a unique trace ID for the request."""
     return str(uuid.uuid4())
+
+
+_ZAKAT_ASSET_ALIASES = {
+    "trade_goods": "trade_goods_value",
+    "stocks": "stocks_value",
+    "bank": "bank_accounts",
+}
+
+
+def _build_from_payload(
+    model: Any,
+    payload: dict[str, Any],
+    *,
+    label: str,
+    aliases: dict[str, str] | None = None,
+) -> Any:
+    """
+    Build a dataclass from a request payload, rejecting unknown keys.
+
+    The tools expose free-form dictionaries so clients can send partial asset or
+    heir lists. Passing those straight into a dataclass turns a typo into a 500,
+    so unknown keys are reported as 422 with the allowed field names.
+    """
+    allowed = {field.name for field in dataclass_fields(model)}
+    aliases = aliases or {}
+
+    normalized: dict[str, Any] = {}
+    unknown: list[str] = []
+    for key, value in payload.items():
+        target = aliases.get(key, key)
+        if target not in allowed:
+            unknown.append(key)
+            continue
+        normalized[target] = value
+
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Unknown {label} field(s): {', '.join(sorted(unknown))}. Allowed fields: {', '.join(sorted(allowed))}."
+            ),
+        )
+
+    return model(**normalized)
 
 
 # ==========================================
@@ -104,7 +149,12 @@ async def calculate_zakat(request: ZakatRequest) -> Any:
 
     try:
         calculator = _get_zakat_calculator()
-        assets = ZakatAssets(**request.assets)
+        assets = _build_from_payload(
+            ZakatAssets,
+            request.assets,
+            label="asset",
+            aliases=_ZAKAT_ASSET_ALIASES,
+        )
         madhhab = Madhhab(request.madhhab.lower())
 
         result = calculator.calculate(assets, debts=request.debts, madhhab=madhhab)
@@ -136,6 +186,8 @@ async def calculate_zakat(request: ZakatRequest) -> Any:
             "references": result.references,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("tools.zakat_error", trace_id=trace_id, error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e
@@ -162,7 +214,7 @@ async def calculate_inheritance(request: InheritanceRequest) -> Any:
 
     try:
         calculator = _get_inheritance_calculator()
-        heirs = Heirs(**request.heirs)
+        heirs = _build_from_payload(Heirs, request.heirs, label="heir")
 
         result = calculator.calculate(
             request.estate_value,
@@ -196,6 +248,8 @@ async def calculate_inheritance(request: InheritanceRequest) -> Any:
             "references": result.references,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("tools.inheritance_error", trace_id=trace_id, error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=GENERIC_TOOL_ERROR) from e

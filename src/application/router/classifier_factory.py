@@ -33,9 +33,74 @@ from src.domain.models import ClassificationResult
 logger = get_logger()
 
 
+# A deterministic calculator needs an actual case to compute. Questions that
+# only ask for a ruling are knowledge questions, even when they name the topic.
+_CALCULATOR_INTENTS = frozenset({Intent.ZAKAT, Intent.INHERITANCE})
+_DIGIT_RE = re.compile(r"\d")
+_TOKEN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+_RULING_CUES = (
+    "حكم",
+    "احكام",
+    "فضل",
+    "فضيل",
+    "معني",
+    "يجوز",
+    "مشروع",
+    "دليل",
+    "تعريف",
+    "شروط",
+    "اركان",
+    "نصيب",
+    "سهم",
+    "حصه",
+)
+_HEIR_TOKENS = frozenset(
+    {
+        "زوج",
+        "زوجه",
+        "زوجات",
+        "زوجتان",
+        "ام",
+        "اب",
+        "ابن",
+        "ابنه",
+        "ابنن",
+        "بنت",
+        "بنتان",
+        "بنتين",
+        "اولاد",
+        "ابناء",
+        "اخ",
+        "اخت",
+        "اخوات",
+        "عم",
+        "عمة",
+        "خال",
+        "خاله",
+        "جد",
+        "جده",
+        "حفيد",
+        "حفيده",
+    }
+)
+
+
 # ============================================================================
 # Query Classifier Abstract Base Class
 # ============================================================================
+
+
+_HERITAGE_PREFIXES = ("وال", "بال", "فال", "كال", "لل", "ال")
+
+
+def _strip_arabic_prefix(token: str) -> str:
+    """Drop a leading conjunction and article so "والأم" matches "ام"."""
+    for prefix in _HERITAGE_PREFIXES:
+        if token.startswith(prefix) and len(token) > len(prefix) + 1:
+            return token[len(prefix) :]
+    if token.startswith("و") and len(token) > 3:
+        return token[1:]
+    return token
 
 
 class QueryClassifier(ABC):
@@ -121,6 +186,28 @@ class KeywordBasedClassifier(QueryClassifier):
             return None
         return max(counts, key=lambda intent: (counts[intent], INTENT_PRIORITY.get(intent, 0)))
 
+    @staticmethod
+    def _requests_calculation(intent: Intent, query: str) -> bool:
+        """Return True when the query supplies a case for a deterministic tool.
+
+        "ما هي أحكام زكاة عروض التجارة؟" matched ZAKAT and FIQH once each, so
+        the tool intent won on priority and the calculator replied with a
+        usage notice instead of an answer. Amounts are what the zakat
+        calculator consumes, so a zakat question without a number is a
+        knowledge question. An inheritance case can be described in words
+        ("توفي وترك زوجة وأم"), so named heirs also count, unless the question
+        asks for a ruling rather than a distribution.
+        """
+        normalized = normalize_arabic(query)
+        if _DIGIT_RE.search(normalized):
+            return True
+        if any(cue in normalized for cue in _RULING_CUES):
+            return False
+        if intent is Intent.ZAKAT:
+            return False
+        tokens = {_strip_arabic_prefix(token) for token in _TOKEN_RE.findall(normalized)}
+        return bool(tokens & _HEIR_TOKENS)
+
     def classify_sync(self, query: str) -> ClassificationResult:
         """Synchronous keyword classification.
 
@@ -153,6 +240,10 @@ class KeywordBasedClassifier(QueryClassifier):
         intent = self.best_intent(matches)
         assert intent is not None  # matches is non-empty
         count = matches[intent]
+
+        if intent in _CALCULATOR_INTENTS and not self._requests_calculation(intent, query):
+            intent = Intent.FIQH
+            count = matches.get(Intent.FIQH, 1)
 
         # Confidence based on match count
         confidence = 0.7 if count == 1 else (0.85 if count == 2 else 0.95)

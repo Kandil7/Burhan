@@ -4,6 +4,8 @@ Tests for Dua Retrieval Tool.
 Tests retrieval by occasion, category, and search.
 """
 
+import json
+
 import pytest
 
 from src.tools.dua_retrieval_tool import DuaRetrievalTool
@@ -101,6 +103,54 @@ class TestDuaRetrievalTool:
 
         assert result.success
         assert result.result["count"] == 0
+
+    @pytest.mark.asyncio
+    async def test_arabic_occasion_hint(self, tool):
+        """An Arabic query maps onto the English occasion field."""
+        result = await tool.execute(query="ما هي أدعية الصباح؟")
+
+        assert result.success
+        assert result.result["count"] > 0
+        for dua in result.result["duas"]:
+            assert dua["occasion"] == "morning"
+
+    @pytest.mark.asyncio
+    async def test_arabic_sleep_hint(self, tool):
+        """Sleep hints resolve to before_sleep entries when present."""
+        result = await tool.execute(query="أدعية النوم")
+
+        assert result.success
+        for dua in result.result["duas"]:
+            assert dua["occasion"] == "before_sleep"
+
+    @pytest.mark.asyncio
+    async def test_search_matches_dataset_keywords(self, tmp_path):
+        """The curated ``search_keywords`` field is searchable, not just the text."""
+        azkar_path = tmp_path / "azkar.json"
+        azkar_path.write_text(
+            json.dumps(
+                [
+                    {
+                        "id": 1,
+                        "category": "protection",
+                        "occasion": "general",
+                        "arabic_text": "أستغفر الله",
+                        "search_keywords": "الاستغفار و التوبة",
+                        "source": "Azkar Database",
+                        "reference": "test",
+                    }
+                ],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        tool = DuaRetrievalTool(azkar_path=azkar_path)
+        result = await tool.execute(query="الاستغفار")
+
+        assert result.success
+        assert result.result["count"] == 1
+        assert result.result["duas"][0]["search_keywords"] == "الاستغفار و التوبة"
 
     # ==========================================
     # Limit Tests

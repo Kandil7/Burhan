@@ -7,7 +7,7 @@ Phase 9: Added metrics endpoint.
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from src.api.schemas.common import HealthResponse
 from src.config.logging_config import metrics
@@ -118,7 +118,9 @@ async def get_timings() -> Any:
     return metrics.get_metrics()["timings"]
 
 
-@router.get("/metrics/reset", status_code=204)
+@router.post("/metrics/reset", status_code=204, include_in_schema=False)
 async def reset_metrics() -> None:
-    """Reset all metrics."""
+    """Reset all metrics (development only)."""
+    if not settings.debug:
+        raise HTTPException(status_code=404, detail="Not found")
     metrics.reset()

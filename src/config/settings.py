@@ -60,10 +60,8 @@ class Settings(BaseSettings):
     # ==========================================
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
-    qdrant_collection_fiqh: str = "fiqh_passages"
-    qdrant_collection_hadith: str = "hadith_passages"
-    qdrant_collection_dua: str = "duas_adhkar"
-    qdrant_collection_general: str = "general_islamic"
+    # Collection names live in each agent as a COLLECTION constant
+    # (src/agents/collection/*.py), not in settings.
 
     # ==========================================
     # LLM Provider
@@ -213,6 +211,16 @@ class Settings(BaseSettings):
                 stacklevel=2,
             )
         return v
+
+    def resolve_max_tokens(self, agent_budget: int) -> int:
+        """Clamp an agent's output budget to the configured ceiling.
+
+        Agents used to hardcode ``max_tokens``, so ``LLM_MAX_TOKENS`` could not
+        constrain them. Providers with small per-minute output quotas (Groq's
+        free tier allows 1000) reject any request above the quota, so the
+        ceiling has to be reachable from configuration.
+        """
+        return max(1, min(agent_budget, self.llm_max_tokens))
 
     @property
     def is_production(self) -> bool:

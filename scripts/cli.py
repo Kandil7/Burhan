@@ -41,6 +41,13 @@ logger = setup_script_logger("cli")
 
 PROJECT_ROOT = get_project_root()
 
+# Windows consoles default to cp1252, which cannot encode the status emoji this
+# CLI prints, so every command crashed before doing any work. Emit UTF-8 and
+# replace unencodable characters instead of raising.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 
 # ── Terminal Helpers ─────────────────────────────────────────────────────
 
@@ -93,6 +100,10 @@ def run_command(cmd: str, capture: bool = False, cwd: Optional[Path] = None) -> 
             shell=True,
             capture_output=capture,
             text=True,
+            # Docker prints UTF-8; the Windows console locale would otherwise
+            # decode it as cp1252 and mangle every non-ASCII character.
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
             cwd=cwd or PROJECT_ROOT,
         )
@@ -229,6 +240,51 @@ def cmd_embed(limit: int = 1000) -> None:
     run_command(f"python scripts/data/generate_embeddings.py --collection fiqh_passages --limit {limit}")
 
 
+def _apply_sql_file(migration_path: Path) -> bool:
+    """
+    Pipe a SQL file into psql inside the Postgres container.
+
+    Shell redirection (`< file`) is a POSIX syntax that PowerShell does not
+    support, so the file is handed to the process as stdin instead. This works
+    on Windows and Linux alike.
+
+    Args:
+        migration_path: Absolute path of the SQL file to apply.
+
+    Returns:
+        True when psql exits with status 0.
+    """
+    command = [
+        "docker",
+        "exec",
+        "-i",
+        "Burhan-postgres",
+        "psql",
+        "-U",
+        "Burhan",
+        "-d",
+        "Burhan_db",
+        "-v",
+        "ON_ERROR_STOP=1",
+    ]
+    try:
+        with migration_path.open("rb") as handle:
+            result = subprocess.run(
+                command,
+                stdin=handle,
+                capture_output=True,
+                timeout=600,
+            )
+    except (OSError, subprocess.SubprocessError) as e:
+        print_error(f"Could not run {migration_path.name}: {e}")
+        return False
+
+    if result.returncode != 0:
+        print_error(result.stderr.decode("utf-8", "replace").strip() or "psql failed")
+        return False
+    return True
+
+
 def cmd_db_migrate() -> None:
     """Run database migrations."""
     print_header("🗄️  Database Migrations")
@@ -236,14 +292,18 @@ def cmd_db_migrate() -> None:
     migrations = [
         "migrations/001_initial_schema.sql",
         "migrations/versions/002_quran_translations_tafsir.sql",
+        "migrations/versions/003_align_unique_constraint_names.sql",
     ]
 
     for migration in migrations:
         migration_path = PROJECT_ROOT / migration
         if migration_path.exists():
             print_step(f"Running {migration_path.name}...")
-            run_command(f"docker exec -i Burhan-postgres psql -U Burhan -d Burhan_db < {migration_path}")
-            print_success(f"{migration_path.name} complete")
+            if _apply_sql_file(migration_path):
+                print_success(f"{migration_path.name} complete")
+            else:
+                print_error(f"{migration_path.name} failed")
+                return
         else:
             print_warning(f"Migration not found: {migration}")
 

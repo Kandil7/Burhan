@@ -258,6 +258,62 @@ class ConcreteCollectionAgent(CollectionAgent):
         return [Citation.from_passage(p, i) for i, p in enumerate(passages, 1)]
 
 
+class _EvidenceFallbackAgent(ConcreteCollectionAgent):
+    """Agent whose generation step returns the raw evidence text."""
+
+    def _format_passages(self, passages: list[dict]) -> str:
+        return "\n".join(f"[C{i}] {p.get('content', '')}" for i, p in enumerate(passages, 1))
+
+    async def generate_answer(
+        self,
+        query: str,
+        verified_passages: list[dict],
+        language: str,
+    ) -> str:
+        return self._format_passages(verified_passages)
+
+
+class _PartialFilterAgent(ConcreteCollectionAgent):
+    """Agent whose verification keeps one of the retrieved candidates."""
+
+    async def retrieve_candidates(self, query: str) -> list[dict]:
+        return [
+            {"content": "kept passage", "score": 0.9, "metadata": {"source": "test"}},
+            {"content": "dropped passage", "score": 0.1, "metadata": {"source": "test"}},
+        ]
+
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        kept = [c for c in candidates if c["content"] == "kept passage"]
+        return VerificationReport(
+            is_verified=True,
+            confidence=0.95,
+            verified_passages=kept,
+        )
+
+
+class _DropsEveryCandidateAgent(ConcreteCollectionAgent):
+    """Agent whose verification rejects every retrieved candidate."""
+
+    async def run_verification(
+        self,
+        query: str,
+        candidates: list[dict],
+        answer: str = "",
+        stage: str = "evidence",
+    ) -> VerificationReport:
+        return VerificationReport(
+            is_verified=False,
+            confidence=0.2,
+            verified_passages=[],
+        )
+
+
 class TestCollectionAgentSubclass:
     """Tests for CollectionAgent subclassing."""
 
@@ -309,6 +365,49 @@ class TestCollectionAgentSubclass:
         )
 
         assert result.metadata["intent"] == "islamic_knowledge"
+
+    @pytest.mark.asyncio
+    async def test_evidence_fallback_is_not_reported_as_answer(self):
+        """Raw evidence text must be marked as evidence, not as an answer."""
+        agent = _EvidenceFallbackAgent()
+
+        result = await agent.run(
+            raw_question="ما حكم الصيام؟",
+            meta={"language": "ar"},
+        )
+
+        assert result.metadata["answer_mode"] == "evidence"
+        assert result.requires_human_review is True
+        assert any(issue.get("type") == "generation_fallback" for issue in result.metadata["verification_issues"])
+
+    @pytest.mark.asyncio
+    async def test_partial_filtering_is_not_reported_as_a_verification_issue(self):
+        """Dropping some candidates is normal reranking, not a failed check."""
+        agent = _PartialFilterAgent()
+
+        result = await agent.run(
+            raw_question="ما حكم الصيام؟",
+            meta={"language": "ar"},
+        )
+
+        assert result.metadata["answer_mode"] == "answer"
+        assert result.metadata["verification_confidence"] == 0.9
+        assert not any(issue.get("type") == "evidence_filtered_out" for issue in result.metadata["verification_issues"])
+
+    @pytest.mark.asyncio
+    async def test_dropping_every_candidate_is_reported(self):
+        """When verification rejects everything, the response says why."""
+        agent = _DropsEveryCandidateAgent()
+
+        result = await agent.run(
+            raw_question="ما حكم الصيام؟",
+            meta={"language": "ar"},
+        )
+
+        issues = result.metadata["verification_issues"]
+        assert result.metadata["answer_mode"] == "abstain"
+        assert any(issue.get("type") == "evidence_filtered_out" for issue in issues)
+        assert any(issue.get("type") == "no_evidence_found" for issue in issues)
 
 
 class TestCollectionAgentCannotInstantiate:

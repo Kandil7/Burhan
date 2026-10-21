@@ -4,6 +4,10 @@
 import asyncio
 from typing import Any
 
+from src.config.logging_config import get_logger
+
+logger = get_logger()
+
 
 class MultiCollectionRetriever:
     """Retriever that queries multiple collections."""
@@ -42,7 +46,12 @@ class MultiCollectionRetriever:
             retrieved_lists = await asyncio.gather(*tasks, return_exceptions=True)
             for coll_id, res in zip(ordered_ids, retrieved_lists, strict=True):
                 if isinstance(res, BaseException):
-                    # TODO: log error هنا لو حابب
+                    logger.warning(
+                        "retrieval.multi_collection.failed",
+                        collection=coll_id,
+                        error=str(res),
+                        error_type=type(res).__name__,
+                    )
                     results[coll_id] = []
                 else:
                     results[coll_id] = res

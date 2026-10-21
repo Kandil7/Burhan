@@ -143,6 +143,9 @@ class CollectionAgent(ABC):
         self.config = config or CollectionAgentConfig(
             collection_name=self.COLLECTION,
         )
+        # Set by generate_answer when the LLM call fails and raw evidence is
+        # returned instead of a composed answer.
+        self._generation_failed = False
 
     @abstractmethod
     def query_intake(self, query: str) -> str: ...
@@ -170,6 +173,10 @@ class CollectionAgent(ABC):
 
     @abstractmethod
     def assemble_citations(self, passages: list[dict[str, Any]]) -> list[Citation]: ...
+
+    def _format_passages(self, passages: list[dict[str, Any]]) -> str:
+        """Render passages for the prompt; subclasses override this."""
+        return ""
 
     # ==========================================
     # Shared Helpers
@@ -307,10 +314,13 @@ class CollectionAgent(ABC):
         # Attach retrieval issues to verification
         verification.issues.extend(retrieval_issues)
 
-        # Track filtered evidence
+        # Track filtered evidence. Dropping candidates is normal: reranking keeps
+        # top_k and verification rejects weak passages. Report it only when every
+        # candidate was removed, which means the query found no usable evidence.
         removed_count = len(candidates) - len(verification.verified_passages)
         if removed_count > 0:
             verification.confidence = min(verification.confidence, 0.90)
+        if candidates and not verification.verified_passages:
             verification.issues.append(
                 {
                     "type": "evidence_filtered_out",
@@ -382,9 +392,25 @@ class CollectionAgent(ABC):
 
         # Step 7: Generate answer + strip CoT leakage
         t0 = time.perf_counter()
+        self._generation_failed = False
         answer = await self.generate_answer(normalized, verification.verified_passages, language)
         answer = strip_cot_leakage(answer)
         timing["generation_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        # Every agent falls back to the raw evidence text when the LLM client is
+        # missing or the call raises. That response has no composed prose, so it
+        # is reported as evidence rather than as an answer.
+        evidence_text = self._format_passages(verification.verified_passages).strip()
+        if evidence_text and answer.strip() == evidence_text:
+            self._generation_failed = True
+
+        if self._generation_failed:
+            verification.issues.append(
+                {
+                    "type": "generation_fallback",
+                    "detail": "LLM generation failed; the answer is the evidence text.",
+                }
+            )
 
         # ==========================================
         # Post-generation Checks (Canonical Paths)
@@ -554,7 +580,7 @@ class CollectionAgent(ABC):
         output_meta: dict[str, Any] = {
             "intent": intent.value if isinstance(intent, Intent) else intent,
             "collection": self.config.collection_name,
-            "answer_mode": "answer",
+            "answer_mode": "evidence" if self._generation_failed else "answer",
             "is_verified": verification.is_verified,
             "verification_confidence": verification.confidence,
             "verification_issues": verification.issues,
@@ -580,7 +606,9 @@ class CollectionAgent(ABC):
             citation_chunks=citation_chunks,
             metadata=output_meta,
             confidence=verification.confidence,
-            requires_human_review=not verification.is_verified or verification.confidence < 0.7,
+            requires_human_review=not verification.is_verified
+            or verification.confidence < 0.7
+            or self._generation_failed,
         )
 
     def __repr__(self) -> str:

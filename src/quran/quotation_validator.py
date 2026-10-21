@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import re
 from difflib import SequenceMatcher
+from typing import Any
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
@@ -68,6 +69,32 @@ def _skeleton(text: str) -> str:
     Dropping long alefs on both sides makes matching insensitive to that.
     """
     return normalize_arabic(text).replace("ا", "")
+
+
+def _match_text(ayah: Ayah) -> str:
+    """Text used for comparison: the diacritics-free column when present."""
+    return str(ayah.text_simple or ayah.text_uthmani or "")
+
+
+def _skeleton_sql(column: Any) -> Any:
+    """
+    SQL mirror of :func:`_skeleton`, with whitespace removed.
+
+    Both sides must apply the same replacements, otherwise a stored verse that
+    uses tatweel, alef maksura, or a hamza carrier never matches the Python
+    skeleton of user input. Whitespace is dropped on both sides so that
+    removing tatweel cannot leave a double space that breaks containment.
+    """
+    expr = func.replace(column, "\u0670", "\u0627")  # superscript alef → alef
+    for variant in ("\u0622", "\u0623", "\u0625", "\u0671"):  # آ أ إ ٱ → ا
+        expr = func.replace(expr, variant, "\u0627")
+    expr = func.replace(expr, "\u0649", "\u064a")  # ى → ي
+    expr = func.replace(expr, "\u0629", "\u0647")  # ة → ه
+    expr = func.replace(expr, "\u0640", "")  # tatweel
+    for mark in range(0x064B, 0x0660):  # tashkeel
+        expr = func.replace(expr, chr(mark), "")
+    expr = func.replace(expr, "\u0627", "")  # skeleton: drop long alefs
+    return func.replace(expr, " ", "")
 
 
 class QuotationValidatorError(Exception):
@@ -129,7 +156,8 @@ class QuotationValidator:
         # 2. Fragment / containment match
         fragment = self._check_fragment(normalized, candidates)
         if fragment:
-            norm_ayah = self.normalize_arabic(fragment["ayah"]["text_uthmani"])
+            matched = fragment["ayah"]
+            norm_ayah = self.normalize_arabic(matched.get("text_simple") or matched["text_uthmani"])
             is_partial = len(normalized) < len(norm_ayah) * 0.9
             return {
                 "is_quran": True,
@@ -169,24 +197,35 @@ class QuotationValidator:
         limit: int = 50,
     ) -> list[Ayah]:
         """
-        Fetch ayah candidates using text_simple for LIKE filtering
-        (diacritics-free, hamza-unified), while returning full Ayah
-        objects with text_uthmani intact for output.
+        Fetch ayah candidates whose diacritics-free skeleton contains the input.
 
-        Using text_simple for the LIKE query ensures normalized words
-        (e.g. 'ابراهيم') correctly match DB rows where text_uthmani
-        contains 'إِبْرَاهِيم'.
+        The containment query runs first because it is precise: a verbatim or
+        partial quote is found directly. Only when it finds nothing does the
+        word filter run, which is what keeps the fuzzy matcher working when the
+        user mistypes a word.
         """
-        words = [w for w in _skeleton(normalized_text).split() if len(w) >= 3][:2]
-        if not words:
-            words = [_skeleton(normalized_text)[:6]]
+        skeleton = _skeleton(normalized_text)
+        if not skeleton:
+            return []
 
-        q = self.session.query(Ayah).options(joinedload(Ayah.surah))
-        simple = func.coalesce(Ayah.text_simple, "")
+        pattern = skeleton.replace(" ", "")
+        skeleton_column = _skeleton_sql(func.coalesce(Ayah.text_simple, ""))
+        base = self.session.query(Ayah).options(joinedload(Ayah.surah))
+
+        contained = (
+            base.filter(skeleton_column.contains(pattern, autoescape=True)).order_by(Ayah.number).limit(limit).all()
+        )
+        if contained:
+            return contained
+
+        words = sorted({w for w in skeleton.split() if len(w) >= 3}, key=len, reverse=True)[:3]
+        if not words:
+            words = [skeleton[:6]]
+
+        query = base
         for word in words:
-            # Compare skeletons so alef spelling variance does not drop the row.
-            q = q.filter(func.replace(simple, "ا", "").contains(word))
-        return q.limit(limit).all()
+            query = query.filter(skeleton_column.contains(word, autoescape=True))
+        return query.order_by(Ayah.number).limit(limit).all()
 
     # ── Matchers (sync — candidates pre-fetched) ─────────────────────────────
 
@@ -197,7 +236,7 @@ class QuotationValidator:
     ) -> dict | None:
         target = _skeleton(normalized_text)
         for ayah in candidates:
-            if _skeleton(str(ayah.text_uthmani)) == target:
+            if _skeleton(_match_text(ayah)) == target:
                 return self._ayah_to_dict(ayah)
         return None
 
@@ -216,7 +255,7 @@ class QuotationValidator:
         target = _skeleton(normalized_text)
         target_nospace = target.replace(" ", "")
         for ayah in candidates:
-            ayah_norm = _skeleton(str(ayah.text_uthmani))
+            ayah_norm = _skeleton(_match_text(ayah))
             if target in ayah_norm:
                 return {
                     "confidence": 1.0,
@@ -242,7 +281,7 @@ class QuotationValidator:
         best_match: dict | None = None
         target = _skeleton(normalized_text)
         for ayah in candidates:
-            ayah_norm = _skeleton(str(ayah.text_uthmani))
+            ayah_norm = _skeleton(_match_text(ayah))
             similarity = SequenceMatcher(None, target, ayah_norm).ratio()
             if similarity > best_score and similarity >= self.threshold:
                 best_score = similarity

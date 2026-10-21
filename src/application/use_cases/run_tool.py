@@ -1,9 +1,20 @@
 # Run Tool Use Case
-"""Use case for running deterministic tools."""
+"""Use case for running deterministic tools.
+
+Dispatches to the implementations in :mod:`src.tools` and reports the tool's
+own success flag. Zakat and inheritance are HTTP-only (see
+``src.application.services.tool_service``); requesting them here fails with an
+explicit message instead of a placeholder success.
+"""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.application.services.tool_service import ToolService
 
 
 class ToolType(str, Enum):
@@ -39,41 +50,33 @@ class RunToolUseCase:
     """Use case for running deterministic tools."""
 
     def __init__(self) -> None:
-        pass
+        self._service: ToolService | None = None
+
+    @property
+    def tool_service(self) -> ToolService:
+        """Lazily build the tool service to avoid an import cycle at module load."""
+        if self._service is None:
+            from src.application.services.tool_service import ToolService
+
+            self._service = ToolService()
+        return self._service
 
     async def execute(self, input: RunToolInput) -> RunToolOutput:
         """
         Execute the tool use case.
 
         Steps:
-        1. Validate tool type and parameters
-        2. Execute the appropriate tool
-        3. Format the result
-        """
-        # Placeholder - would dispatch to actual tools
-        try:
-            result = self._execute_tool(input.tool_type, input.parameters)
-            return RunToolOutput(
-                result=result,
-                tool_type=input.tool_type,
-                success=True,
-            )
-        except Exception as e:
-            return RunToolOutput(
-                result=None,
-                tool_type=input.tool_type,
-                success=False,
-                error_message=str(e),
-            )
+        1. Resolve the tool implementation
+        2. Execute it with the supplied parameters
+        3. Report the result or the tool's failure
 
-    def _execute_tool(
-        self,
-        tool_type: ToolType,
-        parameters: dict[str, Any],
-    ) -> Any:
-        """Execute the specified tool."""
-        # Placeholder - would call actual tool implementations
-        raise NotImplementedError(f"Tool {tool_type} not yet implemented")
+        Args:
+            input: Tool type and parameters
+
+        Returns:
+            RunToolOutput describing the result or the failure
+        """
+        return await self.tool_service.run_tool(input.tool_type, input.parameters)
 
 
 # Default use case instance

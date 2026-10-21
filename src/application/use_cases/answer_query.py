@@ -10,12 +10,14 @@ Orchestrates the full query answering flow:
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
 from src.agents.base import AgentInput, AgentOutput
 from src.config.logging_config import get_logger
+from src.tools.base import ToolOutput
 
 logger = get_logger()
 
@@ -121,7 +123,11 @@ class AnswerQueryUseCase:
         # V2 agents use .run() for the full pipeline; legacy agents use .execute()
         result: AgentOutput
         try:
-            if hasattr(agent, "run"):
+            if not is_agent:
+                # The registry may route a tool intent (duas, prayer times, ...)
+                # to a deterministic tool instead of a RAG agent.
+                result = await self._run_tool(agent, input_data)
+            elif hasattr(agent, "run"):
                 # V2 Collection-aware RAG pipeline
                 result = await agent.run(
                     input_data.query,
@@ -176,6 +182,145 @@ class AnswerQueryUseCase:
             metadata={"error": error},
             requires_human_review=True,
         )
+
+    async def _run_tool(self, tool: Any, input_data: AnswerQueryInput) -> AgentOutput:
+        """
+        Execute a deterministic tool and adapt its output to AgentOutput.
+
+        Tools use ``ToolOutput`` and keyword arguments, while the rest of the
+        pipeline expects ``AgentOutput``. Calculators that expose no ``execute``
+        method are only available through their dedicated /tools endpoint.
+        """
+        tool_name = getattr(tool, "name", tool.__class__.__name__)
+
+        if not hasattr(tool, "execute"):
+            return AgentOutput(
+                answer=(
+                    "هذه الأداة تُستخدم عبر نقطة النهاية المخصصة لها وليس عبر /ask. "
+                    "مثال: /api/v1/tools/zakat أو /api/v1/tools/inheritance."
+                ),
+                confidence=0.0,
+                metadata={
+                    "tool": tool_name,
+                    "error": "tool_requires_dedicated_endpoint",
+                },
+            )
+
+        params: dict[str, Any] = {"query": input_data.query}
+        for key in (
+            "occasion",
+            "category",
+            "limit",
+            "lat",
+            "lng",
+            "date_str",
+            "method",
+            "timezone",
+            "gregorian_date",
+            "hijri_year",
+            "hijri_month",
+            "hijri_day",
+        ):
+            if key in input_data.context:
+                params[key] = input_data.context[key]
+
+        try:
+            output: ToolOutput = await tool.execute(**params)
+        except Exception as e:
+            logger.error(
+                "use_case.answer_query.tool_error",
+                tool=tool_name,
+                error=str(e),
+                exc_info=True,
+            )
+            return AgentOutput(
+                answer="تعذّر تنفيذ الأداة المطلوبة. تحقق من المدخلات وحاول مرة أخرى.",
+                confidence=0.0,
+                requires_human_review=True,
+                metadata={"tool": tool_name, "error": str(e)},
+            )
+
+        if not output.success:
+            return AgentOutput(
+                answer=f"تعذّر تنفيذ الأداة: {output.error}",
+                confidence=0.0,
+                requires_human_review=True,
+                metadata={"tool": tool_name, "error": output.error},
+            )
+
+        return AgentOutput(
+            answer=self._format_tool_answer(output.result),
+            confidence=0.95,
+            metadata={
+                "tool": tool_name,
+                "tool_result": output.result,
+                **(output.metadata or {}),
+            },
+        )
+
+    @staticmethod
+    def _format_tool_answer(payload: dict[str, Any]) -> str:
+        """Render a deterministic tool result as user-facing text.
+
+        Tools return structured dictionaries. Dumping raw JSON into `answer`
+        is not an answer a person can read, so each known shape gets a short
+        Arabic rendering and only unknown shapes fall back to JSON.
+        """
+        duas = payload.get("duas")
+        if isinstance(duas, list):
+            if not duas:
+                return "لم يتم العثور على أدعية مطابقة في المصادر الموثقة."
+            blocks = []
+            for dua in duas[:3]:
+                arabic = str(dua.get("arabic_text", "")).strip()
+                translation = str(dua.get("translation", "")).strip()
+                block = f"{arabic}\n{translation}".strip()
+                if block:
+                    blocks.append(block)
+            count = payload.get("count", len(duas))
+            return f"عدد النتائج: {count}\n\n" + "\n\n".join(blocks)
+
+        hijri = payload.get("hijri_date")
+        if isinstance(hijri, dict) and hijri.get("formatted_ar"):
+            lines = [
+                f"التاريخ الهجري: {hijri['formatted_ar']}",
+                f"التاريخ الميلادي: {payload.get('gregorian_date', '')}",
+            ]
+            if hijri.get("formatted_en"):
+                lines.append(f"({hijri['formatted_en']})")
+            if payload.get("is_ramadan"):
+                lines.append("الشهر الحالي هو شهر رمضان.")
+            if payload.get("is_eid"):
+                lines.append("هذا اليوم عيد.")
+            special = payload.get("special_day")
+            if special:
+                lines.append(f"مناسبة اليوم: {special}")
+            return "\n".join(lines)
+
+        times = payload.get("times")
+        if isinstance(times, dict) and times:
+            labels = {
+                "fajr": "الفجر",
+                "sunrise": "الشروق",
+                "dhuhr": "الظهر",
+                "asr": "العصر",
+                "maghrib": "المغرب",
+                "isha": "العشاء",
+            }
+            location = payload.get("location") or {}
+            header = f"مواقيت الصلاة ليوم {payload.get('date', '')}"
+            if location.get("lat") is not None and location.get("lng") is not None:
+                header += f" عند ({location['lat']}, {location['lng']})"
+            rows = [header]
+            for key, label in labels.items():
+                value = times.get(key)
+                if value:
+                    rows.append(f"- {label}: {value}")
+            if payload.get("qibla_direction") is not None:
+                rows.append(f"اتجاه القبلة: {payload['qibla_direction']} درجة")
+            return "\n".join(rows)
+
+        return json.dumps(payload, ensure_ascii=False)
 
 
 # Singleton instance
