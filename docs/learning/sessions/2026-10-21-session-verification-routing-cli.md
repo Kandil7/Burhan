@@ -503,5 +503,133 @@ and the constraint names `uq_ayah_surah_number`, `uq_translation`,
   `C:\Users\Kandil\.config\opencode\memory\arabic-heuristics-and-windows-shells.md`.
 - Lower `LLM_MAX_TOKENS` to 1000 or below in `.env`, then re-probe
   `/api/v1/ask` and confirm the mode is `answer` rather than `evidence`.
+  Done in code: the agents now retry with a smaller budget when the provider
+  refuses over the output quota, so the mode is `answer` even at 2048.
 - Decide on the commit, the full-corpus embedding run, and the scratch file
   cleanup.
+
+---
+
+# Part two: the refactor design session
+
+The user asked for a hard look at the structure of the whole project. The
+work split into measuring the tree, deciding the direction, and then
+building the first two phases of the plan.
+
+## What the measurement found
+
+The tree holds two architectures. One runs. The other does not.
+
+- 237 modules, 27,067 code lines under `src`.
+- 108 modules are reachable from the entry points. 129 are not, which is
+  8,778 code lines, about a third of the source.
+- The unreachable set is the retrieval family, the indexing family, the
+  generation composers and prompts, the second tool dispatch, the second
+  classifier, the agent YAML loader, and the duplicate API schemas.
+- Four import cycles, thirty layer violations, and fifteen or more domain
+  classes defined more than once. `Citation` is defined three times.
+- The ten collection agents are one pipeline copied ten times. The measured
+  differences are the collection name, the prompt file, the intent keywords,
+  the temperature, the top-k, the threshold, the no-passages message, and the
+  verification suite. 675 lines of copies where one implementation needs
+  about 160.
+
+The measurement was taken with an AST import graph, not by reading names.
+`scripts/quality/reachability_report.py` is the tool, and it now runs in CI
+through `tests/test_architecture.py`, which fails when a live module imports
+the quarantined set, when the set grows, or when a duplicated name gains a
+definition.
+
+## The decisions the user made
+
+- Goal: harden the live system, not activate the designed subsystems.
+- Dead code: quarantine first, delete after one release.
+- Retrieval: measure first, then decide.
+- Agent layer: make the YAML live, with the ten classes reduced to one
+  pipeline and a data record.
+
+The plan is in
+`docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md`, and the
+decision record is in the mentor decisions file for the project.
+
+## What the harness found
+
+`scripts/quality/eval_harness.py` retrieves with point ids so a run can be
+scored, scores a run against a curated question set, and captures the
+behavioural fingerprint of the running API. The question set is
+`scripts/quality/golden_set.json`: twenty questions, two per collection,
+with the ids that answer each question and the ids on its subject, both
+curated by reading the passage text.
+
+**The corpus finding.** The four collections that still hold a 10k sample
+cannot answer the questions asked of them. Two general questions have no
+on-topic passage at all, one hadith question has three general hadith
+passages and no passage on the hadith of intentions, and one history
+question has a single passage. The six full collections answer every
+question with an on-topic passage at the top of the list. The sample
+collections are not smaller, they are missing the subject matter.
+
+**The retrieval gate.** The two live retrieval paths were scored against the
+same set. The dense path that the agents use scored precision at 5 of 0.853,
+recall at 10 of 1.0, and a mean reciprocal rank of 0.942. The dense plus
+keyword re-rank path that the search endpoint uses scored 0.653, 0.83, and
+0.911. The re-rank is worse on every measure, because it reorders the dense
+candidates it was given and pushes strong semantic matches down. The plan
+therefore does not wire the designed hybrid path. It unifies both endpoints
+on the dense path, and the unreachable retrieval layer is deleted.
+
+**The routing finding.** Fifteen of the twenty questions reached the right
+collection. The five that did not were all keyword table gaps: the Arabic
+language table had no grammar vocabulary, the spirituality table had no
+virtue vocabulary, the principles table had no vocabulary for the science
+itself, and the ethics words sat in the Seerah table. The tables now hold
+the vocabulary the corpora are made of, and the measured routing accuracy is
+20 of 20.
+
+**The provider finding.** Five of the twenty questions came back in
+`evidence` mode, which is the raw passage text, because Groq refused the
+request over the output quota. The ten agents each had their own copy of the
+model call with no second try. The shared `CollectionAgent._complete` helper
+now retries with a smaller budget when the refusal is a budget refusal, and
+the five questions come back in `answer` mode with composed answers, with
+`LLM_MAX_TOKENS` still at 2048.
+
+## What was built
+
+- `scripts/quality/reachability_report.py`, `scripts/quality/legacy_manifest.json`,
+  and `tests/test_architecture.py`, eight tests that fence the dead layer.
+- `scripts/quality/eval_harness.py`, `scripts/quality/golden_set.json`, and
+  `scripts/quality/baseline/`.
+- The routing fix in `src/domain/intents.py`.
+- The shared generation helper in `src/agents/collection/base.py` and the
+  removal of the ten copies.
+- `scripts/data/embed_full_to_qdrant.py`, which embeds the four missing
+  corpora locally with the same encoder the query path uses. The Xet content
+  store failed midway on this workstation with a decoding error and left
+  nothing behind, so the loader uses the classic HTTP transfer, resumes a
+  partial file, and falls back to a direct streamed request. The first
+  collection embedded 2,048 rows at 76 rows per second.
+
+## Verification evidence for part two
+
+```text
+ruff check src tests   -> All checks passed!
+mypy src               -> Success: no issues found in 237 source files
+pytest -q              -> 659 passed, 30 warnings
+```
+
+Measured: routing accuracy 20 of 20, dense precision at 5 of 0.853, recall
+at 10 of 1.0, and the re-rank path at 0.653 and 0.83.
+
+## Next steps for part two
+
+- Finish the full-corpus load for fiqh, hadith, islamic history, and general
+  Islamic, then re-run the harness and record the new scores.
+- Phase 2: one home for the domain models, with re-export shims for a
+  release.
+- Phase 3: the ports and the single composition root, which also breaks the
+  largest import cycle.
+- Phase 4: unify both endpoints on the dense path behind one port.
+- Phase 5: make the YAML live, with the config equivalence test in front of
+  the switch.
+- Phase 7: delete the quarantined set after one release.
