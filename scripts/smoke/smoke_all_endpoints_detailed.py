@@ -11,10 +11,10 @@ Tests ALL endpoints with detailed response validation including:
 - Error handling (404, 405, validation)
 
 Usage:
-    python scripts/tests/test_all_endpoints_detailed.py
-    python scripts/tests/test_all_endpoints_detailed.py --port 8002
-    python scripts/tests/test_all_endpoints_detailed.py --url http://localhost:8000
-    python scripts/tests/test_all_endpoints_detailed.py --verbose
+    python scripts/smoke/smoke_all_endpoints_detailed.py
+    python scripts/smoke/smoke_all_endpoints_detailed.py --port 8002
+    python scripts/smoke/smoke_all_endpoints_detailed.py --url http://localhost:8000
+    python scripts/smoke/smoke_all_endpoints_detailed.py --verbose
 
 Author: Burhan Engineering Team
 """
@@ -522,9 +522,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python scripts/tests/test_all_endpoints_detailed.py
-  python scripts/tests/test_all_endpoints_detailed.py --port 8002
-  python scripts/tests/test_all_endpoints_detailed.py --verbose
+  python scripts/smoke/smoke_all_endpoints_detailed.py
+  python scripts/smoke/smoke_all_endpoints_detailed.py --port 8002
+  python scripts/smoke/smoke_all_endpoints_detailed.py --verbose
         """,
     )
     parser.add_argument("--port", type=int, default=8000, help="API port (default: 8000)")

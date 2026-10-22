@@ -10,9 +10,9 @@ Tests every endpoint with thorough response validation:
 5. Main query endpoint (greeting, fiqh, quran, zakat, dua)
 
 Usage:
-    python scripts/tests/comprehensive_test.py
-    python scripts/tests/comprehensive_test.py --port 8002
-    python scripts/tests/comprehensive_test.py --verbose
+    python scripts/smoke/smoke_comprehensive.py
+    python scripts/smoke/smoke_comprehensive.py --port 8002
+    python scripts/smoke/smoke_comprehensive.py --verbose
 
 Author: Burhan Engineering Team
 """
@@ -525,8 +525,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python scripts/tests/comprehensive_test.py
-  python scripts/tests/comprehensive_test.py --port 8002
+  python scripts/smoke/smoke_comprehensive.py
+  python scripts/smoke/smoke_comprehensive.py --port 8002
         """,
     )
     parser.add_argument("--port", type=int, default=8000, help="API port (default: 8000)")

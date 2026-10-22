@@ -400,12 +400,12 @@ python scripts/ingestion/chunk_all_books.py
 
 **Step 4: Upload to Hugging Face** (2-4 hours, Colab)
 ```
-notebooks/04_upload_to_huggingface.ipynb
+docs/8-development/notebooks/02_upload_and_embed.ipynb
 ```
 
 **Step 5: Embed on Colab GPU** (3 hours)
 ```
-notebooks/01_embed_all_collections.ipynb
+docs/8-development/notebooks/02_upload_and_embed.ipynb
 ```
 
 **Step 6: Import to Qdrant** (1 hour)
@@ -577,7 +577,7 @@ Burhan/
 │   ├── seed_mvp_data.py
 │   └── test_*.py                 # Test scripts
 │
-├── notebooks/                    # Google Colab notebooks
+├── (notebooks now live in docs/8-development/notebooks/)
 │   ├── setup_colab_env.ipynb
 │   ├── 01_embed_all_collections.ipynb
 │   ├── 04_upload_to_huggingface.ipynb
@@ -622,8 +622,8 @@ python scripts/ingestion/chunk_all_books.py           # Build chunks
 python scripts/data/create_category_mapping.py   # Category mapping
 
 # Testing
-python scripts/quick_test.py                # Quick API test
-python scripts/tests/test_all_endpoints_detailed.py  # Full test
+python scripts/smoke/quick_test.py                # Quick API test
+python scripts/smoke/smoke_all_endpoints_detailed.py  # Full test
 python scripts/data/lucene/verify_lucene_extraction.py            # Dataset integrity
 
 # Docker
@@ -757,13 +757,13 @@ make test
 ### Quick Smoke Test
 
 ```bash
-python scripts/quick_test.py --port 8002
+python scripts/smoke/quick_test.py --port 8002
 ```
 
 ### Comprehensive Test Suite
 
 ```bash
-python scripts/tests/test_all_endpoints_detailed.py
+python scripts/smoke/smoke_all_endpoints_detailed.py
 ```
 
 ---

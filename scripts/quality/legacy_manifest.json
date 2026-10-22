@@ -2,8 +2,8 @@
  "generated_at": "2026-10-21",
  "note": "Modules no entry point reaches. They are quarantined, not deleted. The architecture test fails when a live module imports one of them, when this list grows, or when a duplicated name gains a definition.",
  "total_modules": 237,
- "reachable_modules": 108,
- "unreachable_code_lines": 8778,
+ "reachable_modules": 107,
+ "unreachable_code_lines": 8781,
  "unreachable_modules": [
   "src.agents",
   "src.api",
@@ -35,6 +35,7 @@
   "src.core",
   "src.core.exceptions",
   "src.data.ingestion",
+  "src.data.models",
   "src.domain",
   "src.domain.citations",
   "src.domain.collections",

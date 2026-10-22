@@ -47,14 +47,19 @@ degradation only happens when the provider refuses every budget. Lowering
 | Qdrant `seerah_passages` | 295,175 | Full HF embeddings |
 | Qdrant `spirituality_passages` | 439,568 | Full HF embeddings |
 | Qdrant `usul_fiqh` | 371,148 | Full HF embeddings |
-| Qdrant `fiqh_passages` | 10,000 | Mini-dataset sample |
+| Qdrant `fiqh_passages` | 365,824 | Full corpus load in progress, paused (2,397,988 rows total) |
 | Qdrant `hadith_passages` | 10,000 | Mini-dataset sample |
-| Qdrant `islamic_history_passages` | 10,000 | Mini-dataset sample |
+| Qdrant `islamic_history_passages` | 2,048 | Test-clobbered sample, full load pending |
 | Qdrant `general_islamic` | 10,000 | Mini-dataset sample |
 | Qdrant `duas_adhkar` | 355 | Dua and azkar seed entries, embedded for search |
 
-The four 10k collections use `scripts/data/embed_mini_v2_to_qdrant.py`. They
-make every agent retrieve, but they are samples, not the full corpora.
+The four sample collections are being replaced by full-corpus loads through
+`scripts/data/embed_full_to_qdrant.py`. **The load is paused by request** (no
+Hugging Face transfers for now). Fiqh holds 365,824 of 2,397,988 corpus rows;
+point ids equal corpus row indices, so the run resumes with
+`--collection fiqh_passages --start-row 365000 --device cuda --half` and never
+duplicates rows. The other three still hold sample rows and are rebuilt with
+`--recreate` when the load resumes.
 
 Verse-level tafsir is seeded from upstream APIs, not from the Qdrant
 `quran_tafsir` book pages:
@@ -108,28 +113,26 @@ takes effect on the next request without an image rebuild.
 1. **Ibn Kathir gaps:** 31 verses have no Ibn Kathir commentary upstream, so
    those verses return two sources instead of three. Al-Qurtubi has one blank
    entry upstream. Both are upstream data limits, not pipeline faults.
-2. **Sparse collections:** fiqh, hadith, history, and general hold 10k-row
-   samples. The evaluation harness measured what that costs: for those four
+2. **Sparse collections:** fiqh, hadith, history, and general still hold
+   sample rows. The evaluation harness measured what that costs: for those four
    collections the curated questions have no answering passage at all, while
    the six full collections return an on-topic passage for every question.
    The samples are missing the subject matter, not merely fewer passages.
-   Full-corpus embeddings need to be generated and uploaded with
-   `scripts/data/embed_full_to_qdrant.py`.
-3. **Repository hygiene:** scratch files at the repo root are tracked
-   (`debug_*.py`, `classifier_debug.txt`, `rag_eval_*`). Removing tracked files
-   is a user decision.
-4. **Unwired scaffolding:** several modules are imported only by their own
+   The fix is the full-corpus load with `scripts/data/embed_full_to_qdrant.py`;
+   it is paused (no Hugging Face transfers for now), with fiqh at 365,824 of
+   2,397,988 rows.
+3. **Unwired scaffolding:** several modules are imported only by their own
    package, never by a request path: `src/indexing/vectorstores` FAISS/Chroma
    branches, `src/indexing/lexical/tantivy_index.py`, `bm25_index.py`,
    `src/indexing/embeddings/e5.py`, `bge_m3.py`, `src/retrieval/planning/`,
    `src/retrieval/policies/`, `src/indexing/pipelines/ingest_athar.py`, and
    `sync_metadata.py`. Treat them as unimplemented design notes, not features.
-5. **Heuristic verification:** `contradiction_detector` and the quote checkers
+4. **Heuristic verification:** `contradiction_detector` and the quote checkers
    are string heuristics. They catch mechanical failures (a negated statement
    against an affirming passage, a fabricated quote), not semantic ones.
    `contradiction_detector` runs with `fail_policy="proceed"`, so a hit marks
    the answer unverified even though the answer is still returned.
-6. **No frontend in this repository:** the API is the only deliverable here.
+5. **No frontend in this repository:** the API is the only deliverable here.
 
 ## Verification Commands
 

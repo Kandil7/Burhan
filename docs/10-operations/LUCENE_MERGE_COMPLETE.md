@@ -415,7 +415,7 @@ curl http://localhost:6333/collections
 python scripts/test_rag_retrieval.py --collection fiqh_passages --query "ما حكم الصلاة؟"
 
 # Test full pipeline
-python scripts/tests/test_full_pipeline.py
+python scripts/smoke/smoke_full_pipeline.py
 
 # Test via API
 curl -X POST http://localhost:8000/api/v1/query \

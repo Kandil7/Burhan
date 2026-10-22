@@ -102,25 +102,14 @@ docker-build:
 	docker build -f docker/Dockerfile.api -t Burhan-api:latest .
 
 # ============================================
-# Database
+# Database (schema lives in migrations/*.sql; Alembic was removed)
 # ============================================
 
 db-migrate:
-	poetry run alembic upgrade head
-
-db-migrate-create:
-	@if [ -z "$(message)" ]; then \
-		echo "Usage: make db-migrate-create message='your message'"; \
-		exit 1; \
-	fi
-	poetry run alembic revision --autogenerate -m "$(message)"
-
-db-reset:
-	poetry run alembic downgrade base
-	poetry run alembic upgrade head
+	poetry run python scripts/cli.py db migrate
 
 db-seed:
-	poetry run python scripts/seed_quran_sample.py
+	poetry run python scripts/data/seed_quran_sample.py
 
 # ============================================
 # Health & Monitoring

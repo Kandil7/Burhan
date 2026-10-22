@@ -197,7 +197,7 @@ def cmd_test() -> None:
     print_header("🧪 Running Tests")
 
     print_step("Testing API...")
-    run_command("python scripts/tests/test_api.py")
+    run_command("python scripts/smoke/smoke_api.py")
 
     print_step("Running unit tests...")
     run_command("pytest tests/ -v --tb=short")
@@ -354,7 +354,7 @@ def cmd_check_datasets() -> None:
 def cmd_quick_test() -> None:
     """Run quick smoke test."""
     print_header("🧪 Quick Smoke Test")
-    run_command("python scripts/quick_test.py")
+    run_command("python scripts/smoke/quick_test.py")
 
 
 def print_help() -> None:

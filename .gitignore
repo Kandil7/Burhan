@@ -77,8 +77,12 @@ data/processed/*.jsonl
 download_fiqh.log
 download_6_collections.log
 
-# BUT include mini-dataset and key metadata
-!data/mini_dataset/
+# Mini datasets: never carried in Git; keep the local cache out of the tree.
+# Fetch from the Hub (see data/mini_dataset_v2/README.md); stats.json stays tracked.
+data/mini_dataset/
+data/mini_dataset_v2/*.jsonl
+data/mini_dataset_v2/*.json
+!data/mini_dataset_v2/stats.json
 !data/processed/master_catalog.json
 !data/processed/category_mapping.json
 !data/processed/author_catalog.json
@@ -114,9 +118,7 @@ scripts/archive/
 docs/archive/
 notebooks/archive/
 
-# Alembic (keep migrations but ignore auto-generated files)
-alembic/__pycache__/
-alembic/versions/__pycache__/
+# Alembic was removed; the schema lives in migrations/*.sql.
 
 # Docker volumes (production data)
 postgres_data/

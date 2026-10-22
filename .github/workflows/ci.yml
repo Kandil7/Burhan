@@ -1,3 +1,12 @@
+# Burhan CI — one workflow: lint, tests against service containers, security
+# audit, and a Docker image build on main.
+#
+# The schema is applied from migrations/001_initial_schema.sql; Alembic was
+# removed (see migrations/README.md). There are no deploy jobs here: the repo
+# carries no Kubernetes manifests, so deployment stays manual until real
+# manifests and a target environment exist (documented in
+# docs/10-operations/CURRENT_STATE.md).
+
 name: CI
 
 on:
@@ -5,6 +14,7 @@ on:
     branches: [main, dev]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -42,7 +52,7 @@ jobs:
         run: poetry run mypy src/ --ignore-missing-imports
 
   test:
-    name: Run Tests
+    name: Tests
     runs-on: ubuntu-latest
     needs: lint
     services:
@@ -100,8 +110,13 @@ jobs:
           echo "LLM_PROVIDER=groq" >> $GITHUB_ENV
           echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> $GITHUB_ENV
 
-      - name: Run database migrations
-        run: poetry run alembic upgrade head || echo "No alembic config yet, skipping"
+      - name: Apply the SQL schema
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+          psql "postgresql://Burhan:Burhan_password@localhost:5432/Burhan_db" \
+            -v ON_ERROR_STOP=1 \
+            -f migrations/001_initial_schema.sql
 
       - name: Run tests with coverage
         run: |
@@ -113,11 +128,10 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  regression:
-    name: Regression Tests
+  security:
+    name: Security Audit
     runs-on: ubuntu-latest
     needs: lint
-    # Runs without external services - tests intent classification and routing only
     steps:
       - uses: actions/checkout@v4
 
@@ -129,29 +143,23 @@ jobs:
       - name: Install Poetry
         run: pip install poetry==1.8.3
 
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi
+        run: poetry install --no-interaction --with dev --no-ansi
 
-      - name: Set environment variables
-        run: |
-          echo "LLM_PROVIDER=groq" >> $GITHUB_ENV
-          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> $GITHUB_ENV
+      - name: Run safety check
+        run: poetry run safety check
 
-      - name: Run regression tests
-        run: |
-          poetry run pytest tests/regression/ -v --tb=short
+      - name: Run bandit
+        run: poetry run bandit -r src/ -f json -o bandit-report.json
+        continue-on-error: true
 
-      - name: Run classification tests
-        run: |
-          poetry run pytest tests/test_hybrid_classifier.py -v --tb=short
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: bandit-report.json
+        continue-on-error: true
 
   build:
     name: Build Docker Image

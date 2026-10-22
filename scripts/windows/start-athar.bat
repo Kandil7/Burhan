@@ -59,9 +59,9 @@ echo Checking service health...
 docker compose -f docker/docker-compose.dev.yml ps
 echo.
 
-REM Run database migrations
+REM Run database migrations (migrations/*.sql, applied through scripts/cli.py)
 echo [4/5] Running database migrations...
-poetry run alembic upgrade head
+poetry run python scripts/cli.py db migrate
 if %ERRORLEVEL% neq 0 (
     echo ⚠️  Migration failed (may be already up to date)
 ) else (

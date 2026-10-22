@@ -35,7 +35,7 @@
 
 **April 20, 2026:** Successfully completed **Evaluation Framework Integration**:
 
-- ✅ **Evaluation Script** - `rag_eval_seerah.py` tests RAG quality
+- ✅ **Evaluation Script** - `scripts/evaluation/rag_eval_seerah.py` tests RAG quality
 - ✅ **20 Arabic questions** - Seerah/Hijra domain testing
 - ✅ **Hit Rate 80%** - When properly routed to seerah agent
 - ✅ **Intent Classification Fix** - Keywords now override embeddings
@@ -870,7 +870,7 @@ The system now includes an evaluation framework for testing RAG quality:
 
 ```bash
 # Run evaluation script
-python rag_eval_seerah.py
+python scripts/evaluation/rag_eval_seerah.py
 
 # Results:
 # Hit Rate: 80%
@@ -879,7 +879,8 @@ python rag_eval_seerah.py
 # Intent Accuracy: 90%
 ```
 
-See `rag_eval_seerah.py` and `V2_ARCHITECTURE_REPORT.md` for details.
+See `scripts/evaluation/rag_eval_seerah.py` and
+`docs/2-architecture/V2_ARCHITECTURE_REPORT.md` for details.
 
 ### v2 Migration Testing
 

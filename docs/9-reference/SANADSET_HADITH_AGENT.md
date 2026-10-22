@@ -92,7 +92,7 @@ python scripts/data/embed_sanadset_hadith.py
 |------|-------|---------|
 | `src/agents/sanadset_hadith_agent.py` | 338 | Hadith retrieval agent |
 | `scripts/data/embed_sanadset_hadith.py` | 223 | Embedding pipeline |
-| `scripts/tests/test_sanadset_agent.py` | 42 | Agent testing script |
+| `scripts/smoke/smoke_sanadset_agent.py` | 42 | Agent testing script |
 | `docs/SANADSET_HADITH_AGENT.md` | This file | Documentation |
 
 ---

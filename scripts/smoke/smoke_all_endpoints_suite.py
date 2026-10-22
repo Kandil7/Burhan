@@ -4,7 +4,7 @@ Comprehensive API Test Suite for Burhan Islamic QA System.
 
 Tests every endpoint with detailed output.
 Usage:
-    python scripts/test_all_endpoints.py
+    python scripts/smoke/smoke_all_endpoints_suite.py
 """
 
 import urllib.request

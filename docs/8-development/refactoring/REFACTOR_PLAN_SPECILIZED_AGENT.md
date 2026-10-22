@@ -1,3 +1,7 @@
+> **Status: historical record.** Written before the hardening refactor. The
+> authoritative plan is `REFACTOR_PLAN_HARDENING.md` in this directory; treat
+> this file as background, not as an active plan.
+
 نعم، هذا بالضبط هو الاستخدام الصحيح للنص داخل Burhan: اجعل **ARCHITECTURE.md** وثيقة التصميم المرجعية، و**REFRACTOR_PLAN.md** وثيقة التنفيذ، ثم استخرج منها مباشرة `agents/base.py` وملفات `config/agents/*.yaml` وملفات `prompts/*.txt` و`RouterAgent`/orchestrator skeleton. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/57452145/36291451-b3d1-4808-b973-1527eb9b3b89/paste.txt)
 
 ## كيف تقسّم الشغل

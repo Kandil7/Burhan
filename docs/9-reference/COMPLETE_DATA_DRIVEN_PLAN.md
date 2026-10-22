@@ -107,7 +107,7 @@ python scripts/data/generate_embeddings.py --collection arabic_language_passages
 
 ### Step 3: Test All 10 Agents
 ```bash
-python scripts/tests/comprehensive_test.py
+python scripts/smoke/smoke_comprehensive.py
 # Expected: All 10 agents responding with category-appropriate answers
 ```
 

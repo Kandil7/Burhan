@@ -1,3 +1,7 @@
+> **Status: historical record.** Written before the hardening refactor. The
+> authoritative plan is `REFACTOR_PLAN_HARDENING.md` in this directory; treat
+> this file as background, not as an active plan.
+
 بناءً على ما بنيته فعلاً في Burhan حتى الآن, و ما تعلمناه من Fanar-Sadiq ، هنا الـ **Full Implementation Plan** الكامل والمرتّب: [arxiv](https://arxiv.org/pdf/2603.08501.pdf)
 
 ***

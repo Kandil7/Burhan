@@ -5,6 +5,12 @@ The Hub repository only carries precomputed embeddings for six collections.
 This script covers the remaining collections from ``data/mini_dataset_v2`` so
 every registered collection answers retrieval queries.
 
+The dataset payload files are no longer tracked in Git (the repository policy
+keeps large data out of Git). When a collection file is missing locally the
+script downloads it from the Hub dataset ``Kandil7/Athar-Mini-Dataset-v2``; 9 of
+the 10 collections are there. ``usul_fiqh`` has no Hub copy, but its full
+corpus is already loaded, so the mini fallback is not needed for it.
+
 Usage:
     python scripts/data/embed_mini_v2_to_qdrant.py --collections fiqh_passages
     python scripts/data/embed_mini_v2_to_qdrant.py --collections fiqh_passages hadith_passages
@@ -40,10 +46,39 @@ UPSERT_BATCH = 256
 PROGRESS_EVERY = 1024
 
 
+def fetch_from_hub(collection: str) -> None:
+    """Download a missing collection file from the Hub into the local cache."""
+    from huggingface_hub import hf_hub_download
+
+    target = DATA_DIR / f"{collection}.jsonl"
+    print(f"fetching {collection} from Kandil7/Athar-Mini-Dataset-v2 ...")
+    hf_hub_download(
+        repo_id="Kandil7/Athar-Mini-Dataset-v2",
+        repo_type="dataset",
+        filename=f"{collection}.jsonl",
+        local_dir=DATA_DIR,
+    )
+    if not target.exists():
+        raise SystemExit(f"download reported success but the file is missing: {target}")
+
+
 def load_rows(collection: str, limit: int | None) -> list[dict]:
     path = DATA_DIR / f"{collection}.jsonl"
     if not path.exists():
-        raise SystemExit(f"missing dataset: {path}")
+        try:
+            fetch_from_hub(collection)
+        except SystemExit:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise SystemExit(
+                f"missing dataset: {path}\n"
+                f"automatic fetch from the Hub failed ({exc}). The tracked Git tree "
+                "no longer carries dataset payloads. The Hub repository "
+                "Kandil7/Athar-Mini-Dataset-v2 has 9 of the 10 collections; "
+                "usul_fiqh has no Hub copy but its full corpus is already loaded."
+            ) from exc
+    if not path.exists():
+        raise SystemExit(f"missing dataset after fetch: {path}")
 
     rows: list[dict] = []
     with path.open(encoding="utf-8") as handle:

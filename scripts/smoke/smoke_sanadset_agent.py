@@ -9,9 +9,9 @@ Tests the SanadsetHadithAgent with sample queries to verify:
 - Error handling
 
 Usage:
-    python scripts/tests/test_sanadset_agent.py
-    python scripts/tests/test_sanadset_agent.py --query "صلاة الجمعة"
-    python scripts/tests/test_sanadset_agent.py --verbose
+    python scripts/smoke/smoke_sanadset_agent.py
+    python scripts/smoke/smoke_sanadset_agent.py --query "صلاة الجمعة"
+    python scripts/smoke/smoke_sanadset_agent.py --verbose
 
 Author: Burhan Engineering Team
 """
@@ -237,9 +237,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python scripts/tests/test_sanadset_agent.py
-  python scripts/tests/test_sanadset_agent.py --query "صلاة الجمعة"
-  python scripts/tests/test_sanadset_agent.py --verbose
+  python scripts/smoke/smoke_sanadset_agent.py
+  python scripts/smoke/smoke_sanadset_agent.py --query "صلاة الجمعة"
+  python scripts/smoke/smoke_sanadset_agent.py --verbose
         """,
     )
     parser.add_argument("--query", type=str, default=None, help="Single query to test")

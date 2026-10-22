@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (2026-10-22 structure cleanup)
+- Root structure: every script now has one home under `scripts/` (`data`,
+  `ingestion`, `quality`, `evaluation`, `smoke`, `tools`, `windows`).
+  Notebooks moved to `docs/8-development/notebooks/`; `QWEN.md` and
+  `V2_ARCHITECTURE_REPORT.md` to `docs/2-architecture/`. Manual smoke scripts
+  renamed from `test_*` to `smoke_*` and `probe_*` so pytest naming means
+  "collected by pytest".
+- `tests/test_architecture.py` gained `TestTestFilePlacement`, which fails when
+  any file outside `tests/` is named `test_*.py`.
+- CI now applies `migrations/*.sql` with `psql`; the old `alembic upgrade head`
+  step was a silent no-op.
+- Toolchain pins aligned with the verified gates: `ruff ^0.16.4`, `mypy ^2.3`
+  (the lock previously pinned ruff 0.7.4, which rejects the `UP046` selector in
+  the lint config, and mypy 1.20.0, which failed on the dead `chroma_store`
+  import in `src/indexing/vectorstores/factory.py`).
+- Session logs stay in `docs/learning/sessions/` (the `project-log` tool is
+  path-locked there); curated learning guides stay in `docs/11-learning/`.
+
+### Removed (2026-10-22 structure cleanup)
+- The Alembic scaffold (`alembic/`, `alembic.ini`, the `alembic` dependency):
+  it had zero revisions while `migrations/*.sql` carried the entire schema, so
+  schema changes had two homes. The Makefile db targets and
+  `scripts/windows/start-athar.bat` now run `scripts/cli.py db migrate`.
+- `.github/workflows/ci-cd.yml`, merged into `ci.yml`, along with the
+  placeholder `owner/Burhan` deploy gates (the repository has no Kubernetes
+  manifests; deployment stays manual).
+- Tracked dataset payloads (424 MB): `data/mini_dataset/` (superseded v1) and
+  15 files under `data/mini_dataset_v2/` are untracked and ignored.
+  `scripts/data/embed_mini_v2_to_qdrant.py` fetches a missing file from the Hub
+  dataset `Kandil7/Athar-Mini-Dataset-v2`; `stats.json` stays tracked.
+- Root scratch outputs (`results`, `classifier_debug.txt`,
+  `debug_keywords_output.txt`, `debug_output.txt`, `test_result.txt`) and the
+  compiled `scripts/LuceneExtractor.class` (a build artifact).
+
 ### Added
 - Production Docker Compose with healthchecks and resource limits
 - GitHub Actions CI/CD pipeline (lint, test, build)

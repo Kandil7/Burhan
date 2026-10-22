@@ -7,8 +7,8 @@ Minimal smoke test to verify the API is running and responding:
 - Query endpoint with greeting
 
 Usage:
-    python scripts/tests/test_api.py
-    python scripts/tests/test_api.py --port 8002
+    python scripts/smoke/smoke_api.py
+    python scripts/smoke/smoke_api.py --port 8002
 
 Author: Burhan Engineering Team
 """

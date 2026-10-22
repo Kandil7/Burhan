@@ -47,7 +47,7 @@ MODULE_ENTRY_POINTS = (
 # Scripts reach modules that no request does, such as the Quran loader and
 # the indexing pipelines. They are live tooling, not dead code, so every src
 # module a script imports counts as an entry point.
-SCRIPT_DIRS = ("scripts", "alembic")
+SCRIPT_DIRS = ("scripts",)  # alembic was removed; see migrations/README.md
 
 
 def script_entry_points(modules: dict[str, Path]) -> set[str]:

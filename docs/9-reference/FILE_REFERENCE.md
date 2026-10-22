@@ -10,7 +10,7 @@
 K:\business\projects_v2\Burhan\
 │
 ├── README.md                                    # Project overview (main)
-├── QWEN.md                                      # AI assistant context
+├── (QWEN.md now lives in docs/2-architecture/)
 ├── STATUS.md                                    # Current project status
 ├── Makefile                                     # Build commands (25 targets)
 ├── pyproject.toml                               # Python dependencies (Poetry)
@@ -231,7 +231,7 @@ K:\business\projects_v2\Burhan\
 │   ├── check_datasets.py                        # Dataset integrity checker
 │   └── chunk_books.py                           # Book chunking utility
 │
-├── notebooks/                                   # Google Colab notebooks
+├── (notebooks now live in docs/8-development/notebooks/)
 │   ├── README.md                                # Notebook documentation
 │   ├── google_drive_setup.md                    # Google Drive guide
 │   ├── setup_colab_env.ipynb                    # Environment setup
@@ -328,11 +328,11 @@ K:\business\projects_v2\Burhan\
 1. `scripts/data/extract_master_catalog.py` - Extract metadata
 2. `scripts/data/lucene/run_pipeline.py` - Extract content
 3. `scripts/ingestion/chunk_all_books.py` - Build chunks
-4. `notebooks/01_embed_all_collections.ipynb` - Embed
+4. `docs/8-development/notebooks/02_upload_and_embed.ipynb` - Embed
 
 ### Testing
-1. `scripts/quick_test.py` - Quick smoke test
-2. `scripts/tests/test_all_endpoints_detailed.py` - Full test
+1. `scripts/smoke/quick_test.py` - Quick smoke test
+2. `scripts/smoke/smoke_all_endpoints_detailed.py` - Full test
 3. `tests/` - Unit tests
 
 ---

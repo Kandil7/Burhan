@@ -86,3 +86,35 @@ class TestLiveSurface:
         for name, modules in report["duplicate_definitions"].items():
             for module in modules:
                 assert module not in legacy, f"{name} lives only in a legacy module"
+
+
+class TestTestFilePlacement:
+    """pytest collects only tests/; a `test_*.py` outside it is a lying name."""
+
+    SKIP_DIRECTORIES = {
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".qdrant",
+        ".venv",
+        "htmlcov",
+        "node_modules",
+    }
+
+    def test_no_test_named_file_lives_outside_the_test_tree(self):
+        offenders: list[str] = []
+        for path in PROJECT_ROOT.rglob("test_*"):
+            if not path.is_file():
+                continue
+            parts = path.relative_to(PROJECT_ROOT).parts
+            if self.SKIP_DIRECTORIES & set(parts):
+                continue
+            if parts[0] == "tests" or parts[0].startswith("."):
+                continue
+            if path.suffix == ".py":
+                offenders.append("/".join(parts))
+        assert offenders == [], (
+            "files named test_*.py outside tests/: "
+            f"{offenders}. Rename them to probe_* or smoke_* so pytest's "
+            "collection scope matches their purpose."
+        )

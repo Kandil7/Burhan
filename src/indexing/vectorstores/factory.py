@@ -69,9 +69,10 @@ class VectorStoreFactory:
             return cast(VectorStoreBase, cls._instance)
 
         elif store_type == "chroma":
-            from src.indexing.vectorstores.chroma_store import ChromaVectorStore  # type: ignore[import-untyped]
+            # Dead scaffolding: chroma_store.py does not exist yet (Known Gaps).
+            from src.indexing.vectorstores import chroma_store  # type: ignore
 
-            cls._instance = ChromaVectorStore()
+            cls._instance = chroma_store.ChromaVectorStore()
             logger.info("vectorstore.factory.created", store_type="chroma")
             return cast(VectorStoreBase, cls._instance)
 

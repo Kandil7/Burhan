@@ -75,7 +75,7 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Dataset
 **Cost:** FREE (T4 GPU) or ~$10-15 (A100)
 
 1. Open Google Colab: https://colab.research.google.com
-2. Upload: `notebooks/02_upload_and_embed.ipynb`
+2. Upload: `docs/8-development/notebooks/02_upload_and_embed.ipynb`
 3. Set your `HF_TOKEN` in the notebook
 4. Select T4 GPU: Runtime → Change runtime type → GPU
 5. Run all cells (takes ~13 hours)
@@ -85,7 +85,7 @@ poetry run python scripts/final_upload.py --verify --repo Kandil7/Burhan-Dataset
 
 **Time:** 10 minutes
 
-1. Upload: `notebooks/verify_upload.ipynb`
+1. Upload: `docs/8-development/notebooks/verify_upload.ipynb`
 2. Run all cells
 3. Check all collections load correctly
 
@@ -246,11 +246,11 @@ Google Drive/
 ### Immediate
 
 1. ⏳ **Open Colab:** https://colab.research.google.com
-2. ⏳ **Upload notebook:** `notebooks/02_upload_and_embed.ipynb`
+2. ⏳ **Upload notebook:** `docs/8-development/notebooks/02_upload_and_embed.ipynb`
 3. ⏳ **Set HF_TOKEN** in notebook
 4. ⏳ **Select T4 GPU:** Runtime → Change runtime type → GPU
 5. ⏳ **Run all cells** (~13 hours on T4)
-6. ⏳ **Verify:** `notebooks/verify_upload.ipynb`
+6. ⏳ **Verify:** `docs/8-development/notebooks/verify_upload.ipynb`
 
 ### After Embedding
 
