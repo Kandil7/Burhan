@@ -179,7 +179,7 @@ class EvidenceSufficiency(BaseVerifier):
 
 def register_fiqh_checks() -> None:
     """Register Fiqh checks with the suite builder."""
-    from src.verification.suite_builder import register_check
+    from src.verification.base import register_check
 
     register_check("quote_validator", QuoteValidator)
     register_check("source_attributor", SourceAttributor)

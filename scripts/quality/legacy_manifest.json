@@ -1,8 +1,8 @@
 {
  "generated_at": "2026-10-21",
  "note": "Modules no entry point reaches. They are quarantined, not deleted. The architecture test fails when a live module imports one of them, when this list grows, or when a duplicated name gains a definition.",
- "total_modules": 237,
- "reachable_modules": 107,
+ "total_modules": 240,
+ "reachable_modules": 110,
  "unreachable_code_lines": 8781,
  "unreachable_modules": [
   "src.agents",
@@ -180,14 +180,6 @@
   "build_classifier": [
    "src.application.classifier_factory",
    "src.application.router"
-  ],
-  "get_fiqh_agent": [
-   "src.api.routes.fiqh",
-   "src.api.routes.search"
-  ],
-  "get_llm_client": [
-   "src.api.routes.search",
-   "src.infrastructure.llm_client"
   ],
   "health_check": [
    "src.api.routes.ask",

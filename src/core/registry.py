@@ -118,6 +118,22 @@ class AgentRegistry:
             "total": len(self._registrations),
         }
 
+    def names(self, agents: bool) -> list[str]:
+        """Registered names for agents or for tools, without building them."""
+        return [name for name, reg in self._registrations.items() if reg.is_agent == agents]
+
+
+# Infrastructure dependencies for the lazy agent factories. The composition
+# root (src.composition) sets these at startup; nothing here reaches back into
+# the API layer, which used to be the root of the largest import cycle.
+_registry_dependencies: dict[str, Any] = {}
+
+
+def set_registry_dependencies(deps: dict[str, Any]) -> None:
+    """Provide the objects the lazy agent factories need to build."""
+    global _registry_dependencies
+    _registry_dependencies = dict(deps)
+
 
 # Global registry instance
 _registry: AgentRegistry | None = None
@@ -137,16 +153,7 @@ def initialize_registry() -> AgentRegistry:
 
     # Helpers for dependencies
     def get_deps() -> Any:
-
-        # This is a bit of a hack to get global state if needed
-        # In a real DI system, we'd inject these
-        from src.api.main import app
-
-        return {
-            "embedding_model": getattr(app.state, "embedding_model", None),
-            "vector_store": getattr(app.state, "vector_store", None),
-            "llm_client": getattr(app.state, "llm_client", None),
-        }
+        return dict(_registry_dependencies)
 
     # Helpers for lazy instantiation
     def build_zakat() -> Any:

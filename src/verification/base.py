@@ -15,6 +15,32 @@ from src.verification.schemas import (
     VerifierType,
 )
 
+# Check registry. It lives here, not in suite_builder, so the check modules
+# can register themselves without importing the builder (import cycle).
+CHECK_IMPLEMENTATIONS: dict[str, type] = {}
+
+
+def register_check(name: str, check_class: type) -> None:
+    """Register a check implementation.
+
+    Args:
+        name: Check identifier
+        check_class: Check class implementation
+    """
+    CHECK_IMPLEMENTATIONS[name] = check_class
+
+
+def get_check_implementation(name: str) -> type | None:
+    """Get a check implementation by name.
+
+    Args:
+        name: Check identifier
+
+    Returns:
+        Check class or None if not found
+    """
+    return CHECK_IMPLEMENTATIONS.get(name)
+
 
 class BaseVerifier(ABC):
     """Abstract base class for all verifiers."""

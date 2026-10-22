@@ -12,15 +12,19 @@ from __future__ import annotations
 import re
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 
 from src.agents.base import AgentInput
+from src.api.deps import get_container
 from src.api.schemas.common import ErrorResponse
 from src.config.logging_config import get_logger
 from src.config.settings import settings
+
+if TYPE_CHECKING:
+    from src.composition import Container
 
 logger = get_logger()
 fiqh_router = APIRouter(prefix="/fiqh", tags=["Fiqh"])
@@ -104,15 +108,11 @@ class FiqhResponse(BaseModel):
 # ── Dependencies ────────────────────────────────────────────────────────────
 
 
-def get_fiqh_agent(request: Request) -> Any:
-    """Get FiQH agent from app state, falling back to the registry."""
-    agent = getattr(request.app.state, "fiqh_agent", None)
+def _agent_from(container: Container, name: str, label: str) -> Any:
+    """Get one agent from the container, 503 when it is not registered."""
+    agent = container.agents.get(name)
     if agent is None:
-        registry = getattr(request.app.state, "registry", None)
-        if registry is not None:
-            agent = registry.get_agent("fiqh_agent")
-    if agent is None:
-        raise HTTPException(503, detail="FiqhAgent is not initialized.")
+        raise HTTPException(503, detail=f"{label} is not initialized.")
     return agent
 
 
@@ -217,7 +217,7 @@ async def handle_fiqh_question(
         ge=1,
         description="Filter by book ID",
     ),
-    agent: Any = Depends(get_fiqh_agent),
+    container: Container = Depends(get_container),
 ) -> FiqhResponse:
     """
     Submit a Fiqh (Islamic Jurisprudence) question to the Burhan system.
@@ -234,6 +234,7 @@ async def handle_fiqh_question(
     - era: Filter by historical era (e.g., "القرن الرابع الهجري")
     - book_id: Filter by specific book ID
     """
+    agent = _agent_from(container, "fiqh_agent", "FiqhAgent")
     start_time = time.time()
     trace_id = _build_trace_id()
     agent_name: str = "fiqh_collection_agent"
@@ -363,9 +364,10 @@ async def _require_debug() -> None:
 async def test_fiqh(
     request: Request,
     _: None = Depends(_require_debug),
-    agent: Any = Depends(get_fiqh_agent),
+    container: Container = Depends(get_container),
 ) -> Any:
     """Development-only smoke check for the fiqh agent."""
+    agent = _agent_from(container, "fiqh_agent", "FiqhAgent")
     result = await agent.execute(
         AgentInput(
             query="ما حكم الزكاة؟",

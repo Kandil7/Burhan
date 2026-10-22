@@ -22,6 +22,24 @@ Raw answers, kept short.
 - **Next time:** start Phase 2 of the hardening refactor (ports, one
   composition root, YAML-as-config).
 
+## Phase 3 addendum (same day)
+
+Ports and one composition root, per the plan. `src/application/ports.py`,
+`src/composition.py`, `src/api/deps.py` are new; the lifespan, the fiqh and
+search routes, and `core/registry.py` now wire through the container. The
+verification check registry moved from `suite_builder` to `verification/base`
+to break a second live cycle. Measured with the new
+`scripts/quality/import_cycles.py`: live cycles 2 to 0, one legacy cycle left
+for Phase 7.
+
+The fingerprint check needed a control run to be meaningful: two runs of the
+same code already drift on `answer_mode`, `citation_count`, `sources`, and
+`requires_human_review` for 9 of 20 questions. Against that noise, intent and
+collection match the baseline 20 out of 20, and only the two fiqh questions
+drift beyond it, because `fiqh_passages` changed from the 10k sample to
+365,824 full-corpus rows. Lesson for Phase 4: record retrieval baselines
+(data-only, deterministic) separately from ask fingerprints (LLM-curated).
+
 ## What Was Done
 
 ### 1. One home per script

@@ -153,7 +153,14 @@ AGENT_SUITE_MAP: dict[str, VerificationSuite] = {
 
 # =============================================================================
 # Registry mapping check names to their implementation classes
-CHECK_IMPLEMENTATIONS: dict[str, type] = {}
+# The check registry lives in src.verification.base so the check modules can
+# register without importing this builder (import cycle). Re-exported here for
+# the existing importers.
+from src.verification.base import (  # noqa: E402
+    CHECK_IMPLEMENTATIONS,
+    get_check_implementation,
+    register_check,
+)
 
 _CHECKS_REGISTERED = False
 
@@ -220,28 +227,6 @@ def register_all_checks() -> None:
             register_check("evidence_sufficiency", EvidenceSufficiencyVerifier)
     except ImportError:
         pass
-
-
-def register_check(name: str, check_class: type) -> None:
-    """Register a check implementation.
-
-    Args:
-        name: Check identifier
-        check_class: Check class implementation
-    """
-    CHECK_IMPLEMENTATIONS[name] = check_class
-
-
-def get_check_implementation(name: str) -> type | None:
-    """Get a check implementation by name.
-
-    Args:
-        name: Check identifier
-
-    Returns:
-        Check class or None if not found
-    """
-    return CHECK_IMPLEMENTATIONS.get(name)
 
 
 def _get_default_suite() -> VerificationSuite:

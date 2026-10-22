@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -28,81 +27,30 @@ def warm_models(app: FastAPI) -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("lifespan.startup.begin")
 
-    # ── 1. Verification Suite ─────────────────────────────────────────────────
-    from src.verification.suite_builder import register_all_checks
+    # The composition root builds the whole graph: verification checks, the
+    # shared infrastructure, the registry, and the service layer. See
+    # src/composition.py.
+    from src.composition import build_container
 
-    register_all_checks()
+    container = await build_container()
+    app.state.container = container
 
-    # ── 2. Infrastructure (Shared) ────────────────────────────────────────────
-    from src.indexing.embeddings.embedding_model import EmbeddingModel
-    from src.indexing.vectorstores.qdrant_store import VectorStore
-    from src.infrastructure.llm_client import LLMClients
-
-    llm_clients = await LLMClients.create()
-    app.state.llm_clients = llm_clients
-    app.state.llm_client = llm_clients.client
-
-    embedding_model = EmbeddingModel(cache_enabled=True)
-    # Background warming
-    asyncio.create_task(embedding_model.load_model())
-    app.state.embedding_model = embedding_model
-
-    vector_store = VectorStore()
-    await vector_store.initialize()
-    app.state.vector_store = vector_store
-
-    # ── 3. Registry (Lazy) ────────────────────────────────────────────────────
-    from src.core.registry import get_registry
-
-    app.state.registry = get_registry()
-
-    # ── 4. Use Case & Service ─────────────────────────────────────────────────
-    from src.application.classifier_factory import build_classifier
-    from src.application.router import RouterAgent
-    from src.application.services.ask_service import AskService
-    from src.application.use_cases.answer_query import AnswerQueryUseCase
-
-    # Build Router - use keyword-only classifier for fast-path routing
-    classifier = build_classifier(embedding_model=None)
-    logger.info(
-        f"Built classifier: {type(classifier).__name__}, "
-        f"keyword: {type(getattr(classifier, '_keyword_classifier', None)).__name__}"
-    )
-    router = RouterAgent(classifier=classifier)
-    app.state.router = router
-
-    # AnswerQueryUseCase
-    use_case = AnswerQueryUseCase(agent_registry=app.state.registry, router=router)
-
-    # AskService
-    app.state.ask_service = AskService(answer_query_use_case=use_case)
-
-    # SearchService - requires properly initialized RunRetrievalUseCase
-    from src.application.services.search_service import get_search_service
-    from src.application.use_cases.run_retrieval import get_run_retrieval_use_case
-
-    # Create properly initialized RunRetrievalUseCase
-    # Use existing embedding_model and vector_store from app.state
-    run_retrieval_use_case = get_run_retrieval_use_case(
-        embedding_model=app.state.embedding_model,
-        vector_store=app.state.vector_store,
-    )
-
-    # Create SearchService
-    app.state.search_service = get_search_service(run_retrieval_uc=run_retrieval_use_case)
-
-    # ── 5. Standard Agents (Static) ───────────────────────────────────────────
-    from src.agents.chatbot_agent import ChatbotAgent
-
-    app.state.chatbot = ChatbotAgent()
+    # Transitional mirrors for the modules that still read app.state
+    # directly. They move behind the container as the later phases land.
+    app.state.llm_clients = container.llm_clients
+    app.state.llm_client = container.llm_clients.client
+    app.state.embedding_model = container.embedding
+    app.state.vector_store = container.search
+    app.state.registry = container.registry
+    app.state.router = container.router
+    app.state.ask_service = container.ask_service
+    app.state.search_service = container.search_service
+    app.state.chatbot = container.chatbot
 
     logger.info("lifespan.startup.complete")
 
-    yield  # ── app is running ─────────────────────────────────────────────────
+    yield  # --- app is running ---
 
-    # ── Shutdown ──────────────────────────────────────────────────────────────
     logger.info("lifespan.shutdown.begin")
-    await llm_clients.close()
-    if hasattr(vector_store, "close"):
-        await vector_store.close()
+    await container.aclose()
     logger.info("lifespan.shutdown.complete")

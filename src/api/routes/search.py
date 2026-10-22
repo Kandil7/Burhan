@@ -10,10 +10,11 @@ import importlib.util
 import re
 import time
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from src.api.deps import get_container
 from src.api.schemas.common import ErrorResponse
 from src.api.schemas.search import (
     RAGQueryResponse,
@@ -25,6 +26,9 @@ from src.api.schemas.search import (
 from src.config.logging_config import get_logger
 from src.config.settings import settings
 from src.generation.prompts.rag import get_rag_prompt
+
+if TYPE_CHECKING:
+    from src.composition import Container
 
 logger = get_logger()
 search_router = APIRouter(prefix="/search", tags=["Search"])
@@ -148,32 +152,6 @@ def _format_sources(results: list[dict]) -> list[dict]:
 
 
 # ── Dependencies ─────────────────────────────────────────────────────────
-def _get_state(request: Request, attr: str, label: str) -> Any:
-    """Get state attribute from app state."""
-    obj = getattr(request.app.state, attr, None)
-    if obj is None:
-        raise HTTPException(503, detail=f"{label} is not initialised.")
-    return obj
-
-
-def get_fiqh_agent(request: Request) -> Any:
-    return _get_state(request, "fiqh_agent", "FiqhAgent")
-
-
-def get_general_agent(request: Request) -> Any:
-    return _get_state(request, "general_agent", "GeneralIslamicAgent")
-
-
-def get_embedding_model(request: Request) -> Any:
-    return _get_state(request, "embedding_model", "EmbeddingModel")
-
-
-def get_vector_store(request: Request) -> Any:
-    return _get_state(request, "vector_store", "VectorStore")
-
-
-def get_llm_client(request: Request) -> Any:
-    return _get_state(request, "llm_client", "LLM client")
 
 
 # ── GET /search/stats ────────────────────────────────────────────────────
@@ -185,13 +163,14 @@ def get_llm_client(request: Request) -> Any:
 )
 async def get_rag_stats(
     request: Request,
-    vector_store: Any = Depends(get_vector_store),
-    embedding_model: Any = Depends(get_embedding_model),
+    container: Container = Depends(get_container),
 ) -> Any:
     """Get RAG system statistics."""
     trace_id = _build_trace_id()
     _require_rag_available()
 
+    vector_store = container.search
+    embedding_model = container.embedding
     if not getattr(vector_store, "client", None):
         raise HTTPException(503, detail="Vector store connection is not available.")
 
@@ -227,16 +206,17 @@ async def get_rag_stats(
 async def simple_rag_query(
     request: Request,
     req: SimpleRAGRequest,
-    embedding_model: Any = Depends(get_embedding_model),
-    vector_store: Any = Depends(get_vector_store),
-    llm_client: Any = Depends(get_llm_client),
+    container: Container = Depends(get_container),
 ) -> Any:
     trace_id = _build_trace_id()
     start_time = time.time()
     _require_rag_available()
 
+    embedding_model = container.embedding
+    llm_client = container.llm_clients.client
+
     # 1. استخدم SearchService عشان يفسّر "all"
-    search_service = request.app.state.search_service
+    search_service = container.search_service
     if req.collection == "all":
         retrieval_output = await search_service.search(
             query=req.query,

@@ -240,6 +240,46 @@ the root of the largest cycle.
 
 Verification: the harness fingerprint is unchanged and the cycle count is zero.
 
+**Status (2026-10-22): done.** `src/application/ports.py` carries the four
+ports, typed against the shapes the concrete clients already have, so
+today's `EmbeddingModel`, `VectorStore`, `LLMClients`, and tools satisfy them
+structurally with no wrapper. `src/composition.py` owns the `Container` and
+`build_container`; the API lifespan calls it and stores the container on
+`app.state`, keeping the old state names as transitional mirrors. The
+per-route helpers are gone: `src/api/deps.py` exposes one `get_container`
+dependency and the endpoints read what they need from the container. The
+`core.registry` to `api.main` edge is gone; the registry takes its
+infrastructure through `set_registry_dependencies`, called by the composition
+root.
+
+A second live cycle was found and broken on the way: the check registry
+(`register_check` and its table) moved from `verification/suite_builder.py`
+to `verification/base.py`, so the check modules no longer import the builder.
+`scripts/quality/import_cycles.py` measures it: live cycles went from 2 to 0.
+The one remaining cycle is the quarantined `tool_service`/`run_tool` pair
+that Phase 7 deletes.
+
+Two scope adjustments, both recorded here:
+
+1. The ports describe today's method names (`generate_text`, `search`,
+   `execute`) rather than the Phase 5 sketch (`complete`, `run`), so the
+   current clients satisfy them with no behavior change. The pipeline in
+   Phase 5 can narrow the signatures behind an adapter.
+2. `ask.py` and `classify.py` still read `app.state` mirrors. They were not
+   part of the three named helpers; they move behind the container when the
+   pipeline lands.
+
+Fingerprint verification: `eval_harness.py ask` run twice against the
+restarted dev API, then compared to
+`scripts/quality/baseline/ask_fingerprint_after_routing_fix.json`. Intent and
+collection are identical for 20 of 20 questions. `answer_mode`,
+`citation_count`, `sources`, and `requires_human_review` drift, but the
+control run proves the drift is inherent: two runs of the same code differ on
+9 of 20 questions in the same fields. The only outliers beyond that noise are
+the two fiqh questions, whose sources changed because `fiqh_passages` now
+holds 365,824 full-corpus rows instead of the 10,000-row sample the baseline
+was recorded against.
+
 ### Phase 4, one retrieval path, with a measured gate
 
 Both `/api/v1/ask` and `/api/v1/search/simple` call `VectorSearchPort`. The

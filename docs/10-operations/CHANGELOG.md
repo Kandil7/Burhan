@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (2026-10-22 structure cleanup)
+- Phase 3 of the hardening refactor: `src/application/ports.py` defines the
+  four ports (vector search, embedding, LLM, tools) and `src/composition.py`
+  is the single wiring point. The API lifespan builds one `Container` and the
+  routes take it as a dependency instead of reading `app.state` through
+  per-route helpers. The `core.registry` to `api.main` import edge is gone and
+  the live import-cycle count dropped from 2 to 0
+  (`scripts/quality/import_cycles.py` measures it).
 - Phase 2 of the hardening refactor: `Citation`, `AgentOutput`,
   `VerificationReport`, `VerificationStatus`, `RetrievalResult`, and
   `RoutingDecision` moved into `src/domain/models.py` beside
