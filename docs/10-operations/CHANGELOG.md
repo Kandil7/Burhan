@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed (2026-10-23 hardening Phase 7)
+- The fenced legacy layer, deleted in five gated slices: the designed
+  retrieval layer (retrievers, ranking, fusion, expanders, filters, mapping,
+  planning, policies, aggregation), the generation composition layer
+  (composers, prompt loader, schemas, formatting and risk policies), the
+  indexing extras (metadata catalogs, lexical indexes, FAISS/Chroma factory,
+  analysis pipelines), the application leftovers (container shim, config
+  router, classify/tool/trace services and use cases, core.exceptions, dead
+  domain models), and the dead API, infrastructure, and check modules. 101
+  files. The manifest shrank from 130 unreachable modules and 8,781 lines to
+  29 package-initializer files and 190 lines. Total import cycles are now
+  zero.
+
 ### Changed (2026-10-22 structure cleanup)
 - Phase 6 of the hardening refactor: verification hygiene. The exact-quote
   check validates Quran quotations through a `QuranQuotationPort`

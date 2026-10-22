@@ -16,61 +16,6 @@ import pytest
 # ==========================================
 
 
-class TestLanguageDetection:
-    """Tests for language detection utility."""
-
-    def test_detect_arabic(self):
-        """Test Arabic text detection."""
-        from src.utils.language_detection import detect_language
-
-        assert detect_language("ما حكم صلاة العيد؟") == "ar"
-        assert detect_language("الصلاة ركن من أركان الإسلام") == "ar"
-        assert detect_language("كيف أصلي صلاة العيد") == "ar"
-
-    def test_detect_english(self):
-        """Test English text detection."""
-        from src.utils.language_detection import detect_language
-
-        assert detect_language("How to calculate zakat?") == "en"
-        assert detect_language("What is the ruling on prayer?") == "en"
-
-    def test_detect_mixed(self):
-        """Test mixed text detection."""
-        from src.utils.language_detection import detect_language
-
-        # More Arabic than threshold = Arabic
-        assert detect_language("الصلاة prayer", threshold=0.3) == "ar"
-
-    def test_detect_empty(self):
-        """Test empty text handling."""
-        from src.utils.language_detection import detect_language
-
-        assert detect_language("") == "ar"
-        assert detect_language("   ") == "ar"
-
-    def test_is_mostly_arabic(self):
-        """Test mostly Arabic check."""
-        from src.utils.language_detection import is_mostly_arabic
-
-        assert is_mostly_arabic("الصلاة فرض") is True
-        assert is_mostly_arabic("hello world", threshold=0.5) is False
-
-    def test_is_mostly_english(self):
-        """Test mostly English check."""
-        from src.utils.language_detection import is_mostly_english
-
-        assert is_mostly_english("hello world") is True
-        assert is_mostly_english("الصلاة فرض", threshold=0.5) is False
-
-    def test_arabic_char_ratio(self):
-        """Test Arabic character ratio calculation."""
-        from src.utils.language_detection import get_arabic_char_ratio
-
-        ratio = get_arabic_char_ratio("الصلاة فرض")
-        assert 0.0 <= ratio <= 1.0
-        assert ratio > 0.5
-
-
 class TestEraClassifier:
     """Tests for era classification utility."""
 
@@ -332,78 +277,9 @@ class TestSettings:
 # ==========================================
 
 
-class TestQueryExpander:
-    """Tests for query expander."""
-
-    def test_expand_fiqh_terms(self):
-        """Test expansion of fiqh terms."""
-        from src.retrieval.expanders.query_expander import QueryExpander
-
-        expander = QueryExpander()
-        result = expander.expand("صلاة")
-
-        assert "صلاة" in result
-        assert len(result) > 1
-
-    def test_expand_hadith_terms(self):
-        """Test expansion of hadith terms."""
-        from src.retrieval.expanders.query_expander import QueryExpander
-
-        expander = QueryExpander()
-        result = expander.expand("حديث")
-
-        assert "حديث" in result
-        assert len(result) > 1
-
-    def test_expand_for_retrieval_limited(self):
-        """Test limited expansion."""
-        from src.retrieval.expanders.query_expander import QueryExpander
-
-        expander = QueryExpander()
-        result = expander.expand_for_retrieval("صلاة", max_expansions=3)
-
-        assert len(result) <= 3
-
-
 # ==========================================
 # Tests for BM25
 # ==========================================
-
-
-class TestBM25:
-    """Tests for BM25 retriever."""
-
-    def test_bm25_indexing(self):
-        """Test BM25 indexing."""
-        from src.retrieval.retrievers.bm25_retriever import BM25
-
-        bm25 = BM25()
-        documents = [
-            {"content": "الصلاة فرض على كل مسلم"},
-            {"content": "الصيام فرض في شهر رمضان"},
-            {"content": "الزكاة فرض على المال"},
-        ]
-
-        bm25.index(documents)
-
-        assert bm25.corpus_size == 3
-
-    def test_bm25_search(self):
-        """Test BM25 search."""
-        from src.retrieval.retrievers.bm25_retriever import BM25
-
-        bm25 = BM25()
-        documents = [
-            {"content": "الصلاة فرض"},
-            {"content": "الصيام فرض"},
-            {"content": "الزكاة فرض"},
-        ]
-
-        bm25.index(documents)
-        results = bm25.search("صلاة", top_k=2)
-
-        assert len(results) <= 2
-        assert results[0][0] >= 0  # doc index
 
 
 # ==========================================
@@ -450,39 +326,6 @@ class TestCitation:
 # ==========================================
 # Tests for Error Handling
 # ==========================================
-
-
-class TestExceptions:
-    """Tests for exception hierarchy."""
-
-    def test_burhan_exception(self):
-        """Test base Burhan exception."""
-        from src.core.exceptions import BurhanErrorCode, BurhanException
-
-        exc = BurhanException(
-            "Test error",
-            BurhanErrorCode.INVALID_QUERY,
-        )
-
-        assert exc.code == BurhanErrorCode.INVALID_QUERY
-        assert exc.status_code == 400
-
-    def test_retrieval_exception(self):
-        """Test retrieval exception."""
-        from src.core.exceptions import RetrievalException
-
-        exc = RetrievalException("Test retrieval error")
-
-        assert "retrieval" in exc.message.lower()
-
-    def test_not_found_exception(self):
-        """Test not found exception."""
-        from src.core.exceptions import NotFoundException
-
-        exc = NotFoundException("Book", 123)
-
-        assert "123" in exc.message
-        assert exc.status_code == 404
 
 
 # ==========================================

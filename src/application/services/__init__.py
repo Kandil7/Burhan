@@ -2,31 +2,19 @@
 """
 Services for endpoint orchestration.
 
-This module provides the core services:
-- AskService: Orchestration for ask/query endpoint
-- SearchService: Orchestration for search endpoint
-- ClassifyService: Orchestration for classify endpoint
-- ToolService: Orchestration for tool execution
-- TraceService: Orchestration for trace building
+This module provides the services the live tree uses:
+- AskService: orchestration for the ask/query endpoint
+- SearchService: orchestration for the search endpoint
 
-Each service coordinates use cases and handles API-level concerns.
+The designed classify, tool, and trace services were deleted in hardening
+Phase 7; see docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md.
 """
 
 from src.application.services.ask_service import AskService, ask_service
-from src.application.services.classify_service import ClassifyService, classify_service
 from src.application.services.search_service import SearchService
-from src.application.services.tool_service import ToolService, tool_service
-from src.application.services.trace_service import TraceService, trace_service
 
 __all__ = [
     "AskService",
     "ask_service",
     "SearchService",
-    "search_service",
-    "ClassifyService",
-    "classify_service",
-    "ToolService",
-    "tool_service",
-    "TraceService",
-    "trace_service",
 ]

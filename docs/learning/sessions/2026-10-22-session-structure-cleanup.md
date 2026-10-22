@@ -92,6 +92,24 @@ passed; combinations failed with "There is no current event loop in
 MainThread". Bisecting three-file combinations found it in minutes. The
 suite uses pytest-asyncio's default loop now.
 
+## Phase 7 addendum (2026-10-23)
+
+The legacy layer is deleted, 101 files in five slices, each gated by the
+suite and a manifest shrink. The manifest went from 130 unreachable modules
+and 8,781 lines to 29 package-initializer files and 190 lines. Total import
+cycles are zero now, not just live ones.
+
+The measurement that made this safe was the classifier: 101 delete
+candidates, 29 package inits that must stay because live modules live under
+them, and exactly 9 modules with test importers. The classifier caught two
+traps: package inits execute on live import paths, so several had their dead
+re-exports stripped instead of being deleted, and a name-normalization bug
+first classified every package as its own live child.
+
+The hybrid searcher and the strategy table survive by design: the evaluation
+harness keeps them as the record of the dense versus keyword-rerank gate.
+The one-release shims survive until their remaining importers move.
+
 ## What Was Done
 
 ### 1. One home per script

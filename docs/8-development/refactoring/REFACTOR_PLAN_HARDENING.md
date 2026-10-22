@@ -462,6 +462,45 @@ the fence is green on a refreshed manifest (106 live modules), and a live
 After one release, remove the legacy set slice by slice, shrinking the
 manifest with each slice.
 
+**Status (2026-10-22/23): done.** The quarantine held through Phases 2 to 6
+with the fence green, and you called the release; the legacy layer is deleted.
+Five slices, each gated by the suite and a manifest shrink:
+
+1. **Retrieval layer** (32 modules): the designed retrievers, ranking, fusion,
+   expanders, filters, mapping, planning, policies, and aggregation. The
+   hybrid searcher and the strategy table stay: the evaluation harness keeps
+   them as the record of the dense versus keyword-rerank measurement.
+2. **Generation layer** (15 modules): composers, prompt loader, generation
+   schemas, formatting and risk policies. The RAG prompt builder and the
+   answer policy stay.
+3. **Indexing layer** (18 modules): metadata catalogs, lexical indexes, the
+   FAISS/Chroma factory and its base, analysis pipelines. The embedding
+   model, its cache, and the Qdrant store stay.
+4. **Application and domain leftovers** (16 modules): the container shim,
+   config router, classify/tool/trace services and use cases, the tool
+   service cycle, `core.exceptions`, and the dead domain models.
+5. **API, infrastructure, and check leftovers** (20 modules): dead schemas,
+   versioning, request-id middleware, the qdrant and logging wrappers, the
+   quran router, language detection, lazy singletons, the school-consistency
+   check, and the verification pipeline and policies.
+
+The manifest shrank from 130 unreachable modules and 8,781 lines to 29
+modules and 190 lines. What remains is package-initializer bookkeeping: the
+`__init__.py` files of packages that still hold live code. Several were
+stripped of their dead re-exports as their slices died. Total import cycles
+are now zero, not just live ones.
+
+The tests that exercised deleted modules went with them: the four
+dead-module test files, plus the dead-module test classes inside
+`test_comprehensive.py` and `test_phase6_refactoring.py`.
+
+Verification: 635 tests pass, ruff and format clean, mypy clean in 135
+source files under both toolchains, the fence is green on the shrunken
+manifest, and the live API serves both `/api/v1/ask` and
+`/api/v1/search/simple` on the shrunken tree. The one-release shims from
+Phases 2 and 5 remain live until their remaining importers move, which is
+release work, not Phase 7 work.
+
 ## Doors
 
 Two are one-way and must not move.

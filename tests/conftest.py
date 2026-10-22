@@ -4,7 +4,6 @@ Pytest configuration and fixtures for Burhan tests.
 Provides common fixtures and configuration for all tests.
 """
 
-
 import pytest
 
 # NOTE: an earlier session-scoped `event_loop` fixture lived here. It is the

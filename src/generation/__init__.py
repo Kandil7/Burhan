@@ -1,41 +1,6 @@
-"""
-Generation module for Burhan Islamic QA system.
-
-This module handles the generation of responses based on verified evidence.
-It ensures generation only consumes output from the verification layer.
-
-Components:
-- composers: Answer, citation, clarification, abstention composers
-- prompts: Domain-specific prompt templates
-- policies: Generation policies (formatting, risk, answer)
-- schemas: Generation data models
-- prompt_loader: Loads prompts from files
-"""
-
-from src.generation.composers.answer_composer import AnswerComposer
-from src.generation.composers.citation_composer import CitationComposer
-from src.generation.composers.clarification_composer import ClarificationComposer
-from src.generation.schemas import (
-    GeneratedAnswer as AnswerResponse,
-)
-from src.generation.schemas import (
-    GenerationRequest as AnswerRequest,
-)
-from src.generation.schemas import (
-    PromptTemplate,
-)
-
-# Aliases for backward compatibility
-GenerationConfig = dict
-
-__all__ = [
-    # Schemas
-    "AnswerRequest",
-    "AnswerResponse",
-    "GenerationConfig",
-    "PromptTemplate",
-    # Composers
-    "AnswerComposer",
-    "CitationComposer",
-    "ClarificationComposer",
-]
+# Generation Module
+#
+# The designed composition layer (composers, prompt loader, generation
+# schemas, formatting and risk policies) was deleted in hardening Phase 7;
+# see docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md. What remains
+# is what the live tree uses: the RAG prompt builder and the answer policy.

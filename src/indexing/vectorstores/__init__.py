@@ -1,19 +1,12 @@
-"""Vectorstores module for Burhan Islamic QA system."""
+"""Vectorstores module for Burhan Islamic QA system.
 
-from src.indexing.vectorstores.base import VectorStoreBase, VectorStoreBaseError
-from src.indexing.vectorstores.factory import (
-    VectorStoreFactory,
-    get_vector_store,
-    initialize_vector_store,
-)
+The designed multi-store factory (FAISS and Chroma branches) was deleted in
+hardening Phase 7; the Qdrant store is what the live tree uses.
+"""
+
 from src.indexing.vectorstores.qdrant_store import VectorStore, VectorStoreError
 
 __all__ = [
-    "VectorStoreBase",
-    "VectorStoreBaseError",
     "VectorStore",
     "VectorStoreError",
-    "VectorStoreFactory",
-    "get_vector_store",
-    "initialize_vector_store",
 ]
