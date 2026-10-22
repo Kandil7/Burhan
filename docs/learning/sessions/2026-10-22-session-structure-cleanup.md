@@ -40,6 +40,23 @@ drift beyond it, because `fiqh_passages` changed from the 10k sample to
 365,824 full-corpus rows. Lesson for Phase 4: record retrieval baselines
 (data-only, deterministic) separately from ask fingerprints (LLM-curated).
 
+## Phase 4 addendum (same day)
+
+One retrieval path, per the gate decision already recorded in the plan.
+`RunRetrievalUseCase` dropped `HybridSearcher` and calls the dense
+`VectorSearchPort.search`; `/search/simple` and `/ask` now share the
+retrieval call. Runtime proof: three golden queries served by
+`/search/simple` match the harness's dense mode hit for hit, differing only
+by the route's documented content dedup. The ranking changed against the old
+keyword re-rank output on two of three queries, which is the point of the
+gate.
+
+The score drop against the 2026-10-21 baseline is data, not code: the fiqh
+corpus grew to 365,824 rows, so the curated evidence (byte-identical at its
+ids, verified at fiqh id 1879) now ranks below the top-10, and history's
+curated id 5385 is gone with the 2,048-row test clobber. The golden set must
+be re-curated after the paused full-corpus load finishes.
+
 ## What Was Done
 
 ### 1. One home per script

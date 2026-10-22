@@ -59,7 +59,6 @@ class SearchService:
             query=query,
             collections=effective_collections,
             top_k=top_k,
-            enable_reranking=True,
             enable_expansion=True,
             filters=filters,
         )

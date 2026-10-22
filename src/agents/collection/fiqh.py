@@ -152,7 +152,7 @@ class FiqhCollectionAgent(CollectionAgent):
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
         """Retrieve candidate passages from Fiqh collection."""
-        if not self.vector_store or getattr(self, "embedding_model", None) is None:
+        if not self.vector_store or self.embedding_model is None:
             import logging
 
             logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")

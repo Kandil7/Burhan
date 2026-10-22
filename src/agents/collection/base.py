@@ -17,6 +17,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from src.agents.base import AgentInput, Citation, strip_cot_leakage
+from src.application.ports import EmbeddingPort, VectorSearchPort
 from src.domain.intents import Intent
 
 # One-release shim: AgentOutput moved to src.domain.models (Phase 2).
@@ -155,8 +156,8 @@ class CollectionAgent(ABC):
         self._generation_failed = False
         # The collaborators are injected by the registry. They default to
         # None here so the base class can talk about them safely.
-        self.embedding_model: Any = None
-        self.vector_store: Any = None
+        self.embedding_model: EmbeddingPort | None = None
+        self.vector_store: VectorSearchPort | None = None
         self.llm_client: Any = None
 
     @abstractmethod

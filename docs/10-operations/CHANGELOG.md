@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (2026-10-22 structure cleanup)
+- Phase 4 of the hardening refactor: one retrieval path. `RunRetrievalUseCase`
+  calls `VectorSearchPort.search` per collection, the same call the harness's
+  dense mode makes, and the keyword re-rank (`HybridSearcher`) is out of the
+  live tree per the measured gate. `/search/simple` now serves the dense
+  results the `/ask` path uses; the agents' store and encoder are typed
+  against the ports. Post-unification scores are recorded in
+  `scripts/quality/baseline/score_dense_unified.json`.
 - Phase 3 of the hardening refactor: `src/application/ports.py` defines the
   four ports (vector search, embedding, LLM, tools) and `src/composition.py`
   is the single wiring point. The API lifespan builds one `Container` and the

@@ -322,6 +322,42 @@ Consequences for the plan.
 
 Verification: the harness diff plus a written A/B result.
 
+**Status (2026-10-22): unification done.** `RunRetrievalUseCase` no longer
+builds a `HybridSearcher`; it calls `VectorSearchPort.search` per collection,
+exactly the call the harness's dense mode makes, and merges by dense score.
+The keyword re-rank is out of the live tree; `HybridSearcher` remains
+reachable only through the harness's A/B runner, which is the record of the
+measurement. The search path and the ask path now share one retrieval call,
+and the agents' `embedding_model` and `vector_store` are typed as
+`EmbeddingPort` and `VectorSearchPort` in `agents/collection/base.py`.
+`RunRetrievalInput` lost the dead `enable_reranking` flag, and `filters` now
+reach the store (every live caller passes none today).
+
+Verification, three parts:
+
+1. **One path proven at runtime.** For three golden queries,
+   `/api/v1/search/simple` returns exactly the harness's dense-mode hits,
+   same order and scores. The only differences are the documented
+   presentation steps in the route: content dedup and capping. One query had
+   five identical dense hits and serves one; one had a near-duplicate pair
+   and serves four of five. The ranking changed against the old keyword
+   re-rank output for two of the three queries, which is the intended effect
+   of the gate decision.
+2. **Scores re-recorded**: `scripts/quality/baseline/retrieval_dense_unified.json`
+   and `score_dense_unified.json`. Precision at 5 is 0.787, recall at 10 is
+   0.867, mean reciprocal rank is 0.867. These are below the 2026-10-21
+   dense baseline (0.853 / 1.000 / 0.942) for data reasons, not code
+   reasons. The fiqh corpus grew from the 10,000-row sample to 365,824
+   full-corpus rows, so the curated evidence, which is still present and
+   byte-identical at its ids (verified at fiqh id 1879), now ranks below the
+   top-10 window against stronger matches. The islamic_history collection
+   holds 2,048 test rows from the earlier clobber, so its curated id 5385 no
+   longer exists. Both per-collection hit rates read 0.0 while the six
+   untouched collections read 1.0 as before. The golden set needs
+   re-curation against the full corpus after the paused load finishes.
+3. **Suite and fences**: 660 tests pass, mypy clean in 240 files under both
+   toolchains, live import cycles stay at 0.
+
 ### Phase 5, one pipeline, data-driven agents
 
 Complete the ten YAML files so they match today's behavior field for field,

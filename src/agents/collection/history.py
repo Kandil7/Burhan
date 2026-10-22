@@ -76,7 +76,7 @@ class HistoryCollectionAgent(CollectionAgent):
         return Intent.ISLAMIC_HISTORY
 
     async def retrieve_candidates(self, query: str) -> list[dict]:
-        if not self.vector_store or getattr(self, "embedding_model", None) is None:
+        if not self.vector_store or self.embedding_model is None:
             import logging
 
             logging.getLogger(self.__class__.__name__).error("Missing vector_store or embedding_model")

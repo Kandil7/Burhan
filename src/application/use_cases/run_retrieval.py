@@ -4,9 +4,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from src.indexing.embeddings.embedding_model import EmbeddingModel
-from src.indexing.vectorstores.qdrant_store import VectorStore
-from src.retrieval.retrievers.hybrid_searcher import HybridSearcher
+from src.application.ports import EmbeddingPort, VectorSearchPort
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +14,6 @@ class RunRetrievalInput:
     query: str
     collections: list[str]
     top_k: int = 10
-    enable_reranking: bool = True
     enable_expansion: bool = True
     filters: dict[str, Any] | None = None
 
@@ -31,12 +28,18 @@ class RunRetrievalOutput:
 
 
 class RunRetrievalUseCase:
-    """Use case for executing retrieval operations."""
+    """Use case for executing retrieval operations.
 
-    def __init__(self, embedding_model: EmbeddingModel, vector_store: VectorStore) -> None:
+    One retrieval path: dense vector search through VectorSearchPort. The
+    keyword re-rank left the live tree after the measured gate of 2026-10-21
+    (REFACTOR_PLAN_HARDENING.md, Phase 4): it scored worse than dense on every
+    measure of the golden set, so both the ask path and the search path now
+    share the dense path.
+    """
+
+    def __init__(self, embedding_model: EmbeddingPort, vector_store: VectorSearchPort) -> None:
         self._embedding_model = embedding_model
         self._vector_store = vector_store
-        self._hybrid_searcher = HybridSearcher(vector_store)
 
     async def execute(self, input: RunRetrievalInput) -> RunRetrievalOutput:
         start = time.time()
@@ -44,22 +47,22 @@ class RunRetrievalUseCase:
         # 1) Embed query once
         query_embedding = await self._embedding_model.encode_query(input.query)
 
-        # 2) (optional) expansions – حالياً بس نرجّع الـ query نفسه
+        # 2) (optional) expansions: today the expansion list is the query itself
         query_expansions = [input.query] if input.enable_expansion else None
 
         all_results: list[dict[str, Any]] = []
 
-        # 3) Run hybrid search على كل collection مطلوبة (بالتوازي)
+        # 3) Dense search per collection, in parallel
         tasks = []
         collections_order: list[str] = []
 
         for coll in input.collections:
             tasks.append(
-                self._hybrid_searcher.search(
-                    query=input.query,
-                    query_embedding=query_embedding,
-                    collection=coll,
+                self._vector_store.search(
+                    coll,
+                    query_embedding,
                     top_k=input.top_k,
+                    filters=input.filters,
                 )
             )
             collections_order.append(coll)
@@ -80,7 +83,7 @@ class RunRetrievalUseCase:
             return RunRetrievalOutput(
                 results=[],
                 query_expansions=query_expansions,
-                retrieval_strategy="hybrid_multi_collection",
+                retrieval_strategy="dense_multi_collection",
                 execution_time_ms=(time.time() - start) * 1000,
                 metadata={
                     "collections": input.collections,
@@ -89,13 +92,8 @@ class RunRetrievalUseCase:
                 },
             )
 
-        # 4) Global sort by hybrid_score (أو score fallback)
-        def score_of(r: dict) -> float:
-            if "hybrid_score" in r:
-                return float(r["hybrid_score"])
-            return float(r.get("score", 0.0))
-
-        all_results.sort(key=score_of, reverse=True)
+        # 4) Global sort by the dense score
+        all_results.sort(key=lambda r: float(r.get("score", 0.0)), reverse=True)
         final_results = all_results[: input.top_k]
 
         exec_ms = (time.time() - start) * 1000
@@ -103,7 +101,7 @@ class RunRetrievalUseCase:
         return RunRetrievalOutput(
             results=final_results,
             query_expansions=query_expansions,
-            retrieval_strategy="hybrid_multi_collection",
+            retrieval_strategy="dense_multi_collection",
             execution_time_ms=exec_ms,
             metadata={
                 "collections": input.collections,
@@ -119,8 +117,8 @@ run_retrieval_use_case: RunRetrievalUseCase | None = None
 
 
 def get_run_retrieval_use_case(
-    embedding_model: "EmbeddingModel",
-    vector_store: "VectorStore",
+    embedding_model: EmbeddingPort,
+    vector_store: VectorSearchPort,
 ) -> RunRetrievalUseCase:
     """Factory function to create a properly initialized use case instance."""
     return RunRetrievalUseCase(
