@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (2026-10-22 structure cleanup)
+- Phase 6 of the hardening refactor: verification hygiene. The exact-quote
+  check validates Quran quotations through a `QuranQuotationPort`
+  (`src/verification/ports.py`) injected by the composition root, so
+  `src/verification` no longer imports infrastructure or the quran layer.
+  The rule is enforced by a fence test. Every live check has unit tests, and
+  the frozen Qdrant payload schema is asserted against one live point from
+  every collection.
 - Phase 5 of the hardening refactor: the ten collection agent classes and
   their base class are replaced by one spec-driven `RAGPipeline`
   (`src/agents/pipeline.py`) configured by `config/agents/*.yaml`, loaded into

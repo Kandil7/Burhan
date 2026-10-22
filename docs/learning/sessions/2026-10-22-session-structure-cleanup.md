@@ -76,6 +76,22 @@ Fingerprint after the switch: intent and collection 20 of 20 identical to the
 routing-fix baseline; the LLM-curated fields drift inside the noise band the
 Phase 3 control established.
 
+## Phase 6 addendum (same day)
+
+Verification hygiene. The Quran port lives with its consumer
+(`src/verification/ports.py`), the adapter with the infrastructure
+(`src/adapters/quran_validator.py`), and the composition root is the only
+wiring point. The layer rule is a test now, not a convention. Every live
+check has unit tests, and the payload door is frozen by a test that reads one
+live point per collection.
+
+The session also fixed a test-infra trap worth remembering: a deprecated
+session-scoped `event_loop` fixture in tests/conftest.py poisoned the main
+thread's loop when several async test modules ran together. Individual files
+passed; combinations failed with "There is no current event loop in
+MainThread". Bisecting three-file combinations found it in minutes. The
+suite uses pytest-asyncio's default loop now.
+
 ## What Was Done
 
 ### 1. One home per script

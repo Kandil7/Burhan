@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
-from ..base import BaseVerifier
-from ..schemas import CheckResult, VerificationStatus, VerifierType
+from src.verification.base import BaseVerifier
+from src.verification.ports import QuranQuotationPort
+from src.verification.schemas import CheckResult, VerificationStatus, VerifierType
+
 from .quote_span import QuoteSpanDetector
 
 logger = logging.getLogger(__name__)
@@ -32,12 +33,12 @@ class ExactQuoteVerifier(BaseVerifier):
         is_applicable(claim, evidence)   -> bool
     """
 
-    def __init__(self, quran_validator: Any = None) -> None:
+    def __init__(self, quran_validator: QuranQuotationPort | None = None) -> None:
         """Initialize the exact quote verifier.
 
         Args:
-            quran_validator: Optional QuotationValidator instance.
-                             If None, a fresh session will be opened per call.
+            quran_validator: Optional QuranQuotationPort implementor.
+                             Without one, is_quran_text fails closed.
         """
         self.verifier_type = VerifierType.EXACT_QUOTE
         self.detector = QuoteSpanDetector()
@@ -161,26 +162,18 @@ class ExactQuoteVerifier(BaseVerifier):
         Used by the misattributed-Quran detector in CollectionAgent, NOT
         as a fallback inside _quote_in_evidence.
 
-        Opens a fresh DB session if no validator was injected.
-        Returns False on any error (fail-closed).
+        The validator is injected through the QuranQuotationPort; the
+        composition root wires one at startup. Without an injected validator
+        the check fails closed and returns False. Returns False on any error.
         """
+        validator = self._quran_validator
+        if validator is None:
+            logger.warning("is_quran_text skipped: no QuranQuotationPort injected")
+            return False
+
         try:
-            from src.infrastructure.database import get_sync_session
-            from src.quran.quotation_validator import QuotationValidator
-
-            def _run_sync() -> bool:
-                with get_sync_session() as session:
-                    validator = self._quran_validator or QuotationValidator(session=session)
-                    new_loop = asyncio.new_event_loop()
-                    try:
-                        asyncio.set_event_loop(new_loop)
-                        result = new_loop.run_until_complete(validator.validate(quote))
-                        return bool(result.get("is_quran", False))
-                    finally:
-                        new_loop.close()
-
-            return await asyncio.to_thread(_run_sync)
-
+            result = await validator.validate(quote)
+            return bool(result.get("is_quran", False))
         except Exception:
             logger.warning(
                 "is_quran_text check failed for quote: %s",
@@ -204,11 +197,11 @@ class ExactQuoteVerifier(BaseVerifier):
 
         return normalize_arabic(text)
 
-    def set_quran_validator(self, validator: Any) -> None:
-        """Inject a QuotationValidator instance (e.g., in tests).
+    def set_quran_validator(self, validator: QuranQuotationPort) -> None:
+        """Inject the Quran quotation port (composition root, or tests).
 
         Args:
-            validator: QuotationValidator instance
+            validator: QuranQuotationPort implementor
         """
         self._quran_validator = validator
 

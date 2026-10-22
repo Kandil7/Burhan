@@ -4,17 +4,14 @@ Pytest configuration and fixtures for Burhan tests.
 Provides common fixtures and configuration for all tests.
 """
 
-import asyncio
 
 import pytest
 
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create a session-scoped event loop for async tests."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+# NOTE: an earlier session-scoped `event_loop` fixture lived here. It is the
+# deprecated pytest-asyncio pattern and left the main thread without a current
+# loop when several async test modules ran together. The default
+# function-scoped loop is correct for this suite; see
+# docs/learning/sessions/2026-10-22-session-structure-cleanup.md.
 
 
 @pytest.fixture

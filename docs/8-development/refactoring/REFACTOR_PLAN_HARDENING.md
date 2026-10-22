@@ -427,6 +427,36 @@ importing `infrastructure.database`. Give every live check a unit test.
 
 Verification: no verification module imports an adapter.
 
+**Status (2026-10-22): done.** The exact-quote check validates Quran
+quotations through `QuranQuotationPort`, declared by the consumer in
+`src/verification/ports.py`; `src/adapters/quran_validator.py` implements it
+and the composition root injects it at startup. `src/verification` no longer
+imports `infrastructure.database`, `quran`, or `adapters`, and the property is
+enforced by `TestLayerRules` in `tests/test_architecture.py`. Without an
+injected validator the check fails closed; the live container injects one, so
+behavior is unchanged there.
+
+Every live check has unit tests: `tests/test_verifiers/` covers contradiction,
+evidence sufficiency, exact quote, the fiqh trio (QuoteValidator,
+SourceAttributor, EvidenceSufficiency), the groundedness judge, the hadith
+grader, the misattributed-Quran detector, the missing-requested-evidence
+detector, source attribution, and temporal consistency. 91 tests in total.
+
+The payload door from the plan's frozen-doors section is now asserted:
+`tests/test_payload_schema.py` reads one live point from every collection and
+checks the keys against the frozen schema, the keys the citation code reads
+plus the allowed set per collection family.
+
+One infrastructure fix fell out: `tests/conftest.py` carried a deprecated
+session-scoped `event_loop` fixture. In some orderings it left the main
+thread without a current loop and failed unrelated async tests. The suite
+uses pytest-asyncio's default function-scoped loop now.
+
+Verification: the layer rule is a passing fence test, the suite is at 716
+passed, ruff and format clean, mypy clean in 236 files under both toolchains,
+the fence is green on a refreshed manifest (106 live modules), and a live
+`/ask` probe runs the post-generation checks through the injected port.
+
 ### Phase 7, delete
 
 After one release, remove the legacy set slice by slice, shrinking the

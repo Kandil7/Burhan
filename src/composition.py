@@ -103,6 +103,13 @@ async def build_container(settings: Settings | None = None) -> Container:
 
     register_all_checks()
 
+    # The exact-quote check validates Quran quotations through its port; the
+    # adapter is the only thing allowed to open the database for it.
+    from src.adapters.quran_validator import QuranQuotationAdapter
+    from src.verification.checks.exact_quote import exact_quote_verifier
+
+    exact_quote_verifier.set_quran_validator(QuranQuotationAdapter())
+
     llm_clients = await LLMClients.create()
     embedding_model = EmbeddingModel(cache_enabled=True)
     # Warm the embedding model in the background; it is heavy to load.

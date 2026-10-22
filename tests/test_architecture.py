@@ -10,6 +10,7 @@ The manifest is refreshed on purpose, never by accident:
     python scripts/quality/reachability_report.py --write-manifest
 """
 
+import ast
 import importlib.util
 import json
 from pathlib import Path
@@ -86,6 +87,28 @@ class TestLiveSurface:
         for name, modules in report["duplicate_definitions"].items():
             for module in modules:
                 assert module not in legacy, f"{name} lives only in a legacy module"
+
+
+class TestLayerRules:
+    """The hardening plan's layer rules, enforced mechanically."""
+
+    VERIFICATION_BANNED_PREFIXES = ("src.adapters", "src.infrastructure", "src.quran")
+
+    def test_verification_never_imports_adapters_or_infrastructure(self):
+        offenders: list[str] = []
+        for path in sorted((PROJECT_ROOT / "src" / "verification").rglob("*.py")):
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                modules: list[str] = []
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                elif isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                for module in modules:
+                    if module.startswith(self.VERIFICATION_BANNED_PREFIXES):
+                        rel = path.relative_to(PROJECT_ROOT).as_posix()
+                        offenders.append(f"{rel} imports {module}")
+        assert offenders == [], f"verification layer imports adapters: {offenders}"
 
 
 class TestTestFilePlacement:
