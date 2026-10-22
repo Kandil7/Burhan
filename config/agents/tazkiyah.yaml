@@ -1,44 +1,44 @@
-# Tazkiyah Agent Configuration
-# Retrieval, verification, and fallback policies for TazkiyahCollectionAgent
+# TazkiyahCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: tazkiyah
+collection: spirituality_passages
+intent: ISLAMIC_TAZKIYAH
+generation:
+  temperature: 0.25
+  max_tokens: 1792
+  system_prompt_file: prompts/tazkiyah_agent.txt
+  system_prompt_fallback: 'أنت متخصص في التزكية الإسلامية والأخلاق.
 
-name: TazkiyahAgent
-domain: tazkiyah
-collection_name: spirituality_passages
+    استند فقط إلى النصوص التزكية.
 
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال في التزكية: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص التزكية:
+
+    {passages}
+
+    قدم الإجابة مع النصائح.'
+  no_passages_message: لم أجد نصوصاً في التزكية والأخلاق.
 retrieval:
-  primary: hybrid
-  alpha: 0.6
-  topk_initial: 50
-  topk_reranked: 10
-  min_relevance: 0.5
-  metadata_filters_priority:
-    - topic
-    - source_book
-
+  top_k: 10
+  score_threshold: 0.45
+  rerank: true
+  dense_weight: 0.5
+  sparse_weight: 0.5
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
-  fail_fast: true
+  fail_fast: false
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: warn
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: tazkiyah_balance_checker
-      enabled: true
-      fail_policy: proceed
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: proceed
-
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  block_extreme_statements: true
-  require_balanced_presentation: true
-  minimum_sources: 1

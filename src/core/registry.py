@@ -188,72 +188,44 @@ def initialize_registry() -> AgentRegistry:
     registry.register_tool("hijri_tool", factory=build_hijri)
     registry.register_tool("dua_tool", factory=build_dua)
 
-    # Register V2 Collection Agents lazily with dependency injection
-    def build_fiqh() -> Any:
-        from src.agents.collection.fiqh import FiqhCollectionAgent
+    # Register collection agents lazily: one spec-driven RAGPipeline per
+    # config/agents/<name>.yaml (hardening Phase 5).
+    def build_pipeline(spec_name: str) -> Any:
+        def factory() -> Any:
+            from src.agents.pipeline import RAGPipeline
+            from src.agents.spec_loader import load_all_agent_specs
 
-        return FiqhCollectionAgent(**get_deps())
+            deps = get_deps()
+            spec = load_all_agent_specs()[spec_name]
+            return RAGPipeline(
+                spec=spec,
+                search=deps.get("vector_store"),
+                embed=deps.get("embedding_model"),
+                llm_client=deps.get("llm_client"),
+            )
 
-    def build_hadith() -> Any:
-        from src.agents.collection.hadith import HadithCollectionAgent
+        return factory
 
-        return HadithCollectionAgent(**get_deps())
-
-    def build_general() -> Any:
-        from src.agents.collection.general import GeneralCollectionAgent
-
-        return GeneralCollectionAgent(**get_deps())
-
-    def build_seerah() -> Any:
-        from src.agents.collection.seerah import SeerahCollectionAgent
-
-        return SeerahCollectionAgent(**get_deps())
-
-    def build_tafsir() -> Any:
-        from src.agents.collection.tafsir import TafsirCollectionAgent
-
-        return TafsirCollectionAgent(**get_deps())
-
-    def build_aqeedah() -> Any:
-        from src.agents.collection.aqeedah import AqeedahCollectionAgent
-
-        return AqeedahCollectionAgent(**get_deps())
-
-    def build_usul_fiqh() -> Any:
-        from src.agents.collection.usul_fiqh import UsulFiqhCollectionAgent
-
-        return UsulFiqhCollectionAgent(**get_deps())
-
-    def build_history() -> Any:
-        from src.agents.collection.history import HistoryCollectionAgent
-
-        return HistoryCollectionAgent(**get_deps())
-
-    def build_language() -> Any:
-        from src.agents.collection.language import LanguageCollectionAgent
-
-        return LanguageCollectionAgent(**get_deps())
-
-    def build_tazkiyah() -> Any:
-        from src.agents.collection.tazkiyah import TazkiyahCollectionAgent
-
-        return TazkiyahCollectionAgent(**get_deps())
+    agent_registry_names = {
+        "fiqh_agent": "fiqh",
+        "hadith_agent": "hadith",
+        "general_islamic_agent": "general",
+        "seerah_agent": "seerah",
+        "tafsir_agent": "tafsir",
+        "aqeedah_agent": "aqeedah",
+        "usul_fiqh_agent": "usul_fiqh",
+        "history_agent": "history",
+        "language_agent": "language",
+        "tazkiyah_agent": "tazkiyah",
+    }
+    for registry_name, spec_name in agent_registry_names.items():
+        registry.register_agent(registry_name, factory=build_pipeline(spec_name))
 
     def build_chatbot() -> Any:
         from src.agents.chatbot_agent import ChatbotAgent
 
         return ChatbotAgent()
 
-    registry.register_agent("fiqh_agent", factory=build_fiqh)
-    registry.register_agent("hadith_agent", factory=build_hadith)
-    registry.register_agent("general_islamic_agent", factory=build_general)
-    registry.register_agent("seerah_agent", factory=build_seerah)
-    registry.register_agent("tafsir_agent", factory=build_tafsir)
-    registry.register_agent("aqeedah_agent", factory=build_aqeedah)
-    registry.register_agent("usul_fiqh_agent", factory=build_usul_fiqh)
-    registry.register_agent("history_agent", factory=build_history)
-    registry.register_agent("language_agent", factory=build_language)
-    registry.register_agent("tazkiyah_agent", factory=build_tazkiyah)
     registry.register_agent("chatbot_agent", factory=build_chatbot)
 
     registry._initialized = True

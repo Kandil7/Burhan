@@ -1,8 +1,8 @@
 {
  "generated_at": "2026-10-21",
  "note": "Modules no entry point reaches. They are quarantined, not deleted. The architecture test fails when a live module imports one of them, when this list grows, or when a duplicated name gains a definition.",
- "total_modules": 240,
- "reachable_modules": 110,
+ "total_modules": 234,
+ "reachable_modules": 104,
  "unreachable_code_lines": 8781,
  "unreachable_modules": [
   "src.agents",
@@ -160,10 +160,6 @@
   "QueryCache": [
    "src.application.interfaces",
    "src.indexing.embeddings.embedding_cache"
-  ],
-  "RetrievalConfig": [
-   "src.config",
-   "src.config.constants"
   ],
   "RoutingDecision": [
    "src.api.schemas.classify",

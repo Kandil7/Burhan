@@ -1,44 +1,44 @@
-# Language Agent Configuration
-# Retrieval, verification, and fallback policies for LanguageCollectionAgent
+# LanguageCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: language
+collection: arabic_language_passages
+intent: ARABIC_LANGUAGE
+generation:
+  temperature: 0.2
+  max_tokens: 1536
+  system_prompt_file: prompts/language_agent.txt
+  system_prompt_fallback: 'أنت متخصص في اللغة العربية.
 
-name: LanguageAgent
-domain: language
-collection_name: arabic_language_passages
+    استند فقط إلى النصوص اللغوية.
 
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال اللغوي: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص اللغوية:
+
+    {passages}
+
+    قدم الإجابة مع الشرح.'
+  no_passages_message: لم أجد معلومات لغوية كافية.
 retrieval:
-  primary: hybrid
-  alpha: 0.4
-  topk_initial: 40
-  topk_reranked: 10
-  min_relevance: 0.5
-  metadata_filters_priority:
-    - topic
-    - grammar_type
-    - reference_book
-
+  top_k: 10
+  score_threshold: 0.45
+  rerank: true
+  dense_weight: 0.5
+  sparse_weight: 0.5
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
-  fail_fast: false
+  fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: warn
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: arabic_grammar_checker
-      enabled: true
-      fail_policy: proceed
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: proceed
-
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_grammatically_correct: true
-  minimum_sources: 1

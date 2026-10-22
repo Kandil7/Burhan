@@ -1,44 +1,44 @@
-# History Agent Configuration
-# Retrieval, verification, and fallback policies for HistoryCollectionAgent
+# HistoryCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: history
+collection: islamic_history_passages
+intent: ISLAMIC_HISTORY
+generation:
+  temperature: 0.25
+  max_tokens: 1024
+  system_prompt_file: prompts/history_agent.txt
+  system_prompt_fallback: 'أنت متخصص في التاريخ الإسلامي.
 
-name: HistoryAgent
-domain: history
-collection_name: islamic_history_passages
+    استند فقط إلى النصوص التاريخية.
 
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال التاريخي: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص التاريخية:
+
+    {passages}
+
+    قدم الإجابة مع الترتيب الزمني.'
+  no_passages_message: لم أجد معلومات تاريخية كافية.
 retrieval:
-  primary: hybrid
-  alpha: 0.5
-  topk_initial: 60
-  topk_reranked: 12
-  min_relevance: 0.45
-  metadata_filters_priority:
-    - period
-    - dynasty
-    - region
-
+  top_k: 12
+  score_threshold: 0.5
+  rerank: true
+  dense_weight: 0.6
+  sparse_weight: 0.4
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
-  fail_fast: false
+  fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: warn
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: chronology_checker
-      enabled: false
-      fail_policy: warn
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: proceed
-
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_diverse_sources: false
-  minimum_sources: 1

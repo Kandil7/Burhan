@@ -1,45 +1,61 @@
-# Hadith Agent Configuration
-# Retrieval, verification, and fallback policies for HadithCollectionAgent
+# HadithCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: hadith
+collection: hadith_passages
+intent: HADITH
+generation:
+  temperature: 0.1
+  max_tokens: 1024
+  system_prompt_file: prompts/hadith_agent.txt
+  system_prompt_fallback: 'أنت متخصص في علم الحديث النبوي ورواياته.
 
-name: HadithAgent
-domain: hadith
-collection_name: hadith_passages
+    تحذير مطلق: لا تختلق أي حديث أو إسناد.
 
+    استند حصراً إلى النصوص المسترجاعة.
+
+    اعرض الأحاديث حرفياً كما وردت.
+
+    اذكر درجة الحديث (صحيح، حسن، ضعيف، موضوع) إن وُجدت.
+
+    Use مراجع المصادر [C1]، [C2]، ... after each hadith.'
+  system_prompt_fallback_includes_preamble: true
+  user_prompt_template: 'السؤال: {query}
+
+
+    اللغة المطلوبة: {language}
+
+
+    الأحاديث المسترجعة:
+
+    {passages}
+
+
+    اعرض الأحاديث المناسبة مع ذكر المصدر والدرجة.'
+  no_passages_message: لم أجد أحاديث نبوية مرتبطة بهذا السؤال.
 retrieval:
-  primary: hybrid
-  alpha: 0.3
-  topk_initial: 120
-  topk_reranked: 20
-  min_relevance: 0.5
-  metadata_filters_priority:
-    - book_id
-    - compiler
-    - grade
-
+  top_k: 10
+  score_threshold: 0.5
+  rerank: true
+  dense_weight: 0.3
+  sparse_weight: 0.7
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: abstain
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: grade_checker
-      enabled: true
-      fail_policy: warn
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: abstain
-
+  - name: quote_validator
+    fail_policy: abstain
+    enabled: true
+    stage: answer
+  - name: hadith_grade_checker
+    fail_policy: abstain
+    enabled: true
+    stage: both
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_sahih_for_aqeedah_and_ahkam: true
-  allow_daif_for_fadail_with_warning: true
-  minimum_sources: 2

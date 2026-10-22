@@ -369,6 +369,57 @@ docstrings, which currently claim the YAML drives them.
 
 Verification: the equivalence test, the harness fingerprint, and the suite.
 
+**Status (2026-10-22): done.** `src/domain/agent_spec.py` holds the frozen
+`AgentSpec`; `src/agents/spec_loader.py` loads it from the ten rewritten
+`config/agents/*.yaml` files; `src/agents/pipeline.py` is the one
+`RAGPipeline` that runs the seven-step flow. The ten agent classes and their
+base class are deleted.
+
+The YAML files were rewritten to the truth. The old files recorded a designed
+system (hybrid retrieval, alpha weights, checks like `aqeedah_orthodoxy_checker`)
+that never ran; the new files carry the behavior the classes actually had,
+captured from the running classes: strategy values, the temperature and
+budget differences (fiqh 0.15/1024, hadith 0.1, general 0.3/1536, tazkiyah
+0.25/1792, usul_fiqh 0.15/1792, and so on), the no-passages messages, the
+user prompt templates, the passage rendering (seerah formats differently and
+caps at 600), the verification suites, and the two fallback-prompt behaviors
+(aqeedah, history, language, tafsir, tazkiyah, usul_fiqh return the fallback
+without the shared preamble; the others prepend it). The retired design
+content is in git history.
+
+The equivalence test (`tests/test_agent_spec_equivalence.py`) proves the YAML
+reproduces the frozen capture byte for byte and agrees with the verification
+layer's suites. The capture (`tests/agent_spec_expected.json`) holds the
+values and two rendered probes per agent, taken from the classes while they
+lived.
+
+Verification, three parts:
+
+1. **Equivalence:** 23 tests green against the frozen capture and the live
+   suites.
+2. **Fingerprint:** `eval_harness.py ask` against the restarted dev API,
+   compared to the routing-fix baseline: intent and collection identical for
+   20 of 20 questions. The LLM-curated fields drift within the noise band the
+   Phase 3 control measured (5 to 7 questions per field; same-code runs drift
+   on 9 of 20).
+3. **Suite:** 654 tests pass, ruff and format clean, mypy clean in 234 files
+   under both toolchains, live import cycles stay 0.
+
+Scope notes:
+
+- `tests/test_config_backed_agents.py` was deleted with the old YAML
+  mapping; its contract is superseded by the equivalence test. Two tests that
+  asserted the base class is abstract were removed with the abstraction.
+- `src/config/__init__.py` lost the AgentConfigManager that mapped the
+  retired YAML schema; `src/evaluation/cli.py` now builds pipelines from
+  specs. `src/agents/collection/base.py` is a one-release shim carrying the
+  config models to their new home `src/agents/config_models.py`.
+- The dev compose mounts `config/` and `prompts/` now: the specs are runtime
+  configuration, and the container was serving the image's stale copies.
+- The pipeline takes the raw LLM client, not `LLMPort.generate_text`:
+  generate_text adds provider thinking extras and would change output. The
+  budget-retry call is byte-identical to the classes'.
+
 ### Phase 6, verification hygiene
 
 Inject the Quran port into the exact-quote check so `verification` stops

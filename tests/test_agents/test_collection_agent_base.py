@@ -8,6 +8,7 @@ Tests:
 - Pydantic models work as expected
 """
 
+from dataclasses import replace as _replace
 from types import SimpleNamespace
 
 import pytest
@@ -15,7 +16,6 @@ from pydantic import ValidationError
 
 from src.agents.base import Citation
 from src.agents.collection import (
-    CollectionAgent,
     CollectionAgentConfig,
     FallbackPolicy,
     RetrievalStrategy,
@@ -23,7 +23,35 @@ from src.agents.collection import (
     VerificationReport,
     VerificationSuite,
 )
+from src.agents.pipeline import RAGPipeline
+from src.agents.spec_loader import load_all_agent_specs
+from src.domain.agent_spec import AgentSpec
 from src.domain.intents import Intent
+
+
+def make_agent(spec_name: str = "fiqh", **kwargs):
+    """Build a RAGPipeline the way the deleted classes were built."""
+    spec = SPECS[spec_name]
+    config = kwargs.pop("config", None)
+    if config is not None:
+        spec = _replace(
+            spec,
+            collection=config.collection_name,
+            top_k=config.strategy.top_k,
+            score_threshold=config.strategy.score_threshold,
+            rerank=config.strategy.rerank,
+            dense_weight=config.strategy.dense_weight,
+            sparse_weight=config.strategy.sparse_weight,
+        )
+    return RAGPipeline(
+        spec=spec,
+        search=kwargs.pop("vector_store", None),
+        embed=kwargs.pop("embedding_model", None),
+        llm_client=kwargs.pop("llm_client", None),
+    )
+
+
+SPECS = load_all_agent_specs()
 
 
 class TestRetrievalStrategy:
@@ -200,13 +228,37 @@ class TestVerificationReport:
         assert result["verified_passages_count"] == 0
 
 
-class ConcreteCollectionAgent(CollectionAgent):
+TEST_SPEC = AgentSpec(
+    name="test_agent",
+    collection="test_collection",
+    intent="ISLAMIC_KNOWLEDGE",
+    temperature=0.2,
+    max_tokens=1024,
+    system_prompt_file="prompts/fiqh_agent.txt",
+    system_prompt_fallback="fallback prompt",
+    system_prompt_fallback_includes_preamble=True,
+    user_prompt_template="{query}|{language}|{passages}",
+    no_passages_message="no passages found",
+    top_k=5,
+    score_threshold=0.0,
+    rerank=True,
+    dense_weight=0.5,
+    sparse_weight=0.5,
+    passage_header="[C{index}] {content}",
+    passage_truncate=500,
+    verification_fail_fast=True,
+    verification_checks=(),
+    fallback_strategy="chatbot",
+)
+
+
+class ConcreteCollectionAgent(RAGPipeline):
     """
-    Concrete implementation of CollectionAgent for testing.
+    Concrete RAGPipeline with stubbed steps, for testing the flow.
     """
 
-    name = "test_agent"
-    COLLECTION = "test_collection"
+    def __init__(self) -> None:
+        super().__init__(spec=TEST_SPEC)
 
     def query_intake(self, query: str) -> str:
         """Normalize query - strip and lowercase for test."""
@@ -409,7 +461,7 @@ class TestCollectionAgentSubclass:
 
         assert agent.name == "test_agent"
         assert agent.COLLECTION == "test_collection"
-        assert isinstance(agent.config, CollectionAgentConfig)
+        assert isinstance(agent.spec, AgentSpec)
 
     def test_abstract_methods_exist(self):
         """Test all abstract methods are defined."""
@@ -494,31 +546,6 @@ class TestCollectionAgentSubclass:
         assert result.metadata["answer_mode"] == "abstain"
         assert any(issue.get("type") == "evidence_filtered_out" for issue in issues)
         assert any(issue.get("type") == "no_evidence_found" for issue in issues)
-
-
-class TestCollectionAgentCannotInstantiate:
-    """Tests that CollectionAgent cannot be instantiated directly."""
-
-    def test_cannot_instantiate_base(self):
-        """Test that CollectionAgent cannot be instantiated without implementation."""
-        with pytest.raises(TypeError):
-            CollectionAgent()
-
-    def test_abstract_methods_enforced(self):
-        """Test that missing abstract methods raise TypeError."""
-
-        # This should fail because we don't implement all abstract methods
-        class IncompleteAgent(CollectionAgent):
-            name = "incomplete"
-            COLLECTION = "test"
-
-            def query_intake(self, query: str) -> str:
-                return query
-
-            # Missing other abstract methods
-
-        with pytest.raises(TypeError):
-            IncompleteAgent()
 
 
 class TestCitationIntegration:

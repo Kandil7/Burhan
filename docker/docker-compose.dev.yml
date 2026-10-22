@@ -75,6 +75,8 @@ services:
       - ../src:/app/src
       - ../tests:/app/tests
       - ../data:/app/data
+      - ../config:/app/config
+      - ../prompts:/app/prompts
       - hf_cache:/home/appuser/.cache/huggingface
     env_file:
       - ../.env

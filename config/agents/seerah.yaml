@@ -1,44 +1,75 @@
-# Seerah Agent Configuration
-# Retrieval, verification, and fallback policies for SeerahCollectionAgent
+# SeerahCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: seerah
+collection: seerah_passages
+intent: SEERAH
+generation:
+  temperature: 0.2
+  max_tokens: 1024
+  system_prompt_file: prompts/seerah_agent.txt
+  system_prompt_fallback: 'أنت باحث متفحص في السيرة النبوية، مهمتك كتابة إجابات سردية موثقة.
 
-name: SeerahAgent
-domain: seerah
-collection_name: seerah_passages
+    يجب أن يكون أسلوبك سردياً متصلاً (Narrative) كما في كتب السير الكبرى، بعيداً عن أسلوب النقاط أو القوائم.
 
+    توقف عن الكتابة فور انتهاء المعلومات المستقاة من النصوص.
+
+    لا تقدم ملخصات أو استنتاجات شخصية.'
+  system_prompt_fallback_includes_preamble: true
+  user_prompt_template: 'أجب على السؤال التالي المتعلق بالسيرة النبوية بأسلوب سردي علمي رصين، مع الالتزام التام بالنصوص المسترجعة المرفقة.
+
+
+    السؤال: {query}
+
+    اللغة: {language}
+
+
+    النصوص الموثقة:
+
+    {passages}
+
+
+    الضوابط الصارمة:
+
+    - صُغ الإجابة كفقرات مترابطة بأسلوب الكتب العلمية، مع دمج الاستشهادات [C1]، [C2] بسلاسة.
+
+    - **ممنوع تماماً**: لا تضف أي خاتمة، أو ملخص، أو فقرة "دروس مستفادة"، أو نصائح وعبر، ما لم ترد حرفياً في النصوص.
+
+    - توقف فوراً بعد ذكر المعلومات المستمدة من النصوص.
+
+    - لا تضف أي معلومات من خارج هذه النصوص المحددة.
+
+    - التزم باللغة العربية الفصحى، وتجنب أي تنسيقات غير ضرورية.'
+  no_passages_message: لم أجد في النصوص المتاحة ما يتعلق بهذا السؤال من السيرة النبوية.
 retrieval:
-  primary: hybrid
-  alpha: 0.5
-  topk_initial: 60
-  topk_reranked: 12
-  min_relevance: 0.45
-  metadata_filters_priority:
-    - period
-    - event
-    - source_book
+  top_k: 10
+  score_threshold: 0.5
+  rerank: true
+  dense_weight: 0.6
+  sparse_weight: 0.4
+passages:
+  header: '--- النص رقم {index} ---
 
+    {content}'
+  truncate: 600
 verification:
-  fail_fast: false
+  fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: warn
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: chronology_checker
-      enabled: false
-      fail_policy: warn
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: proceed
-
+  - name: quote_validator
+    fail_policy: abstain
+    enabled: true
+    stage: answer
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: temporal_consistency
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: evidence_sufficiency
+    fail_policy: warn
+    enabled: true
+    stage: evidence
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_diverse_sources: false
-  minimum_sources: 1

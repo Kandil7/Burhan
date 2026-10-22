@@ -1,47 +1,54 @@
-# Aqeedah Agent Configuration
-# Retrieval, verification, and fallback policies for AqeedahCollectionAgent
+# AqeedahCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: aqeedah
+collection: aqeedah_passages
+intent: AQEEDAH
+generation:
+  temperature: 0.2
+  max_tokens: 1024
+  system_prompt_file: prompts/aqeedah_agent.txt
+  system_prompt_fallback: 'أنت متخصص في العقيدة الإسلامية (علم التوحيد).
 
-name: AqeedahAgent
-domain: aqeedah
-collection_name: aqeedah_passages
+    استند حصراً إلى النصوص العقدية.
 
+    اذكر الدليل من القرآن والسنة.
+
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال العقدي: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص العقدية:
+
+    {passages}
+
+    قدم الإجابة العقدية مع الاستشهاد.'
+  no_passages_message: لم أجد نصوصاً في العقيدة الإسلامية مرتبطة بهذا السؤال.
 retrieval:
-  primary: hybrid
-  alpha: 0.7
-  topk_initial: 40
-  topk_reranked: 8
-  min_relevance: 0.6
-  metadata_filters_priority:
-    - topic
-    - scholar
-    - school
-    - era
-
+  top_k: 10
+  score_threshold: 0.15
+  rerank: true
+  dense_weight: 0.6
+  sparse_weight: 0.4
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: abstain
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: abstain
-
-    - name: aqeedah_orthodoxy_checker
-      enabled: true
-      fail_policy: abstain
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: abstain
-
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: contradiction_detector
+    fail_policy: proceed
+    enabled: true
+    stage: answer
+  - name: evidence_sufficiency
+    fail_policy: warn
+    enabled: true
+    stage: evidence
 fallback:
-  strategy: human_review
-  message: null
-
-abstention:
-  require_authentic_sources: true
-  require_sahih_evidence_only: true
-  minimum_sources: 2
-  block_kufr_tafreet_statements: true
+  strategy: chatbot

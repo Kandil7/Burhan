@@ -1,45 +1,65 @@
-# Fiqh Agent Configuration
-# Retrieval, verification, and fallback policies for FiqhCollectionAgent
+# FiqhCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: fiqh
+collection: fiqh_passages
+intent: FIQH
+generation:
+  temperature: 0.15
+  max_tokens: 1024
+  system_prompt_file: prompts/fiqh_agent.txt
+  system_prompt_fallback: 'أنت مساعد إسلامي متخصص في الفقه الإسلامي.
 
-name: FiqhAgent
-domain: fiqh
-collection_name: fiqh_passages
+    استند حصراً إلى النصوص المسترجاعة المُقدَّمة.
 
+    Use مراجع المصادر [C1]، [C2]، ... after each sentence.
+
+    اذكر المذهب الفقهي إن وُجد (حنفي، مالكي، شافعي، حنبلي).
+
+    إذا تعارضت النصوص أو وُجد خلاف فقهي، اعرض الأقوال وأصحابها.
+
+    إذا كانت النصوص غير كافية، أقرّ بذلك بوضوح.'
+  system_prompt_fallback_includes_preamble: true
+  user_prompt_template: 'السؤال: {query}
+
+
+    اللغة المطلوبة: {language}
+
+
+    النصوص المسترجعة:
+
+    {passages}
+
+
+    أجب على السؤال مستنداً إلى النصوص أعلاه، مع ذكر المصادر.'
+  no_passages_message: لم أجد نصوصاً فقهية كافية للإجابة على سؤالك.
 retrieval:
-  primary: hybrid
-  alpha: 0.6
-  topk_initial: 80
-  topk_reranked: 12
-  min_relevance: 0.45
-  metadata_filters_priority:
-    - madhhab
-    - category_sub
-    - era
-
+  top_k: 15
+  score_threshold: 0.65
+  rerank: true
+  dense_weight: 0.4
+  sparse_weight: 0.6
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: abstain
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: contradiction_detector
-      enabled: true
-      fail_policy: proceed
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: abstain
-
+  - name: quote_validator
+    fail_policy: abstain
+    enabled: true
+    stage: answer
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: contradiction_detector
+    fail_policy: proceed
+    enabled: true
+    stage: answer
+  - name: evidence_sufficiency
+    fail_policy: abstain
+    enabled: true
+    stage: evidence
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  high_risk_personal_fatwa: true
-  require_diverse_evidence: true
-  minimum_sources: 3

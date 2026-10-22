@@ -1,39 +1,48 @@
-# General Islamic Agent Configuration
-# Retrieval, verification, and fallback policies for GeneralIslamicAgent
+# GeneralCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: general
+collection: general_islamic
+intent: ISLAMIC_KNOWLEDGE
+generation:
+  temperature: 0.3
+  max_tokens: 1536
+  system_prompt_file: prompts/general_agent.txt
+  system_prompt_fallback: 'أنت معلم إسلامي متخصص.
 
-name: GeneralIslamicAgent
-domain: general
-collection_name: general_islamic
+    استند حصراً إلى المصادر المُقدَّمة.
 
+    Use مراجع المصادر [C1]، [C2].
+
+    أضف السياق التاريخي أو الفقهي عند الاقتضاء.
+
+    إذا كانت المصادر غير كافية، قل ذلك بوضوح.'
+  system_prompt_fallback_includes_preamble: true
+  user_prompt_template: 'السؤال: {query}
+
+    اللغة المطلوبة: {language}
+
+    المصادر المتاحة:
+
+    {passages}
+
+    قدم إجابة تعليمية مُنظَّمة.'
+  no_passages_message: لم أجد في المصادر المتاحة ما يُجيب على هذا السؤال بدقة.
 retrieval:
-  primary: hybrid
-  alpha: 0.5
-  topk_initial: 30
-  topk_reranked: 8
-  min_relevance: 0.4
-  metadata_filters_priority:
-    - topic
-    - category
-
+  top_k: 10
+  score_threshold: 0.35
+  rerank: true
+  dense_weight: 0.7
+  sparse_weight: 0.3
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: false
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: warn
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: proceed
-
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_sources: false
-  minimum_sources: 0

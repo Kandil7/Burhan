@@ -1,46 +1,54 @@
-# Tafsir Agent Configuration
-# Retrieval, verification, and fallback policies for TafsirCollectionAgent
+# TafsirCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: tafsir
+collection: quran_tafsir
+intent: TAFSIR
+generation:
+  temperature: 0.2
+  max_tokens: 1024
+  system_prompt_file: prompts/tafsir_agent.txt
+  system_prompt_fallback: 'أنت متخصص في تفسير القرآن الكريم.
 
-name: TafsirAgent
-domain: tafsir
-collection_name: quran_tafsir
+    استند حصراً إلى النصوص التفسيرية.
 
+    اذكر اسم المفسر والمصدر.
+
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص التفسيرية:
+
+    {passages}
+
+    قدم التفسير مع ذكر المصدر.'
+  no_passages_message: لم أجد تفسيراً للآية المطلوبة.
 retrieval:
-  primary: hybrid
-  alpha: 0.7
-  topk_initial: 50
-  topk_reranked: 10
-  min_relevance: 0.55
-  metadata_filters_priority:
-    - surah
-    - verse_start
-    - interpreter
-    - methodology
-
+  top_k: 12
+  score_threshold: 0.15
+  rerank: true
+  dense_weight: 0.7
+  sparse_weight: 0.3
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: abstain
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: tafsir_maqasid_checker
-      enabled: true
-      fail_policy: proceed
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: abstain
-
+  - name: quote_validator
+    fail_policy: abstain
+    enabled: true
+    stage: answer
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: contradiction_detector
+    fail_policy: proceed
+    enabled: true
+    stage: answer
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_authentic_tafsir: true
-  require_asbab_al_nuzul: false
-  minimum_sources: 2

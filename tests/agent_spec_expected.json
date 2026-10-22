@@ -1,0 +1,426 @@
+{
+ "aqeedah": {
+  "name": "aqeedah",
+  "collection": "aqeedah_passages",
+  "intent": "AQEEDAH",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/aqeedah_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في العقيدة الإسلامية (علم التوحيد).\nاستند حصراً إلى النصوص العقدية.\nاذكر الدليل من القرآن والسنة.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال العقدي: {query}\nاللغة المطلوبة: {language}\nالنصوص العقدية:\n{passages}\nقدم الإجابة العقدية مع الاستشهاد.",
+  "top_k": 10,
+  "score_threshold": 0.15,
+  "rerank": true,
+  "dense_weight": 0.6,
+  "sparse_weight": 0.4,
+  "no_passages_message": "لم أجد نصوصاً في العقيدة الإسلامية مرتبطة بهذا السؤال.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "contradiction_detector",
+    "fail_policy": "proceed",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "evidence_sufficiency",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "evidence"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال العقدي: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص العقدية:\n«PASSAGES»\nقدم الإجابة العقدية مع الاستشهاد.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "fiqh": {
+  "name": "fiqh",
+  "collection": "fiqh_passages",
+  "intent": "FIQH",
+  "temperature": 0.15,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/fiqh_agent.txt",
+  "system_prompt_fallback": "أنت مساعد إسلامي متخصص في الفقه الإسلامي.\nاستند حصراً إلى النصوص المسترجاعة المُقدَّمة.\nUse مراجع المصادر [C1]، [C2]، ... after each sentence.\nاذكر المذهب الفقهي إن وُجد (حنفي، مالكي، شافعي، حنبلي).\nإذا تعارضت النصوص أو وُجد خلاف فقهي، اعرض الأقوال وأصحابها.\nإذا كانت النصوص غير كافية، أقرّ بذلك بوضوح.",
+  "system_prompt_fallback_includes_preamble": true,
+  "user_prompt_template": "السؤال: {query}\n\nاللغة المطلوبة: {language}\n\nالنصوص المسترجعة:\n{passages}\n\nأجب على السؤال مستنداً إلى النصوص أعلاه، مع ذكر المصادر.",
+  "top_k": 15,
+  "score_threshold": 0.65,
+  "rerank": true,
+  "dense_weight": 0.4,
+  "sparse_weight": 0.6,
+  "no_passages_message": "لم أجد نصوصاً فقهية كافية للإجابة على سؤالك.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "quote_validator",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "contradiction_detector",
+    "fail_policy": "proceed",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "evidence_sufficiency",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "evidence"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال: «QUERY»\n\nاللغة المطلوبة: «LANG»\n\nالنصوص المسترجعة:\n«PASSAGES»\n\nأجب على السؤال مستنداً إلى النصوص أعلاه، مع ذكر المصادر.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "6145a661"
+ },
+ "general": {
+  "name": "general",
+  "collection": "general_islamic",
+  "intent": "ISLAMIC_KNOWLEDGE",
+  "temperature": 0.3,
+  "max_tokens": 1536,
+  "system_prompt_file": "prompts/general_agent.txt",
+  "system_prompt_fallback": "أنت معلم إسلامي متخصص.\nاستند حصراً إلى المصادر المُقدَّمة.\nUse مراجع المصادر [C1]، [C2].\nأضف السياق التاريخي أو الفقهي عند الاقتضاء.\nإذا كانت المصادر غير كافية، قل ذلك بوضوح.",
+  "system_prompt_fallback_includes_preamble": true,
+  "user_prompt_template": "السؤال: {query}\nاللغة المطلوبة: {language}\nالمصادر المتاحة:\n{passages}\nقدم إجابة تعليمية مُنظَّمة.",
+  "top_k": 10,
+  "score_threshold": 0.35,
+  "rerank": true,
+  "dense_weight": 0.7,
+  "sparse_weight": 0.3,
+  "no_passages_message": "لم أجد في المصادر المتاحة ما يُجيب على هذا السؤال بدقة.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": false,
+  "verification_checks": [
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال: «QUERY»\nاللغة المطلوبة: «LANG»\nالمصادر المتاحة:\n«PASSAGES»\nقدم إجابة تعليمية مُنظَّمة.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "hadith": {
+  "name": "hadith",
+  "collection": "hadith_passages",
+  "intent": "HADITH",
+  "temperature": 0.1,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/hadith_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في علم الحديث النبوي ورواياته.\nتحذير مطلق: لا تختلق أي حديث أو إسناد.\nاستند حصراً إلى النصوص المسترجاعة.\nاعرض الأحاديث حرفياً كما وردت.\nاذكر درجة الحديث (صحيح، حسن، ضعيف، موضوع) إن وُجدت.\nUse مراجع المصادر [C1]، [C2]، ... after each hadith.",
+  "system_prompt_fallback_includes_preamble": true,
+  "user_prompt_template": "السؤال: {query}\n\nاللغة المطلوبة: {language}\n\nالأحاديث المسترجعة:\n{passages}\n\nاعرض الأحاديث المناسبة مع ذكر المصدر والدرجة.",
+  "top_k": 10,
+  "score_threshold": 0.5,
+  "rerank": true,
+  "dense_weight": 0.3,
+  "sparse_weight": 0.7,
+  "no_passages_message": "لم أجد أحاديث نبوية مرتبطة بهذا السؤال.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "quote_validator",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "hadith_grade_checker",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "both"
+   },
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال: «QUERY»\n\nاللغة المطلوبة: «LANG»\n\nالأحاديث المسترجعة:\n«PASSAGES»\n\nاعرض الأحاديث المناسبة مع ذكر المصدر والدرجة.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "62e3593a"
+ },
+ "history": {
+  "name": "history",
+  "collection": "islamic_history_passages",
+  "intent": "ISLAMIC_HISTORY",
+  "temperature": 0.25,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/history_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في التاريخ الإسلامي.\nاستند فقط إلى النصوص التاريخية.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال التاريخي: {query}\nاللغة المطلوبة: {language}\nالنصوص التاريخية:\n{passages}\nقدم الإجابة مع الترتيب الزمني.",
+  "top_k": 12,
+  "score_threshold": 0.5,
+  "rerank": true,
+  "dense_weight": 0.6,
+  "sparse_weight": 0.4,
+  "no_passages_message": "لم أجد معلومات تاريخية كافية.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال التاريخي: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص التاريخية:\n«PASSAGES»\nقدم الإجابة مع الترتيب الزمني.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "language": {
+  "name": "language",
+  "collection": "arabic_language_passages",
+  "intent": "ARABIC_LANGUAGE",
+  "temperature": 0.2,
+  "max_tokens": 1536,
+  "system_prompt_file": "prompts/language_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في اللغة العربية.\nاستند فقط إلى النصوص اللغوية.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال اللغوي: {query}\nاللغة المطلوبة: {language}\nالنصوص اللغوية:\n{passages}\nقدم الإجابة مع الشرح.",
+  "top_k": 10,
+  "score_threshold": 0.45,
+  "rerank": true,
+  "dense_weight": 0.5,
+  "sparse_weight": 0.5,
+  "no_passages_message": "لم أجد معلومات لغوية كافية.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال اللغوي: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص اللغوية:\n«PASSAGES»\nقدم الإجابة مع الشرح.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "seerah": {
+  "name": "seerah",
+  "collection": "seerah_passages",
+  "intent": "SEERAH",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/seerah_agent.txt",
+  "system_prompt_fallback": "أنت باحث متفحص في السيرة النبوية، مهمتك كتابة إجابات سردية موثقة.\nيجب أن يكون أسلوبك سردياً متصلاً (Narrative) كما في كتب السير الكبرى، بعيداً عن أسلوب النقاط أو القوائم.\nتوقف عن الكتابة فور انتهاء المعلومات المستقاة من النصوص.\nلا تقدم ملخصات أو استنتاجات شخصية.",
+  "system_prompt_fallback_includes_preamble": true,
+  "user_prompt_template": "أجب على السؤال التالي المتعلق بالسيرة النبوية بأسلوب سردي علمي رصين، مع الالتزام التام بالنصوص المسترجعة المرفقة.\n\nالسؤال: {query}\nاللغة: {language}\n\nالنصوص الموثقة:\n{passages}\n\nالضوابط الصارمة:\n- صُغ الإجابة كفقرات مترابطة بأسلوب الكتب العلمية، مع دمج الاستشهادات [C1]، [C2] بسلاسة.\n- **ممنوع تماماً**: لا تضف أي خاتمة، أو ملخص، أو فقرة \"دروس مستفادة\"، أو نصائح وعبر، ما لم ترد حرفياً في النصوص.\n- توقف فوراً بعد ذكر المعلومات المستمدة من النصوص.\n- لا تضف أي معلومات من خارج هذه النصوص المحددة.\n- التزم باللغة العربية الفصحى، وتجنب أي تنسيقات غير ضرورية.",
+  "top_k": 10,
+  "score_threshold": 0.5,
+  "rerank": true,
+  "dense_weight": 0.6,
+  "sparse_weight": 0.4,
+  "no_passages_message": "لم أجد في النصوص المتاحة ما يتعلق بهذا السؤال من السيرة النبوية.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "--- النص رقم {index} ---\n{content}",
+  "passage_truncate": 600,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "quote_validator",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "temporal_consistency",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "evidence_sufficiency",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "evidence"
+   }
+  ],
+  "probes": {
+   "user_prompt": "أجب على السؤال التالي المتعلق بالسيرة النبوية بأسلوب سردي علمي رصين، مع الالتزام التام بالنصوص المسترجعة المرفقة.\n\nالسؤال: «QUERY»\nاللغة: «LANG»\n\nالنصوص الموثقة:\n«PASSAGES»\n\nالضوابط الصارمة:\n- صُغ الإجابة كفقرات مترابطة بأسلوب الكتب العلمية، مع دمج الاستشهادات [C1]، [C2] بسلاسة.\n- **ممنوع تماماً**: لا تضف أي خاتمة، أو ملخص، أو فقرة \"دروس مستفادة\"، أو نصائح وعبر، ما لم ترد حرفياً في النصوص.\n- توقف فوراً بعد ذكر المعلومات المستمدة من النصوص.\n- لا تضف أي معلومات من خارج هذه النصوص المحددة.\n- التزم باللغة العربية الفصحى، وتجنب أي تنسيقات غير ضرورية.",
+   "passages": "--- النص رقم 1 ---\nالنص الأول\n\n--- النص رقم 2 ---\nBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n--- النص رقم 3 ---\nCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "tafsir": {
+  "name": "tafsir",
+  "collection": "quran_tafsir",
+  "intent": "TAFSIR",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "system_prompt_file": "prompts/tafsir_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في تفسير القرآن الكريم.\nاستند حصراً إلى النصوص التفسيرية.\nاذكر اسم المفسر والمصدر.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال: {query}\nاللغة المطلوبة: {language}\nالنصوص التفسيرية:\n{passages}\nقدم التفسير مع ذكر المصدر.",
+  "top_k": 12,
+  "score_threshold": 0.15,
+  "rerank": true,
+  "dense_weight": 0.7,
+  "sparse_weight": 0.3,
+  "no_passages_message": "لم أجد تفسيراً للآية المطلوبة.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "quote_validator",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "contradiction_detector",
+    "fail_policy": "proceed",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص التفسيرية:\n«PASSAGES»\nقدم التفسير مع ذكر المصدر.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "62e3593a"
+ },
+ "tazkiyah": {
+  "name": "tazkiyah",
+  "collection": "spirituality_passages",
+  "intent": "ISLAMIC_TAZKIYAH",
+  "temperature": 0.25,
+  "max_tokens": 1792,
+  "system_prompt_file": "prompts/tazkiyah_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في التزكية الإسلامية والأخلاق.\nاستند فقط إلى النصوص التزكية.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال في التزكية: {query}\nاللغة المطلوبة: {language}\nالنصوص التزكية:\n{passages}\nقدم الإجابة مع النصائح.",
+  "top_k": 10,
+  "score_threshold": 0.45,
+  "rerank": true,
+  "dense_weight": 0.5,
+  "sparse_weight": 0.5,
+  "no_passages_message": "لم أجد نصوصاً في التزكية والأخلاق.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": false,
+  "verification_checks": [
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال في التزكية: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص التزكية:\n«PASSAGES»\nقدم الإجابة مع النصائح.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ },
+ "usul_fiqh": {
+  "name": "usul_fiqh",
+  "collection": "usul_fiqh",
+  "intent": "USUL_FIQH",
+  "temperature": 0.15,
+  "max_tokens": 1792,
+  "system_prompt_file": "prompts/usul_fiqh_agent.txt",
+  "system_prompt_fallback": "أنت متخصص في أصول الفقه.\nاستند حصراً إلى النصوص الأصولية.\nUse مراجع المصادر [C1]، [C2].",
+  "system_prompt_fallback_includes_preamble": false,
+  "user_prompt_template": "السؤال الأصولي: {query}\nاللغة المطلوبة: {language}\nالنصوص الأصولية:\n{passages}\nقدم الإجابة الأصولية.",
+  "top_k": 10,
+  "score_threshold": 0.55,
+  "rerank": true,
+  "dense_weight": 0.4,
+  "sparse_weight": 0.6,
+  "no_passages_message": "لم أجد نصوصاً أصولية كافية.",
+  "fallback_strategy": "chatbot",
+  "passage_header": "[C{index}] {content}",
+  "passage_truncate": 500,
+  "verification_fail_fast": true,
+  "verification_checks": [
+   {
+    "name": "quote_validator",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "source_attributor",
+    "fail_policy": "warn",
+    "enabled": true,
+    "stage": "answer"
+   },
+   {
+    "name": "evidence_sufficiency",
+    "fail_policy": "abstain",
+    "enabled": true,
+    "stage": "evidence"
+   }
+  ],
+  "probes": {
+   "user_prompt": "السؤال الأصولي: «QUERY»\nاللغة المطلوبة: «LANG»\nالنصوص الأصولية:\n«PASSAGES»\nقدم الإجابة الأصولية.",
+   "passages": "[C1] النص الأول\n\n[C2] BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB…\n\n[C3] CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  },
+  "_normalize_arabic_sha1": "35435ce8"
+ }
+}

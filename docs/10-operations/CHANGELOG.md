@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (2026-10-22 structure cleanup)
+- Phase 5 of the hardening refactor: the ten collection agent classes and
+  their base class are replaced by one spec-driven `RAGPipeline`
+  (`src/agents/pipeline.py`) configured by `config/agents/*.yaml`, loaded into
+  `src/domain/agent_spec.AgentSpec`. The YAML files were rewritten to record
+  the real behavior: generation budgets and temperatures, retrieval values,
+  prompt templates, passage rendering, verification suites, and fallback
+  messages. `tests/test_agent_spec_equivalence.py` proves the YAML reproduces
+  the frozen capture of the deleted classes byte for byte.
 - Phase 4 of the hardening refactor: one retrieval path. `RunRetrievalUseCase`
   calls `VectorSearchPort.search` per collection, the same call the harness's
   dense mode makes, and the keyword re-rank (`HybridSearcher`) is out of the

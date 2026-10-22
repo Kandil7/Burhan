@@ -57,6 +57,25 @@ ids, verified at fiqh id 1879) now ranks below the top-10, and history's
 curated id 5385 is gone with the 2,048-row test clobber. The golden set must
 be re-curated after the paused full-corpus load finishes.
 
+## Phase 5 addendum (same day)
+
+One pipeline, data-driven agents. The ten classes and their base are deleted;
+`RAGPipeline` runs the seven-step flow from `AgentSpec` values loaded from the
+rewritten `config/agents/*.yaml`. The YAML files previously recorded a design
+that never ran (hybrid alpha weights, checks that do not exist); they now
+record the behavior, captured from the classes while they lived. The
+equivalence test reproduces that capture byte for byte, including the two
+fallback-prompt behaviors and seerah's different passage format.
+
+The dev container taught one lesson: the specs are runtime configuration, and
+the compose file mounted only src, tests, and data. The container served the
+image's stale YAMLs and `/ask` died with KeyError 'collection'. config/ and
+prompts/ are mounted now.
+
+Fingerprint after the switch: intent and collection 20 of 20 identical to the
+routing-fix baseline; the LLM-curated fields drift inside the noise band the
+Phase 3 control established.
+
 ## What Was Done
 
 ### 1. One home per script

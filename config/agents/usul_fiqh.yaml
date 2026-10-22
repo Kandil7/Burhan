@@ -1,46 +1,52 @@
-# Usul Fiqh Agent Configuration
-# Retrieval, verification, and fallback policies for UsulFiqhCollectionAgent
+# UsulFiqhCollectionAgent behavior record (hardening Phase 5).
+# Every value here matches what the agent does at runtime; the
+# equivalence test in tests/test_agent_spec_equivalence.py guards it.
+name: usul_fiqh
+collection: usul_fiqh
+intent: USUL_FIQH
+generation:
+  temperature: 0.15
+  max_tokens: 1792
+  system_prompt_file: prompts/usul_fiqh_agent.txt
+  system_prompt_fallback: 'أنت متخصص في أصول الفقه.
 
-name: UsulFiqhAgent
-domain: usul_fiqh
-collection_name: usul_fiqh_passages
+    استند حصراً إلى النصوص الأصولية.
 
+    Use مراجع المصادر [C1]، [C2].'
+  system_prompt_fallback_includes_preamble: false
+  user_prompt_template: 'السؤال الأصولي: {query}
+
+    اللغة المطلوبة: {language}
+
+    النصوص الأصولية:
+
+    {passages}
+
+    قدم الإجابة الأصولية.'
+  no_passages_message: لم أجد نصوصاً أصولية كافية.
 retrieval:
-  primary: hybrid
-  alpha: 0.7
-  topk_initial: 40
-  topk_reranked: 10
-  min_relevance: 0.55
-  metadata_filters_priority:
-    - topic
-    - scholar
-    - school
-    - era
-
+  top_k: 10
+  score_threshold: 0.55
+  rerank: true
+  dense_weight: 0.4
+  sparse_weight: 0.6
+passages:
+  header: '[C{index}] {content}'
+  truncate: 500
 verification:
   fail_fast: true
   checks:
-    - name: quote_validator
-      enabled: true
-      fail_policy: abstain
-
-    - name: source_attributor
-      enabled: true
-      fail_policy: warn
-
-    - name: usul_methodology_checker
-      enabled: true
-      fail_policy: proceed
-
-    - name: evidence_sufficiency
-      enabled: true
-      fail_policy: abstain
-
+  - name: quote_validator
+    fail_policy: abstain
+    enabled: true
+    stage: answer
+  - name: source_attributor
+    fail_policy: warn
+    enabled: true
+    stage: answer
+  - name: evidence_sufficiency
+    fail_policy: abstain
+    enabled: true
+    stage: evidence
 fallback:
   strategy: chatbot
-  message: null
-
-abstention:
-  require_academic_sources: true
-  require_diverse_evidence: false
-  minimum_sources: 2

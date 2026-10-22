@@ -25,29 +25,16 @@ def load_agent(agent_name: str) -> Any:
         agent_name: Name of the agent (e.g., 'fiqh', 'aqeedah', 'tafsir').
 
     Returns:
-        Agent instance.
+        Agent instance, or None when no spec carries that name.
     """
-    # Import from v2 collection agents
-    from src.agents.collection import (
-        AqeedahCollectionAgent,
-        FiqhCollectionAgent,
-        HadithCollectionAgent,
-        TafsirCollectionAgent,
-    )
-    from src.config import get_config_manager
+    from src.agents.pipeline import RAGPipeline
+    from src.agents.spec_loader import load_all_agent_specs
 
-    config = get_config_manager().get_collection_agent_config(agent_name)
-
-    if agent_name == "fiqh":
-        return FiqhCollectionAgent(config=config)
-    if agent_name == "hadith":
-        return HadithCollectionAgent(config=config)
-    if agent_name == "tafsir":
-        return TafsirCollectionAgent(config=config)
-    if agent_name == "aqeedah":
-        return AqeedahCollectionAgent(config=config)
-
-    return None
+    specs = load_all_agent_specs()
+    spec = specs.get(agent_name)
+    if spec is None:
+        return None
+    return RAGPipeline(spec=spec)
 
 
 async def run_cli(args: Any) -> Any:

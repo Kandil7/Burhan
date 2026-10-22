@@ -9,6 +9,7 @@ Tests:
 - Full pipeline execution
 """
 
+from dataclasses import replace as _replace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -17,11 +18,35 @@ from src.agents.collection import (
     CollectionAgentConfig,
     RetrievalStrategy,
 )
-from src.agents.collection.fiqh import (
-    FiqhCollectionAgent,
-    _normalize_arabic,
-)
+from src.agents.pipeline import RAGPipeline, _normalize_arabic
+from src.agents.spec_loader import load_all_agent_specs
+from src.domain.agent_spec import AgentSpec
 from src.domain.intents import Intent
+
+
+def make_agent(spec_name: str = "fiqh", **kwargs):
+    """Build a RAGPipeline the way the deleted classes were built."""
+    spec = SPECS[spec_name]
+    config = kwargs.pop("config", None)
+    if config is not None:
+        spec = _replace(
+            spec,
+            collection=config.collection_name,
+            top_k=config.strategy.top_k,
+            score_threshold=config.strategy.score_threshold,
+            rerank=config.strategy.rerank,
+            dense_weight=config.strategy.dense_weight,
+            sparse_weight=config.strategy.sparse_weight,
+        )
+    return RAGPipeline(
+        spec=spec,
+        search=kwargs.pop("vector_store", None),
+        embed=kwargs.pop("embedding_model", None),
+        llm_client=kwargs.pop("llm_client", None),
+    )
+
+
+SPECS = load_all_agent_specs()
 
 
 class TestArabicNormalization:
@@ -60,12 +85,12 @@ class TestFiqhCollectionAgentInstantiation:
 
     def test_default_instantiation(self):
         """Test agent can be instantiated with default config."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         assert agent.name == "fiqh"
         assert agent.COLLECTION == "fiqh_passages"
-        assert isinstance(agent.config, CollectionAgentConfig)
-        assert agent.config.collection_name == "fiqh_passages"
+        assert isinstance(agent.spec, AgentSpec)
+        assert agent.spec.collection == "fiqh_passages"
 
     def test_custom_config_instantiation(self):
         """Test agent with custom configuration."""
@@ -82,11 +107,11 @@ class TestFiqhCollectionAgentInstantiation:
             strategy=strategy,
         )
 
-        agent = FiqhCollectionAgent(config=config)
+        agent = make_agent("fiqh", config=config)
 
         assert agent.name == "fiqh"
-        assert agent.config.strategy.top_k == 100
-        assert agent.config.strategy.score_threshold == 0.7
+        assert agent.spec.top_k == 100
+        assert agent.spec.score_threshold == 0.7
 
     def test_with_dependencies(self):
         """Test agent with injected dependencies."""
@@ -94,7 +119,8 @@ class TestFiqhCollectionAgentInstantiation:
         mock_vector_store = MagicMock()
         mock_llm = MagicMock()
 
-        agent = FiqhCollectionAgent(
+        agent = make_agent(
+            "fiqh",
             embedding_model=mock_embedding,
             vector_store=mock_vector_store,
             llm_client=mock_llm,
@@ -110,7 +136,7 @@ class TestQueryIntake:
 
     def test_normalize_simple_query(self):
         """Test normalizing a simple Arabic query."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = agent.query_intake("ما حكم الصيام؟")
 
@@ -118,7 +144,7 @@ class TestQueryIntake:
 
     def test_normalize_with_alef_variants(self):
         """Test normalizing query with alef variants."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = agent.query_intake("ما حكم الأكل في رمضان؟")
 
@@ -126,7 +152,7 @@ class TestQueryIntake:
 
     def test_normalize_removes_extra_spaces(self):
         """Test that extra spaces are removed."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = agent.query_intake("ما  حكم  الصيام  ؟")
 
@@ -138,7 +164,7 @@ class TestIntentClassification:
 
     def test_ruling_keywords_classify_as_fiqh(self):
         """Ruling keywords always classify as FIQH."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         assert agent.classify_intent("ما حكم الصلاة؟") == Intent.FIQH
         assert agent.classify_intent("هل الحضور واجب؟") == Intent.FIQH
@@ -148,7 +174,7 @@ class TestIntentClassification:
 
     def test_masaail_keywords_classify_as_fiqh(self):
         """Question-form fiqh queries also classify as FIQH."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         assert agent.classify_intent("ما مسألة الصيام؟") == Intent.FIQH
         assert agent.classify_intent("سؤال عن الزكاة") == Intent.FIQH
@@ -156,7 +182,7 @@ class TestIntentClassification:
 
     def test_fiqh_agent_defaults_to_fiqh(self):
         """The fiqh agent classifies every query as FIQH."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         assert agent.classify_intent("أخبرني عن التاريخ") == Intent.FIQH
 
@@ -166,22 +192,22 @@ class TestStrategyConfiguration:
 
     def test_default_strategy_values(self):
         """Test default strategy values."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
-        assert agent.strategy is not None
-        assert agent.strategy.dense_weight == 0.4
-        assert agent.strategy.sparse_weight == 0.6
-        assert agent.strategy.top_k == 15
-        assert agent.strategy.rerank is True
-        assert agent.strategy.score_threshold == 0.65
+        assert agent.spec is not None
+        assert agent.spec.dense_weight == 0.4
+        assert agent.spec.sparse_weight == 0.6
+        assert agent.spec.top_k == 15
+        assert agent.spec.rerank is True
+        assert agent.spec.score_threshold == 0.65
 
     def test_default_strategy_is_sparse_heavy(self):
         """Fiqh retrieval is sparse-heavy for precise wording."""
-        strategy = FiqhCollectionAgent.DEFAULT_STRATEGY
+        strategy = SPECS["fiqh"]
 
         assert strategy.sparse_weight > strategy.dense_weight
-        assert FiqhCollectionAgent.COLLECTION == "fiqh_passages"
-        assert FiqhCollectionAgent.NO_PASSAGES_MESSAGE
+        assert SPECS["fiqh"].collection == "fiqh_passages"
+        assert SPECS["fiqh"].no_passages_message
 
 
 class TestRetrieval:
@@ -190,7 +216,7 @@ class TestRetrieval:
     @pytest.mark.asyncio
     async def test_retrieve_no_vector_store(self):
         """Test retrieval returns empty when no vector store."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = await agent.retrieve_candidates("ما حكم الصيام؟")
 
@@ -207,7 +233,7 @@ class TestRetrieval:
         mock_embedding = AsyncMock()
         mock_embedding.encode_query = AsyncMock(return_value=[0.1, 0.2, 0.3])
 
-        agent = FiqhCollectionAgent(embedding_model=mock_embedding, vector_store=mock_store)
+        agent = make_agent("fiqh", embedding_model=mock_embedding, vector_store=mock_store)
 
         result = await agent.retrieve_candidates("ما حكم الصيام؟")
 
@@ -222,7 +248,7 @@ class TestReranking:
     @pytest.mark.asyncio
     async def test_rerank_empty_candidates(self):
         """Test reranking with empty candidates."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = await agent.rerank_candidates("query", [])
 
@@ -231,7 +257,7 @@ class TestReranking:
     @pytest.mark.asyncio
     async def test_rerank_filters_by_threshold(self):
         """Test reranking filters by score threshold."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         candidates = [
             {"content": "high score", "score": 0.9},
@@ -250,7 +276,7 @@ class TestVerification:
     @pytest.mark.asyncio
     async def test_verification_with_candidates(self):
         """Test verification with candidate passages."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         candidates = [
             {"content": "نص فقهي", "score": 0.9, "metadata": {}},
@@ -264,7 +290,7 @@ class TestVerification:
     @pytest.mark.asyncio
     async def test_verification_empty_candidates(self):
         """Test verification with empty candidates."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = await agent.run_verification("query", [])
 
@@ -278,7 +304,7 @@ class TestGenerateAnswer:
     @pytest.mark.asyncio
     async def test_generate_no_passages(self):
         """Test generate returns fallback message when no passages."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = await agent.generate_answer("query", [], "ar")
 
@@ -287,7 +313,7 @@ class TestGenerateAnswer:
     @pytest.mark.asyncio
     async def test_generate_with_passages_no_llm(self):
         """Test generate returns formatted passages when no LLM."""
-        agent = FiqhCollectionAgent()  # No llm_client
+        agent = make_agent("fiqh")  # No llm_client
 
         passages = [
             {"content": "نص فقهي 1", "score": 0.9, "metadata": {}},
@@ -305,7 +331,7 @@ class TestAssembleCitations:
 
     def test_assemble_citations_from_passages(self):
         """Test assembling citations from passages."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         passages = [
             {
@@ -333,7 +359,7 @@ class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_full_run_with_mock_data(self):
         """Test complete pipeline execution."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         # Run the full pipeline
         result = await agent.run(
@@ -351,7 +377,7 @@ class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_run_intent_classification(self):
         """Test that run() properly classifies intent."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         result = await agent.run(
             raw_question="هل الصيام فرض؟",
@@ -366,13 +392,13 @@ class TestClassAttributes:
 
     def test_system_prompt_arabic(self):
         """Test the system prompt is loaded from the prompt file."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         assert "وكيل مجموعة فقهية" in agent._get_system_prompt()
 
     def test_user_prompt_includes_query_and_passages(self):
         """Test the user prompt embeds the query and the passages."""
-        agent = FiqhCollectionAgent()
+        agent = make_agent("fiqh")
 
         prompt = agent._build_user_prompt("ما حكم الصيام؟", "[C1] نص فقهي", "ar")
 
@@ -381,4 +407,4 @@ class TestClassAttributes:
 
     def test_no_passages_message_arabic(self):
         """Test fallback message is in Arabic."""
-        assert "لم أجد نصوصاً فقهية" in FiqhCollectionAgent.NO_PASSAGES_MESSAGE
+        assert "لم أجد نصوصاً فقهية" in SPECS["fiqh"].no_passages_message
