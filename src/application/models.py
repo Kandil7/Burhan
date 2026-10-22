@@ -1,38 +1,13 @@
 """
 Application-level models for Burhan Islamic QA system.
 
-This module contains:
-- RoutingDecision: Application-level result wrapping ClassificationResult with routing info
+One-release shim: `RoutingDecision` moved to `src.domain.models` (Phase 2 of
+docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md). Import from the
+domain home in new code; this alias disappears after the next release.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from src.domain.models import RoutingDecision as RoutingDecision
 
-from src.domain.models import ClassificationResult
-
-
-@dataclass(frozen=True)
-class RoutingDecision:
-    """
-    Application-level result: wraps ClassificationResult with a resolved
-    route string and optional metadata for downstream agents.
-
-    Route examples:
-      "fiqh_agent"
-      "hadith_agent"
-      "quran:verse_lookup"
-      "quran:nl2sql"
-      "quran:interpretation_rag"
-      "quran:quote_validation"
-
-    Attributes:
-        result: The underlying ClassificationResult
-        route: Resolved route string for agent/tool dispatch
-        agent_metadata: Optional metadata for downstream agents
-    """
-
-    result: ClassificationResult
-    route: str
-    agent_metadata: dict[str, Any] = field(default_factory=dict)
+__all__ = ["RoutingDecision"]

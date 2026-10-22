@@ -137,17 +137,13 @@
   "src.verification.policies"
  ],
  "duplicate_definitions": {
-  "AgentOutput": [
-   "src.agents.base",
-   "src.agents.collection.base"
-  ],
   "BaseAgent": [
    "src.agents.base",
    "src.evaluation.metrics"
   ],
   "Citation": [
-   "src.agents.base",
-   "src.core.citation"
+   "src.core.citation",
+   "src.domain.models"
   ],
   "ClassificationResult": [
    "src.api.schemas.classify",
@@ -171,14 +167,14 @@
   ],
   "RoutingDecision": [
    "src.api.schemas.classify",
-   "src.application.models"
+   "src.domain.models"
   ],
   "SearchRequest": [
    "src.api.routes.quran",
    "src.api.schemas.search"
   ],
   "VerificationReport": [
-   "src.agents.base",
+   "src.domain.models",
    "src.verification.schemas"
   ],
   "build_classifier": [

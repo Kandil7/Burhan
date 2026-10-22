@@ -203,6 +203,33 @@ aliases. This also removes the `retrieval` to `agents` inversion.
 
 Verification: ruff, mypy, the full suite, and no import errors.
 
+**Status (2026-10-22): done, with a documented scope adjustment.** Six models
+moved into `src/domain/models.py` (`Citation`, `AgentOutput`,
+`VerificationReport`, `VerificationStatus`, `RetrievalResult`,
+`RoutingDecision`; `ClassificationResult` was already home). The old homes
+re-export with explicit aliases: `src/agents/base.py`,
+`src/agents/collection/base.py`, `src/verification/schemas.py`,
+`src/application/interfaces.py`, `src/application/models.py`. The
+`retrieval/mapping/citation_mapper.py` import moved to the domain home, which
+removes the layer inversion.
+
+Three same-name models stay where they are, deliberately:
+
+1. `src/api/schemas/classify.py` keeps its own `ClassificationResult` and
+   `RoutingDecision`: they are the `/classify` response DTOs and the 26-path
+   HTTP contract is frozen. Unifying them with the domain value objects would
+   add or drop response keys.
+2. `src/core/citation.py` keeps its own `Citation`: it is a reference model
+   (chapter, verse, hadith number, authority weight) for the citation
+   service, not the quote model agents attach to answers.
+3. `src/verification/schemas.py` keeps its own `VerificationReport`: the
+   verification layer's report (issues, check results) is a different model
+   from the agent answer summary.
+
+The dead-layer duplicates (`src/domain/citations.py`,
+`src/domain/evidence.py`, `src/retrieval/schemas.py`) keep their definitions
+until Phase 7 deletes the modules.
+
 ### Phase 3, ports and one composition root
 
 Add `src/application/ports.py` and `src/composition.py`. Make `api/lifespan`

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.agents.base import Citation
+from src.domain.models import Citation
 
 
 class CitationMapper:

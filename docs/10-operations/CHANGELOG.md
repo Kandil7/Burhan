@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed (2026-10-22 structure cleanup)
+- Phase 2 of the hardening refactor: `Citation`, `AgentOutput`,
+  `VerificationReport`, `VerificationStatus`, `RetrievalResult`, and
+  `RoutingDecision` moved into `src/domain/models.py` beside
+  `ClassificationResult`, with one-release re-export shims at their old homes.
+  `src/retrieval/mapping/citation_mapper.py` now imports `Citation` from the
+  domain home, which removes the retrieval-to-agents layer inversion. The
+  `/classify` response DTOs and the other same-name layer models stay in
+  place on purpose (frozen HTTP contract); see Phase 2 in
+  `docs/8-development/refactoring/REFACTOR_PLAN_HARDENING.md`.
 - Root structure: every script now has one home under `scripts/` (`data`,
   `ingestion`, `quality`, `evaluation`, `smoke`, `tools`, `windows`).
   Notebooks moved to `docs/8-development/notebooks/`; `QWEN.md` and

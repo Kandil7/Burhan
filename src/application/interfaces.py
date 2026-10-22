@@ -17,6 +17,9 @@ from typing import Protocol, runtime_checkable
 from src.application.models import RoutingDecision
 from src.domain.models import ClassificationResult
 
+# One-release shim: RetrievalResult moved to src.domain.models (Phase 2).
+from src.domain.models import RetrievalResult as RetrievalResult
+
 # ==========================================
 # Core Protocols
 # ==========================================
@@ -70,29 +73,7 @@ class Router(Protocol):
 # ==========================================
 
 
-class RetrievalResult:
-    """Structured retrieval result with metadata."""
-
-    def __init__(
-        self,
-        content: str,
-        source: str,
-        score: float,
-        metadata: dict | None = None,
-    ):
-        self.content = content
-        self.source = source
-        self.score = score
-        self.metadata = metadata or {}
-
-    def to_dict(self) -> dict:
-        """Convert to dictionary."""
-        return {
-            "content": self.content,
-            "source": self.source,
-            "score": self.score,
-            "metadata": self.metadata,
-        }
+# RetrievalResult moved to src.domain.models (Phase 2); imported above.
 
 
 @runtime_checkable

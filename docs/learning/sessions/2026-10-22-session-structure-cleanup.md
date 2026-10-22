@@ -5,6 +5,23 @@ Continuation of the session logged in
 "implement all steps" of the root-order review, then stopped the Hugging Face
 data load partway.
 
+## Ritual Capture (2026-10-22)
+
+Raw answers, kept short.
+
+- **Worked on:** root structure cleanup, 424 MB of datasets untracked from Git,
+  Alembic removed and CI merged, everything committed as `807f6bf`.
+- **Learned:** ruff 0.7.4 rejects the `UP046` selector the config used, so CI
+  lint would have failed on locked tools. `project-log` is path-locked to
+  `docs/learning/`, so merging session logs into `docs/11-learning/` was the
+  wrong direction. Qdrant point ids equal corpus row ids, so the full loader
+  resumes with `--start-row` while `--recreate` would have wiped 365k rows. A
+  checkpoint hook auto-committed the 54 staged moves before I reached them.
+- **Still fuzzy:** when to resume the HF load and the remaining ~2M fiqh rows;
+  the `.opencode.json` deletion stays unstaged and undecided.
+- **Next time:** start Phase 2 of the hardening refactor (ports, one
+  composition root, YAML-as-config).
+
 ## What Was Done
 
 ### 1. One home per script

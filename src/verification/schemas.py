@@ -11,15 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-
-class VerificationStatus(str, Enum):
-    """Verification status values."""
-
-    PASSED = "passed"
-    FAILED = "failed"
-    SKIPPED = "skipped"
-    ABSTAINED = "abstained"
-    WARNING = "warning"
+# One-release shim: VerificationStatus moved to src.domain.models (Phase 2).
+from src.domain.models import VerificationStatus as VerificationStatus
 
 
 class VerifierType(str, Enum):

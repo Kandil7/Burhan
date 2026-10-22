@@ -18,6 +18,9 @@ from pydantic import BaseModel, Field
 
 from src.agents.base import AgentInput, Citation, strip_cot_leakage
 from src.domain.intents import Intent
+
+# One-release shim: AgentOutput moved to src.domain.models (Phase 2).
+from src.domain.models import AgentOutput as AgentOutput
 from src.verification import (
     VerificationCheck as VerificationCheck,
 )
@@ -62,17 +65,6 @@ def _is_answer_truncated(answer: str) -> bool:
     """Return True if answer appears cut mid-sentence (max_tokens reached)."""
     stripped = answer.rstrip()
     return not stripped or stripped[-1] not in _SENTENCE_ENDINGS
-
-
-class AgentOutput(BaseModel):
-    """Standardized output for all agents."""
-
-    answer: str = Field(description="Agent answer text")
-    citations: list[Citation] = Field(default_factory=list)
-    citation_chunks: list[dict[str, Any]] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    requires_human_review: bool = Field(default=False)
 
 
 class RetrievalStrategy(BaseModel):
